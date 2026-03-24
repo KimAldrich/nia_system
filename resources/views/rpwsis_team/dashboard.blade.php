@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'FS Team Dashboard')
+@section('title', 'RP-WSIS Team Dashboard')
 
 @section('content')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -272,7 +272,7 @@
         }
     </style>
 
-    <h1 class="header-title">FS Team Dashboard</h1>
+    <h1 class="header-title">RP-WSIS Team Dashboard</h1>
 
     <div class="dashboard-grid">
 
@@ -299,7 +299,7 @@
                             <th>Document Name</th>
                             <th>Status</th>
 
-                            @if(auth()->user() && auth()->user()->role == 'fs_team')
+                            @if(auth()->user() && auth()->user()->role == 'rpwsis_team')
                                 <th style="text-align: right;">Action</th>
                             @endif
                         </tr>
@@ -322,9 +322,9 @@
                                     @endif
                                 </td>
 
-                                @if(auth()->user() && auth()->user()->role == 'fs_team')
+                                @if(auth()->user() && auth()->user()->role == 'rpwsis_team')
                                     <td style="text-align: right;">
-                                        <form action="{{ route('fs.resolutions.update_status', $res->id) }}" method="POST">
+                                        <form action="{{ route('rpwsis.resolutions.update_status', $res->id) }}" method="POST">
                                             @csrf
                                             <select name="status" class="status-select" onchange="this.form.submit()">
                                                 <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>
@@ -340,7 +340,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ (auth()->user() && auth()->user()->role == 'fs_team') ? '3' : '2' }}"
+                                <td colspan="{{ (auth()->user() && auth()->user()->role != 'rpwsis_team') ? '3' : '2' }}"
                                     style="text-align:center; color:#a1a1aa; padding: 30px 0;">
                                     No projects uploaded yet.
                                 </td>

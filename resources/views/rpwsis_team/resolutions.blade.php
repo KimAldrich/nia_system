@@ -1,31 +1,22 @@
 @extends('layouts.app')
-@section('title', 'Downloadables')
+@section('title', 'IA Resolutions')
+
+@section('sidebar')
+    <a href="{{ route('rpwsis.dashboard') }}">Dashboard</a>
+    <a href="{{ route('rpwsis.downloadables') }}">Downloadables</a>
+    <a href="{{ route('rpwsis.resolutions') }}" style="background:rgba(255,255,255,0.1); border-left-color:white;">IA
+        Resolutions</a>
+@endsection
 
 @section('content')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Base Styling */
-        /* Add this line right here to fix all width/padding calculations */
         * {
             box-sizing: border-box;
         }
 
         /* Base Styling */
-        .content {
-            background-color: #f7f8fa;
-            font-family: 'Poppins', sans-serif;
-            padding: 40px;
-            color: #111;
-        }
-
-        .header-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
         .content {
             background-color: #f7f8fa;
             font-family: 'Poppins', sans-serif;
@@ -320,8 +311,8 @@
         }
     </style>
 
-    <h1 class="header-title">Downloadable Forms</h1>
-    <p class="header-desc">Access and manage official documents for the regional office and field offices.</p>
+    <h1 class="header-title">IA Resolutions</h1>
+    <p class="header-desc">Manage and upload resolutions for the regional office and field offices.</p>
 
     @if(session('success'))
         <div
@@ -335,31 +326,30 @@
     @endif
 
     <div class="tab-nav">
-        <button class="tab-btn active" onclick="switchTab(event, 'available-forms')">Available Forms</button>
-
-        @if(auth()->user()->role == 'fs-team')
-            <button class="tab-btn" onclick="switchTab(event, 'upload-form')">Upload a Form</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'available-resolutions')">Available Resolutions</button>
+        @if(auth()->user()->role != 'rpwsis_team')
+            <button class="tab-btn" onclick="switchTab(event, 'upload-resolution')">Upload a Resolution</button>
         @endif
     </div>
 
-    <div id="available-forms" class="tab-pane active">
+    <div id="available-resolutions" class="tab-pane active">
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
 
-            @forelse($files as $file)
+            @forelse($resolutions as $resolution)
                 @php
-                    $extension = pathinfo($file->file_path, PATHINFO_EXTENSION);
+                    $extension = pathinfo($resolution->file_path, PATHINFO_EXTENSION);
                 @endphp
 
                 <div class="ui-card">
                     <div style="margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e4e7; height: 120px; background: #fafafa; position: relative; transition: opacity 0.2s;"
                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
 
-                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank"
+                        <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank"
                             style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
                             title="Click to view or download document"></a>
 
                         @if(strtolower($extension) === 'pdf')
-                            <iframe src="{{ asset('storage/' . $file->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
+                            <iframe src="{{ asset('storage/' . $resolution->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
                                 width="100%" height="100%" scrolling="no"
                                 style="border: none; transform: scale(0.95); transform-origin: top center; pointer-events: none; overflow: hidden;">
                             </iframe>
@@ -383,20 +373,20 @@
                     <div style="flex: 1;">
                         <h4
                             style="margin:0 0 2px 0; font-size: 14px; font-weight: 600; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->title }}
+                            {{ $resolution->title }}
                         </h4>
                         <p
                             style="font-size: 11px; color: #a1a1aa; margin: 0 0 15px 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->original_name }}
+                            {{ $resolution->original_name }}
                         </p>
                     </div>
 
-                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
+                    <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank" class="btn-dark"
                         style="margin-bottom: 15px;">Download</a>
 
-                    @if(auth()->user()->role == 'fs-team')
+                    @if(auth()->user()->role != 'rpwsis_team')
                         <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
-                        <form action="{{ route('fs.downloadables.update', $file->id) }}" method="POST"
+                        <form action="{{ route('rpwsis.resolutions.update', $resolution->id) }}" method="POST"
                             enctype="multipart/form-data">
                             @csrf
                             <label
@@ -412,14 +402,14 @@
             @empty
                 <div
                     style="grid-column: 1 / -1; background: #ffffff; padding: 40px; border-radius: 12px; text-align: center; border: 1px solid #e4e4e7;">
-                    <p style="color: #a1a1aa; font-weight: 500; font-size: 13px;">No documents have been uploaded yet.</p>
+                    <p style="color: #a1a1aa; font-weight: 500; font-size: 13px;">No resolutions have been uploaded yet.</p>
                 </div>
             @endforelse
         </div>
     </div>
 
-    <div id="upload-form" class="tab-pane">
-        <form action="{{ route('fs.downloadables.upload') }}" method="POST" enctype="multipart/form-data">
+    <div id="upload-resolution" class="tab-pane">
+        <form action="{{ route('rpwsis.resolutions.upload') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
@@ -432,7 +422,7 @@
                         </path>
                     </svg>
 
-                    <div class="upload-title">Drag & drop file</div>
+                    <div class="upload-title">Drag & drop resolution</div>
                     <div class="upload-or">or</div>
                     <button type="button" class="browse-btn">Browse Files</button>
                     <p style="font-size: 11px; color: #a1a1aa; margin-top: 15px; text-align: center; font-weight: 500;">
@@ -446,7 +436,7 @@
                         <div class="empty-state">No file selected.</div>
                     </div>
                     <button type="submit" class="btn-dark" id="submit-btn"
-                        style="padding: 12px; font-size: 13px; display: none;">Upload Document</button>
+                        style="padding: 12px; font-size: 13px; display: none;">Upload Resolution</button>
                 </div>
             </div>
         </form>
@@ -477,15 +467,15 @@
                     let sizeMB = (file.size / (1024 * 1024)).toFixed(2);
 
                     fileList.innerHTML = `
-                                                            <div class="file-item">
-                                                                <div class="file-type-ring">${ext}</div>
-                                                                <div class="file-details">
-                                                                    <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
-                                                                    <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
-                                                                </div>
-                                                                <div class="file-status">✓</div>
+                                                        <div class="file-item">
+                                                            <div class="file-type-ring">${ext}</div>
+                                                            <div class="file-details">
+                                                                <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
+                                                                <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
                                                             </div>
-                                                        `;
+                                                            <div class="file-status">✓</div>
+                                                        </div>
+                                                    `;
                     submitBtn.style.display = 'block';
                 } else {
                     fileList.innerHTML = '<div class="empty-state">No file selected.</div>';

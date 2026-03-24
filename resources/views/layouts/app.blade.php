@@ -287,17 +287,15 @@
                 Departments</div>
 
             @php
-                // List of all your teams
+                // Updated to match your exact database values
                 $teams = [
-                    'fs-team' => 'Feasibility Team',
-                    'rp-wsis' => 'R & P WSIS Team',
-                    'contract' => 'Contract Management',
-                    'row' => 'Right of Way Team',
-                    'programming' => 'Programming Team',
-                    'pcr' => 'Project Completion Report'
+                    'fs-team' => 'Feasibility Study Team',
+                    'rpwsis_team' => 'RP-WSIS Team',
+                    'cm_team' => 'Contract Management Team',
+                    'row_team' => 'Right Of Way Team',
+                    'pcr_team' => 'Program Completion Report Team',
+                    'pao_team' => 'Programming Team'
                 ];
-
-                // Get the current team from the URL
                 $activeTeam = request()->segment(1); 
             @endphp
 

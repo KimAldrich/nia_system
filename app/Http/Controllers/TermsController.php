@@ -18,22 +18,55 @@ class TermsController extends Controller
 
     public function agree(Request $request)
     {
+        $user = auth()->user();
         // Save the agreement in the current browser session
         session(['agreed_to_terms' => true]);
 
-        return $this->redirectUser();
+        switch ($user->role) {
+            case 'admin':
+                return redirect()->route('admin.dashboard');
+            case 'fs_team':
+                return redirect()->route('fs.dashboard');
+            case 'rpwsis_team':
+                return redirect('/rpwsis_team/dashboard'); // Sending them to their own route
+            case 'cm_team':
+                return redirect('/cm-team/dashboard');
+            case 'row_team':
+                return redirect('/row-team/dashboard');
+            case 'pcr_team':
+                return redirect('/pcr-team/dashboard');
+            case 'pao_team':
+                return redirect('/pao-team/dashboard');
+            default:
+                return redirect('/');
+        }
     }
 
     private function redirectUser()
     {
         $role = auth()->user()->role;
 
-        if ($role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        } elseif ($role === 'fs_team') {
-            return redirect()->route('fs.dashboard');
-        }
+        switch ($role) {
+            case 'admin':
+                return redirect()->route('admin.dashboard');
+            case 'fs_team':
+                return redirect()->route('fs.dashboard');
+            case 'rpwsis_team':
+                return redirect()->route('rpwsis.dashboard'); // <-- The fix for RP-WSIS!
 
-        return redirect('/');
+            // Placeholders for when you build the rest of the teams:
+            case 'cm_team':
+                return redirect('/cm-team/dashboard');
+            case 'row_team':
+                return redirect('/row-team/dashboard');
+            case 'pcr_team':
+                return redirect('/pcr-team/dashboard');
+            case 'pao_team':
+                return redirect('/pao-team/dashboard');
+
+            // Fallback just in case
+            default:
+                return redirect('/');
+        }
     }
 }
