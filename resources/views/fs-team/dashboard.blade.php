@@ -6,6 +6,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         .content {
             background-color: #f7f8fa;
             font-family: 'Poppins', sans-serif;
@@ -28,19 +32,21 @@
 
         .ui-card {
             background: #ffffff;
-            border-radius: 30px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             margin-bottom: 30px;
+            border: 1px solid #e4e4e7;
         }
 
         .ui-card.dark {
             background: #18181b;
             color: #ffffff;
+            border: none;
         }
 
         .section-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
             margin-bottom: 25px;
             display: flex;
@@ -84,7 +90,7 @@
             padding-bottom: 15px;
             color: #a1a1aa;
             font-weight: 500;
-            font-size: 13px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 1px solid #f4f4f5;
@@ -93,7 +99,7 @@
         .sleek-table td {
             padding: 15px 0;
             border-bottom: 1px solid #f4f4f5;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             vertical-align: middle;
         }
@@ -106,7 +112,7 @@
         .status-badge {
             padding: 6px 14px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             display: inline-block;
             text-align: center;
@@ -134,7 +140,7 @@
             border-radius: 8px;
             border: 1px solid #e4e4e7;
             font-family: 'Poppins', sans-serif;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             background: #ffffff;
             color: #18181b;
@@ -204,10 +210,10 @@
         }
 
         .day-num {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -224,7 +230,7 @@
             border: 2px solid #18181b;
         }
 
-        /* The black circle from the UI */
+        /* The black circle */
         .day-num.today {
             background: #f4f4f5;
         }
@@ -261,7 +267,7 @@
 
         .chart-wrapper {
             position: relative;
-            height: 250px;
+            height: 220px;
             width: 100%;
         }
     </style>
@@ -292,7 +298,10 @@
                         <tr>
                             <th>Document Name</th>
                             <th>Status</th>
-                            <th style="text-align: right;">Action</th>
+
+                            @if(auth()->user() && auth()->user()->role != 'fs-team')
+                                <th style="text-align: right;">Action</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -312,24 +321,29 @@
                                         <span class="status-badge badge-outline">Not-Validated</span>
                                     @endif
                                 </td>
-                                <td style="text-align: right;">
-                                    <form action="{{ route('fs.resolutions.update_status', $res->id) }}" method="POST">
-                                        @csrf
-                                        <select name="status" class="status-select" onchange="this.form.submit()">
-                                            <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                                Not-Validated</option>
-                                            <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>On-Going
-                                            </option>
-                                            <option value="validated" {{ $res->status == 'validated' ? 'selected' : '' }}>
-                                                Validated</option>
-                                        </select>
-                                    </form>
-                                </td>
+
+                                @if(auth()->user() && auth()->user()->role != 'fs-team')
+                                    <td style="text-align: right;">
+                                        <form action="{{ route('fs.resolutions.update_status', $res->id) }}" method="POST">
+                                            @csrf
+                                            <select name="status" class="status-select" onchange="this.form.submit()">
+                                                <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>
+                                                    Not-Validated</option>
+                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>On-Going
+                                                </option>
+                                                <option value="validated" {{ $res->status == 'validated' ? 'selected' : '' }}>
+                                                    Validated</option>
+                                            </select>
+                                        </form>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" style="text-align:center; color:#a1a1aa; padding: 30px 0;">No projects uploaded
-                                    yet.</td>
+                                <td colspan="{{ (auth()->user() && auth()->user()->role === 'fs-team') ? '3' : '2' }}"
+                                    style="text-align:center; color:#a1a1aa; padding: 30px 0;">
+                                    No projects uploaded yet.
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -339,16 +353,16 @@
             <div class="ui-card">
                 <div class="section-title">
                     Analytics
-                    <span style="font-size: 13px; color: #a1a1aa; font-weight: 500;">Project Status</span>
+                    <span style="font-size: 12px; color: #a1a1aa; font-weight: 500;">Project Status</span>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
-                        <p style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity
+                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity
                         </p>
                         <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
                     </div>
                     <div>
-                        <p style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate
+                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate
                         </p>
                         <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
                     </div>
@@ -361,15 +375,13 @@
                 <div class="section-title" style="margin-bottom: 15px;">New Events</div>
 
                 @php
-                    // PHP Logic to build the current month's calendar dynamically
                     $today = \Carbon\Carbon::now();
                     $daysInMonth = $today->daysInMonth;
-                    $firstDayOfWeek = $today->copy()->startOfMonth()->dayOfWeek; // 0 (Sun) to 6 (Sat)
+                    $firstDayOfWeek = $today->copy()->startOfMonth()->dayOfWeek;
 
-                    // Extract just the Day numbers of our upcoming events so we can circle them
-                    $eventDays = $events->map(function ($e) {
+                    $eventDays = isset($events) ? $events->map(function ($e) {
                         return $e->event_date->format('j');
-                    })->toArray();
+                    })->toArray() : [];
                 @endphp
 
                 <div class="calendar-header">
@@ -410,18 +422,20 @@
                         style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
                         Upcoming Schedule</p>
 
-                    @forelse($events as $event)
-                        <div class="mini-event">
-                            <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
-                            <div>
-                                <h4 class="mini-event-title">{{ $event->title }}</h4>
-                                <p class="mini-event-time">{{ $event->event_time }}</p>
+                    @if(isset($events) && $events->count() > 0)
+                        @foreach($events as $event)
+                            <div class="mini-event">
+                                <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
+                                <div>
+                                    <h4 class="mini-event-title">{{ $event->title }}</h4>
+                                    <p class="mini-event-time">{{ $event->event_time }}</p>
+                                </div>
                             </div>
-                        </div>
-                    @empty
+                        @endforeach
+                    @else
                         <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming events.
                         </p>
-                    @endforelse
+                    @endif
                 </div>
 
             </div>

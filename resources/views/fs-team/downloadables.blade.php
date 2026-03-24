@@ -7,11 +7,25 @@
     <style>
         /* Base Styling */
         /* Add this line right here to fix all width/padding calculations */
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         /* Base Styling */
-        .content { background-color: #f7f8fa; font-family: 'Poppins', sans-serif; padding: 40px; color: #111; }
-        .header-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .content {
+            background-color: #f7f8fa;
+            font-family: 'Poppins', sans-serif;
+            padding: 40px;
+            color: #111;
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
         .content {
             background-color: #f7f8fa;
             font-family: 'Poppins', sans-serif;
@@ -322,7 +336,10 @@
 
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab(event, 'available-forms')">Available Forms</button>
-        <button class="tab-btn" onclick="switchTab(event, 'upload-form')">Upload a Form</button>
+
+        @if(auth()->user()->role != 'fs-team')
+            <button class="tab-btn" onclick="switchTab(event, 'upload-form')">Upload a Form</button>
+        @endif
     </div>
 
     <div id="available-forms" class="tab-pane active">
@@ -366,28 +383,31 @@
                     <div style="flex: 1;">
                         <h4
                             style="margin:0 0 2px 0; font-size: 14px; font-weight: 600; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->title }}</h4>
+                            {{ $file->title }}
+                        </h4>
                         <p
                             style="font-size: 11px; color: #a1a1aa; margin: 0 0 15px 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->original_name }}</p>
+                            {{ $file->original_name }}
+                        </p>
                     </div>
 
                     <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
                         style="margin-bottom: 15px;">Download</a>
 
-                    <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
-
-                    <form action="{{ route('fs.downloadables.update', $file->id) }}" method="POST"
-                        enctype="multipart/form-data">
-                        @csrf
-                        <label
-                            style="font-size: 10px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update
-                            File</label>
-                        <div class="file-input-wrapper">
-                            <input type="file" name="document" required class="file-input-sm">
-                            <button type="submit" class="btn-outline">Replace</button>
-                        </div>
-                    </form>
+                    @if(auth()->user()->role != 'fs-team')
+                        <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
+                        <form action="{{ route('fs.downloadables.update', $file->id) }}" method="POST"
+                            enctype="multipart/form-data">
+                            @csrf
+                            <label
+                                style="font-size: 10px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update
+                                File</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" name="document" required class="file-input-sm">
+                                <button type="submit" class="btn-outline">Replace</button>
+                            </div>
+                        </form>
+                    @endif
                 </div>
             @empty
                 <div
@@ -457,15 +477,15 @@
                     let sizeMB = (file.size / (1024 * 1024)).toFixed(2);
 
                     fileList.innerHTML = `
-                            <div class="file-item">
-                                <div class="file-type-ring">${ext}</div>
-                                <div class="file-details">
-                                    <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
-                                    <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
-                                </div>
-                                <div class="file-status">✓</div>
-                            </div>
-                        `;
+                                                <div class="file-item">
+                                                    <div class="file-type-ring">${ext}</div>
+                                                    <div class="file-details">
+                                                        <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
+                                                        <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
+                                                    </div>
+                                                    <div class="file-status">✓</div>
+                                                </div>
+                                            `;
                     submitBtn.style.display = 'block';
                 } else {
                     fileList.innerHTML = '<div class="empty-state">No file selected.</div>';

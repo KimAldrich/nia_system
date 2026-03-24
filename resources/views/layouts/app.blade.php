@@ -282,29 +282,50 @@
             NIA Portal
         </div>
         <div class="nav-links">
+            <div
+                style="padding: 0 15px 10px 15px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+                Departments</div>
 
-            <div class="menu-item active open" onclick="toggleMenu('dashboard-menu', this)">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
-                    </path>
-                </svg>
-                <span>Dashboard</span>
-                <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-                    style="width: 16px; height: 16px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
-                </svg>
-            </div>
+            @php
+                // List of all your teams
+                $teams = [
+                    'fs-team' => 'Feasibility Team',
+                    'rp-wsis' => 'R & P WSIS Team',
+                    'contract' => 'Contract Management',
+                    'row' => 'Right of Way Team',
+                    'programming' => 'Programming Team',
+                    'pcr' => 'Project Completion Report'
+                ];
 
-            <div class="sub-menu open" id="dashboard-menu">
-                <a href="{{ route('fs.dashboard') }}"
-                    class="sub-item {{ request()->routeIs('fs.dashboard') ? 'active' : '' }}">Home Overview</a>
-                <a href="{{ route('fs.downloadables') }}"
-                    class="sub-item {{ request()->routeIs('fs.downloadables') ? 'active' : '' }}">Downloadables</a>
-                <a href="{{ route('fs.resolutions') }}"
-                    class="sub-item {{ request()->routeIs('fs.resolutions') ? 'active' : '' }}">IA Resolutions</a>
-            </div>
+                // Get the current team from the URL
+                $activeTeam = request()->segment(1); 
+            @endphp
 
+            @foreach($teams as $slug => $name)
+                <div class="menu-item {{ $activeTeam == $slug ? 'active open' : '' }}"
+                    onclick="toggleMenu('menu-{{ $slug }}', this)">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                    <span
+                        style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">{{ $name }}</span>
+                    <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                        style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+
+                <div class="sub-menu {{ $activeTeam == $slug ? 'open' : '' }}" id="menu-{{ $slug }}">
+                    <a href="/{{ $slug }}/dashboard"
+                        class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
+                    <a href="/{{ $slug }}/downloadables"
+                        class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+                    <a href="/{{ $slug }}/ia-resolutions"
+                        class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
+                </div>
+            @endforeach
         </div>
         <div class="logout-container">
             <form action="{{ route('logout') }}" method="POST">
