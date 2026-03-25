@@ -327,7 +327,7 @@
 
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab(event, 'available-resolutions')">Available Resolutions</button>
-        @if(auth()->user()->role == 'fs_team')
+        @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
             <button class="tab-btn" onclick="switchTab(event, 'upload-resolution')">Upload a Resolution</button>
         @endif
     </div>
@@ -384,7 +384,7 @@
                     <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank" class="btn-dark"
                         style="margin-bottom: 15px;">Download</a>
 
-                    @if(auth()->user()->role == 'fs_team')
+                    @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                         <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
                         <form action="{{ route('fs.resolutions.update', $resolution->id) }}" method="POST"
                             enctype="multipart/form-data">
@@ -467,15 +467,15 @@
                     let sizeMB = (file.size / (1024 * 1024)).toFixed(2);
 
                     fileList.innerHTML = `
-                                                                <div class="file-item">
-                                                                    <div class="file-type-ring">${ext}</div>
-                                                                    <div class="file-details">
-                                                                        <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
-                                                                        <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
-                                                                    </div>
-                                                                    <div class="file-status">✓</div>
-                                                                </div>
-                                                            `;
+                                                                        <div class="file-item">
+                                                                            <div class="file-type-ring">${ext}</div>
+                                                                            <div class="file-details">
+                                                                                <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
+                                                                                <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
+                                                                            </div>
+                                                                            <div class="file-status">✓</div>
+                                                                        </div>
+                                                                    `;
                     submitBtn.style.display = 'block';
                 } else {
                     fileList.innerHTML = '<div class="empty-state">No file selected.</div>';

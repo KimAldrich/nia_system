@@ -299,7 +299,7 @@
                             <th>Document Name</th>
                             <th>Status</th>
 
-                            @if(auth()->user() && auth()->user()->role == 'fs_team')
+                            @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                 <th style="text-align: right;">Action</th>
                             @endif
                         </tr>
@@ -322,7 +322,7 @@
                                     @endif
                                 </td>
 
-                                @if(auth()->user() && auth()->user()->role == 'fs_team')
+                                @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                     <td style="text-align: right;">
                                         <form action="{{ route('fs.resolutions.update_status', $res->id) }}" method="POST">
                                             @csrf
@@ -340,7 +340,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ (auth()->user() && auth()->user()->role == 'fs_team') ? '3' : '2' }}"
+                                <td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin'])) ? '3' : '2' }}"
                                     style="text-align:center; color:#a1a1aa; padding: 30px 0;">
                                     No projects uploaded yet.
                                 </td>
