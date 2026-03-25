@@ -45,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
             Route::middleware(['check.role:fs_team,admin'])->group(function () {
                 Route::post('/downloadables/upload', [FsTeamController::class, 'uploadForm'])->name('fs.downloadables.upload');
                 Route::post('/downloadables/{id}/update', [FsTeamController::class, 'updateForm'])->name('fs.downloadables.update');
+                Route::delete('/downloadables/{id}/delete', [FsTeamController::class, 'deleteForm'])->name('fs.downloadables.delete');
 
                 Route::post('/ia-resolutions/upload', [FsTeamController::class, 'uploadResolution'])->name('fs.resolutions.upload');
                 Route::post('/ia-resolutions/{id}/update', [FsTeamController::class, 'updateResolution'])->name('fs.resolutions.update');
@@ -67,6 +68,7 @@ Route::middleware(['auth'])->group(function () {
             Route::middleware(['check.role:rpwsis_team,admin'])->group(function () {
                 Route::post('/downloadables/upload', [RpwsisTeamController::class, 'uploadForm'])->name('rpwsis.downloadables.upload');
                 Route::post('/downloadables/{id}/update', [RpwsisTeamController::class, 'updateForm'])->name('rpwsis.downloadables.update');
+                Route::delete('/downloadables/{id}/delete', [RpwsisTeamController::class, 'deleteForm'])->name('rpwsis.downloadables.delete');
 
                 Route::post('/ia-resolutions/upload', [RpwsisTeamController::class, 'uploadResolution'])->name('rpwsis.resolutions.upload');
                 Route::post('/ia-resolutions/{id}/update', [RpwsisTeamController::class, 'updateResolution'])->name('rpwsis.resolutions.update');

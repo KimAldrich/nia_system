@@ -391,23 +391,19 @@
                         </p>
                     </div>
 
-                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
-                        style="margin-bottom: 15px;">Download</a>
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
+                            style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
 
-                    @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
-                        <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
-                        <form action="{{ route('fs.downloadables.update', $file->id) }}" method="POST"
-                            enctype="multipart/form-data">
-                            @csrf
-                            <label
-                                style="font-size: 10px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update
-                                File</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" name="document" required class="file-input-sm">
-                                <button type="submit" class="btn-outline">Replace</button>
-                            </div>
-                        </form>
-                    @endif
+                        @if(auth()->user()->role == 'fs_team' || auth()->user()->role == 'admin')
+                            <form action="{{ route('fs.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline"
+                                    style="padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">Delete</button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <div
@@ -477,15 +473,15 @@
                     let sizeMB = (file.size / (1024 * 1024)).toFixed(2);
 
                     fileList.innerHTML = `
-                                                                    <div class="file-item">
-                                                                        <div class="file-type-ring">${ext}</div>
-                                                                        <div class="file-details">
-                                                                            <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
-                                                                            <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
+                                                                        <div class="file-item">
+                                                                            <div class="file-type-ring">${ext}</div>
+                                                                            <div class="file-details">
+                                                                                <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
+                                                                                <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
+                                                                            </div>
+                                                                            <div class="file-status">✓</div>
                                                                         </div>
-                                                                        <div class="file-status">✓</div>
-                                                                    </div>
-                                                                `;
+                                                                    `;
                     submitBtn.style.display = 'block';
                 } else {
                     fileList.innerHTML = '<div class="empty-state">No file selected.</div>';

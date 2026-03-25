@@ -73,7 +73,21 @@ class FsTeamController extends Controller
         return back()->with('success', 'File updated successfully.');
     }
 
-    // 6. Upload Resolution
+    // 6. Delete Downloadable
+    public function deleteForm($id)
+    {
+        $downloadable = Downloadable::findOrFail($id);
+
+        if (Storage::disk('public')->exists($downloadable->file_path)) {
+            Storage::disk('public')->delete($downloadable->file_path);
+        }
+
+        $downloadable->delete();
+
+        return back()->with('success', 'File deleted successfully.');
+    }
+
+    // 7. Upload Resolution
     public function uploadResolution(Request $request)
     {
         $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
