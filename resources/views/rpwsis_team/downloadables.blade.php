@@ -337,7 +337,7 @@
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab(event, 'available-forms')">Available Forms</button>
 
-        @if(auth()->user()->role == 'rpwsis_team')
+        @if(auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
             <button class="tab-btn" onclick="switchTab(event, 'upload-form')">Upload a Form</button>
         @endif
     </div>
@@ -391,23 +391,18 @@
                         </p>
                     </div>
 
-                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
-                        style="margin-bottom: 15px;">Download</a>
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
+                            style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
 
-                    @if(auth()->user()->role == 'rpwsis_team')
-                        <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
-                        <form action="{{ route('rpwsis.downloadables.update', $file->id) }}" method="POST"
-                            enctype="multipart/form-data">
-                            @csrf
-                            <label
-                                style="font-size: 10px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update
-                                File</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" name="document" required class="file-input-sm">
-                                <button type="submit" class="btn-outline">Replace</button>
-                            </div>
-                        </form>
-                    @endif
+                        @if(auth()->user()->role == 'rpwsis_team' || auth()->user()->role == 'admin')
+                            <form action="{{ route('rpwsis.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline" style="padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">Delete</button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <div
