@@ -8,14 +8,12 @@ return new class extends Migration {
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('events', function (Blueprint $table) {
+        Schema::create('event_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
-            $table->date('event_date');
-            $table->string('event_time')->nullable();
-            $table->unsignedBigInteger('event_category_id')->nullable();
+            $table->string('name');
+            $table->string('color');
             $table->timestamps();
         });
     }
@@ -25,6 +23,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('events');
+        Schema::dropIfExists('event_categories');
     }
 };

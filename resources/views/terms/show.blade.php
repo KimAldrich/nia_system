@@ -106,7 +106,7 @@
         </div>
 
         <div class="terms-content">
-            <p>Before you access your team dashboard, please read and accept our data privacy rules.</p>
+            <p>Before you access this website, please read and accept our data privacy rules.</p>
 
             <div class="terms-scroll-box">
                 <h3>Data Privacy Act of 2012</h3>

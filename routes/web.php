@@ -29,6 +29,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/users', [AdminController::class, 'manageUsers'])->name('admin.users');
             Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
             // Add more admin routes here
+
+            Route::post('/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
+            Route::delete('/events/{id}', [AdminController::class, 'destroyEvent'])->name('admin.events.destroy');
+            // Manage Custom Categories
+            Route::post('/event-categories', [AdminController::class, 'storeCategory'])->name('admin.categories.store');
+            Route::delete('/event-categories/{id}', [AdminController::class, 'destroyCategory'])->name('admin.categories.destroy');
         });
 
         // ==========================================

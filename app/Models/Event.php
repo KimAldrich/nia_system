@@ -3,12 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Event extends Model
 {
-    protected $fillable = ['title', 'event_date', 'event_time', 'tag'];
+    use HasFactory;
+
+    protected $fillable = ['title', 'event_date', 'event_time', 'event_category_id'];
 
     protected $casts = [
-        'event_date' => 'date', // This lets us use ->format('M') in Blade
+        'event_date' => 'date',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(EventCategory::class, 'event_category_id');
+    }
 }

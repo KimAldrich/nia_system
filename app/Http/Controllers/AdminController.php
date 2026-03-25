@@ -8,6 +8,7 @@ use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Models\EventCategory;
 
 class AdminController extends Controller
 {
@@ -23,20 +24,18 @@ class AdminController extends Controller
     public function index()
     {
         $users = User::all();
-        $this->checkAdmin(); // <-- Added security check
+        $this->checkAdmin();
+        $resolutions = \App\Models\IaResolution::latest()->get();
 
-        // Fetch all resolutions across the whole agency so the Admin can see everything
-        $resolutions = IaResolution::latest()->get();
+        // Added 'with('category')' so the colored badges load efficiently
+        $events = Event::with('category')->orderBy('event_date', 'asc')->get();
 
-        // Fetch upcoming events for the calendar
-        $events = Event::whereDate('event_date', '>=', now())
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+        // Fetch custom tags for the legend
+        $categories = EventCategory::all();
 
-        // Pass resolutions and events to the view, NOT users!
-        return view('admin.dashboard', compact('resolutions', 'events', 'users'));
+        return view('admin.dashboard', compact('resolutions', 'events', 'categories'));
     }
+
 
     // 2. Manage Users Page
     public function manageUsers()
@@ -73,6 +72,53 @@ class AdminController extends Controller
         ]);
 
         return back()->with('success', 'User account created successfully.');
+    }
+
+    public function storeEvent(Request $request)
+    {
+        $this->checkAdmin();
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'event_date' => 'required|date',
+            'event_time' => 'required|string|max:255',
+            'event_category_id' => 'required' // Validate the dropdown!
+        ]);
+
+        Event::create([
+            'title' => $request->title,
+            'event_date' => $request->event_date,
+            'event_time' => $request->event_time,
+            'event_category_id' => $request->event_category_id, // Save the ID!
+        ]);
+
+        return back()->with('success', 'Event added to the calendar!');
+    }
+
+    // Delete an Event
+    public function storeCategory(Request $request)
+    {
+        $this->checkAdmin();
+        $request->validate(['name' => 'required|string|max:50', 'color' => 'required|string|max:10']);
+        EventCategory::create(['name' => $request->request->get('name'), 'color' => $request->request->get('color')]);
+        return back()->with('success', 'New tag added to legend!');
+    }
+
+    // 4. New! Delete a Custom Tag
+    public function destroyCategory($id)
+    {
+        $this->checkAdmin();
+        EventCategory::findOrFail($id)->delete();
+        return back()->with('success', 'Tag removed.');
+    }
+
+    public function destroyEvent($id)
+    {
+        $this->checkAdmin();
+
+        Event::findOrFail($id)->delete();
+
+        return back()->with('success', 'Event removed from schedule.');
     }
 }
 
