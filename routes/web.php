@@ -6,6 +6,10 @@ use App\Http\Controllers\TermsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FsTeamController;
 use App\Http\Controllers\RpwsisTeamController;
+use App\Http\Controllers\ContractManagementTeamController;
+use App\Http\Controllers\RowTeamController;
+use App\Http\Controllers\PcrTeamController;
+use App\Http\Controllers\PaoTeamController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -87,7 +91,93 @@ Route::middleware(['auth'])->group(function () {
             });
         });
 
-        //dito niyo add yung mga routes per team, dapat naka middleware parang fs team
+        // ==========================================
+        // Contract Management Team Routes
+        // ==========================================
+        Route::prefix('cm_team')->group(function () {
+
+            // 👁️ VIEWERS (Open to all logged-in agency staff)
+            Route::get('/dashboard', [ContractManagementTeamController::class, 'index'])->name('cm.dashboard');
+            Route::get('/downloadables', [ContractManagementTeamController::class, 'downloadables'])->name('cm.downloadables');
+            Route::get('/ia-resolutions', [ContractManagementTeamController::class, 'resolutions'])->name('cm.resolutions');
+
+            // 🔒 EDITORS ONLY (Locked to Contract Management Team and Admin)
+            Route::middleware(['check.role:cm_team,admin'])->group(function () {
+                Route::post('/downloadables/upload', [ContractManagementTeamController::class, 'uploadForm'])->name('cm.downloadables.upload');
+                Route::post('/downloadables/{id}/update', [ContractManagementTeamController::class, 'updateForm'])->name('cm.downloadables.update');
+                Route::delete('/downloadables/{id}/delete', [ContractManagementTeamController::class, 'deleteForm'])->name('cm.downloadables.delete');
+
+                Route::post('/ia-resolutions/upload', [ContractManagementTeamController::class, 'uploadResolution'])->name('cm.resolutions.upload');
+                Route::post('/ia-resolutions/{id}/update', [ContractManagementTeamController::class, 'updateResolution'])->name('cm.resolutions.update');
+                Route::post('/ia-resolutions/{id}/status', [ContractManagementTeamController::class, 'updateResolutionStatus'])->name('cm.resolutions.update_status');
+            });
+        });
+
+        // ==========================================
+        // Right Of Way Team Routes
+        // ==========================================
+        Route::prefix('row_team')->group(function () {
+
+            // 👁️ VIEWERS (Open to all logged-in agency staff)
+            Route::get('/dashboard', [RowTeamController::class, 'index'])->name('row.dashboard');
+            Route::get('/downloadables', [RowTeamController::class, 'downloadables'])->name('row.downloadables');
+            Route::get('/ia-resolutions', [RowTeamController::class, 'resolutions'])->name('row.resolutions');
+
+            // 🔒 EDITORS ONLY (Locked to Row Team and Admin)
+            Route::middleware(['check.role:row_team,admin'])->group(function () {
+                Route::post('/downloadables/upload', [RowTeamController::class, 'uploadForm'])->name('row.downloadables.upload');
+                Route::post('/downloadables/{id}/update', [RowTeamController::class, 'updateForm'])->name('row.downloadables.update');
+                Route::delete('/downloadables/{id}/delete', [RowTeamController::class, 'deleteForm'])->name('row.downloadables.delete');
+
+                Route::post('/ia-resolutions/upload', [RowTeamController::class, 'uploadResolution'])->name('row.resolutions.upload');
+                Route::post('/ia-resolutions/{id}/update', [RowTeamController::class, 'updateResolution'])->name('row.resolutions.update');
+                Route::post('/ia-resolutions/{id}/status', [RowTeamController::class, 'updateResolutionStatus'])->name('row.resolutions.update_status');
+            });
+        });
+
+        // ==========================================
+        // Program Completion Report Team Routes
+        // ==========================================
+        Route::prefix('pcr_team')->group(function () {
+
+            // 👁️ VIEWERS (Open to all logged-in agency staff)
+            Route::get('/dashboard', [PcrTeamController::class, 'index'])->name('pcr.dashboard');
+            Route::get('/downloadables', [PcrTeamController::class, 'downloadables'])->name('pcr.downloadables');
+            Route::get('/ia-resolutions', [PcrTeamController::class, 'resolutions'])->name('pcr.resolutions');
+
+            // 🔒 EDITORS ONLY (Locked to PCR Team and Admin)
+            Route::middleware(['check.role:pcr_team,admin'])->group(function () {
+                Route::post('/downloadables/upload', [PcrTeamController::class, 'uploadForm'])->name('pcr.downloadables.upload');
+                Route::post('/downloadables/{id}/update', [PcrTeamController::class, 'updateForm'])->name('pcr.downloadables.update');
+                Route::delete('/downloadables/{id}/delete', [PcrTeamController::class, 'deleteForm'])->name('pcr.downloadables.delete');
+
+                Route::post('/ia-resolutions/upload', [PcrTeamController::class, 'uploadResolution'])->name('pcr.resolutions.upload');
+                Route::post('/ia-resolutions/{id}/update', [PcrTeamController::class, 'updateResolution'])->name('pcr.resolutions.update');
+                Route::post('/ia-resolutions/{id}/status', [PcrTeamController::class, 'updateResolutionStatus'])->name('pcr.resolutions.update_status');
+            });
+        });
+
+        // ==========================================
+        // Programming Team Routes
+        // ==========================================
+        Route::prefix('pao_team')->group(function () {
+
+            // 👁️ VIEWERS (Open to all logged-in agency staff)
+            Route::get('/dashboard', [PaoTeamController::class, 'index'])->name('pao.dashboard');
+            Route::get('/downloadables', [PaoTeamController::class, 'downloadables'])->name('pao.downloadables');
+            Route::get('/ia-resolutions', [PaoTeamController::class, 'resolutions'])->name('pao.resolutions');
+
+            // 🔒 EDITORS ONLY (Locked to Programming Team and Admin)
+            Route::middleware(['check.role:pao_team,admin'])->group(function () {
+                Route::post('/downloadables/upload', [PaoTeamController::class, 'uploadForm'])->name('pao.downloadables.upload');
+                Route::post('/downloadables/{id}/update', [PaoTeamController::class, 'updateForm'])->name('pao.downloadables.update');
+                Route::delete('/downloadables/{id}/delete', [PaoTeamController::class, 'deleteForm'])->name('pao.downloadables.delete');
+
+                Route::post('/ia-resolutions/upload', [PaoTeamController::class, 'uploadResolution'])->name('pao.resolutions.upload');
+                Route::post('/ia-resolutions/{id}/update', [PaoTeamController::class, 'updateResolution'])->name('pao.resolutions.update');
+                Route::post('/ia-resolutions/{id}/status', [PaoTeamController::class, 'updateResolutionStatus'])->name('pao.resolutions.update_status');
+            });
+        });
 
     });
 });
