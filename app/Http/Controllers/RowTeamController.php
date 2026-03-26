@@ -7,6 +7,7 @@ use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
+use App\Models\EventCategory;
 
 class RowTeamController extends Controller
 {
@@ -18,7 +19,8 @@ class RowTeamController extends Controller
             ->take(5)
             ->get();
 
-        return view('row_team.dashboard', compact('resolutions', 'events'));
+        $categories = EventCategory::all();
+        return view('row_team.dashboard', compact('resolutions', 'events', 'categories'));
     }
 
     public function downloadables()

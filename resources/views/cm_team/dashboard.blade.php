@@ -169,6 +169,33 @@
             letter-spacing: 1px;
         }
 
+        .calendar-carousel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-btn {
+    background: #fff;
+    border: 1px solid #e4e4e7;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+}
+
+.calendar-viewport {
+    flex: 1;
+}
+
+.month-block {
+    display: none;
+}
+
+.month-block.active {
+    display: block;
+}
+
         .cal-nav {
             display: flex;
             gap: 10px;
@@ -270,6 +297,22 @@
             height: 220px;
             width: 100%;
         }
+
+        .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #71717a;
+    text-transform: uppercase;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
     </style>
 
     <h1 class="header-title">Contract Management Team Dashboard</h1>
@@ -375,6 +418,23 @@
             <div class="ui-card">
                 <div class="section-title" style="margin-bottom: 15px;">New Events</div>
 
+                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f4f4f5;">
+    <p style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
+        Event Legend
+    </p>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        @forelse($categories as $cat)
+            <div class="legend-item">
+                <div class="legend-dot" style="background: {{ $cat->color }};"></div>
+                {{ $cat->name }}
+            </div>
+        @empty
+            <p style="font-size: 11px; color: #a1a1aa;">No tags available.</p>
+        @endforelse
+    </div>
+</div>
+
                 @php
                     $today = \Carbon\Carbon::now();
                     $daysInMonth = $today->daysInMonth;
@@ -385,12 +445,33 @@
                     })->toArray() : [];
                 @endphp
 
+                <div class="calendar-carousel">
+    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
+        &lt;
+    </button>
+
+    <div class="calendar-viewport">
+        @php
+            $currentYear = \Carbon\Carbon::now()->year;
+            $today = \Carbon\Carbon::now();
+        @endphp
+
+        @for($m = 1; $m <= 12; $m++)
+            @php
+                $monthDate = \Carbon\Carbon::createFromDate($currentYear, $m, 1);
+                $daysInMonth = $monthDate->daysInMonth;
+                $firstDayOfWeek = $monthDate->dayOfWeek;
+
+                $eventsForMonth = $events->filter(function($e) use ($currentYear, $m) {
+                    return $e->event_date->year == $currentYear && $e->event_date->month == $m;
+                })->groupBy(function($e) {
+                    return $e->event_date->format('j');
+                });
+            @endphp
+
+            <div class="month-block" id="month-{{ $m }}">
                 <div class="calendar-header">
-                    <h4>{{ $today->format('F Y') }}</h4>
-                    <div class="cal-nav">
-                        <button>&lt;</button>
-                        <button>&gt;</button>
-                    </div>
+                    <h4>{{ $monthDate->format('F Y') }}</h4>
                 </div>
 
                 <div class="calendar-grid">
@@ -408,15 +489,28 @@
 
                     @for($day = 1; $day <= $daysInMonth; $day++)
                         @php
-                            $hasEvent = in_array($day, $eventDays);
-                            $isToday = ($day == $today->day);
+                            $dayEvents = $eventsForMonth->get($day);
+                            $hasEvent = $dayEvents ? true : false;
+                            $isToday = ($day == $today->day && $m == $today->month);
+                            $ringColor = ($hasEvent && $dayEvents->first()->category)
+                                ? $dayEvents->first()->category->color
+                                : '#18181b';
                         @endphp
 
-                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}">
+                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
+                             style="{{ $hasEvent ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
                             {{ $day }}
                         </div>
                     @endfor
                 </div>
+            </div>
+        @endfor
+    </div>
+
+    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
+        &gt;
+    </button>
+</div>
 
                 <div style="margin-top: 10px;">
                     <p
@@ -468,5 +562,30 @@
                 options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, padding: 20 } } } }
             });
         });
+
+        let activeMonth = new Date().getMonth() + 1;
+
+document.addEventListener('DOMContentLoaded', function () {
+    updateCalendarView();
+});
+
+function changeMonth(direction) {
+    activeMonth += direction;
+    if (activeMonth < 1) activeMonth = 1;
+    if (activeMonth > 12) activeMonth = 12;
+    updateCalendarView();
+}
+
+function updateCalendarView() {
+    document.querySelectorAll('.month-block').forEach(block => {
+        block.classList.remove('active');
+    });
+
+    const current = document.getElementById('month-' + activeMonth);
+    if (current) current.classList.add('active');
+
+    document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
+    document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
+}
     </script>
 @endsection

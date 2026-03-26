@@ -7,6 +7,7 @@ use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
+use App\Models\EventCategory;
 
 class FsTeamController extends Controller
 {
@@ -22,7 +23,8 @@ class FsTeamController extends Controller
             ->take(5)
             ->get();
 
-        return view('fs-team.dashboard', compact('resolutions', 'events'));
+        $categories = EventCategory::all();
+        return view('fs-team.dashboard', compact('resolutions', 'events', 'categories'));
     }
 
     // 2. View Downloadables Page
