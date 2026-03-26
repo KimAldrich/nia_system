@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class IaResolution extends Model
 {
-    protected $fillable = ['title', 'file_path', 'original_name', 'status'];
+    protected $fillable = ['title', 'file_path', 'original_name', 'status', 'team'];
 }

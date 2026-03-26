@@ -13,7 +13,7 @@ class RpwsisTeamController extends Controller
     // 1. Dashboard
     public function index()
     {
-        $resolutions = IaResolution::latest()->get();
+        $resolutions = IaResolution::where('team', 'rpwsis_team')->latest()->get();
         $events = Event::whereDate('event_date', '>=', now())->orderBy('event_date', 'asc')->take(5)->get();
         return view('rpwsis_team.dashboard', compact('resolutions', 'events'));
     }
@@ -21,14 +21,14 @@ class RpwsisTeamController extends Controller
     // 2. View Downloadables Page
     public function downloadables()
     {
-        $files = Downloadable::all();
+        $files = Downloadable::where('team', 'rpwsis_team')->get();
         return view('rpwsis_team.downloadables', compact('files'));
     }
 
     // 3. View IA Resolutions Page
     public function resolutions()
     {
-        $resolutions = IaResolution::latest()->get();
+        $resolutions = IaResolution::where('team', 'rpwsis_team')->latest()->get();
         return view('rpwsis_team.resolutions', compact('resolutions'));
     }
 
@@ -42,7 +42,12 @@ class RpwsisTeamController extends Controller
         $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
-        Downloadable::create(['title' => $cleanTitle, 'file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+                Downloadable::create([
+            'title' => $cleanTitle,
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'team' => 'rpwsis_team' // 🔥 IMPORTANT
+        ]);
         return back()->with('success', 'File uploaded successfully.');
     }
 
@@ -86,7 +91,13 @@ class RpwsisTeamController extends Controller
         $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
-        IaResolution::create(['title' => $cleanTitle, 'file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+        
+        IaResolution::create([
+            'title' => $cleanTitle,
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'team' => 'rpwsis_team' // 🔥 IMPORTANT
+        ]);
         return back()->with('success', 'Resolution uploaded successfully.');
     }
 

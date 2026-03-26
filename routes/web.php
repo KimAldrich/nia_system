@@ -35,6 +35,11 @@ Route::middleware(['auth'])->group(function () {
             // Manage Custom Categories
             Route::post('/event-categories', [AdminController::class, 'storeCategory'])->name('admin.categories.store');
             Route::delete('/event-categories/{id}', [AdminController::class, 'destroyCategory'])->name('admin.categories.destroy');
+
+            //Downloadables
+            Route::post('/downloadables/upload', [AdminController::class, 'uploadDownloadable'])->name('admin.downloadables.upload');
+            //IA Resolutions
+            Route::post('/resolutions/upload', [AdminController::class, 'uploadResolution'])->name('admin.resolutions.upload');
         });
 
         // ==========================================

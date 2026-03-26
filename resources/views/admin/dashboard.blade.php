@@ -120,6 +120,78 @@
                 </table>
             </div>
 
+        <div class="ui-card">
+            <div class="section-title">Upload Downloadable File to Team</div>
+
+            <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
+                        Select Team
+                    </label>
+                    <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+                        <option value="">-- Choose Team --</option>
+                        <option value="fs_team">FS Team</option>
+                        <option value="rpwsis_team">RP-WSIS Team</option>
+                        <option value="cm_team">CM Team</option>
+                        <option value="row_team">ROW Team</option>
+                        <option value="pcr_team">PCR Team</option>
+                        <option value="pao_team">PAO Team</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
+                        Upload File
+                    </label>
+                    <input type="file" name="document" required
+                        style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+                </div>
+
+                <button type="submit"
+                        style="width: 100%; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    Upload File
+                </button>
+            </form>
+        </div>
+
+<div class="ui-card">
+    <div class="section-title">Upload IA Resoltion File to Team</div>
+
+    <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
+                Select Team
+            </label>
+            <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+                <option value="">-- Choose Team --</option>
+                <option value="fs_team">FS Team</option>
+                <option value="rpwsis_team">RP-WSIS Team</option>
+                <option value="cm_team">CM Team</option>
+                <option value="row_team">ROW Team</option>
+                <option value="pcr_team">PCR Team</option>
+                <option value="pao_team">PAO Team</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
+                Upload File
+            </label>
+            <input type="file" name="document" required
+                   style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+        </div>
+
+        <button type="submit"
+                style="width: 100%; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            Upload File
+        </button>
+    </form>
+</div>
+
             <div class="ui-card">
                 <div class="section-title">Analytics</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">

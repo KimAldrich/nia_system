@@ -14,7 +14,7 @@ class FsTeamController extends Controller
     public function index()
     {
         // Fetch resolutions for the project table
-        $resolutions = IaResolution::latest()->get();
+        $resolutions = IaResolution::where('team', 'fs_team')->latest()->get();
 
         // Fetch upcoming events set by the admin
         $events = Event::whereDate('event_date', '>=', now())
@@ -28,14 +28,14 @@ class FsTeamController extends Controller
     // 2. View Downloadables Page
     public function downloadables()
     {
-        $files = Downloadable::all();
+        $files = Downloadable::where('team', 'fs_team')->get();
         return view('fs-team.downloadables', compact('files'));
     }
 
     // 3. View IA Resolutions Page
     public function resolutions()
     {
-        $resolutions = IaResolution::latest()->get();
+        $resolutions = IaResolution::where('team', 'fs_team')->latest()->get();
         return view('fs-team.resolutions', compact('resolutions'));
     }
 
@@ -49,10 +49,11 @@ class FsTeamController extends Controller
         $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
-        Downloadable::create([
+            Downloadable::create([
             'title' => $cleanTitle,
             'file_path' => $path,
             'original_name' => $file->getClientOriginalName(),
+            'team' => 'fs_team' // 🔥 THIS IS THE FIX
         ]);
         return back()->with('success', 'File uploaded successfully.');
     }
@@ -82,15 +83,22 @@ class FsTeamController extends Controller
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
+        
+// if ($downloadable->team !== 'fs_team') {
+//     abort(403);
+// }
         $downloadable->delete();
 
         return back()->with('success', 'File deleted successfully.');
     }
 
     // 7. Upload Resolution
-    public function uploadResolution(Request $request)
+        public function uploadResolution(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate([
+            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120'
+        ]);
+
         $file = $request->file('document');
         $path = $file->store('resolutions', 'public');
 
@@ -101,7 +109,9 @@ class FsTeamController extends Controller
             'title' => $cleanTitle,
             'file_path' => $path,
             'original_name' => $file->getClientOriginalName(),
+            'team' => 'fs_team'
         ]);
+
         return back()->with('success', 'Resolution uploaded successfully.');
     }
 
