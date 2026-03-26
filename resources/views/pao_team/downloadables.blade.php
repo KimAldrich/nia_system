@@ -395,7 +395,7 @@
                         <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
                             style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
 
-                        @if(auth()->user()->role == 'pao_team' || auth()->user()->role == 'admin')
+                        @if(auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
                             <form action="{{ route('pao.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;">
                                 @csrf
                                 @method('DELETE')
