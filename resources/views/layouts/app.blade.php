@@ -190,7 +190,7 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding: 12px 88px 12px 30px;
+            padding: 12px 30px;
             border-bottom: 1px solid var(--border-color);
             overflow: hidden;
         }
@@ -199,34 +199,42 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
+            justify-content: center;
             line-height: 1.2;
-            max-width: min(100%, 320px);
+            width: min(100%, 280px);
+            min-width: 280px;
             text-align: right;
             margin-left: auto;
         }
 
         .user-meta-label {
+            width: 100%;
             font-size: 11px;
             font-weight: 700;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.6px;
+            text-align: right;
         }
 
         .user-meta-name {
+            width: 100%;
             font-size: 16px;
             font-weight: 700;
             color: #0f172a;
             margin-top: 2px;
             word-break: break-word;
+            text-align: right;
         }
 
         .user-meta-team {
+            width: 100%;
             font-size: 12px;
             color: #64748b;
             margin-top: 2px;
             word-break: break-word;
             white-space: normal;
+            text-align: right;
         }
 
         .content {
