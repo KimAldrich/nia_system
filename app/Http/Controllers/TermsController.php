@@ -25,10 +25,12 @@ class TermsController extends Controller
         switch ($user->role) {
             case 'admin':
                 return redirect()->route('admin.dashboard');
+            case 'guest':
+                return redirect()->route('guest.dashboard');
             case 'fs_team':
                 return redirect()->route('fs.dashboard');
             case 'rpwsis_team':
-                return redirect('/rpwsis_team/dashboard'); // Sending them to their own route
+                return redirect('/rpwsis_team/dashboard');
             case 'cm_team':
                 return redirect('/cm_team/dashboard');
             case 'row_team':
@@ -49,6 +51,8 @@ class TermsController extends Controller
         switch ($role) {
             case 'admin':
                 return redirect()->route('admin.dashboard');
+            case 'guest':
+                return redirect()->route('guest.dashboard');
             case 'fs_team':
                 return redirect()->route('fs.dashboard');
             case 'rpwsis_team':

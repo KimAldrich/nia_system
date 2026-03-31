@@ -303,6 +303,22 @@
                 </a>
 
             @endif
+           @if(auth()->check() && auth()->user()->role == 'guest')
+                
+                <div style="padding: 20px 15px 10px 15px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+                    Guest Portal
+                </div>
+
+                <a href="{{ route('guest.dashboard') }}" class="menu-item active" style="text-decoration: none;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                    </svg>
+                    <span>Master Dashboard</span>
+                </a>
+
+            @else
+                
+                @endif
             
             <div style="padding: 0 15px 10px 15px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
                 Departments
@@ -346,6 +362,15 @@
                         class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
                 </div>
             @endforeach
+            <div style="margin-top: 25px; margin-bottom: 8px; padding: 0 15px; font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">
+                Shared Hubs
+            </div>
+            <a href="{{ route('administrative.index') }}" class="menu-item {{ request()->routeIs('administrative.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <span>Administrative</span>
+            </a>
         </div>
         <div class="logout-container">
             <form action="{{ route('logout') }}" method="POST">

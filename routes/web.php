@@ -10,6 +10,8 @@ use App\Http\Controllers\ContractManagementTeamController;
 use App\Http\Controllers\RowTeamController;
 use App\Http\Controllers\PcrTeamController;
 use App\Http\Controllers\PaoTeamController;
+use App\Http\Controllers\AdministrativeController;
+use App\Http\Controllers\GuestController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -23,6 +25,13 @@ Route::middleware(['auth'])->group(function () {
     // Terms and Conditions (RA10173)
     Route::get('/terms', [TermsController::class, 'show'])->name('terms.show');
     Route::post('/terms/agree', [TermsController::class, 'agree'])->name('terms.agree');
+
+    Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
+    Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
+    Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
+
+    //guest 
+    Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
 
     // Protected Routes (Must have agreed to terms)
     Route::middleware(['check.terms'])->group(function () {
