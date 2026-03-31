@@ -216,46 +216,6 @@ input:checked + .slider:before {
     <!-- MAP -->
     <div id="map"></div>
 
-    <!-- LEGEND -->
-    <div id="legend">
-        <strong>Legend</strong>
-
-        <!-- <div class="legend-item">
-            <div class="legend-color" style="background: blue;"></div>
-            Canals
-        </div>
-
-        <div class="legend-item">
-            <div class="legend-color" style="background: yellow;"></div>
-            Dam
-        </div> -->
-
-        <div class="legend-item">
-            <div class="legend-color" style="background: green;"></div>
-            Irrigated
-        </div>
-
-        <div class="legend-item">
-            <div class="legend-color" style="background: red;"></div>
-            Not Irrigated
-        </div>
-
-          <div class="legend-item">
-            <div class="legend-color" style="background: yellow;"></div>
-            Potential Irrigable Area
-        </div>
-
-        <div class="legend-item">
-            <div class="legend-color" style="background: white;"></div>
-            Service Boundary
-        </div>
-
-         <div class="legend-item">
-            <div class="legend-color" style="background: blue;"></div>
-            Land Boundary
-        </div>
-   </div>
-
 <div id="map-status">Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.</div>
 <div id="miniMap"></div>
 </div>
