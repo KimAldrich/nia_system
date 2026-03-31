@@ -266,9 +266,12 @@ input:checked + .slider:before {
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js"></script>
 <script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
 
+<script id="overlay-groups-data" type="application/json">{!! json_encode($overlayGroups ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+<script id="app-base-url-data" type="application/json">{!! json_encode(rtrim(request()->getBaseUrl(), '/')) !!}</script>
+
 <script>
-const overlayGroups = @json($overlayGroups);
-const appBaseUrl = @json(rtrim(request()->getBaseUrl(), '/'));
+const overlayGroups = JSON.parse((document.getElementById('overlay-groups-data') || { textContent: '{}' }).textContent);
+const appBaseUrl = JSON.parse((document.getElementById('app-base-url-data') || { textContent: '""' }).textContent);
 
 function buildAppUrl(path) {
     if (!path) {
