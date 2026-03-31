@@ -148,6 +148,113 @@
             background: #18181b;
             color: #ffffff;
         }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-pill.inactive {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .status-select {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d4d4d8;
+            font-size: 12px;
+            font-family: 'Poppins', sans-serif;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .status-select:disabled {
+            background: #f4f4f5;
+            cursor: not-allowed;
+        }
+
+        .table-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: nowrap;
+            min-width: 230px;
+        }
+
+        .inline-form {
+            margin: 0;
+        }
+
+        .status-form {
+            flex: 1;
+        }
+
+        .status-form .status-select {
+            width: 100%;
+        }
+
+        .btn-danger {
+            background: #b91c1c;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-danger:hover {
+            background: #991b1b;
+        }
+
+        .btn-danger:disabled {
+            background: #d4d4d8;
+            cursor: not-allowed;
+        }
+
+        .muted-note {
+            color: #71717a;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .ajax-feedback {
+            display: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .ajax-feedback.success {
+            display: block;
+            background: #ecfdf3;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .ajax-feedback.error {
+            display: block;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .status-select.is-loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
     </style>
 
     <h1 class="header-title">User Management</h1>
@@ -164,6 +271,15 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div
+            style="background: #fee2e2; color: #b91c1c; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500; border: 1px solid #fecaca;">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div id="account-feedback" class="ajax-feedback"></div>
+
     <div class="dashboard-grid">
         <div class="ui-card">
             <h3 class="section-title">Active Directory</h3>
@@ -173,11 +289,16 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role / Team</th>
+                        <th>Status</th>
                         <th>Date Added</th>
+                        <th>Account Controls</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($users as $user)
+                        @php
+                            $isCurrentUser = auth()->id() === $user->id;
+                        @endphp
                         <tr>
                             <td><strong style="color:#18181b;">{{ $user->name }}</strong></td>
                             <td style="color:#71717a;">{{ $user->email }}</td>
@@ -198,7 +319,36 @@
                                     @endphp
                                 </span>
                             </td>
+                            <td>
+                                <span class="status-pill js-status-pill {{ $user->is_active ? '' : 'inactive' }}">
+                                    {{ $user->is_active ? 'Active' : 'Deactivated' }}
+                                </span>
+                            </td>
                             <td style="color:#a1a1aa; font-size: 12px;">{{ $user->created_at->format('M d, Y') }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <form action="{{ route('admin.users.status', $user) }}" method="POST" class="inline-form status-form js-status-form">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select name="is_active" class="status-select js-status-select"
+                                            data-current-value="{{ $user->is_active ? '1' : '0' }}" {{ $isCurrentUser ? 'disabled' : '' }}>
+                                            <option value="1" {{ $user->is_active ? 'selected' : '' }}>Activate</option>
+                                            <option value="0" {{ ! $user->is_active ? 'selected' : '' }}>Deactivate</option>
+                                        </select>
+                                    </form>
+
+                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-form"
+                                        onsubmit="return confirm('Are you sure you want to delete this account?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn-danger" {{ $isCurrentUser ? 'disabled' : '' }}>Delete</button>
+                                    </form>
+                                </div>
+
+                                @if($isCurrentUser)
+                                    <div class="muted-note" style="margin-top: 6px;">Current account</div>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -243,4 +393,75 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const feedback = document.getElementById('account-feedback');
+
+            function showFeedback(message, type) {
+                if (!feedback) {
+                    return;
+                }
+
+                feedback.textContent = message;
+                feedback.className = `ajax-feedback ${type}`;
+
+                window.clearTimeout(showFeedback.timeoutId);
+                showFeedback.timeoutId = window.setTimeout(() => {
+                    feedback.className = 'ajax-feedback';
+                    feedback.textContent = '';
+                }, 3000);
+            }
+
+            document.querySelectorAll('.js-status-select').forEach((select) => {
+                select.addEventListener('change', async function() {
+                    const form = this.closest('.js-status-form');
+                    const row = this.closest('tr');
+                    const statusPill = row ? row.querySelector('.js-status-pill') : null;
+                    const previousValue = this.dataset.currentValue || '1';
+                    const wasDisabled = this.disabled;
+                    const formData = new FormData(form);
+
+                    this.disabled = true;
+                    this.classList.add('is-loading');
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        });
+
+                        const contentType = response.headers.get('content-type') || '';
+                        const data = contentType.includes('application/json') ? await response.json() : {};
+
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Unable to update account status.');
+                        }
+
+                        const isActive = data.is_active === true || data.is_active === 1 || data.is_active === '1';
+
+                        this.value = isActive ? '1' : '0';
+                        this.dataset.currentValue = this.value;
+
+                        if (statusPill) {
+                            statusPill.textContent = isActive ? 'Active' : 'Deactivated';
+                            statusPill.classList.toggle('inactive', !isActive);
+                        }
+
+                        showFeedback(data.message || 'Account status updated successfully.', 'success');
+                    } catch (error) {
+                        this.value = previousValue;
+                        showFeedback(error.message || 'Unable to update account status.', 'error');
+                    } finally {
+                        this.disabled = wasDisabled;
+                        this.classList.remove('is-loading');
+                    }
+                });
+            });
+        });
+    </script>
 @endsection

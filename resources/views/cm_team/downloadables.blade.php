@@ -337,7 +337,8 @@
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab(event, 'available-forms')">Available Forms</button>
 
-        @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
+        
+        @if(auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
             <button class="tab-btn" onclick="switchTab(event, 'upload-form')">Upload a Form</button>
         @endif
     </div>
@@ -395,7 +396,7 @@
                         <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
                             style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
 
-                        @if(auth()->user()->role == 'fs_team' || auth()->user()->role == 'admin')
+                        @if(auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
                             <form action="{{ route('cm.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;">
                                 @csrf
                                 @method('DELETE')

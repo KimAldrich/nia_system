@@ -25,7 +25,16 @@ class DatabaseSeeder extends Seeder
             'agreed_to_terms' => true, // Admin already agreed
         ]);
 
-        // 3. Create an FS Team User (Set terms to false to test the RA10173 page)
+        // 3. Create a Guest User
+        User::create([
+            'name' => 'Guest User',
+            'email' => 'guest@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'guest',
+            'agreed_to_terms' => true,
+        ]);
+
+        // 4. Create an FS Team User (Set terms to false to test the RA10173 page)
         User::create([
             'name' => 'FS Member',
             'email' => 'fsteam@test.com',
@@ -35,7 +44,7 @@ class DatabaseSeeder extends Seeder
             'agreed_to_terms' => false,
         ]);
 
-        // 4. Create sample projects for the FS Team
+        // 5. Create sample projects for the FS Team
         Project::create([
             'title' => 'IA RESOLUTIONS',
             'status' => 'Pending',

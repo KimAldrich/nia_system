@@ -25,18 +25,20 @@ class TermsController extends Controller
         switch ($user->role) {
             case 'admin':
                 return redirect()->route('admin.dashboard');
+            case 'guest':
+                return redirect()->route('guest.dashboard');
             case 'fs_team':
                 return redirect()->route('fs.dashboard');
             case 'rpwsis_team':
-                return redirect('/rpwsis_team/dashboard'); // Sending them to their own route
+                return redirect('/rpwsis_team/dashboard');
             case 'cm_team':
-                return redirect('/cm-team/dashboard');
+                return redirect('/cm_team/dashboard');
             case 'row_team':
-                return redirect('/row-team/dashboard');
+                return redirect('/row_team/dashboard');
             case 'pcr_team':
-                return redirect('/pcr-team/dashboard');
+                return redirect('/pcr_team/dashboard');
             case 'pao_team':
-                return redirect('/pao-team/dashboard');
+                return redirect('/pao_team/dashboard');
             default:
                 return redirect('/');
         }
@@ -49,6 +51,8 @@ class TermsController extends Controller
         switch ($role) {
             case 'admin':
                 return redirect()->route('admin.dashboard');
+            case 'guest':
+                return redirect()->route('guest.dashboard');
             case 'fs_team':
                 return redirect()->route('fs.dashboard');
             case 'rpwsis_team':
@@ -56,13 +60,13 @@ class TermsController extends Controller
 
             // Placeholders for when you build the rest of the teams:
             case 'cm_team':
-                return redirect('/cm-team/dashboard');
+                return redirect('/cm_team/dashboard');
             case 'row_team':
-                return redirect('/row-team/dashboard');
+                return redirect('/row_team/dashboard');
             case 'pcr_team':
-                return redirect('/pcr-team/dashboard');
+                return redirect('/pcr_team/dashboard');
             case 'pao_team':
-                return redirect('/pao-team/dashboard');
+                return redirect('/pao_team/dashboard');
 
             // Fallback just in case
             default:

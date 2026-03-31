@@ -182,21 +182,69 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .topbar {
-            height: 70px;
+            min-height: 70px;
             background: var(--card-bg);
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding: 0 30px;
+            padding: 12px 30px;
             border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .user-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            line-height: 1.2;
+            width: min(100%, 280px);
+            min-width: 280px;
+            text-align: right;
+            margin-left: auto;
+        }
+
+        .user-meta-label {
+            width: 100%;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            text-align: right;
+        }
+
+        .user-meta-name {
+            width: 100%;
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 2px;
+            word-break: break-word;
+            text-align: right;
+        }
+
+        .user-meta-team {
+            width: 100%;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+            word-break: break-word;
+            white-space: normal;
+            text-align: right;
         }
 
         .content {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 30px;
             overflow-y: auto;
+            overflow-x: hidden;
             flex: 1;
         }
 
@@ -282,9 +330,47 @@
             NIA Portal
         </div>
         <div class="nav-links">
-            <div
-                style="padding: 0 15px 10px 15px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
-                Departments</div>
+            @if(auth()->check() && auth()->user()->role == 'admin')
+
+                <div style="padding: 0 15px 10px 15px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+                    Admin Controls
+                </div>
+
+                <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Home</span>
+                </a>
+
+                <a href="{{ route('admin.users') }}" class="menu-item {{ request()->routeIs('admin.users') ? 'active' : '' }}" style="margin-bottom: 25px;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <span>User Management</span>
+                </a>
+
+            @endif
+           @if(auth()->check() && auth()->user()->role == 'guest')
+
+                <div style="padding: 20px 15px 10px 15px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+                    Guest Portal
+                </div>
+
+                <a href="{{ route('guest.dashboard') }}" class="menu-item active" style="text-decoration: none;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                    </svg>
+                    <span>Master Dashboard</span>
+                </a>
+
+            @else
+
+                @endif
+
+            <div style="padding: 0 15px 10px 15px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+                Departments
+            </div>
 
             @php
                 // Updated to match your exact database values
@@ -324,6 +410,15 @@
                         class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
                 </div>
             @endforeach
+            <div style="margin-top: 25px; margin-bottom: 8px; padding: 0 15px; font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">
+                Shared Hubs
+            </div>
+            <a href="{{ route('administrative.index') }}" class="menu-item {{ request()->routeIs('administrative.*') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <span>Administrative</span>
+            </a>
           <div class="menu-item" onclick="window.location.href='/map'">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -344,8 +439,28 @@
     </div>
 
     <div class="main-wrapper">
+        @php
+            $roleLabels = [
+                'admin' => 'Administrator',
+                'guest' => 'Guest User',
+                'fs_team' => 'FS Member',
+                'rpwsis_team' => 'RP-WSIS Team Member',
+                'cm_team' => 'Contract Management Team Member',
+                'row_team' => 'Right Of Way Team Member',
+                'pcr_team' => 'Program Completion Report Team Member',
+                'pao_team' => 'Programming Team Member',
+            ];
+
+            $currentUser = auth()->user();
+            $currentUserTeam = $roleLabels[$currentUser->role ?? ''] ?? 'User';
+        @endphp
+
         <div class="topbar">
-            <strong>Logged in as: {{ auth()->user()->name ?? 'User' }}</strong>
+            <div class="user-meta">
+                <div class="user-meta-label">Logged in as</div>
+                <div class="user-meta-name">{{ $currentUser->name ?? 'User' }}</div>
+                <div class="user-meta-team">{{ $currentUserTeam }}</div>
+            </div>
         </div>
         <div class="content">
             @yield('content')

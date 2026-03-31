@@ -10,6 +10,8 @@ use App\Http\Controllers\ContractManagementTeamController;
 use App\Http\Controllers\RowTeamController;
 use App\Http\Controllers\PcrTeamController;
 use App\Http\Controllers\PaoTeamController;
+use App\Http\Controllers\AdministrativeController;
+use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MapController;
 
 // Authentication Routes
@@ -17,13 +19,21 @@ Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 // Routes that require login
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'check.active'])->group(function () {
 
     // Terms and Conditions (RA10173)
     Route::get('/terms', [TermsController::class, 'show'])->name('terms.show');
     Route::post('/terms/agree', [TermsController::class, 'agree'])->name('terms.agree');
+
+    Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
+    Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
+    Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
+
+    //guest
+    Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
+    Route::get('/map', [MapController::class, 'Showmap'])->name('map');
+
 
     // Protected Routes (Must have agreed to terms)
     Route::middleware(['check.terms'])->group(function () {
@@ -33,6 +43,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
             Route::get('/users', [AdminController::class, 'manageUsers'])->name('admin.users');
             Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+            Route::patch('/users/{user}/status', [AdminController::class, 'updateUserStatus'])->name('admin.users.status');
+            Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
             // Add more admin routes here
 
             Route::post('/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');

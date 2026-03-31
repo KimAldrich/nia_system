@@ -124,6 +124,17 @@
             font-size: 14px;
             text-align: center;
         }
+
+        .flash-note {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            text-align: center;
+            border: 1px solid #fecaca;
+        }
     </style>
 </head>
 
@@ -135,7 +146,11 @@
             <p>Please enter your details to sign in.</p>
         </div>
 
-        @if ($errors->any())
+        @if (session('deactivated_message'))
+            <div class="flash-note">{{ session('deactivated_message') }}</div>
+        @endif
+
+        @if ($errors->any() && !session('deactivated_message'))
             <div class="error">{{ $errors->first() }}</div>
         @endif
 
@@ -143,7 +158,7 @@
             @csrf
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" name="email" id="email" placeholder="Enter your email" required autofocus>
+                <input type="email" name="email" id="email" placeholder="Enter your email" value="{{ old('email') }}" required autofocus>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>

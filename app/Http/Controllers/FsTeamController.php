@@ -7,6 +7,7 @@ use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
+use App\Models\EventCategory;
 
 class FsTeamController extends Controller
 {
@@ -22,7 +23,8 @@ class FsTeamController extends Controller
             ->take(5)
             ->get();
 
-        return view('fs-team.dashboard', compact('resolutions', 'events'));
+        $categories = EventCategory::all();
+        return view('fs-team.dashboard', compact('resolutions', 'events', 'categories'));
     }
 
     // 2. View Downloadables Page
@@ -83,8 +85,8 @@ class FsTeamController extends Controller
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
-        
-// if ($downloadable->team !== 'fs_team') {
+
+        // if ($downloadable->team !== 'fs_team') {
 //     abort(403);
 // }
         $downloadable->delete();
@@ -93,7 +95,7 @@ class FsTeamController extends Controller
     }
 
     // 7. Upload Resolution
-        public function uploadResolution(Request $request)
+    public function uploadResolution(Request $request)
     {
         $request->validate([
             'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120'

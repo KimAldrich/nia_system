@@ -7,6 +7,7 @@ use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
+use App\Models\EventCategory;
 
 class RpwsisTeamController extends Controller
 {
@@ -15,7 +16,9 @@ class RpwsisTeamController extends Controller
     {
         $resolutions = IaResolution::where('team', 'rpwsis_team')->latest()->get();
         $events = Event::whereDate('event_date', '>=', now())->orderBy('event_date', 'asc')->take(5)->get();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events'));
+
+        $categories = EventCategory::all();
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories'));
     }
 
     // 2. View Downloadables Page

@@ -131,7 +131,7 @@
                         Select Team
                     </label>
                     <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
-                        <option value="">-- Choose Team --</option>
+                        <option value="" disabled selected>-- Choose Team --</option>
                         <option value="fs_team">FS Team</option>
                         <option value="rpwsis_team">RP-WSIS Team</option>
                         <option value="cm_team">CM Team</option>
@@ -167,7 +167,7 @@
                 Select Team
             </label>
             <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
-                <option value="">-- Choose Team --</option>
+                <option value="" disabled selected>-- Choose Team --</option>
                 <option value="fs_team">FS Team</option>
                 <option value="rpwsis_team">RP-WSIS Team</option>
                 <option value="cm_team">CM Team</option>

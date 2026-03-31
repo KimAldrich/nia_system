@@ -327,7 +327,7 @@
 
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab(event, 'available-resolutions')">Available Resolutions</button>
-        @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
+        @if(auth()->check() && in_array(auth()->user()->role, ['pcr_team', 'admin']))
             <button class="tab-btn" onclick="switchTab(event, 'upload-resolution')">Upload a Resolution</button>
         @endif
     </div>
@@ -384,7 +384,7 @@
                     <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank" class="btn-dark"
                         style="margin-bottom: 15px;">Download</a>
 
-                    @if(auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
+                    @if(auth()->check() && in_array(auth()->user()->role, ['pcr_team', 'admin']))
                         <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
                         <form action="{{ route('pcr.resolutions.update', $resolution->id) }}" method="POST"
                             enctype="multipart/form-data">
