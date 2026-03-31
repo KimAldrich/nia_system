@@ -77,6 +77,54 @@
     font-size: 13px;
 }
 
+#layer-controls {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(255,255,255,0);
+    backdrop-filter: blur(1px);
+    padding: 12px 14px;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.18);
+    min-width: 230px;
+}
+
+.layer-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.layer-check:last-child {
+    margin-bottom: 0;
+}
+
+.layer-check input {
+    accent-color: #0b5e2c;
+}
+
+#map-status {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    z-index: 1000;
+    max-width: 360px;
+    background: rgba(255,255,255,0.94);
+    padding: 10px 12px;
+    border-radius: 10px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.18);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+#map-status.error {
+    border-left: 4px solid #c62828;
+}
+
 /* SWITCH */
 .switch {
     position: relative;
@@ -150,6 +198,21 @@ input:checked + .slider:before {
     <span>🛰 Satellite</span>
 </div>
 
+    <div id="layer-controls">
+        <label class="layer-check">
+            <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['files']) ? 'disabled' : '' }}>
+            <span>Irrigated Area</span>
+        </label>
+        <label class="layer-check">
+            <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
+            <span>Land Boundary</span>
+        </label>
+        <label class="layer-check">
+            <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
+            <span>Potential Irrigable Area</span>
+        </label>
+    </div>
+
     <!-- MAP -->
     <div id="map"></div>
 
@@ -192,15 +255,35 @@ input:checked + .slider:before {
             Land Boundary
         </div>
    </div>
+
+<div id="map-status">Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.</div>
 <div id="miniMap"></div>
 </div>
 
 <!-- the map -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js"></script>
+<script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
 
 <script>
-let map = L.map('map').setView([15.8949, 120.2863], 9);
+const overlayGroups = @json($overlayGroups);
+const appBaseUrl = @json(rtrim(request()->getBaseUrl(), '/'));
 
+function buildAppUrl(path) {
+    if (!path) {
+        return null;
+    }
+
+    if (/^https?:\/\//i.test(path)) {
+        return path;
+    }
+
+    const normalizedPath = String(path).replace(/^\/+/, '');
+    return appBaseUrl ? `${appBaseUrl}/${normalizedPath}` : `/${normalizedPath}`;
+}
+
+let map = L.map('map').setView([15.8949, 120.2863], 9);
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -212,18 +295,48 @@ let satelliteLayer = L.tileLayer(
     { maxZoom: 19 }
 );
 
-
 let labelLayer = L.tileLayer(
     'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 19 }
 );
 
-let isSatellite = false;
+const toggle = document.getElementById('toggleSwitch');
+const statusBox = document.getElementById('map-status');
+const overlayToggles = {
+    irrigated: document.getElementById('toggleIrrigated'),
+    land_boundary: document.getElementById('toggleLandBoundary'),
+    potential: document.getElementById('togglePotential')
+};
 
-const toggle = document.getElementById("toggleSwitch");
+const overlayStyles = {
+    irrigated: {
+        color: '#1b5e20',
+        weight: 2,
+        fillColor: '#43a047',
+        fillOpacity: 0.45
+    },
+    land_boundary: {
+        color: '#0d47a1',
+        weight: 3,
+        fillColor: '#64b5f6',
+        fillOpacity: 0.08,
+        opacity: 1
+    },
+    potential: {
+        color: '#ff8f00',
+        weight: 3,
+        fillColor: '#ffeb3b',
+        fillOpacity: 0.55,
+        opacity: 1
+    }
+};
 
-toggle.addEventListener("change", () => {
+let geoLayer;
+let selectedBaseLayer;
+let miniGeoLayer;
+const overlayLayers = {};
 
+toggle.addEventListener('change', () => {
     if (toggle.checked) {
         map.removeLayer(normalLayer);
         map.addLayer(satelliteLayer);
@@ -233,42 +346,254 @@ toggle.addEventListener("change", () => {
         map.removeLayer(labelLayer);
         map.addLayer(normalLayer);
     }
-
 });
 
-// highlight of pangasinan
-fetch('/maps/PANGASINAN.geojson')
-.then(res => res.json())
-.then(data => {
+function updateStatus(message, isError = false) {
+    statusBox.innerHTML = message;
+    statusBox.classList.toggle('error', isError);
+}
 
-    let geoLayer = L.geoJSON(data, {
+function getFeatureName(feature, fallback = 'Unknown') {
+    const properties = feature?.properties || {};
 
-        style: function(feature) {
-            return {
-                color: "white",
-                weight: 1,
-                fillColor: feature.properties.irrigated ? "green" : "#242525",
-                fillOpacity: 0.6
-            };
-        },
+    return properties.name
+        || properties.Name
+        || properties.MUNICIPALI
+        || properties.MUNICIPAL
+        || properties.title
+        || fallback;
+}
 
+function getBaseStyle(feature) {
+    return {
+        color: 'white',
+        weight: 1,
+        fillColor: feature.properties?.irrigated ? 'green' : '#242525',
+        fillOpacity: 0.6
+    };
+}
+
+function setSelectedBaseLayer(layer) {
+    if (selectedBaseLayer && geoLayer) {
+        geoLayer.resetStyle(selectedBaseLayer);
+    }
+
+    selectedBaseLayer = layer;
+    selectedBaseLayer.setStyle({
+        color: '#ffd400',
+        weight: 2,
+        fillColor: '#ff5a36',
+        fillOpacity: 0.8
+    });
+}
+
+async function loadBaseMap() {
+    const response = await fetch(buildAppUrl('maps/PANGASINAN.geojson'));
+
+    if (!response.ok) {
+        throw new Error('Unable to load the base Pangasinan boundary.');
+    }
+
+    const data = await response.json();
+
+    geoLayer = L.geoJSON(data, {
+        style: getBaseStyle,
         onEachFeature: function(feature, layer) {
+            const name = getFeatureName(feature);
 
-            let name = feature.properties.MUNICIPALI || "Unknown";
+            layer.on('click', function() {
+                setSelectedBaseLayer(layer);
+                showMiniMap(feature);
+            });
 
-layer.on('click', function() {
-
-    layer.setStyle({ fillColor: "red" });
-
-    showMiniMap(feature, layer);
-
-});
-
-            layer.bindPopup("<b>" + name + "</b>");
+            layer.bindPopup('<b>' + name + '</b>');
         }
-
     }).addTo(map);
 
+    const bounds = geoLayer.getBounds();
+    if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [20, 20] });
+    }
+}
+
+function normalizeGeoJson(data) {
+    if (Array.isArray(data)) {
+        return {
+            type: 'FeatureCollection',
+            features: data.flatMap(item => item?.features || [])
+        };
+    }
+
+    if (data && typeof data === 'object' && !data.type) {
+        return {
+            type: 'FeatureCollection',
+            features: Object.values(data).flatMap(item => item?.features || [])
+        };
+    }
+
+    return data;
+}
+
+async function convertStoredFileToGeoJson(fileUrl) {
+    const safeUrl = encodeURI(buildAppUrl(fileUrl));
+    const lowerFileUrl = fileUrl.toLowerCase();
+
+    if (lowerFileUrl.endsWith('.geojson') || lowerFileUrl.endsWith('.json')) {
+        const response = await fetch(safeUrl);
+        if (!response.ok) {
+            throw new Error('The GeoJSON file could not be fetched.');
+        }
+
+        return await response.json();
+    }
+
+    if (lowerFileUrl.endsWith('.kml')) {
+        const response = await fetch(safeUrl);
+        if (!response.ok) {
+            throw new Error('The KML file could not be fetched.');
+        }
+
+        const kmlText = await response.text();
+        const kmlDocument = new DOMParser().parseFromString(kmlText, 'text/xml');
+        return toGeoJSON.kml(kmlDocument);
+    }
+
+    if (lowerFileUrl.endsWith('.kmz')) {
+        const response = await fetch(safeUrl);
+        if (!response.ok) {
+            throw new Error('The KMZ file could not be fetched.');
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const kmlEntryName = Object.keys(zip.files).find(name => name.toLowerCase() === 'doc.kml')
+            || Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+
+        if (!kmlEntryName) {
+            throw new Error('No KML document was found inside the KMZ file.');
+        }
+
+        const kmlText = await zip.files[kmlEntryName].async('text');
+        const kmlDocument = new DOMParser().parseFromString(kmlText, 'text/xml');
+        return toGeoJSON.kml(kmlDocument);
+    }
+
+    if (lowerFileUrl.endsWith('.shp')) {
+        return await shp(safeUrl);
+    }
+
+    throw new Error('Unsupported map file type.');
+}
+
+function styleOverlayFeature(categoryKey, feature) {
+    const baseStyle = overlayStyles[categoryKey];
+    const geometryType = feature?.geometry?.type || '';
+
+    if (categoryKey === 'land_boundary') {
+        return {
+            color: baseStyle.color,
+            weight: baseStyle.weight,
+            opacity: 1,
+            fillColor: baseStyle.fillColor,
+            fillOpacity: geometryType.includes('Polygon') ? 0.04 : 0
+        };
+    }
+
+    if (geometryType.includes('Line')) {
+        return {
+            color: baseStyle.color,
+            weight: baseStyle.weight + 1,
+            fillOpacity: 0
+        };
+    }
+
+    return baseStyle;
+}
+
+function createOverlayLayer(categoryKey, geoJson, fileName) {
+    return L.geoJSON(normalizeGeoJson(geoJson), {
+        style: feature => styleOverlayFeature(categoryKey, feature),
+        onEachFeature: function(feature, layer) {
+            const name = getFeatureName(feature, fileName);
+            layer.bindPopup('<b>' + name + '</b><br>' + overlayGroups[categoryKey].label);
+            layer.on('click', function() {
+                showMiniMap(feature);
+            });
+        }
+    });
+}
+
+async function showOverlayCategory(categoryKey) {
+    const config = overlayGroups[categoryKey];
+
+    if (!config || !config.files.length) {
+        updateStatus('No files found for ' + (config?.label || categoryKey) + '.', true);
+        return;
+    }
+
+    if (!overlayLayers[categoryKey]) {
+        const layers = [];
+
+        for (let index = 0; index < config.files.length; index++) {
+            const file = config.files[index];
+
+            updateStatus(`Loading ${config.label} (${index + 1}/${config.files.length})...`);
+
+            try {
+                const geoJson = await convertStoredFileToGeoJson(file.url);
+                layers.push(createOverlayLayer(categoryKey, geoJson, file.name));
+            } catch (error) {
+                console.error('Failed to load file:', file.name, error);
+            }
+        }
+
+        if (!layers.length) {
+            updateStatus('No valid polygons could be loaded for ' + config.label + '.', true);
+            return;
+        }
+
+        overlayLayers[categoryKey] = L.featureGroup(layers);
+    }
+
+    if (!map.hasLayer(overlayLayers[categoryKey])) {
+        overlayLayers[categoryKey].addTo(map);
+    }
+
+    overlayLayers[categoryKey].eachLayer(layer => {
+        if (typeof layer.bringToFront === 'function') {
+            layer.bringToFront();
+        }
+    });
+
+    const bounds = overlayLayers[categoryKey].getBounds();
+    if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [25, 25] });
+    }
+
+    updateStatus(config.label + ' is now highlighted on the map.');
+}
+
+function hideOverlayCategory(categoryKey) {
+    if (overlayLayers[categoryKey] && map.hasLayer(overlayLayers[categoryKey])) {
+        map.removeLayer(overlayLayers[categoryKey]);
+    }
+
+    const config = overlayGroups[categoryKey];
+    updateStatus((config?.label || 'Selected layer') + ' has been hidden.');
+}
+
+Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
+    if (!checkbox) {
+        return;
+    }
+
+    checkbox.addEventListener('change', async function() {
+        if (this.checked) {
+            await showOverlayCategory(categoryKey);
+        } else {
+            hideOverlayCategory(categoryKey);
+        }
+    });
 });
 
 let miniMap = L.map('miniMap', {
@@ -281,11 +606,8 @@ let miniLayer = L.tileLayer(
 );
 miniLayer.addTo(miniMap);
 
-let miniGeoLayer;
-
-function showMiniMap(feature, layer) {
-
-    document.getElementById("miniMap").style.display = "block";
+function showMiniMap(feature) {
+    document.getElementById('miniMap').style.display = 'block';
 
     if (miniGeoLayer) {
         miniMap.removeLayer(miniGeoLayer);
@@ -293,15 +615,23 @@ function showMiniMap(feature, layer) {
 
     miniGeoLayer = L.geoJSON(feature, {
         style: {
-            color: "red",
+            color: 'red',
             weight: 2,
-
             fillOpacity: 0.5
         }
     }).addTo(miniMap);
 
     miniMap.fitBounds(miniGeoLayer.getBounds());
 }
+
+(async function initializeMap() {
+    try {
+        await loadBaseMap();
+    } catch (error) {
+        console.error(error);
+        updateStatus(error.message, true);
+    }
+})();
 </script>
 
 @endsection
