@@ -190,7 +190,7 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding: 12px 108px 12px 30px;
+            padding: 12px 88px 12px 30px;
             border-bottom: 1px solid var(--border-color);
             overflow: hidden;
         }
