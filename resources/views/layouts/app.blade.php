@@ -296,7 +296,7 @@
                     'pcr_team' => 'Program Completion Report Team',
                     'pao_team' => 'Programming Team'
                 ];
-                $activeTeam = request()->segment(1); 
+                $activeTeam = request()->segment(1);
             @endphp
 
             @foreach($teams as $slug => $name)
@@ -324,7 +324,17 @@
                         class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
                 </div>
             @endforeach
+          <div class="menu-item" onclick="window.location.href='/map'">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.553-.832L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-1.553-.832L15 9m0 8V9m0 0L9 7">
+                </path>
+            </svg>
+
+            <span>Map</span>
         </div>
+        </div>
+
         <div class="logout-container">
             <form action="{{ route('logout') }}" method="POST">
                 @csrf

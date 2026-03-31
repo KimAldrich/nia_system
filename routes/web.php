@@ -10,13 +10,14 @@ use App\Http\Controllers\ContractManagementTeamController;
 use App\Http\Controllers\RowTeamController;
 use App\Http\Controllers\PcrTeamController;
 use App\Http\Controllers\PaoTeamController;
+use App\Http\Controllers\MapController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
+Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 // Routes that require login
 Route::middleware(['auth'])->group(function () {
 
