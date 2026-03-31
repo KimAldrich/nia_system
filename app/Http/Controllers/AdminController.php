@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use App\Models\EventCategory;
 
 class AdminController extends Controller
@@ -102,28 +101,75 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
-        // 1. Manually run the validation
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email', // Fails if email already exists
-            'password' => 'required|string|min:8', // Fails if password is under 8 chars
-            'role' => 'required|in:admin,fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'role' => 'required|in:admin,fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team',
         ]);
 
-        // 2. IF IT FAILS, FREEZE THE SCREEN AND SHOW THE ERROR
-        if ($validator->fails()) {
-            dd('VALIDATION FAILED!', $validator->errors());
-        }
-
-        // 3. IF IT PASSES, CREATE THE USER
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'is_active' => true,
         ]);
 
         return back()->with('success', 'User account created successfully.');
+    }
+
+    public function updateUserStatus(Request $request, User $user)
+    {
+        $this->checkAdmin();
+
+        $validated = $request->validate([
+            'is_active' => 'required|boolean',
+        ]);
+
+        if (auth()->id() === $user->id && ! (bool) $validated['is_active']) {
+            $message = 'You cannot deactivate your own account while logged in.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return back()->with('error', $message);
+        }
+
+        $user->update([
+            'is_active' => (bool) $validated['is_active'],
+        ]);
+
+        $status = $user->is_active ? 'activated' : 'deactivated';
+        $message = "{$user->name}'s account was {$status} successfully.";
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'is_active' => $user->is_active,
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    public function destroyUser(User $user)
+    {
+        $this->checkAdmin();
+
+        if (auth()->id() === $user->id) {
+            return back()->with('error', 'You cannot delete your own account while logged in.');
+        }
+
+        $userName = $user->name;
+        $user->delete();
+
+        return back()->with('success', "{$userName}'s account was deleted successfully.");
     }
 
     public function storeEvent(Request $request)

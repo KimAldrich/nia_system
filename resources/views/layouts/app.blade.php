@@ -185,13 +185,48 @@
         }
 
         .topbar {
-            height: 70px;
+            min-height: 70px;
             background: var(--card-bg);
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding: 0 30px;
+            padding: 12px 108px 12px 30px;
             border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .user-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            line-height: 1.2;
+            max-width: min(100%, 320px);
+            text-align: right;
+            margin-left: auto;
+        }
+
+        .user-meta-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .user-meta-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 2px;
+            word-break: break-word;
+        }
+
+        .user-meta-team {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+            word-break: break-word;
+            white-space: normal;
         }
 
         .content {
@@ -381,8 +416,28 @@
     </div>
 
     <div class="main-wrapper">
+        @php
+            $roleLabels = [
+                'admin' => 'Administrator',
+                'guest' => 'Guest User',
+                'fs_team' => 'FS Member',
+                'rpwsis_team' => 'RP-WSIS Team Member',
+                'cm_team' => 'Contract Management Team Member',
+                'row_team' => 'Right Of Way Team Member',
+                'pcr_team' => 'Program Completion Report Team Member',
+                'pao_team' => 'Programming Team Member',
+            ];
+
+            $currentUser = auth()->user();
+            $currentUserTeam = $roleLabels[$currentUser->role ?? ''] ?? 'User';
+        @endphp
+
         <div class="topbar">
-            <strong>Logged in as: {{ auth()->user()->name ?? 'User' }}</strong>
+            <div class="user-meta">
+                <div class="user-meta-label">Logged in as</div>
+                <div class="user-meta-name">{{ $currentUser->name ?? 'User' }}</div>
+                <div class="user-meta-team">{{ $currentUserTeam }}</div>
+            </div>
         </div>
         <div class="content">
             @yield('content')

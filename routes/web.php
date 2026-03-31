@@ -20,7 +20,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Routes that require login
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'check.active'])->group(function () {
 
     // Terms and Conditions (RA10173)
     Route::get('/terms', [TermsController::class, 'show'])->name('terms.show');
@@ -41,6 +41,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
             Route::get('/users', [AdminController::class, 'manageUsers'])->name('admin.users');
             Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+            Route::patch('/users/{user}/status', [AdminController::class, 'updateUserStatus'])->name('admin.users.status');
+            Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
             // Add more admin routes here
 
             Route::post('/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');

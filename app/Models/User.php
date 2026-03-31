@@ -18,6 +18,7 @@ class User extends Authenticatable
         'role',
         'agreed_to_terms',
         'team_id',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -31,6 +32,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'agreed_to_terms' => 'boolean', // Ensures this is treated as true/false
+            'is_active' => 'boolean',
         ];
     }
 
