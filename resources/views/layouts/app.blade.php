@@ -182,7 +182,6 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-width: 0;
         }
 
         .topbar {
@@ -239,12 +238,8 @@
         }
 
         .content {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
             padding: 30px;
             overflow-y: auto;
-            overflow-x: hidden;
             flex: 1;
         }
 
