@@ -282,7 +282,7 @@ const overlayStyles = {
         opacity: 1
     },
     potential: {
-        color: '#ff8f00',
+        color: '#ffeb3b',
         weight: 3,
         fillColor: '#ffeb3b',
         fillOpacity: 0.55,
