@@ -19,6 +19,12 @@ Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::post('/guest/authenticate', [GuestController::class, 'authenticate'])->name('guest.authenticate');
+Route::get('/guest/terms', [GuestController::class, 'terms'])->name('guest.terms');
+Route::post('/guest/accept-terms', [GuestController::class, 'acceptTerms'])->name('guest.accept');
+Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.dashboard');
+Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 // Routes that require login
 Route::middleware(['auth', 'check.active'])->group(function () {
 
@@ -29,11 +35,6 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
     Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
     Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
-
-    //guest
-    Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
-    Route::get('/map', [MapController::class, 'Showmap'])->name('map');
-
 
     // Protected Routes (Must have agreed to terms)
     Route::middleware(['check.terms'])->group(function () {
