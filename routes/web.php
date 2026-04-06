@@ -32,8 +32,12 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
     //guest
     Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
-    Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 
+    //Map Routes
+    Route::get('/map', [MapController::class, 'Showmap'])->name('map');
+    Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
+Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
+Route::delete('/map/delete', [MapController::class, 'deleteFile']);
 
     // Protected Routes (Must have agreed to terms)
     Route::middleware(['check.terms'])->group(function () {
