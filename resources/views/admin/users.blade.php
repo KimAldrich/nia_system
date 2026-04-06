@@ -2,231 +2,231 @@
 @section('title', 'User Management')
 
 @section('content')
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --primary: #18181b;
+            --primary-hover: #3f3f46;
+            --bg-main: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
         }
 
-        .content {
-            background-color: #f7f8fa;
-            font-family: 'Poppins', sans-serif;
-            padding: 40px;
-            color: #111;
+        /* FIXED WIDTH & CENTERING */
+        .content-wrapper {
+            background-color: var(--bg-main);
+            font-family: 'Inter', sans-serif;
+            padding: 40px 20px;
+            min-height: 100vh;
+            max-width: 1300px; /* Limits expansion to the right */
+            margin: 0 auto;    /* Centers the whole dashboard */
+        }
+
+        .header-section {
+            margin-bottom: 32px;
         }
 
         .header-title {
-            font-size: 28px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 30px;
             font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
         }
 
         .header-desc {
-            color: #a1a1aa;
-            font-size: 13px;
-            margin-bottom: 25px;
-            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 14px;
         }
 
+        /* ADJUSTED GRID FOR SCREEN VISIBILITY */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
+            grid-template-columns: 1.6fr 1fr; /* Use fractions instead of fixed pixels */
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Stack earlier to prevent horizontal overflow */
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
         }
 
         .ui-card {
             background: #ffffff;
-            border-radius: 12px;
-            padding: 25px;
-            border: 1px solid #e4e4e7;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border-radius: 16px;
+            padding: 28px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden; /* Keeps content inside the card */
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
         }
 
         .section-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 20px;
-            color: #18181b;
+            color: var(--primary);
+            margin: 0;
         }
 
-        /* Form Inputs */
-        .form-group {
-            margin-bottom: 15px;
-        }
+        /* Form Styling */
+        .form-group { margin-bottom: 20px; }
 
         .form-label {
             display: block;
             font-size: 12px;
             font-weight: 600;
-            color: #71717a;
-            margin-bottom: 6px;
+            color: var(--text-main);
+            margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
         }
 
         .form-input {
             width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #e4e4e7;
-            font-family: 'Poppins', sans-serif;
-            font-size: 13px;
-            background: #fafafa;
-            transition: 0.2s;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+            background: #fff;
+            transition: all 0.2s;
             outline: none;
+            color: var(--text-main);
         }
 
         .form-input:focus {
-            border-color: #18181b;
-            background: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
         }
 
         .btn-dark {
-            background: #18181b;
+            background: var(--primary);
             color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
-            text-align: center;
-            display: block;
             width: 100%;
             border: none;
             cursor: pointer;
-            font-family: 'Poppins', sans-serif;
-            margin-top: 10px;
             transition: 0.2s;
+            margin-top: 10px;
         }
 
-        .btn-dark:hover {
-            background: #3f3f46;
+        .btn-dark:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+        /* Table Styling */
+        .table-container { 
+            overflow-x: auto; 
+            width: 100%;
         }
 
-        /* Sleek Table */
         .sleek-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 600px; /* Ensures table doesn't get too squished */
         }
 
         .sleek-table th {
             text-align: left;
-            padding-bottom: 15px;
-            color: #a1a1aa;
-            font-weight: 500;
-            font-size: 12px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #f4f4f5;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .sleek-table td {
-            padding: 15px 0;
-            border-bottom: 1px solid #f4f4f5;
-            font-size: 13px;
-            font-weight: 500;
-            vertical-align: middle;
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: var(--text-main);
         }
 
-        .sleek-table tr:last-child td {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
+        .sleek-table tr:hover td { background-color: #fafafa; }
 
+        /* Badges & Pills */
         .role-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
+            padding: 4px 10px;
+            border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
-            display: inline-block;
-            background: #f4f4f5;
-            color: #18181b;
+            background: #f1f5f9;
+            color: #475569;
         }
 
-        .role-badge.admin {
-            background: #18181b;
-            color: #ffffff;
-        }
+        .role-badge.admin { background: #e0e7ff; color: #4338ca; }
 
         .status-pill {
             display: inline-flex;
             align-items: center;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            background: #dcfce7;
-            color: #166534;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #ecfdf5;
+            color: #065f46;
         }
 
-        .status-pill.inactive {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
+        .status-pill.inactive { background: #fff1f2; color: #9f1239; }
 
         .status-select {
-            padding: 8px 10px;
+            padding: 8px;
             border-radius: 8px;
-            border: 1px solid #d4d4d8;
-            font-size: 12px;
-            font-family: 'Poppins', sans-serif;
+            border: 1px solid var(--border-color);
+            font-size: 13px;
             background: #fff;
             cursor: pointer;
         }
 
-        .status-select:disabled {
-            background: #f4f4f5;
-            cursor: not-allowed;
-        }
-
-        .table-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: nowrap;
-            min-width: 230px;
-        }
-
-        .inline-form {
-            margin: 0;
-        }
-
-        .status-form {
-            flex: 1;
-        }
-
-        .status-form .status-select {
-            width: 100%;
-        }
-
         .btn-danger {
-            background: #b91c1c;
-            color: #fff;
-            border: none;
+            background: #fff;
+            color: var(--danger);
+            border: 1px solid #fee2e2;
             border-radius: 8px;
             padding: 8px 12px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
         }
 
-        .btn-danger:hover {
-            background: #991b1b;
+        .btn-danger:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
+
+        .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .muted-note { color: var(--text-muted); font-size: 11px; font-weight: 500; margin-top: 4px; }
+
+        /* Ajax & Sessions */
+        .alert-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            font-weight: 500;
         }
 
-        .btn-danger:disabled {
-            background: #d4d4d8;
-            cursor: not-allowed;
-        }
-
-        .muted-note {
-            color: #71717a;
-            font-size: 11px;
-            font-weight: 600;
-        }
+        .alert-success { background: #18181b; color: #fff; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
         .ajax-feedback {
             display: none;
@@ -234,163 +234,156 @@
             border-radius: 8px;
             margin-bottom: 20px;
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
+            text-align: center;
         }
 
-        .ajax-feedback.success {
-            display: block;
-            background: #ecfdf3;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
+        .ajax-feedback.success { display: block; background: #ecfdf5; color: #065f46; border: 1px solid #bbf7d0; }
+        .ajax-feedback.error { display: block; background: #fff1f2; color: #9f1239; border: 1px solid #fecaca; }
 
-        .ajax-feedback.error {
-            display: block;
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .status-select.is-loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
+        .is-loading { opacity: 0.5; pointer-events: none; }
     </style>
 
-    <h1 class="header-title">User Management</h1>
-    <p class="header-desc">Create and manage accounts and team assignments for agency staff.</p>
-
-    @if(session('success'))
-        <div
-            style="background: #18181b; color: #ffffff; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
-            <svg style="width:18px; height:18px; color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div
-            style="background: #fee2e2; color: #b91c1c; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500; border: 1px solid #fecaca;">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    <div id="account-feedback" class="ajax-feedback"></div>
-
-    <div class="dashboard-grid">
-        <div class="ui-card">
-            <h3 class="section-title">Active Directory</h3>
-            <table class="sleek-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role / Team</th>
-                        <th>Status</th>
-                        <th>Date Added</th>
-                        <th>Account Controls</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($users as $user)
-                        @php
-                            $isCurrentUser = auth()->id() === $user->id;
-                        @endphp
-                        <tr>
-                            <td><strong style="color:#18181b;">{{ $user->name }}</strong></td>
-                            <td style="color:#71717a;">{{ $user->email }}</td>
-                            <td>
-                                <span class="role-badge {{ $user->role == 'admin' ? 'admin' : '' }}">
-                                    @php
-                                        // Make the database roles readable for the table
-                                        $roleNames = [
-                                            'admin' => 'Admin',
-                                            'fs_team' => 'Feasibility Study',
-                                            'rpwsis_team' => 'RP-WSIS',
-                                            'cm_team' => 'Contract Management',
-                                            'row_team' => 'Right Of Way',
-                                            'pcr_team' => 'Prog. Completion Report',
-                                            'pao_team' => 'Programming'
-                                        ];
-                                        echo $roleNames[$user->role] ?? $user->role;
-                                    @endphp
-                                </span>
-                            </td>
-                            <td>
-                                <span class="status-pill js-status-pill {{ $user->is_active ? '' : 'inactive' }}">
-                                    {{ $user->is_active ? 'Active' : 'Deactivated' }}
-                                </span>
-                            </td>
-                            <td style="color:#a1a1aa; font-size: 12px;">{{ $user->created_at->format('M d, Y') }}</td>
-                            <td>
-                                <div class="table-actions">
-                                    <form action="{{ route('admin.users.status', $user) }}" method="POST" class="inline-form status-form js-status-form">
-                                        @csrf
-                                        @method('PATCH')
-                                        <select name="is_active" class="status-select js-status-select"
-                                            data-current-value="{{ $user->is_active ? '1' : '0' }}" {{ $isCurrentUser ? 'disabled' : '' }}>
-                                            <option value="1" {{ $user->is_active ? 'selected' : '' }}>Activate</option>
-                                            <option value="0" {{ ! $user->is_active ? 'selected' : '' }}>Deactivate</option>
-                                        </select>
-                                    </form>
-
-                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-form"
-                                        onsubmit="return confirm('Are you sure you want to delete this account?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn-danger" {{ $isCurrentUser ? 'disabled' : '' }}>Delete</button>
-                                    </form>
-                                </div>
-
-                                @if($isCurrentUser)
-                                    <div class="muted-note" style="margin-top: 6px;">Current account</div>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    <div class="content-wrapper">
+        <div class="header-section">
+            <h1 class="header-title">User Management</h1>
+            <p class="header-desc">Manage agency staff, team roles, and system access permissions.</p>
         </div>
 
-        <div class="ui-card">
-            <h3 class="section-title">Register New User</h3>
+        @if(session('success'))
+            <div class="alert-box alert-success">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                {{ session('success') }}
+            </div>
+        @endif
 
-            <form action="{{ route('admin.users.store') }}" method="POST">
-                @csrf
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" name="name" class="form-input" required placeholder="John Doe">
+        @if(session('error'))
+            <div class="alert-box alert-error">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div id="account-feedback" class="ajax-feedback"></div>
+
+        <div class="dashboard-grid">
+            <div class="ui-card">
+                <div class="section-header">
+                    <h3 class="section-title">Team Directory</h3>
+                    <span class="role-badge">{{ count($users) }} Users Total</span>
                 </div>
+                
+                <div class="table-container">
+                    <table class="sleek-table">
+                        <thead>
+                            <tr>
+                                <th>User Details</th>
+                                <th>Role / Team</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($users as $user)
+                                @php $isCurrentUser = auth()->id() === $user->id; @endphp
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 600; color: var(--primary);">{{ $user->name }}</div>
+                                        <div style="font-size: 12px; color: var(--text-muted);">{{ $user->email }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="role-badge {{ $user->role == 'admin' ? 'admin' : '' }}">
+                                            @php
+                                                $roleNames = [
+                                                    'admin' => 'Administrator',
+                                                    'fs_team' => 'Feasibility Study',
+                                                    'rpwsis_team' => 'RP-WSIS',
+                                                    'cm_team' => 'Contract Management',
+                                                    'row_team' => 'Right Of Way',
+                                                    'pcr_team' => 'Completion Report',
+                                                    'pao_team' => 'Programming'
+                                                ];
+                                                echo $roleNames[$user->role] ?? $user->role;
+                                            @endphp
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-pill js-status-pill {{ $user->is_active ? '' : 'inactive' }}">
+                                            {{ $user->is_active ? 'Active' : 'Deactivated' }}
+                                        </span>
+                                    </td>
+                                    <td style="color: var(--text-muted); font-size: 12px;">
+                                        {{ $user->created_at->format('M d, Y') }}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                                            <form action="{{ route('admin.users.status', $user) }}" method="POST" class="js-status-form" style="margin:0;">
+                                                @csrf
+                                                @method('PATCH')
+                                                <select name="is_active" class="status-select js-status-select" 
+                                                    data-current-value="{{ $user->is_active ? '1' : '0' }}" 
+                                                    {{ $isCurrentUser ? 'disabled' : '' }}>
+                                                    <option value="1" {{ $user->is_active ? 'selected' : '' }}>Activate</option>
+                                                    <option value="0" {{ ! $user->is_active ? 'selected' : '' }}>Deactivate</option>
+                                                </select>
+                                            </form>
 
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-input" required placeholder="john@agency.gov">
+                                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" style="margin:0;"
+                                                onsubmit="return confirm('Permanently delete this user account?')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="btn-danger" {{ $isCurrentUser ? 'disabled' : '' }}>
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                        @if($isCurrentUser)
+                                            <div class="muted-note" style="text-align: right;">(You)</div>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label">Temporary Password</label>
-                    <input type="password" name="password" class="form-input" required placeholder="Minimum 8 characters">
-                </div>
+            <div class="ui-card">
+                <h3 class="section-title" style="margin-bottom: 24px;">Register User</h3>
+                <form action="{{ route('admin.users.store') }}" method="POST">
+                    @csrf
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-input" required placeholder="John Doe">
+                    </div>
 
-                <div class="form-group" style="margin-top: 20px;">
-                    <label class="form-label" style="color: #18181b;">Assign Team Role</label>
-                    <select name="role" class="form-input" required style="cursor: pointer;">
-                        <option value="" disabled selected>Select a role...</option>
-                        <option value="admin">Admin (Full Access)</option>
-                        <option value="fs_team">Feasibility Study Team</option>
-                        <option value="rpwsis_team">RP-WSIS Team</option>
-                        <option value="cm_team">Contract Management Team</option>
-                        <option value="row_team">Right Of Way Team</option>
-                        <option value="pcr_team">Program Completion Report Team</option>
-                        <option value="pao_team">Programming Team</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" required placeholder="name@agency.gov">
+                    </div>
 
-                <button type="submit" class="btn-dark">Create Account</button>
-            </form>
+                    <div class="form-group">
+                        <label class="form-label">Initial Password</label>
+                        <input type="password" name="password" class="form-input" required placeholder="Min. 8 characters">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Assign Team</label>
+                        <select name="role" class="form-input" required>
+                            <option value="" disabled selected>Select Team...</option>
+                            <option value="admin">Admin (Full Access)</option>
+                            <option value="fs_team">Feasibility Study Team</option>
+                            <option value="rpwsis_team">RP-WSIS Team</option>
+                            <option value="cm_team">Contract Management Team</option>
+                            <option value="row_team">Right Of Way Team</option>
+                            <option value="pcr_team">Program Completion Report Team</option>
+                            <option value="pao_team">Programming Team</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-dark">Create Account</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -399,13 +392,9 @@
             const feedback = document.getElementById('account-feedback');
 
             function showFeedback(message, type) {
-                if (!feedback) {
-                    return;
-                }
-
+                if (!feedback) return;
                 feedback.textContent = message;
                 feedback.className = `ajax-feedback ${type}`;
-
                 window.clearTimeout(showFeedback.timeoutId);
                 showFeedback.timeoutId = window.setTimeout(() => {
                     feedback.className = 'ajax-feedback';
@@ -438,12 +427,9 @@
                         const contentType = response.headers.get('content-type') || '';
                         const data = contentType.includes('application/json') ? await response.json() : {};
 
-                        if (!response.ok) {
-                            throw new Error(data.message || 'Unable to update account status.');
-                        }
+                        if (!response.ok) throw new Error(data.message || 'Unable to update account status.');
 
                         const isActive = data.is_active === true || data.is_active === 1 || data.is_active === '1';
-
                         this.value = isActive ? '1' : '0';
                         this.dataset.currentValue = this.value;
 
