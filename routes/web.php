@@ -36,7 +36,6 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
     Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
 
-<<<<<<< HEAD
     //guest
     Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
 
@@ -46,8 +45,6 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
 Route::delete('/map/delete', [MapController::class, 'deleteFile']);
 
-=======
->>>>>>> b40a2e25b44d61ca9ed7a0fa1e6a1a152813828a
     // Protected Routes (Must have agreed to terms)
     Route::middleware(['check.terms'])->group(function () {
 
