@@ -281,21 +281,27 @@
                 color: '#1b5e20',
                 weight: 2,
                 fillColor: '#43a047',
-                fillOpacity: 0.45
+                fillOpacity: 0.6
             },
             land_boundary: {
                 color: '#0d47a1',
                 weight: 3,
                 fillColor: '#64b5f6',
-                fillOpacity: 0.08,
-                opacity: 1
+                fillOpacity: 0.15
             },
             potential: {
-                color: '#ff8f00',
+                <<
+                << << < HEAD
+                color: '#fbc02d',
+                weight: 2,
+                ===
+                === =
+                color: '#ffeb3b',
                 weight: 3,
+                >>>
+                >>> > b40a2e25b44d61ca9ed7a0fa1e6a1a152813828a
                 fillColor: '#ffeb3b',
-                fillOpacity: 0.55,
-                opacity: 1
+                fillOpacity: 0.7
             }
         };
 

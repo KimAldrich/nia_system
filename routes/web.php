@@ -203,4 +203,5 @@ Route::delete('/map/delete', [MapController::class, 'deleteFile']);
         });
 
     });
-});
+})
+->middleware('check.active'); // Ensure user is active before allowing access to any routes within this group
