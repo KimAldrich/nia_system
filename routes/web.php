@@ -19,6 +19,12 @@ Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::post('/guest/authenticate', [GuestController::class, 'authenticate'])->name('guest.authenticate');
+Route::get('/guest/terms', [GuestController::class, 'terms'])->name('guest.terms');
+Route::post('/guest/accept-terms', [GuestController::class, 'acceptTerms'])->name('guest.accept');
+Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.dashboard');
+Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 // Routes that require login
 Route::middleware(['auth', 'check.active'])->group(function () {
 
@@ -30,11 +36,18 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
     Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
 
+<<<<<<< HEAD
     //guest
     Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
+
+    //Map Routes
     Route::get('/map', [MapController::class, 'Showmap'])->name('map');
+    Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
+Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
+Route::delete('/map/delete', [MapController::class, 'deleteFile']);
 
-
+=======
+>>>>>>> b40a2e25b44d61ca9ed7a0fa1e6a1a152813828a
     // Protected Routes (Must have agreed to terms)
     Route::middleware(['check.terms'])->group(function () {
 

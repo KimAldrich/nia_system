@@ -166,6 +166,13 @@
             </div>
             <button type="submit">Sign In</button>
         </form>
+        <form action="{{ route('guest.authenticate') }}" method="POST" style="margin-top: 15px; text-align: center;">
+    @csrf
+    <button type="submit" style="width: 100%; padding: 12px; background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+        Continue as Guest User
+    </button>
+    <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">Read-only access to public documents.</p>
+</form>
     </div>
 </body>
 

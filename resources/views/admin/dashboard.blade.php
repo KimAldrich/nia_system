@@ -2,12 +2,14 @@
 @section('title', 'Admin Master Dashboard')
 
 @section('content')
+    <!-- External Resources -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <style>
+        /* CSS remained exactly as provided to maintain your specific UI style */
         * { box-sizing: border-box; }
         .content { background-color: #f7f8fa; font-family: 'Poppins', sans-serif; padding: 40px; color: #111; }
         .header-title { font-size: 32px; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; }
@@ -16,13 +18,11 @@
         .ui-card.dark { background: #18181b; color: #ffffff; border: none; }
         .section-title { font-size: 18px; font-weight: 600; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; align-items: center; justify-content: center; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
         .modal-box { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Table Styles */
         .sleek-table { width: 100%; border-collapse: collapse; }
         .sleek-table th { text-align: left; padding-bottom: 15px; color: #a1a1aa; font-weight: 500; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #f4f4f5; }
         .sleek-table td { padding: 15px 0; border-bottom: 1px solid #f4f4f5; font-size: 13px; font-weight: 500; }
@@ -31,14 +31,12 @@
         .badge-light { background: #f4f4f5; color: #18181b; }
         .badge-outline { border: 1px solid #e4e4e7; color: #71717a; }
 
-        /* Calendar Pagination & Layout */
         .calendar-carousel { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 20px; }
         .nav-btn { background: #ffffff; border: 1px solid #e4e4e7; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: #18181b; box-shadow: 0 2px 5px rgba(0,0,0,0.02); flex-shrink: 0; }
         .nav-btn:hover:not(:disabled) { background: #18181b; color: #ffffff; border-color: #18181b; }
         .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .calendar-viewport { flex: 1; overflow: hidden; position: relative; min-height: 280px; }
         
-        /* Individual Month Blocks */
         .month-block { display: none; animation: slideFade 0.3s ease; }
         .month-block.active { display: block; }
         @keyframes slideFade { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
@@ -54,7 +52,6 @@
         .day-num.clickable { cursor: pointer; transition: 0.2s; }
         .day-num.clickable:hover { background: #18181b !important; color: white !important; border-color: #18181b !important; }
 
-        /* Dynamic Tags & Events */
         .mini-event { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid #f4f4f5; }
         .mini-event-date { font-size: 16px; font-weight: 700; color: #18181b; min-width: 30px; text-align: center;}
         .mini-event-title { font-size: 13px; font-weight: 600; color: #18181b; margin: 0; }
@@ -68,6 +65,7 @@
 
     <h1 class="header-title">Admin Master Dashboard</h1>
 
+    <!-- Notifications -->
     @if(session('success'))
         <div style="background: #18181b; color: #ffffff; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
             <svg style="width:18px; height:18px; color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -84,7 +82,9 @@
     @endif
 
     <div class="dashboard-grid">
+        <!-- Main Column -->
         <div class="main-column">
+            <!-- Table Card -->
             <div class="ui-card">
                 <div class="section-title">Agency Resolutions Overview</div>
                 <table class="sleek-table">
@@ -120,91 +120,78 @@
                 </table>
             </div>
 
-        <div class="ui-card">
-            <div class="section-title">Upload Downloadable File to Team</div>
+            <!-- Upload Card 1 -->
+            <div class="ui-card">
+                <div class="section-title">Upload Downloadable File to Team</div>
+                <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Select Team</label>
+                        <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+                            <option value="" disabled selected>-- Choose Team --</option>
+                            <option value="fs_team">FS Team</option>
+                            <option value="rpwsis_team">RP-WSIS Team</option>
+                            <option value="cm_team">CM Team</option>
+                            <option value="row_team">ROW Team</option>
+                            <option value="pcr_team">PCR Team</option>
+                            <option value="pao_team">PAO Team</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Upload File</label>
+                        <input type="file" name="document" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+                    </div>
+                    <button type="submit" style="width: 100%; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Upload File</button>
+                </form>
+            </div>
 
-            <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data">
-                @csrf
+            <!-- Upload Card 2 -->
+            <div class="ui-card">
+                <div class="section-title">Upload IA Resolution File to Team</div>
+                <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Select Team</label>
+                        <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+                            <option value="" disabled selected>-- Choose Team --</option>
+                            <option value="fs_team">FS Team</option>
+                            <option value="rpwsis_team">RP-WSIS Team</option>
+                            <option value="cm_team">CM Team</option>
+                            <option value="row_team">ROW Team</option>
+                            <option value="pcr_team">PCR Team</option>
+                            <option value="pao_team">PAO Team</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Upload File</label>
+                        <input type="file" name="document" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
+                    </div>
+                    <button type="submit" style="width: 100%; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Upload File</button>
+                </form>
+            </div>
 
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
-                        Select Team
-                    </label>
-                    <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
-                        <option value="" disabled selected>-- Choose Team --</option>
-                        <option value="fs_team">FS Team</option>
-                        <option value="rpwsis_team">RP-WSIS Team</option>
-                        <option value="cm_team">CM Team</option>
-                        <option value="row_team">ROW Team</option>
-                        <option value="pcr_team">PCR Team</option>
-                        <option value="pao_team">PAO Team</option>
-                    </select>
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
-                        Upload File
-                    </label>
-                    <input type="file" name="document" required
-                        style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
-                </div>
-
-                <button type="submit"
-                        style="width: 100%; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
-                    Upload File
-                </button>
-            </form>
-        </div>
-
-<div class="ui-card">
-    <div class="section-title">Upload IA Resoltion File to Team</div>
-
-    <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
-                Select Team
-            </label>
-            <select name="team" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
-                <option value="" disabled selected>-- Choose Team --</option>
-                <option value="fs_team">FS Team</option>
-                <option value="rpwsis_team">RP-WSIS Team</option>
-                <option value="cm_team">CM Team</option>
-                <option value="row_team">ROW Team</option>
-                <option value="pcr_team">PCR Team</option>
-                <option value="pao_team">PAO Team</option>
-            </select>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">
-                Upload File
-            </label>
-            <input type="file" name="document" required
-                   style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
-        </div>
-
-        <button type="submit"
-                style="width: 100%; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
-            Upload File
-        </button>
-    </form>
-</div>
-
+            <!-- Analytics Card -->
             <div class="ui-card">
                 <div class="section-title">Analytics</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div><p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity</p><div class="chart-wrapper"><canvas id="barChart"></canvas></div></div>
-                    <div><p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate</p><div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div></div>
+                    <div>
+                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity</p>
+                        <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
+                    </div>
+                    <div>
+                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate</p>
+                        <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- Side Column -->
         <div class="side-column">
             <div class="ui-card">
                 <div class="section-title" style="margin-bottom: 15px;">Event Manager</div>
 
+                <!-- Legend -->
                 <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #f4f4f5;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <p style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin: 0;">Event Legend</p>
@@ -219,6 +206,7 @@
                     </div>
                 </div>
 
+                <!-- Calendar Section -->
                 <div class="calendar-carousel">
                     <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
@@ -247,24 +235,19 @@
                                 <div class="calendar-header">
                                     <h4>{{ $monthDate->format('F Y') }}</h4>
                                 </div>
-                                
                                 <div class="calendar-grid">
                                     <div class="day-name">Sun</div><div class="day-name">Mon</div><div class="day-name">Tue</div><div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div><div class="day-name">Sat</div>
-                                    
                                     @for($i = 0; $i < $firstDayOfWeek; $i++)
                                         <div class="day-num empty"></div>
                                     @endfor
-
                                     @for($day = 1; $day <= $daysInMonth; $day++)
                                         @php
                                             $dayEvents = $eventsForMonth->get($day);
                                             $hasEvent = $dayEvents ? true : false;
                                             $isToday = ($day == $today->day && $m == $today->month && $currentYear == $today->year);
                                             $dateString = $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT);
-                                            
                                             $ringColor = ($hasEvent && $dayEvents->first()->category) ? $dayEvents->first()->category->color : '#18181b';
                                         @endphp
-                                        
                                         <div class="day-num clickable {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}" 
                                              style="{{ $hasEvent ? 'border-color: ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}"
                                              onclick="openEventModal('{{ $dateString }}')" title="Click to add event">
@@ -281,9 +264,9 @@
                     </button>
                 </div>
 
+                <!-- Upcoming Section -->
                 <div style="margin-top: 10px;">
                     <p style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">Upcoming Schedule</p>
-                    
                     @if(isset($events) && $events->count() > 0)
                         @foreach($events->where('event_date', '>=', \Carbon\Carbon::today())->take(5) as $event)
                             <div class="mini-event">
@@ -299,7 +282,6 @@
                                         @endif
                                     </div>
                                 </div>
-                                
                                 <form action="{{ route('admin.events.destroy', $event->id ?? 0) }}" method="POST" style="margin: 0;">
                                     @csrf @method('DELETE')
                                     <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 18px; padding: 0 5px;" title="Delete Event">×</button>
@@ -314,6 +296,7 @@
         </div>
     </div>
 
+    <!-- Modal: Add Event -->
     <div class="modal-overlay" id="eventModal">
         <div class="modal-box">
             <h3 style="margin-top: 0; font-size: 18px; color: #18181b;">Schedule Event</h3>
@@ -321,33 +304,28 @@
             
             <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm">
                 @csrf
-                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Event Date</label>
                     <input type="text" name="event_date" id="eventDateInput" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white; cursor: pointer;">
                 </div>
-                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Event Title</label>
                     <input type="text" name="title" required placeholder="e.g. System Maintenance" style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none;">
                 </div>
-
                 <input type="hidden" name="event_time" id="finalTimeInput">
-
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div>
                         <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Start Time</label>
-                        <input type="text" id="startTime" required placeholder="Select time" style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white; cursor: pointer;">
+                        <input type="text" id="startTime" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">End Time</label>
-                        <input type="text" id="endTime" required placeholder="Select time" style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white; cursor: pointer;">
+                        <input type="text" id="endTime" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white;">
                     </div>
                 </div>
-
                 <div style="margin-bottom: 25px;">
                     <label style="display: block; font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 5px; text-transform: uppercase;">Category Tag</label>
-                    <select name="event_category_id" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white; cursor: pointer;">
+                    <select name="event_category_id" required style="width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white;">
                         @forelse($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                         @empty
@@ -355,7 +333,6 @@
                         @endforelse
                     </select>
                 </div>
-
                 <div style="display: flex; gap: 10px;">
                     <button type="button" onclick="closeEventModal()" style="flex: 1; padding: 10px; background: white; border: 1px solid #d4d4d8; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; color: #18181b;">Cancel</button>
                     <button type="submit" style="flex: 1; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif;">Save Event</button>
@@ -364,10 +341,10 @@
         </div>
     </div>
 
+    <!-- Modal: Manage Tags -->
     <div class="modal-overlay" id="categoryModal">
         <div class="modal-box">
             <h3 style="margin-top: 0; font-size: 18px; color: #18181b;">Manage Event Tags</h3>
-            
             <div style="margin-bottom: 20px; max-height: 150px; overflow-y: auto;">
                 @if($categories->count() > 0)
                     @foreach($categories as $cat)
@@ -383,12 +360,11 @@
                     <p style="font-size: 12px; color: #a1a1aa; text-align: center;">No custom tags created yet.</p>
                 @endif
             </div>
-
             <form action="{{ route('admin.categories.store') }}" method="POST">
                 @csrf
                 <p style="font-size: 12px; font-weight: 600; margin-bottom: 10px;">Add New Tag</p>
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <select name="color" required style="width: 130px; padding: 8px 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none; background: white; cursor: pointer;">
+                    <select name="color" required style="width: 130px; padding: 8px 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; background: white;">
                         <option value="#3b82f6">🔵 Blue</option>
                         <option value="#eab308">🟡 Yellow</option>
                         <option value="#ef4444">🔴 Red</option>
@@ -396,38 +372,33 @@
                         <option value="#8b5cf6">🟣 Violet</option>
                         <option value="#f97316">🟠 Orange</option>
                     </select>
-                    <input type="text" name="name" required placeholder="Tag Name" style="flex: 1; padding: 8px 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif; outline: none;">
+                    <input type="text" name="name" required placeholder="Tag Name" style="flex: 1; padding: 8px 10px; border: 1px solid #e4e4e7; border-radius: 6px; font-family: 'Poppins', sans-serif;">
                 </div>
-
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" onclick="document.getElementById('categoryModal').classList.remove('active')" style="flex: 1; padding: 10px; background: white; border: 1px solid #d4d4d8; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; color: #18181b;">Close</button>
-                    <button type="submit" style="flex: 1; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif;">Save Tag</button>
+                    <button type="button" onclick="document.getElementById('categoryModal').classList.remove('active')" style="flex: 1; padding: 10px; background: white; border: 1px solid #d4d4d8; border-radius: 6px; cursor: pointer; font-weight: 600; color: #18181b;">Close</button>
+                    <button type="submit" style="flex: 1; padding: 10px; background: #18181b; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Tag</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Logic Scripts Unchanged -->
     <script>
-        // Start the calendar on the exact current real-world month (1-12)
         let activeMonth = {{ \Carbon\Carbon::now()->month }};
 
-        // Initialize the view immediately when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             updateCalendarView();
             
-            // Dummy Charts
             Chart.defaults.font.family = "'Poppins', sans-serif";
             const ctxBar = document.getElementById('barChart').getContext('2d');
             new Chart(ctxBar, { type: 'bar', data: { labels: ['W1', 'W2', 'W3', 'W4'], datasets: [{ data: [12, 19, 15, 22], backgroundColor: '#18181b', borderRadius: 6 }] }, options: { plugins: { legend: { display: false } } } });
             const ctxPie = document.getElementById('doughnutChart').getContext('2d');
             new Chart(ctxPie, { type: 'doughnut', data: { labels: ['Done', 'Pending'], datasets: [{ data: [70, 30], backgroundColor: ['#18181b', '#e4e4e7'], borderWidth: 0 }] }, options: { cutout: '75%', plugins: { legend: { position: 'bottom' } } } });
 
-            // 1. Activate the Visual Pickers
             flatpickr("#eventDateInput", { dateFormat: "Y-m-d" });
             flatpickr("#startTime", { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "09:00" });
             flatpickr("#endTime", { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "10:30" });
 
-            // 2. Automatically merge the times when the user clicks "Save"
             document.getElementById('eventForm').addEventListener('submit', function(e) {
                 let start = document.getElementById('startTime').value;
                 let end = document.getElementById('endTime').value;
@@ -435,7 +406,6 @@
             });
         });
 
-        // The button click function
         function changeMonth(direction) {
             activeMonth += direction;
             if (activeMonth < 1) activeMonth = 1;
@@ -443,23 +413,16 @@
             updateCalendarView();
         }
 
-        // Hides everything and only shows the active month
         function updateCalendarView() {
             document.querySelectorAll('.month-block').forEach(block => {
                 block.classList.remove('active');
             });
-            
             const currentBlock = document.getElementById('month-' + activeMonth);
-            if(currentBlock) {
-                currentBlock.classList.add('active');
-            }
-
-            // Disable the Left button if we are on January, disable Right if on December
+            if(currentBlock) { currentBlock.classList.add('active'); }
             document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
             document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
         }
 
-        // Modal Controls
         function openEventModal(dateStr) {
             document.getElementById('eventDateInput').value = dateStr;
             document.getElementById('displayDate').innerText = dateStr;
