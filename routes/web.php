@@ -37,13 +37,13 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
 
     //guest
-    Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
+    // Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
 
     //Map Routes
     Route::get('/map', [MapController::class, 'Showmap'])->name('map');
     Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
-Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
-Route::delete('/map/delete', [MapController::class, 'deleteFile']);
+    Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
+    Route::delete('/map/delete', [MapController::class, 'deleteFile']);
 
     // Protected Routes (Must have agreed to terms)
     Route::middleware(['check.terms'])->group(function () {
@@ -204,4 +204,4 @@ Route::delete('/map/delete', [MapController::class, 'deleteFile']);
 
     });
 })
-->middleware('check.active'); // Ensure user is active before allowing access to any routes within this group
+    ->middleware('check.active'); // Ensure user is active before allowing access to any routes within this group
