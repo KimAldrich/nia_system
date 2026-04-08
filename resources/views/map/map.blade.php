@@ -14,7 +14,15 @@
     width: 100%;
     height: 100%;
 }
+.municipality-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
 
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+}
 /* MAP */
 #map {
     width: 100%;
@@ -319,8 +327,8 @@ input:checked + .slider:before {
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@6.2.0/dist/shp.min.js" crossorigin="anonymous"></script>
 <script>
-const overlayGroups = @json($overlayGroups);
-const appBaseUrl = @json(rtrim(request()->getBaseUrl(), '/'));
+const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
+const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 
 function buildAppUrl(path) {
     if (!path) {
@@ -365,13 +373,13 @@ const overlayStyles = {
         color: '#1b5e20',
         weight: 2,
         fillColor: '#43a047',
-        fillOpacity: 0.6
+        fillOpacity: 0.9
     },
     land_boundary: {
         color: '#0d47a1',
         weight: 3,
         fillColor: '#64b5f6',
-        fillOpacity: 0.15
+        fillOpacity: 1
     },
     potential: {
         color: '#fbc02d',
@@ -429,12 +437,12 @@ function setSelectedBaseLayer(layer) {
     }
 
     selectedBaseLayer = layer;
-    selectedBaseLayer.setStyle({
-        color: '#ffd400',
-        weight: 2,
-        fillColor: '#ff5a36',
-        fillOpacity: 0.8
-    });
+    // selectedBaseLayer.setStyle({
+    //     color: '#ffd400',
+    //     weight: 2,
+    //     fillColor: '#ff5a36',
+    //     fillOpacity: 0.8
+    // });
 }
 
 async function loadBaseMap() {
@@ -456,7 +464,22 @@ async function loadBaseMap() {
                 showMiniMap(feature);
             });
 
-            layer.bindPopup('<b>' + name + '</b>');
+            const bounds = layer.getBounds();
+
+// get size of polygon
+const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
+
+
+if (size < 5000) return;
+
+const center = bounds.getCenter();
+
+L.marker(center, {
+    icon: L.divIcon({
+        className: 'municipality-label',
+        html: name
+    })
+}).addTo(map);
         }
     }).addTo(map);
 
@@ -542,11 +565,11 @@ function styleOverlayFeature(categoryKey, feature) {
 
     if (categoryKey === 'land_boundary') {
         return {
-            color: baseStyle.color,
-            weight: baseStyle.weight,
+            // color: baseStyle.color,
+            // weight: baseStyle.weight,
             opacity: 1,
-            fillColor: baseStyle.fillColor,
-            fillOpacity: geometryType.includes('Polygon') ? 0.04 : 0
+            // fillColor: baseStyle.fillColor,
+            // fillOpacity: geometryType.includes('Polygon') ? 0.04 : 0
         };
     }
 
@@ -576,30 +599,30 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
     layer.on('click', function(e) {
 
         // 🔥 highlight selected overlay
-        layer.setStyle({
-            color: '#ff0000',
-            weight: 3,
-            fillColor: '#ff5722',
-            fillOpacity: 0.9
-        });
+        // layer.setStyle({
+        //     color: '#ff0000',
+        //     weight: 3,
+        //     fillColor: '#ff5722',
+        //     fillOpacity: 0.9
+        // });
 
         // reset others
-        Object.values(overlayLayers).forEach(group => {
-            group.eachLayer(l => {
-                if (l !== layer) {
-                    l.setStyle(styleOverlayFeature(categoryKey, l.feature));
-                }
-            });
-        });
-// 🔥 bring overlays to front
-Object.values(overlayLayers).forEach(group => {
-    group.eachLayer(layer => layer.bringToFront());
-});
+//         Object.values(overlayLayers).forEach(group => {
+//             group.eachLayer(l => {
+//                 if (l !== layer) {
+//                     l.setStyle(styleOverlayFeature(categoryKey, l.feature));
+//                 }
+//             });
+//         });
+// // 🔥 bring overlays to front
+// Object.values(overlayLayers).forEach(group => {
+//     group.eachLayer(layer => layer.bringToFront());
+// });
 
-// 🔥 keep Pangasinan layer BELOW (but visible)
-if (geoLayer) {
-    geoLayer.eachLayer(layer => layer.bringToBack());
-}
+// // 🔥 keep Pangasinan layer BELOW (but visible)
+// if (geoLayer) {
+//     geoLayer.eachLayer(layer => layer.bringToBack());
+// }
         // 🔥 zoom to clicked overlay
         map.fitBounds(layer.getBounds());
 
@@ -899,8 +922,8 @@ form.addEventListener('submit', async function (e) {
 });
 const overlayPriority = {
     irrigated: 3,       // highest
-    land_boundary: 2,   // middle
-    potential: 1        // lowest
+    land_boundary: 1,   // middle
+    potential: 2        // lowest
 };
 
 </script>
