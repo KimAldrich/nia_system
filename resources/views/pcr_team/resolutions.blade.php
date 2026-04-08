@@ -314,7 +314,7 @@
     <h1 class="header-title">IA Resolutions</h1>
     <p class="header-desc">Manage and upload resolutions for the regional office and field offices.</p>
 
-    @if(session('success'))
+    @if (session('success'))
         <div
             style="background: #18181b; color: #ffffff; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
             <svg style="width:18px; height:18px; color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,7 +327,7 @@
 
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab(event, 'available-resolutions')">Available Resolutions</button>
-        @if(auth()->check() && in_array(auth()->user()->role, ['pcr_team', 'admin']))
+        @if (auth()->check() && in_array(auth()->user()->role, ['pcr_team', 'admin']))
             <button class="tab-btn" onclick="switchTab(event, 'upload-resolution')">Upload a Resolution</button>
         @endif
     </div>
@@ -348,15 +348,16 @@
                             style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
                             title="Click to view or download document"></a>
 
-                        @if(strtolower($extension) === 'pdf')
-                            <iframe src="{{ asset('storage/' . $resolution->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
+                        @if (strtolower($extension) === 'pdf')
+                            <iframe
+                                src="{{ asset('storage/' . $resolution->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
                                 width="100%" height="100%" scrolling="no"
                                 style="border: none; transform: scale(0.95); transform-origin: top center; pointer-events: none; overflow: hidden;">
                             </iframe>
                         @else
                             <div
                                 style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                @if(in_array(strtolower($extension), ['xls', 'xlsx']))
+                                @if (in_array(strtolower($extension), ['xls', 'xlsx']))
                                     <div style="font-size: 32px; margin-bottom: 5px;">📊</div><span
                                         style="font-size: 12px; font-weight: 600; color: #18181b;">Excel Sheet</span>
                                 @elseif(in_array(strtolower($extension), ['doc', 'docx']))
@@ -384,7 +385,7 @@
                     <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank" class="btn-dark"
                         style="margin-bottom: 15px;">Download</a>
 
-                    @if(auth()->check() && in_array(auth()->user()->role, ['pcr_team', 'admin']))
+                    @if (auth()->check() && in_array(auth()->user()->role, ['pcr_team', 'admin']))
                         <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
                         <form action="{{ route('pcr.resolutions.update', $resolution->id) }}" method="POST"
                             enctype="multipart/form-data">
@@ -444,13 +445,17 @@
 
     <script>
         function switchTab(event, tabId) {
-            document.querySelectorAll('.tab-pane').forEach(function (pane) { pane.classList.remove('active'); });
-            document.querySelectorAll('.tab-btn').forEach(function (btn) { btn.classList.remove('active'); });
+            document.querySelectorAll('.tab-pane').forEach(function(pane) {
+                pane.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
@@ -460,7 +465,7 @@
             dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
             dropzone.addEventListener('drop', () => dropzone.classList.remove('dragover'));
 
-            fileInput.addEventListener('change', function () {
+            fileInput.addEventListener('change', function() {
                 if (this.files && this.files.length > 0) {
                     const file = this.files[0];
                     let ext = file.name.split('.').pop().substring(0, 3).toUpperCase();
