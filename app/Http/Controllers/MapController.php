@@ -10,9 +10,9 @@ class MapController extends Controller
     public function Showmap()
     {
         $overlayGroups = [
-            'irrigated' => $this->buildOverlayGroup('Irrigated Area', 'irrigated'),
-            'land_boundary' => $this->buildOverlayGroup('Land Boundary', 'land_boundary'),
-            'potential' => $this->buildOverlayGroup('Potential Area', 'potential'),
+            'Irrigated Area' => $this->buildOverlayGroup('Irrigated Area', 'Irrigated Area'),
+            'Pangasinan Land Boundary' => $this->buildOverlayGroup('Pangasinan Land Boundary', 'Pangasinan Land Boundary'),
+            'Potential Irrigable Area' => $this->buildOverlayGroup('Potential Irrigable Area', 'Potential Irrigable Area'),
         ];
 
         return view('map.map', compact('overlayGroups'));
@@ -53,7 +53,7 @@ class MapController extends Controller
     {
         try {
             $request->validate([
-                'category' => 'required|in:irrigated,land_boundary,potential',
+                'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
                 'files' => 'required',
                 'files.*' => 'file|max:51200'
             ]);
@@ -113,7 +113,7 @@ class MapController extends Controller
 
   public function fileManager()
 {
-    $categories = ['irrigated', 'land_boundary', 'potential'];
+    $categories = ['Irrigated Area', 'Pangasinan Land Boundary', 'Potential Irrigable Area'];
     $filesData = [];
 
     foreach ($categories as $category) {

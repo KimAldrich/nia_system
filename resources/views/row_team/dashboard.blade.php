@@ -14,7 +14,8 @@
             background-color: #f7f8fa;
             font-family: 'Poppins', sans-serif;
             padding: 40px;
-            color: #111;
+            color: #0c4d05;
+            /* ✅ */
         }
 
         .header-title {
@@ -40,7 +41,8 @@
         }
 
         .ui-card.dark {
-            background: #18181b;
+            background: #0c4d05;
+            /* ✅ */
             color: #ffffff;
             border: none;
         }
@@ -54,7 +56,6 @@
             align-items: center;
         }
 
-        /* Dark Summary Card */
         .status-hero {
             display: flex;
             justify-content: space-between;
@@ -79,7 +80,6 @@
             opacity: 0.8;
         }
 
-        /* Sleek Table with Actions */
         .sleek-table {
             width: 100%;
             border-collapse: collapse;
@@ -120,13 +120,15 @@
         }
 
         .badge-dark {
-            background: #18181b;
+            background: #0c4d05;
+            /* ✅ */
             color: #fff;
         }
 
         .badge-light {
-            background: #f4f4f5;
-            color: #18181b;
+            background: #fda611;
+            /* ✅ */
+            color: #ffffff;
         }
 
         .badge-outline {
@@ -134,7 +136,6 @@
             color: #71717a;
         }
 
-        /* Custom Status Dropdown */
         .status-select {
             padding: 6px 10px;
             border-radius: 8px;
@@ -153,7 +154,6 @@
             border-color: #18181b;
         }
 
-        /* Dynamic Visual Calendar */
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -170,31 +170,32 @@
         }
 
         .calendar-carousel {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-.nav-btn {
-    background: #fff;
-    border: 1px solid #e4e4e7;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-}
+        .nav-btn {
+            background: #fff;
+            border: 1px solid #0c4d05;
+            /* ✅ */
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+        }
 
-.calendar-viewport {
-    flex: 1;
-}
+        .calendar-viewport {
+            flex: 1;
+        }
 
-.month-block {
-    display: none;
-}
+        .month-block {
+            display: none;
+        }
 
-.month-block.active {
-    display: block;
-}
+        .month-block.active {
+            display: block;
+        }
 
         .cal-nav {
             display: flex;
@@ -203,7 +204,8 @@
 
         .cal-nav button {
             background: none;
-            border: 1px solid #e4e4e7;
+            border: 1px solid #0c4d05;
+            /* ✅ */
             border-radius: 50%;
             width: 28px;
             height: 28px;
@@ -257,12 +259,11 @@
             border: 2px solid #18181b;
         }
 
-        /* The black circle */
         .day-num.today {
-            background: #f4f4f5;
+            background: #4fc94d;
+            /* ✅ */
         }
 
-        /* Mini Event List Below Calendar */
         .mini-event {
             display: flex;
             align-items: center;
@@ -299,20 +300,20 @@
         }
 
         .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #71717a;
-    text-transform: uppercase;
-}
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #71717a;
+            text-transform: uppercase;
+        }
 
-.legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
     </style>
 
     <h1 class="header-title">Right Of Way Team Dashboard</h1>
@@ -342,7 +343,7 @@
                             <th>Document Name</th>
                             <th>Status</th>
 
-                            @if(auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
+                            @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
                                 <th style="text-align: right;">Action</th>
                             @endif
                         </tr>
@@ -356,7 +357,7 @@
                                         style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
                                 </td>
                                 <td>
-                                    @if($res->status == 'validated')
+                                    @if ($res->status == 'validated')
                                         <span class="status-badge badge-dark">Validated</span>
                                     @elseif($res->status == 'on-going')
                                         <span class="status-badge badge-light">On-Going</span>
@@ -365,16 +366,20 @@
                                     @endif
                                 </td>
 
-                                @if(auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
+                                @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
                                     <td style="text-align: right;">
-                                        <form action="{{ route('row.resolutions.update_status', $res->id) }}" method="POST">
+                                        <form action="{{ route('row.resolutions.update_status', $res->id) }}"
+                                            method="POST">
                                             @csrf
                                             <select name="status" class="status-select" onchange="this.form.submit()">
-                                                <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>
+                                                <option value="not-validated"
+                                                    {{ $res->status == 'not-validated' ? 'selected' : '' }}>
                                                     Not-Validated</option>
-                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>On-Going
+                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
+                                                    On-Going
                                                 </option>
-                                                <option value="validated" {{ $res->status == 'validated' ? 'selected' : '' }}>
+                                                <option value="validated"
+                                                    {{ $res->status == 'validated' ? 'selected' : '' }}>
                                                     Validated</option>
                                             </select>
                                         </form>
@@ -383,7 +388,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin'])) ? '3' : '2' }}"
+                                <td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']) ? '3' : '2' }}"
                                     style="text-align:center; color:#a1a1aa; padding: 30px 0;">
                                     No projects uploaded yet.
                                 </td>
@@ -418,106 +423,114 @@
                 <div class="section-title" style="margin-bottom: 15px;">New Events</div>
 
                 <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f4f4f5;">
-    <p style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
-        Event Legend
-    </p>
+                    <p
+                        style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
+                        Event Legend
+                    </p>
 
-    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-        @forelse($categories as $cat)
-            <div class="legend-item">
-                <div class="legend-dot" style="background: {{ $cat->color }};"></div>
-                {{ $cat->name }}
-            </div>
-        @empty
-            <p style="font-size: 11px; color: #a1a1aa;">No tags available.</p>
-        @endforelse
-    </div>
-</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        @forelse($categories as $cat)
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: {{ $cat->color }};"></div>
+                                {{ $cat->name }}
+                            </div>
+                        @empty
+                            <p style="font-size: 11px; color: #a1a1aa;">No tags available.</p>
+                        @endforelse
+                    </div>
+                </div>
 
                 @php
                     $today = \Carbon\Carbon::now();
                     $daysInMonth = $today->daysInMonth;
                     $firstDayOfWeek = $today->copy()->startOfMonth()->dayOfWeek;
 
-                    $eventDays = isset($events) ? $events->map(function ($e) {
-                        return $e->event_date->format('j');
-                    })->toArray() : [];
+                    $eventDays = isset($events)
+                        ? $events
+                            ->map(function ($e) {
+                                return $e->event_date->format('j');
+                            })
+                            ->toArray()
+                        : [];
                 @endphp
 
                 <div class="calendar-carousel">
-    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
-        &lt;
-    </button>
+                    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
+                        &lt;
+                    </button>
 
-    <div class="calendar-viewport">
-        @php
-            $currentYear = \Carbon\Carbon::now()->year;
-            $today = \Carbon\Carbon::now();
-        @endphp
-
-        @for($m = 1; $m <= 12; $m++)
-            @php
-                $monthDate = \Carbon\Carbon::createFromDate($currentYear, $m, 1);
-                $daysInMonth = $monthDate->daysInMonth;
-                $firstDayOfWeek = $monthDate->dayOfWeek;
-
-                $eventsForMonth = $events->filter(function($e) use ($currentYear, $m) {
-                    return $e->event_date->year == $currentYear && $e->event_date->month == $m;
-                })->groupBy(function($e) {
-                    return $e->event_date->format('j');
-                });
-            @endphp
-
-            <div class="month-block" id="month-{{ $m }}">
-                <div class="calendar-header">
-                    <h4>{{ $monthDate->format('F Y') }}</h4>
-                </div>
-
-                <div class="calendar-grid">
-                    <div class="day-name">Sun</div>
-                    <div class="day-name">Mon</div>
-                    <div class="day-name">Tue</div>
-                    <div class="day-name">Wed</div>
-                    <div class="day-name">Thu</div>
-                    <div class="day-name">Fri</div>
-                    <div class="day-name">Sat</div>
-
-                    @for($i = 0; $i < $firstDayOfWeek; $i++)
-                        <div class="day-num empty"></div>
-                    @endfor
-
-                    @for($day = 1; $day <= $daysInMonth; $day++)
+                    <div class="calendar-viewport">
                         @php
-                            $dayEvents = $eventsForMonth->get($day);
-                            $hasEvent = $dayEvents ? true : false;
-                            $isToday = ($day == $today->day && $m == $today->month);
-                            $ringColor = ($hasEvent && $dayEvents->first()->category)
-                                ? $dayEvents->first()->category->color
-                                : '#18181b';
+                            $currentYear = \Carbon\Carbon::now()->year;
+                            $today = \Carbon\Carbon::now();
                         @endphp
 
-                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
-                             style="{{ $hasEvent ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
-                            {{ $day }}
-                        </div>
-                    @endfor
-                </div>
-            </div>
-        @endfor
-    </div>
+                        @for ($m = 1; $m <= 12; $m++)
+                            @php
+                                $monthDate = \Carbon\Carbon::createFromDate($currentYear, $m, 1);
+                                $daysInMonth = $monthDate->daysInMonth;
+                                $firstDayOfWeek = $monthDate->dayOfWeek;
 
-    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
-        &gt;
-    </button>
-</div>
+                                $eventsForMonth = $events
+                                    ->filter(function ($e) use ($currentYear, $m) {
+                                        return $e->event_date->year == $currentYear && $e->event_date->month == $m;
+                                    })
+                                    ->groupBy(function ($e) {
+                                        return $e->event_date->format('j');
+                                    });
+                            @endphp
+
+                            <div class="month-block" id="month-{{ $m }}">
+                                <div class="calendar-header">
+                                    <h4>{{ $monthDate->format('F Y') }}</h4>
+                                </div>
+
+                                <div class="calendar-grid">
+                                    <div class="day-name">Sun</div>
+                                    <div class="day-name">Mon</div>
+                                    <div class="day-name">Tue</div>
+                                    <div class="day-name">Wed</div>
+                                    <div class="day-name">Thu</div>
+                                    <div class="day-name">Fri</div>
+                                    <div class="day-name">Sat</div>
+
+                                    @for ($i = 0; $i < $firstDayOfWeek; $i++)
+                                        <div class="day-num empty"></div>
+                                    @endfor
+
+                                    @for ($day = 1; $day <= $daysInMonth; $day++)
+                                        @php
+                                            $dayEvents = $eventsForMonth->get($day);
+                                            $hasEvent = $dayEvents ? true : false;
+                                            $isToday = $day == $today->day && $m == $today->month;
+                                            $ringColor =
+                                                $hasEvent && $dayEvents->first()->category
+                                                    ? $dayEvents->first()->category->color
+                                                    : '#18181b';
+                                        @endphp
+
+                                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
+                                            style="{{ $hasEvent ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
+                                            {{ $day }}
+                                        </div>
+                                    @endfor
+                                </div>
+                            </div>
+                        @endfor
+                    </div>
+
+                    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
+                        &gt;
+                    </button>
+                </div>
 
                 <div style="margin-top: 10px;">
                     <p
                         style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
                         Upcoming Schedule</p>
 
-                    @if(isset($events) && $events->count() > 0)
-                        @foreach($events as $event)
+                    @if (isset($events) && $events->count() > 0)
+                        @foreach ($events as $event)
                             <div class="mini-event">
                                 <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
                                 <div>
@@ -527,7 +540,8 @@
                             </div>
                         @endforeach
                     @else
-                        <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming events.
+                        <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming
+                            events.
                         </p>
                     @endif
                 </div>
@@ -537,7 +551,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
             Chart.defaults.color = '#a1a1aa';
 
@@ -546,9 +560,42 @@
                 type: 'bar',
                 data: {
                     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    datasets: [{ label: 'Uploads', data: [5, 12, 8, 15], backgroundColor: '#18181b', borderRadius: 6, barPercentage: 0.5 }]
+                    datasets: [{
+                        label: 'Uploads',
+                        data: [5, 12, 8, 15],
+                        backgroundColor: '#0c4d05',
+                        borderRadius: 6,
+                        barPercentage: 0.5
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f4f4f5' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f4f4f5'
+                            },
+                            border: {
+                                display: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
+                    }
+                }
             });
 
             const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
@@ -556,35 +603,55 @@
                 type: 'doughnut',
                 data: {
                     labels: ['Validated', 'On-Going', 'Pending'],
-                    datasets: [{ data: [45, 30, 25], backgroundColor: ['#18181b', '#d4d4d8', '#ffffff'], borderColor: '#e4e4e7', borderWidth: 2, hoverOffset: 4 }]
+                    datasets: [{
+                        data: [45, 30, 25],
+                        backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'],
+                        borderColor: '#e4e4e7',
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, padding: 20 } } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    }
+                }
             });
         });
 
         let activeMonth = new Date().getMonth() + 1;
 
-document.addEventListener('DOMContentLoaded', function () {
-    updateCalendarView();
-});
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCalendarView();
+        });
 
-function changeMonth(direction) {
-    activeMonth += direction;
-    if (activeMonth < 1) activeMonth = 1;
-    if (activeMonth > 12) activeMonth = 12;
-    updateCalendarView();
-}
+        function changeMonth(direction) {
+            activeMonth += direction;
+            if (activeMonth < 1) activeMonth = 1;
+            if (activeMonth > 12) activeMonth = 12;
+            updateCalendarView();
+        }
 
-function updateCalendarView() {
-    document.querySelectorAll('.month-block').forEach(block => {
-        block.classList.remove('active');
-    });
+        function updateCalendarView() {
+            document.querySelectorAll('.month-block').forEach(block => {
+                block.classList.remove('active');
+            });
 
-    const current = document.getElementById('month-' + activeMonth);
-    if (current) current.classList.add('active');
+            const current = document.getElementById('month-' + activeMonth);
+            if (current) current.classList.add('active');
 
-    document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
-    document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
-}
+            document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
+            document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
+        }
     </script>
 @endsection

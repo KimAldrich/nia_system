@@ -21,7 +21,7 @@
             background-color: #f7f8fa;
             font-family: 'Poppins', sans-serif;
             padding: 40px;
-            color: #111;
+            color: #0c4d05;
         }
 
         .header-title {
@@ -61,12 +61,12 @@
         }
 
         .tab-btn:hover {
-            color: #18181b;
+            color: #0c4d05;
         }
 
         .tab-btn.active {
-            color: #18181b;
-            border-bottom: 2px solid #18181b;
+            color: #0c4d05;
+            border-bottom: 2px solid #0c4d05;
         }
 
         .tab-pane {
@@ -109,7 +109,7 @@
 
         /* Modern Buttons & Forms */
         .btn-dark {
-            background: #18181b;
+            background: #126e08;
             color: white;
             padding: 8px 16px;
             border-radius: 6px;
@@ -126,13 +126,13 @@
         }
 
         .btn-dark:hover {
-            background: #3f3f46;
+            background: #0c4d05;
         }
 
         .btn-outline {
             background: #ffffff;
-            color: #18181b;
-            border: 1px solid #d4d4d8;
+            color: #0c4d05;
+            border: 1px solid #0c4d05;
             padding: 6px 12px;
             border-radius: 6px;
             font-size: 11px;
@@ -143,8 +143,8 @@
         }
 
         .btn-outline:hover {
-            border-color: #18181b;
-            background: #f4f4f5;
+            border-color: #0c4d05;
+            background: #ecfdf5;
         }
 
         .file-input-wrapper {
@@ -158,10 +158,10 @@
             width: 100%;
             font-size: 11px;
             padding: 5px 8px;
-            border: 1px dashed #d4d4d8;
+            border: 1px dashed #0c4d05;
             border-radius: 6px;
-            background: #fafafa;
-            color: #71717a;
+            background: #f0fdf4;
+            color: #0c4d05;
             font-family: 'Poppins', sans-serif;
             cursor: pointer;
         }
@@ -192,7 +192,7 @@
 
         .uploader-left:hover,
         .uploader-left.dragover {
-            background: #fafafa;
+            background: #f0fdf4;
         }
 
         .file-input-hidden {
@@ -212,11 +212,11 @@
             width: 48px;
             height: 48px;
             margin-bottom: 15px;
-            color: #18181b;
+            color: #0c4d05;
         }
 
         .upload-title {
-            color: #18181b;
+            color: #0c4d05;
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 4px;
@@ -230,7 +230,7 @@
         }
 
         .browse-btn {
-            background: #18181b;
+            background: #126e08;
             color: white;
             padding: 8px 24px;
             border-radius: 6px;
@@ -275,11 +275,11 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            border: 2px solid #18181b;
+            border: 2px solid #0c4d05;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #18181b;
+            color: #0c4d05;
             font-size: 10px;
             font-weight: bold;
             margin-right: 12px;
@@ -291,7 +291,7 @@
 
         .file-name {
             font-size: 13px;
-            color: #18181b;
+            color: #0c4d05;
             font-weight: 600;
             margin: 0 0 2px 0;
         }
@@ -304,7 +304,7 @@
         }
 
         .file-status {
-            color: #18181b;
+            color: #0c4d05;
             font-weight: bold;
             font-size: 14px;
             margin-left: 12px;

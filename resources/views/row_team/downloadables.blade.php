@@ -16,7 +16,7 @@
             background-color: #f7f8fa;
             font-family: 'Poppins', sans-serif;
             padding: 40px;
-            color: #111;
+            color: #0c4d05;
         }
 
         .header-title {
@@ -30,7 +30,7 @@
             background-color: #f7f8fa;
             font-family: 'Poppins', sans-serif;
             padding: 40px;
-            color: #111;
+            color: #0c4d05;
         }
 
         .header-title {
@@ -70,12 +70,12 @@
         }
 
         .tab-btn:hover {
-            color: #18181b;
+            color: #0c4d05;
         }
 
         .tab-btn.active {
-            color: #18181b;
-            border-bottom: 2px solid #18181b;
+            color: #0c4d05;
+            border-bottom: 2px solid #0c4d05;
         }
 
         .tab-pane {
@@ -104,8 +104,8 @@
             background: #ffffff;
             border-radius: 12px;
             padding: 18px;
-            border: 1px solid #e4e4e7;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border: 1px solid #0c4d05;
+            box-shadow: 0 2px 8px rgba(25, 161, 20, 0.02);
             display: flex;
             flex-direction: column;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -118,7 +118,7 @@
 
         /* Modern Buttons & Forms */
         .btn-dark {
-            background: #18181b;
+            background: #126e08;
             color: white;
             padding: 8px 16px;
             border-radius: 6px;
@@ -135,13 +135,13 @@
         }
 
         .btn-dark:hover {
-            background: #3f3f46;
+            background: #0c4d05;
         }
 
         .btn-outline {
             background: #ffffff;
-            color: #18181b;
-            border: 1px solid #d4d4d8;
+            color: #0c4d05;
+            border: 1px solid #0c4d05;
             padding: 6px 12px;
             border-radius: 6px;
             font-size: 11px;
@@ -152,8 +152,8 @@
         }
 
         .btn-outline:hover {
-            border-color: #18181b;
-            background: #f4f4f5;
+            border-color: #0c4d05;
+            background: #ecfdf5;
         }
 
         .file-input-wrapper {
@@ -167,10 +167,10 @@
             width: 100%;
             font-size: 11px;
             padding: 5px 8px;
-            border: 1px dashed #d4d4d8;
+            border: 1px dashed #0c4d05;
             border-radius: 6px;
-            background: #fafafa;
-            color: #71717a;
+            background: #f0fdf4;
+            color: #0c4d05;
             font-family: 'Poppins', sans-serif;
             cursor: pointer;
         }
@@ -201,7 +201,7 @@
 
         .uploader-left:hover,
         .uploader-left.dragover {
-            background: #fafafa;
+            background: #f0fdf4;
         }
 
         .file-input-hidden {
@@ -221,11 +221,11 @@
             width: 48px;
             height: 48px;
             margin-bottom: 15px;
-            color: #18181b;
+            color: #0c4d05;
         }
 
         .upload-title {
-            color: #18181b;
+            color: #0c4d05;
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 4px;
@@ -239,7 +239,7 @@
         }
 
         .browse-btn {
-            background: #18181b;
+            background: #126e08;
             color: white;
             padding: 8px 24px;
             border-radius: 6px;
@@ -284,11 +284,11 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            border: 2px solid #18181b;
+            border: 2px solid #0c4d05;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #18181b;
+            color: #0c4d05;
             font-size: 10px;
             font-weight: bold;
             margin-right: 12px;
@@ -300,7 +300,7 @@
 
         .file-name {
             font-size: 13px;
-            color: #18181b;
+            color: #0c4d05;
             font-weight: 600;
             margin: 0 0 2px 0;
         }
@@ -313,7 +313,7 @@
         }
 
         .file-status {
-            color: #18181b;
+            color: #0c4d05;
             font-weight: bold;
             font-size: 14px;
             margin-left: 12px;
@@ -323,7 +323,7 @@
     <h1 class="header-title">Downloadable Forms</h1>
     <p class="header-desc">Access and manage official documents for the regional office and field offices.</p>
 
-    @if(session('success'))
+    @if (session('success'))
         <div
             style="background: #18181b; color: #ffffff; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
             <svg style="width:18px; height:18px; color:#4ade80;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,7 +337,7 @@
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab(event, 'available-forms')">Available Forms</button>
 
-        @if(auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
+        @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
             <button class="tab-btn" onclick="switchTab(event, 'upload-form')">Upload a Form</button>
         @endif
     </div>
@@ -358,7 +358,7 @@
                             style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
                             title="Click to view or download document"></a>
 
-                        @if(strtolower($extension) === 'pdf')
+                        @if (strtolower($extension) === 'pdf')
                             <iframe src="{{ asset('storage/' . $file->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
                                 width="100%" height="100%" scrolling="no"
                                 style="border: none; transform: scale(0.95); transform-origin: top center; pointer-events: none; overflow: hidden;">
@@ -366,7 +366,7 @@
                         @else
                             <div
                                 style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                @if(in_array(strtolower($extension), ['xls', 'xlsx']))
+                                @if (in_array(strtolower($extension), ['xls', 'xlsx']))
                                     <div style="font-size: 32px; margin-bottom: 5px;">📊</div><span
                                         style="font-size: 12px; font-weight: 600; color: #18181b;">Excel Sheet</span>
                                 @elseif(in_array(strtolower($extension), ['doc', 'docx']))
@@ -395,8 +395,9 @@
                         <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
                             style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
 
-                        @if(auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
-                            <form action="{{ route('row.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;">
+                        @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
+                            <form action="{{ route('row.downloadables.delete', $file->id) }}" method="POST"
+                                style="margin: 0;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -450,13 +451,17 @@
 
     <script>
         function switchTab(event, tabId) {
-            document.querySelectorAll('.tab-pane').forEach(function (pane) { pane.classList.remove('active'); });
-            document.querySelectorAll('.tab-btn').forEach(function (btn) { btn.classList.remove('active'); });
+            document.querySelectorAll('.tab-pane').forEach(function(pane) {
+                pane.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
@@ -466,7 +471,7 @@
             dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
             dropzone.addEventListener('drop', () => dropzone.classList.remove('dragover'));
 
-            fileInput.addEventListener('change', function () {
+            fileInput.addEventListener('change', function() {
                 if (this.files && this.files.length > 0) {
                     const file = this.files[0];
                     let ext = file.name.split('.').pop().substring(0, 3).toUpperCase();
