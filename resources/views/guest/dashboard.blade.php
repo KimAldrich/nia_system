@@ -1,306 +1,270 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NIA Guest Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+@extends('layouts.app')
+@section('title', 'Master Dashboard')
+
+@section('content')
+
     <style>
-        :root {
-            --bg-color: #f9fafb;
-            --card-bg: #ffffff;
-            --text-main: #111827;
-            --text-muted: #6b7280;
-            --primary: #15803d; /* Clean NIA Green */
-            --border: #e5e7eb;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Clean White Header */
-        .guest-header {
-            background-color: var(--card-bg);
-            padding: 16px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .guest-header h1 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-main);
-        }
-
-        .logout-btn {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 13px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .logout-btn:hover {
-            background: #fee2e2;
-            color: #ef4444;
-            border-color: #fca5a5;
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        /* Clean Pill Navigation */
-        .guest-nav {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 30px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            padding-bottom: 5px;
-        }
-
-        .guest-nav::-webkit-scrollbar {
-            display: none;
-        }
-
-        .nav-tab {
-            padding: 8px 16px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: var(--text-muted);
-            font-weight: 500;
-            font-size: 14px;
-            border-radius: 20px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s ease;
-        }
-
-        .nav-tab:hover {
-            color: var(--text-main);
-            background: #f3f4f6;
-        }
-
-        .nav-tab.active {
-            background: var(--text-main);
-            color: #ffffff;
-        }
-
-        /* Content Panels */
-        .team-panel {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .team-panel.active {
-            display: block;
-        }
-
-        .panel-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: var(--text-main);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Minimalist File Grid */
-        .file-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
-        .file-card {
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 20px;
-            background: var(--card-bg);
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .file-card:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            transform: translateY(-2px);
-        }
-
-        .file-icon {
-            font-size: 28px;
-            background: #f3f4f6;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-
-        .file-info {
-            flex: 1;
-            min-width: 0; /* Enables text truncation */
-        }
-
-        .file-info h4 {
-            margin: 0 0 4px 0;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-info p {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px 20px;
-            border: 1px dashed var(--border);
-            border-radius: 10px;
-            color: var(--text-muted);
-            background: var(--card-bg);
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-
-    <header class="guest-header">
-        <h1>
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: var(--primary);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            NIA Document Portal
-        </h1>
+        /* Calendar Specific Soft-UI Styles */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header h4 { margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; }
+        .calendar-carousel { display: flex; align-items: center; gap: 10px; }
         
-        <form action="{{ route('guest.logout') }}" method="POST" style="margin: 0;">
-            @csrf
-            <button type="submit" class="logout-btn">Log out</button>
-        </form>
-    </header>
+        .nav-btn { background: #f8fafc; border: none; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; color: #64748b; font-weight: bold; font-size: 14px; transition: 0.2s;}
+        .nav-btn:hover { background: #e2e8f0; color: #1e293b; }
+        
+        .calendar-viewport { flex: 1; }
+        .month-block { display: none; }
+        .month-block.active { display: block; }
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; row-gap: 15px; margin-bottom: 15px; }
+        .day-name { font-size: 11px; font-weight: 600; color: #a0aec0; margin-bottom: 5px; text-transform: uppercase; }
+        .day-num { font-size: 13px; font-weight: 500; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border-radius: 50%; color: #475569; transition: 0.2s;}
+        .day-num.empty { visibility: hidden; }
+        
+        .day-num.today { background: #4f46e5 !important; color: #ffffff !important; font-weight: 700; border: none !important; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
 
-    <div class="container">
-        @php
-            $teams = [
-                'fs' => ['role' => 'fs_team', 'title' => 'Feasibility Study'],
-                'rpwsis' => ['role' => 'rpwsis_team', 'title' => 'RP-WSIS'],
-                'cm' => ['role' => 'cm_team', 'title' => 'Contract Management'],
-                'row' => ['role' => 'row_team', 'title' => 'Right Of Way'],
-                'pcr' => ['role' => 'pcr_team', 'title' => 'Program Completion'],
-                'pao' => ['role' => 'pao_team', 'title' => 'Programming']
-            ];
-        @endphp
+        .mini-event { display: flex; align-items: center; gap: 15px; padding: 12px 0; border-top: 1px solid #f1f5f9; }
+        .mini-event-date { font-size: 16px; font-weight: 700; color: #4f46e5; min-width: 30px; text-align: center; background: #e0e7ff; padding: 5px; border-radius: 8px;}
+        .mini-event-title { font-size: 13px; font-weight: 600; color: #1e293b; margin: 0; }
+        .mini-event-time { font-size: 11px; color: #a0aec0; margin: 0; }
+        
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    </style>
 
-        <div class="guest-nav">
-            <button class="nav-tab active" onclick="switchTab('all', this)">All Documents</button>
-            @foreach($teams as $id => $data)
-                <button class="nav-tab" onclick="switchTab('{{ $id }}', this)">{{ $data['title'] }}</button>
-            @endforeach
-        </div>
+    @php
+        $totalResolutions = $resolutions->count();
+        $validatedResolutions = $resolutions->where('status', 'validated')->count();
+        $pendingResolutions = $resolutions->whereIn('status', ['on-going', 'not-validated'])->count();
+        $totalDownloads = $downloadables->count();
+    @endphp
 
-        <div id="panel-all" class="team-panel active">
-            <h3 class="panel-title">All Available Documents</h3>
-            
-            <div class="file-grid">
-                @forelse($downloadables as $file)
-                    @php $extension = pathinfo($file->file_path, PATHINFO_EXTENSION); @endphp
-                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="file-card">
-                        <div class="file-icon">
-                            @if(in_array(strtolower($extension), ['pdf'])) 📕 
-                            @elseif(in_array(strtolower($extension), ['xls', 'xlsx'])) 📊 
-                            @elseif(in_array(strtolower($extension), ['doc', 'docx'])) 📝 
-                            @else 📁 @endif
-                        </div>
-                        <div class="file-info">
-                            <h4>{{ $file->title }}</h4>
-                            <p>{{ $file->original_name }}</p>
-                        </div>
-                    </a>
-                @empty
-                    <div class="empty-state">No documents are currently available.</div>
-                @endforelse
+    <h2 class="page-title">{{ $pageTitle ?? 'Master Dashboard' }}</h2>
+
+    <div class="kpi-grid">
+        
+        <div class="kpi-card">
+            <div class="kpi-title">Total Validated</div>
+            <div class="kpi-value">{{ $validatedResolutions }}</div>
+            <div class="kpi-icon green">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="kpi-trend">
+                <span class="trend-up">+ Active</span>
+                <span class="trend-text">Resolutions</span>
             </div>
         </div>
 
-        @foreach($teams as $id => $data)
-            <div id="panel-{{ $id }}" class="team-panel">
-                <h3 class="panel-title">{{ $data['title'] }} Documents</h3>
-                
-                <div class="file-grid">
-                    @php $teamFiles = $downloadables->where('team', $data['role']); @endphp
-                    
-                    @forelse($teamFiles as $file)
-                        @php $extension = pathinfo($file->file_path, PATHINFO_EXTENSION); @endphp
-                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="file-card">
-                            <div class="file-icon">
-                                @if(in_array(strtolower($extension), ['pdf'])) 📕 
-                                @elseif(in_array(strtolower($extension), ['xls', 'xlsx'])) 📊 
-                                @elseif(in_array(strtolower($extension), ['doc', 'docx'])) 📝 
-                                @else 📁 @endif
-                            </div>
-                            <div class="file-info">
-                                <h4>{{ $file->title }}</h4>
-                                <p>{{ $file->original_name }}</p>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="empty-state">No documents have been uploaded by {{ $data['title'] }} yet.</div>
-                    @endforelse
+        <div class="kpi-card">
+            <div class="kpi-title">Pending Action</div>
+            <div class="kpi-value">{{ $pendingResolutions }}</div>
+            <div class="kpi-icon orange">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="kpi-trend">
+                <span class="trend-down">Attention</span>
+                <span class="trend-text">Needed</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-title">Total Forms</div>
+            <div class="kpi-value">{{ $totalDownloads }}</div>
+            <div class="kpi-icon blue">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            </div>
+            <div class="kpi-trend">
+                <span class="trend-text">Available to download</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-title">Upcoming Events</div>
+            <div class="kpi-value">{{ isset($events) ? $events->count() : '0' }}</div>
+            <div class="kpi-icon purple">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+            <div class="kpi-trend">
+                <span class="trend-text">Scheduled this month</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="dashboard-main-grid">
+        
+        <div class="main-column">
+            <div class="card">
+                <div class="section-title">
+                    <span>Recent Resolutions Overview</span>
                 </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document Name</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($resolutions->take(5) as $res)
+                            <tr>
+                                <td>
+                                    <a href="{{ asset('storage/' . $res->file_path) }}" target="_blank" style="color: #1e293b; font-weight: 600; text-decoration: none;">
+                                        {{ $res->title }}
+                                    </a><br>
+                                    <span style="font-size: 11px; color: #94a3b8;">{{ $res->created_at->format('M d, Y') }} | Team: {{ strtoupper(str_replace('_', ' ', $res->team)) }}</span>
+                                </td>
+                                <td>
+                                    @if ($res->status == 'validated')
+                                        <span class="badge badge-completed">Validated</span>
+                                    @elseif($res->status == 'on-going')
+                                        <span class="badge badge-progress">On-Going</span>
+                                    @else
+                                        <span class="badge badge-pending">Not-Validated</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="2" style="text-align:center; color:#94a3b8; padding: 30px 0;">No recent resolutions.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        @endforeach
+        </div>
+
+        <div class="side-column">
+            <div class="card">
+                <div class="section-title" style="margin-bottom: 15px;">
+                    <span>Calendar</span>
+                    <svg width="20" height="20" fill="none" stroke="#a0aec0" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+                </div>
+                
+                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        @forelse($categories ?? [] as $cat)
+                            <div class="legend-item">
+                                <div class="legend-dot" style="background: {{ $cat->color }};"></div>
+                                {{ $cat->name }}
+                            </div>
+                        @empty
+                            <p style="font-size: 11px; color: #a0aec0;">No tags available.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                @php
+                    $today = \Carbon\Carbon::now();
+                    $eventDays = isset($events) ? $events->map(function ($e) { return $e->event_date->format('j'); })->toArray() : [];
+                @endphp
+
+                <div class="calendar-carousel">
+                    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">&lt;</button>
+
+                    <div class="calendar-viewport">
+                        @php
+                            $currentYear = \Carbon\Carbon::now()->year;
+                        @endphp
+
+                        @for ($m = 1; $m <= 12; $m++)
+                            @php
+                                $monthDate = \Carbon\Carbon::createFromDate($currentYear, $m, 1);
+                                $daysInMonth = $monthDate->daysInMonth;
+                                $firstDayOfWeek = $monthDate->dayOfWeek;
+
+                                $eventsForMonth = collect($events ?? [])->filter(function ($e) use ($currentYear, $m) {
+                                    return $e->event_date->year == $currentYear && $e->event_date->month == $m;
+                                })->groupBy(function ($e) {
+                                    return $e->event_date->format('j');
+                                });
+                            @endphp
+
+                            <div class="month-block" id="month-{{ $m }}">
+                                <div class="calendar-header">
+                                    <h4>{{ $monthDate->format('F Y') }}</h4>
+                                </div>
+
+                                <div class="calendar-grid">
+                                    <div class="day-name">Sun</div><div class="day-name">Mon</div><div class="day-name">Tue</div>
+                                    <div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div><div class="day-name">Sat</div>
+
+                                    @for ($i = 0; $i < $firstDayOfWeek; $i++)
+                                        <div class="day-num empty"></div>
+                                    @endfor
+
+                                    @for ($day = 1; $day <= $daysInMonth; $day++)
+                                        @php
+                                            $dayEvents = $eventsForMonth->get($day);
+                                            $hasEvent = $dayEvents ? true : false;
+                                            $isToday = $day == $today->day && $m == $today->month;
+                                            
+                                            // Dynamic Category Color
+                                            $ringColor = $hasEvent && $dayEvents->first()->category ? $dayEvents->first()->category->color : '#18181b';
+                                        @endphp
+
+                                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
+                                             style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . '; font-weight: 700;' : '' }}">
+                                            {{ $day }}
+                                        </div>
+                                    @endfor
+                                </div>
+                            </div>
+                        @endfor
+                    </div>
+
+                    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">&gt;</button>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">
+                        Upcoming Schedule
+                    </p>
+
+                    @if (isset($events) && $events->count() > 0)
+                        @foreach ($events as $event)
+                            <div class="mini-event">
+                                <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
+                                <div>
+                                    <h4 class="mini-event-title">{{ $event->title }}</h4>
+                                    <p class="mini-event-time">{{ $event->event_time }}</p>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
+                    @endif
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
     <script>
-        function switchTab(teamId, clickedButton) {
-            document.querySelectorAll('.team-panel').forEach(panel => panel.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
-            
-            const activePanel = document.getElementById('panel-' + teamId);
-            if(activePanel) activePanel.classList.add('active');
-            
-            clickedButton.classList.add('active');
+        let activeMonth = new Date().getMonth() + 1;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCalendarView();
+        });
+
+        function changeMonth(direction) {
+            activeMonth += direction;
+            if (activeMonth < 1) activeMonth = 1;
+            if (activeMonth > 12) activeMonth = 12;
+            updateCalendarView();
+        }
+
+        function updateCalendarView() {
+            document.querySelectorAll('.month-block').forEach(block => {
+                block.classList.remove('active');
+            });
+
+            const current = document.getElementById('month-' + activeMonth);
+            if (current) current.classList.add('active');
+
+            document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
+            document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
         }
     </script>
-</body>
-</html>
+@endsection

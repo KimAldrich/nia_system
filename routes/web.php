@@ -25,6 +25,10 @@ Route::get('/guest/terms', [GuestController::class, 'terms'])->name('guest.terms
 Route::post('/guest/accept-terms', [GuestController::class, 'acceptTerms'])->name('guest.accept');
 Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.dashboard');
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
+
+
+Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
+Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'teamResolutions'])->name('guest.team.resolutions');
 // Routes that require login
 Route::middleware(['auth', 'check.active'])->group(function () {
 
