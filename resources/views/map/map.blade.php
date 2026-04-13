@@ -8,65 +8,26 @@
 
 
 <style>
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-}
-
+/* MAP CONTAINER */
 #map-container {
     position: relative;
     width: 100%;
-    height: 100vh; /* Use 100vh to fill the entire screen height */
-    overflow: hidden; /* This prevents the "scroll to the right" issue */
-    display: flex;
-    flex-direction: column;
+    height: 100%;
 }
-
 .municipality-label {
     font-size: 13px;
     font-weight: 600;
-    color: #222;
-
+    color: #ffffff;
+    border-color: black;
     padding: 2px 6px;
     border-radius: 4px;
     pointer-events: none;
 }
-
 /* MAP */
 #map {
-    flex-grow: 1;
     width: 100%;
     height: 100%;
 }
-
-.province-label {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #ffffff;
-    font-weight: 900;
-    text-shadow: 2px 2px 4px #000;
-    font-size: 28px; /* Larger than municipality labels */
-    pointer-events: none;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-.municipality-label-base {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #ffffff;
-    font-weight: 600;
-    text-shadow: 1px 1px 3px #000;
-    font-size: 10px; /* Small and clean */
-    pointer-events: none;
-    text-transform: uppercase;
-}
-
 /* TOGGLE BUTTON */
 #toggleBtn {
     position: absolute;
@@ -114,7 +75,7 @@ html, body {
     top: 20px;
     left: 20px;
     z-index: 1000;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0);
     backdrop-filter: blur(6px);
     padding: 8px 12px;
     border-radius: 20px;
@@ -124,80 +85,41 @@ html, body {
     font-size: 13px;
 }
 
-/* LAYER CONTROLS CONTAINER */
 #layer-controls {
     position: absolute;
     top: 70px;
     left: 20px;
     z-index: 1000;
-    padding: 15px;
+
+    padding: 12px 14px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    min-width: 220px;
-    border: 1px solid rgba(0,0,0,0.1);
-}
-
-/* INDIVIDUAL ITEM WRAPPERS */
-#layer-controls {
-    position: absolute;
-    top: 75px;
-    left: 20px;
-    z-index: 1000;
-    width: auto;
-    min-width: 160px;
-    padding: 8px 10px;
-
-    /* 2. Make it transparent */
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(8px);
-
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 3px 15px rgba(0,0,0,0.18);
+    min-width: 200px;
 }
 
 .layer-check {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 6px;
-    margin-bottom: 4px;
-    border-radius: 6px;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
     cursor: pointer;
-}
 
+    padding: 6px 10px;
+    border-radius: 8px;
+
+    width: 100%;              /* allow full width */
+    box-sizing: border-box;   /* prevent overflow */
+}
+#admin-sidebar {
+    position: fixed; /* 🔥 CHANGE FROM absolute */
+}
 .layer-check:last-child {
     margin-bottom: 0;
 }
 
-.legend-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
 .layer-check input {
-    margin-right: 10px;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
     accent-color: #0b5e2c;
-}
-
-.layer-check span {
-    font-size: 11px;
-    font-weight: 500;
-    color: #1a1a1a;
-    white-space: nowrap;
-}
-
-.layer-check input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    margin: 0;
 }
 
 #map-status {
@@ -279,10 +201,10 @@ input:checked + .slider:before {
 
 #miniMap {
     position: absolute;
-    bottom: 100px;
+    bottom: 80px;
     left: 20px;
-    width: 250px;
-    height: 180px;
+    width: 200px;
+    height: 150px;
     z-index: 1000;
     border-radius: 10px;
     overflow: hidden;
@@ -316,7 +238,231 @@ input:checked + .slider:before {
     color: white;
 }
 
-/* Sidebar Container */
+.loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 3px solid white;
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.leaflet-interactive {
+    filter: drop-shadow(3px 4px 4px rgba(0,0,0,0.5));
+    transition: all 0.2s ease;
+}
+
+/* when hovered = raised */
+.leaflet-interactive:hover {
+    transform: translateY(-3px) scale(1.02);
+}
+
+/* INFO PANEL */
+.info-panel {
+    position: absolute;
+    top: 0;
+    right: -400px;
+    width: 220px;
+    color: white;
+    text-shadow:
+        -1px -1px 0 black,
+         1px -1px 0 black,
+        -1px  1px 0 black,
+         1px  1px 0 black;
+    height: 100%;
+    background: #ffffff00;
+    box-shadow: -4px 0 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    transition: right 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-panel.active {
+    right: 0;
+}
+
+.info-header {
+    padding: 15px;
+    background: #2e7d32;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.info-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.data-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 6px;
+}
+/* CHART */
+.chart-small {
+    width: 200px !important;
+    height: 200px !important;
+    margin: 0 auto 10px auto;
+    display: block;
+    color: #cccccc00;
+}
+#infoContent {
+    padding: 25px;
+    text-align: center;
+}
+#legendContainer {
+    margin-top: 5px; /* reduce gap */
+    text-align: left;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px; /* tighter spacing */
+    font-size: 13px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    margin-right: 6px; /* closer text */
+}
+/* DATA TABLE */
+.data-table {
+    margin-top: 10px;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+    border: 1px solid #ccc;
+}
+
+/* HEADER */
+.data-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    background: #455a64;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+}
+
+/* ROWS */
+.data-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    padding: 8px;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+}
+
+/* ALTERNATE ROW COLOR */
+.data-row:nth-child(even) {
+    background: #f1f1f1;
+}
+
+/* TEXT STYLE */
+.data-row div,
+.data-header div {
+    padding: 2px 5px;
+}
+/* FLOATING PANEL */
+.detail-panel {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+
+    width: 350px;
+    max-height: 400px;
+
+    background: rgba(50, 60, 70, 0.95);
+    color: #fff;
+
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.25s;
+    z-index: 3000;
+
+    display: flex;
+    flex-direction: column;
+}
+
+/* SHOW */
+.detail-panel.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+}
+
+/* HEADER */
+.detail-header {
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-header button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+/* CONTENT */
+.detail-content {
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
+/* TABLE STYLE */
+.detail-table {
+    width: 100%;
+}
+
+.detail-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    margin-bottom: 6px;
+}
+
+.detail-header-row {
+    font-weight: bold;
+    border-bottom: 1px solid #aaa;
+    margin-bottom: 6px;
+}
+#admin-sidebar:not(.sidebar-closed) ~ #admin-toggle-btn {
+    opacity: 0;
+    pointer-events: none;
+}
 #admin-sidebar {
     position: absolute;
     top: 0;
@@ -332,25 +478,19 @@ input:checked + .slider:before {
     flex-direction: column;
     border-left: 1px solid rgba(0,0,0,0.05);
 }
-
-.sidebar-closed {
-    transform: translateX(115%); /* Hide it completely including shadows */
+.sidebar-content {
+    padding: 25px 20px;
+    overflow-y: auto;
 }
-
-/* Header Refinement */
 .sidebar-header {
     background: #181818;
     color: white;
     padding: 24px 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-
-/* Sidebar Content Layout */
-.sidebar-content {
-    padding: 25px 20px;
-    overflow-y: auto;
+.sidebar-closed {
+    transform: translateX(115%); /* Hide it completely including shadows */
 }
-
 .panel-header {
     display: flex;
     justify-content: space-between;
@@ -487,74 +627,73 @@ select[name="category"]:focus {
     transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(0,0,0,0.4);
 }
-
-/* Hide the floating button when the sidebar is open (optional) */
-#admin-sidebar:not(.sidebar-closed) ~ #admin-toggle-btn {
-    opacity: 0;
-    pointer-events: none;
+.layer-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    color: black; /* keep text normal */
 }
 
+/* remove default checkbox */
+.layer-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    color: white;
+    text-shadow:
+        -1px -1px 0 black,
+         1px -1px 0 black,
+        -1px  1px 0 black,
+         1px  1px 0 black;
+}
 
-
-.loader {
-    display: inline-block;
+/* remove default checkbox */
+.layer-check input {
+    appearance: none;
     width: 16px;
     height: 16px;
-    border: 3px solid white;
-    border-top: 3px solid transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-right: 8px;
+    border-radius: 3px;
+    border: 2px solid transparent;
+    position: relative;
+    cursor: pointer;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+/* ✔ check icon */
+.layer-check input:checked::after {
+    content: "✔";
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    font-size: 12px;
+    color: white;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+/* 🎨 ALWAYS COLORED (even unchecked) */
+#toggleIrrigated { background-color: #81c784; }
+#toggleIrrigated:checked { background-color: #2e7d32; }
 
-.leaflet-interactive {
-    filter: drop-shadow(3px 4px 4px rgba(0,0,0,0.5));
-    transition: all 0.2s ease;
-}
+#toggleLandBoundary { background-color: #64b5f6; }
+#toggleLandBoundary:checked { background-color: #1565c0; }
 
-/* when hovered = raised */
-.leaflet-interactive:hover {
-    transform: translateY(-3px) scale(1.02);
+#togglePotential { background-color: #fff176; }
+#togglePotential:checked { background-color: #fbc02d; }
+.province-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgb(255, 255, 255);
+    font-weight: 900;
+    text-shadow: 2px 2px 6px #000;
+    font-size: 32px;
+    letter-spacing: 3px;
 }
 </style>
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<form id="uploadForm" enctype="multipart/form-data">
-<meta name="csrf-token" content="{{ csrf_token() }}">
-
-<div id="uploadStatus" class="upload-status" style="display:none;"></div>
-
-<form id="uploadForm">
-    @csrf
-
-    <select name="category" required>
-        <option value="">Select Category</option>
-        <option value="irrigated">Irrigated Area</option>
-        <option value="land_boundary">Land Boundary</option>
-        <option value="potential">Potential Area</option>
-    </select>
-
-    <label>Upload Files:</label>
-    <input type="file" id="fileInput" multiple>
-
-
-    <label>Upload Folder:</label>
-    <input type="file" id="folderInput" webkitdirectory directory multiple>
-
-
-    <button type="submit">Upload</button>
-</form>
-<meta name="csrf-token" content="{{ csrf_token() }}">
-
-<a href="map/files">files</a>
 
 <div id="map-container">
 <div id="infoPanel" class="info-panel">
@@ -570,7 +709,7 @@ select[name="category"]:focus {
 
         <!-- DATA -->
             <div id="extraData"></div>
-          <button class="view-btn" onclick="openDetail()" style="">View Full Details</button>
+          <!-- <button class="view-btn" onclick="openDetail()" style="">View Full Details</button> -->
     </div>
 
 
@@ -595,43 +734,29 @@ select[name="category"]:focus {
     <span>🛰 Satellite</span>
 </div>
 
-<div id="map-status" style="padding: 5px; font-size: 12px; font-weight: bold;"></div>
-
     <div id="layer-controls">
-    <!-- Irrigated Area -->
-    <label class="layer-check">
-        <div class="legend-indicator" style="background-color: #1b5e20;"></div>
-        <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['Irrigated Area']['files']) ? 'disabled' : '' }}>
-        <span>Irrigated Area</span>
-    </label>
-
-    <!-- Land Boundary -->
-    <label class="layer-check">
-        <div class="legend-indicator" style="background-color: #0d47a1;"></div>
-        <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['Pangasinan Land Boundary']['files']) ? 'disabled' : '' }}>
-        <span>Land Boundary</span>
-    </label>
-
-    <!-- Potential Irrigable Area -->
-    <label class="layer-check">
-        <div class="legend-indicator" style="background-color: #fbc02d;"></div>
-        <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['Potential Irrigable Area']['files']) ? 'disabled' : '' }}>
-        <span>Potential Irrigable Area</span>
-    </label>
-</div>
+        <label class="layer-check">
+            <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['files']) ? 'disabled' : '' }}>
+            <span>Irrigated Area</span>
+        </label>
+        <label class="layer-check" >
+            <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
+            <span>Land Boundary</span>
+        </label>
+        <label class="layer-check" >
+            <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
+            <span>Potential Irrigable Area</span>
+        </label>
+    </div>
 
     <!-- MAP -->
     <div id="map"></div>
 
-
+<div id="map-status">Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.</div>
 <div id="miniMap"></div>
-
-<!-- Floating Admin Trigger Button -->
 <button id="admin-toggle-btn" title="Open Admin Panel">
     <i class="fas fa-cog"></i> Upload
 </button>
-
-<!-- Side Admin Panel -->
 <div id="admin-sidebar" class="sidebar-closed">
     <div class="sidebar-header">
         <h3><i class="fas fa-tools"></i> Admin Panel</h3>
@@ -684,7 +809,6 @@ select[name="category"]:focus {
         </div>
     </div>
 </div>
-
 </div>
 
 <div id="uploadStatus" class="upload-status" style="display:none;"></div>
@@ -699,6 +823,10 @@ select[name="category"]:focus {
 <script>
 const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
+let landChart = null;
+let selectedMunicipality = null;
+let activeSliceIndex = null;
+let provinceLabelLayer = null;
 
 function buildAppUrl(path) {
     if (!path) {
@@ -730,29 +858,30 @@ let labelLayer = L.tileLayer(
     { maxZoom: 19 }
 );
 
-const statusBox = document.getElementById('map-status');
 const toggle = document.getElementById('toggleSwitch');
-
+const statusBox = document.getElementById('map-status');
 const overlayToggles = {
-    'Irrigated Area': document.getElementById('toggleIrrigated'),
-    'Pangasinan Land Boundary': document.getElementById('toggleLandBoundary'),
-    'Potential Irrigable Area': document.getElementById('togglePotential')
+    irrigated: document.getElementById('toggleIrrigated'),
+    land_boundary: document.getElementById('toggleLandBoundary'),
+    potential: document.getElementById('togglePotential')
 };
-
+// function closeDetail(){
+//     document.getElementById('detailPanel').classList.add('deactive');
+// };
 const overlayStyles = {
-    'Irrigated Area': {
+    irrigated: {
         color: '#1b5e20',
         weight: 2,
         fillColor: '#43a047',
         fillOpacity: 0.9
     },
-    'Pangasinan Land Boundary': {
-        color: '#0d47a1', // Dark blue border
-        weight: 2,
-        fillColor: '#2196f3', // Vibrant blue fill
-        fillOpacity: 0.1    // Adjusted for visibility
+    land_boundary: {
+        color: '#0d47a1',
+        weight: 3,
+        fillColor: '#64b5f6',
+        fillOpacity: 1
     },
-    'Potential Irrigable Area': {
+    potential: {
         color: '#fbc02d',
         weight: 2,
         fillColor: '#ffeb3b',
@@ -763,28 +892,17 @@ const overlayStyles = {
 let geoLayer;
 let selectedBaseLayer;
 let miniGeoLayer;
-let provinceLabelLayer = null;
-let municipalityLabels = [];
 const overlayLayers = {};
 
 toggle.addEventListener('change', () => {
-    // Get the container that holds your checkboxes
-    const layerControls = document.getElementById('layer-controls');
-
     if (toggle.checked) {
         map.removeLayer(normalLayer);
         map.addLayer(satelliteLayer);
         map.addLayer(labelLayer);
-
-        // Add the class to turn text white
-        layerControls.classList.add('satellite-active');
     } else {
         map.removeLayer(satelliteLayer);
         map.removeLayer(labelLayer);
         map.addLayer(normalLayer);
-
-        // Remove the class to go back to dark text
-        layerControls.classList.remove('satellite-active');
     }
 });
 
@@ -796,36 +914,12 @@ function updateStatus(message, isError = false) {
 function getFeatureName(feature, fallback = 'Unknown') {
     const properties = feature?.properties || {};
 
-    return properties.ADM3_EN
-        || properties.name
+    return properties.name
         || properties.Name
         || properties.MUNICIPALI
         || properties.MUNICIPAL
         || properties.title
         || fallback;
-}
-
-function getBaseStyle(feature) {
-    return {
-        color: '#ffffff',
-        weight: 1,
-        fillColor: '#9e9e9e', // ✅ visible gray
-        fillOpacity: 0.5
-    };
-}
-
-function setSelectedBaseLayer(layer) {
-    if (selectedBaseLayer && geoLayer) {
-        geoLayer.resetStyle(selectedBaseLayer);
-    }
-
-    selectedBaseLayer = layer;
-    // selectedBaseLayer.setStyle({
-    //     color: '#ffd400',
-    //     weight: 2,
-    //     fillColor: '#ff5a36',
-    //     fillOpacity: 0.8
-    // });
 }
 
 function updateProvinceLabelVisibility() {
@@ -853,6 +947,29 @@ function updateProvinceLabelVisibility() {
     }
 }
 
+function getBaseStyle(feature) {
+    return {
+        color: '#ffffff',
+        weight: 1,
+        fillColor: '#9e9e9e', // ✅ visible gray
+        fillOpacity: 0.5
+    };
+}
+
+function setSelectedBaseLayer(layer) {
+    if (selectedBaseLayer && geoLayer) {
+        geoLayer.resetStyle(selectedBaseLayer);
+    }
+
+    selectedBaseLayer = layer;
+    // selectedBaseLayer.setStyle({
+    //     color: '#ffd400',
+    //     weight: 2,
+    //     fillColor: '#ff5a36',
+    //     fillOpacity: 0.8
+    // });
+}
+
 async function loadBaseMap() {
     const response = await fetch(buildAppUrl('maps/PANGASINAN.geojson'));
 
@@ -861,39 +978,57 @@ async function loadBaseMap() {
     }
 
     const data = await response.json();
-    const labeledNames = new Set(); // To prevent duplicate labels for islands/multipolygons
 
     geoLayer = L.geoJSON(data, {
         style: getBaseStyle,
         onEachFeature: function(feature, layer) {
             const name = getFeatureName(feature);
 
-            // 1. Create Municipality Labels (Only once per unique name)
-            if (name && !labeledNames.has(name)) {
-                const bounds = layer.getBounds();
-                if (bounds.isValid()) {
-                    const center = bounds.getCenter();
-                    const labelMarker = L.marker(center, {
-                        opacity: 0,
-                        interactive: false
-                    });
+layer.on('click', function() {
+    const name = getFeatureName(feature);
+    const data = getMunicipalityData(name);
+ // or municipality
+    updateInfoPanel(name);
 
-                    labelMarker.bindTooltip(name, {
-                        permanent: true,
-                        direction: 'center',
-                        className: 'municipality-label-base',
-                        offset: [0, 0]
-                    });
+    selectedMunicipality = data; // 🔥 SAVE IT
+    setSelectedBaseLayer(layer);
+    document.getElementById('infoTitle').innerText = name;
 
-                    municipalityLabels.push(labelMarker);
-                    labeledNames.add(name);
-                }
-            }
+if (data) {
+    // 🔥 Convert your real data into chart format
+    const landData = {
+        labels: [
+            "Total Land Area (ha)",
+            "Primary Crops", // Count of crop varieties
+            "Canals",
+            "Dams",
+            "Annual Crop Area (ha)"
+        ],
+        values: [
+            data.total_land_area_ha,
+            data.primary_crops.length,
+            data.infrastructure.canals,
+            data.infrastructure.dams.length,
+            data.annual_crop_ha
+        ],
+        colors: [
+            "#2e7d32", // Dark Green
+            "#ffa726", // Orange (Crops)
+            "#42a5f5", // Blue (Canals)
+            "#8d6e63",  // Brown (Dams)
+            "#4caf50"   // Green (Annual Crop Area)
+        ]
+    };
 
-            layer.on('click', function() {
-                setSelectedBaseLayer(layer);
-                showMiniMap(feature);
-            });
+    renderChart(landData);
+    renderLegend(landData);
+    openDetail();
+} else {
+        document.getElementById('extraData').innerHTML = "No data available";
+    }
+    showMiniMap(layer.toGeoJSON());
+    openPanel();
+});
 
             const bounds = layer.getBounds();
 
@@ -911,6 +1046,8 @@ L.marker(center, {
         html: name
     })
 }).addTo(map);
+
+
         }
     }).addTo(map);
 
@@ -918,7 +1055,17 @@ L.marker(center, {
     if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [20, 20] });
     }
+const provinceName = "PANGASINAN";
 
+provinceLabelLayer = L.tooltip({
+    permanent: true,
+    direction: 'center',
+    className: 'province-label',
+    pane: 'provincePane'
+})
+.setLatLng(geoLayer.getBounds().getCenter())
+.setContent(provinceName)
+.addTo(map);
 }
 
 function normalizeGeoJson(data) {
@@ -994,12 +1141,13 @@ function styleOverlayFeature(categoryKey, feature) {
     const baseStyle = overlayStyles[categoryKey];
     const geometryType = feature?.geometry?.type || '';
 
-    if (categoryKey === 'Pangasinan Land Boundary') {
+    if (categoryKey === 'land_boundary') {
         return {
-            color: baseStyle.color,
-            weight: baseStyle.weight,
-            fillColor: baseStyle.fillColor,
-            fillOpacity: 0.3
+            // color: baseStyle.color,
+            // weight: baseStyle.weight,
+            opacity: 1,
+            // fillColor: baseStyle.fillColor,
+            // fillOpacity: geometryType.includes('Polygon') ? 0.04 : 0
         };
     }
 
@@ -1025,16 +1173,6 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
     const name = getFeatureName(feature, fileName);
 
     layer.bindPopup('<b>' + name + '</b><br>' + overlayGroups[categoryKey].label);
-
-    //If it's a Land Boundary, add the permanent floating label
-            if (categoryKey === 'Pangasinan Land Boundary') {
-                layer.bindTooltip(name, {
-                    permanent: true,
-                    direction: 'center',
-                    className: 'municipality-label'
-                }).openTooltip();
-            }
-
 
     layer.on('click', function(e) {
 
@@ -1178,7 +1316,21 @@ function hideOverlayCategory(categoryKey) {
     updateStatus((config?.label || 'Selected layer') + ' has been hidden.');
 }
 
+Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
+    if (!checkbox) return;
 
+    checkbox.addEventListener('change', async function () {
+
+        if (this.checked) {
+            await showOverlayCategory(categoryKey);
+        } else {
+            hideOverlayCategory(categoryKey);
+        }
+
+        // 🔥 THIS IS THE KEY
+        updateProvinceLabelVisibility();
+    });
+});
 
 let miniMap = L.map('miniMap', {
     attributionControl: false,
@@ -1215,7 +1367,52 @@ function showMiniMap(feature) {
     miniMap.fitBounds(miniGeoLayer.getBounds(), { padding: [10,10] });
 }
 
+    // 👉 If there are active overlays
+//     activeCategories.forEach(categoryKey => {
+//         if (overlayLayers[categoryKey]) {
 
+//             overlayLayers[categoryKey].eachLayer(layer => {
+
+//                 // Check if overlay is inside municipality
+//                 if (feature.geometry && layer.getBounds().intersects(L.geoJSON(feature).getBounds())) {
+//                     layersToShow.push(layer.toGeoJSON());
+//                 }
+
+//             });
+//         }
+//     });
+
+//     // 👉 If overlays found → show them
+//     if (layersToShow.length > 0) {
+//         miniGeoLayer = L.geoJSON(layersToShow, {
+//     style: function(feature) {
+//         const category = feature.properties._category;
+
+//         if (category && overlayStyles[category]) {
+//             return overlayStyles[category]; // ✅ SAME COLOR AS MAIN MAP
+//         }
+
+//         return {
+//             color: 'red',
+//             weight: 2,
+//             fillOpacity: 0.5
+//         };
+//     }
+// }).addTo(miniMap);
+
+//         miniMap.fitBounds(miniGeoLayer.getBounds());
+//     } else {
+//         // 👉 fallback if no overlay matched
+//         miniGeoLayer = L.geoJSON(feature, {
+//             style: {
+//                 color: 'red',
+//                 weight: 2,
+//                 fillOpacity: 0.5
+//             }
+//         }).addTo(miniMap);
+
+//         miniMap.fitBounds(miniGeoLayer.getBounds());
+//     }
 
 (async function initializeMap() {
     try {
@@ -1313,10 +1510,252 @@ form.addEventListener('submit', async function (e) {
 });
 const overlayPriority = {
     irrigated: 3,       // highest
-    land_boundary: 1,   // middle
-    potential: 2        // lowest
+    land_boundary: 1,   // lowest
+    potential: 2        // middle
+};
+//Details
+
+let municipalityData = [];
+
+// load your dataset
+fetch(buildAppUrl('maps/municipalities.json'))
+    .then(res => res.json())
+    .then(data => {
+        municipalityData = data;
+        console.log("Municipality data loaded:", municipalityData);
+    });
+
+function getMunicipalityData(name) {
+    return municipalityData.find(m =>
+        m.name.toLowerCase() === name.toLowerCase()
+    );
+}
+function openPanel() {
+    document.getElementById('infoPanel').classList.add('active');
+}
+
+function closePanel() {
+    document.getElementById('infoPanel').classList.remove('active');
+}
+function closeDetail(){
+    document.getElementById('detailPanel').classList.remove('active');
+};
+// if (data) {
+
+//     // 🔥 Convert your real data into chart format
+//     const landData = {
+//         labels: [
+//             "Land Area (ha)",
+//             "Annual Palay (MT)",
+//             "Canals",
+//             "Dams"
+//         ],
+//         values: [
+//             data.land_area_ha,
+//             data.annual_palay_mt,
+//             data.canals_count,
+//             data.dams.length
+//         ],
+//         colors: [
+//             "#2e7d32",
+//             "#66bb6a",
+//             "#42a5f5",
+//             "#8d6e63"
+//         ]
+//     };
+
+//     renderChart(landData);
+//     renderLegend(landData);
+
+// // if (data) {
+
+// //     const landData = {
+// //         labels: [
+// //             "Land Area (ha)",
+// //             "Annual Crop (ha)",
+// //             "Canals",
+// //             "Dams"
+// //         ],
+// //         values: [
+// //             data.total_land_area_ha || 0,
+// //             data.annual_crop_ha || 0,
+// //             data.infrastructure?.canals || 0,
+// //             data.infrastructure?.dams?.length || 0
+// //         ],
+// //         colors: [
+// //             "#2e7d32",
+// //             "#66bb6a",
+// //             "#42a5f5",
+// //             "#8d6e63"
+// //         ]
+// //     };
+
+// //     renderChart(landData);
+// //     renderLegend(landData);
+// //     openDetail();
+
+// // }
+
+// }
+function openDetail() {
+
+    if (!selectedMunicipality) {
+        alert("No data selected");
+        return;
+    }
+
+    const data = selectedMunicipality;
+
+    document.getElementById('detailContent').innerHTML = `
+        <div class="detail-table">
+
+            <div class="detail-row detail-header-row">
+                <div>ATTRIBUTE</div>
+                <div>VALUE</div>
+                <div>DESCRIPTION</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Land Area</div>
+                <div>${data.total_land_area_ha.toLocaleString()} ha</div>
+                <div>Total land area</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Annual Crop</div>
+                <div>${data.annual_crop_ha.toLocaleString()} ha</div>
+                <div>Planted crop area</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Canals</div>
+                <div>${data.infrastructure?.canals || 0}</div>
+                <div>Irrigation canals</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Dams</div>
+                <div>${data.infrastructure?.dams?.join(', ') || 'None'}</div>
+                <div>Water infrastructure</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Primary Crops</div>
+                <div>${data.primary_crops.join(', ')}</div>
+                <div>Main crops grown</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Classification</div>
+                <div>${data.classification}</div>
+                <div>Land classification</div>
+            </div>
+
+        </div>
+    `;
+
+    document.getElementById('detailPanel').classList.add('active');
+}
+
+function renderChart(landData) {
+    const ctx = document.getElementById('landChart').getContext('2d');
+
+    if (landChart) {
+        landChart.destroy();
+    }
+
+    activeSliceIndex = null;
+
+    const total = landData.values.reduce((a, b) => a + b, 0);
+
+    landChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: landData.labels,
+            datasets: [{
+                data: landData.values,
+                backgroundColor: landData.colors,
+
+                // ✅ DYNAMIC OFFSET (PERSISTENT)
+                offset: (ctx) => {
+                    return ctx.dataIndex === activeSliceIndex ? 20 : 0;
+                },
+
+                // ✅ DYNAMIC BORDER
+                borderWidth: (ctx) => {
+                    return ctx.dataIndex === activeSliceIndex ? 3 : 1;
+                },
+
+                borderColor: (ctx) => {
+                    return ctx.dataIndex === activeSliceIndex ? '#000' : '#fff';
+                }
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const percent = ((value / total) * 100).toFixed(2);
+                            return `${context.label}: ${value} (${percent}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+function renderLegend(landData) {
+    const container = document.getElementById('legendContainer');
+    container.innerHTML = '';
+
+    const total = landData.values.reduce((a, b) => a + b, 0);
+
+    landData.labels.forEach((label, index) => {
+        const value = landData.values[index];
+        const percent = ((value / total) * 100).toFixed(2);
+
+        const item = document.createElement('div');
+        item.className = 'legend-item active';
+
+        item.innerHTML = `
+            <div class="legend-color" style="background:${landData.colors[index]}"></div>
+            ${label}: ${value.toLocaleString()} (${percent}%)
+        `;
+
+        // 🔥 CLICK TO TOGGLE SLICE
+        item.onclick = function () {
+     if (!landChart) return;
+
+    activeSliceIndex = index;
+    landChart.update();
+
 };
 
+        container.appendChild(item);
+    });
+}
+function updateInfoPanel(municipalityName) {
+    document.getElementById("municipalityName").textContent = municipalityName + " Details";
+}
+const adminSidebar = document.getElementById('admin-sidebar');
+const openBtn = document.getElementById('admin-toggle-btn');
+const closeBtn = document.getElementById('close-sidebar');
+
+// OPEN sidebar
+openBtn.addEventListener('click', () => {
+    adminSidebar.classList.remove('sidebar-closed');
+});
+
+// CLOSE sidebar
+closeBtn.addEventListener('click', () => {
+    adminSidebar.classList.add('sidebar-closed');
+});
 </script>
 
 @endsection
