@@ -849,8 +849,9 @@ const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 let landChart = null;
 let selectedMunicipality = null;
 let activeSliceIndex = null;
-let provinceLabelLayer = null;
 let municipalityMarkers = [];
+let provinceLabelLayer = null;
+
 
 function buildAppUrl(path) {
     if (!path) {
@@ -948,26 +949,32 @@ function getFeatureName(feature, fallback = 'Unknown') {
 }
 
 function updateProvinceLabelVisibility() {
-    // Check if ANY checkbox is checked
+    // Check if ANY layer checkbox is checked
     const anyChecked = Object.values(overlayToggles).some(checkbox => checkbox && checkbox.checked);
 
     if (anyChecked) {
-        // HIDE PROVINCE
+        // HIDE PROVINCE LABEL
         if (provinceLabelLayer && map.hasLayer(provinceLabelLayer)) {
             map.removeLayer(provinceLabelLayer);
         }
-        // HIDE ALL MUNICIPALITIES
-        municipalityLabels.forEach(label => {
-            if (map.hasLayer(label)) map.removeLayer(label);
+        
+        // HIDE ALL MUNICIPALITY LABELS
+        municipalityMarkers.forEach(marker => {
+            if (map.hasLayer(marker)) {
+                map.removeLayer(marker);
+            }
         });
     } else {
-        // SHOW PROVINCE
+        // SHOW PROVINCE LABEL
         if (provinceLabelLayer && !map.hasLayer(provinceLabelLayer)) {
             provinceLabelLayer.addTo(map);
         }
-        // SHOW ALL MUNICIPALITIES
-        municipalityLabels.forEach(label => {
-            if (!map.hasLayer(label)) label.addTo(map);
+        
+        // SHOW ALL MUNICIPALITY LABELS
+        municipalityMarkers.forEach(marker => {
+            if (!map.hasLayer(marker)) {
+                marker.addTo(map);
+            }
         });
     }
 }
@@ -1009,88 +1016,65 @@ async function loadBaseMap() {
         onEachFeature: function(feature, layer) {
             const name = getFeatureName(feature);
 
-layer.on('click', function() {
-    const name = getFeatureName(feature);
-    const data = getMunicipalityData(name);
- // or municipality
-    updateInfoPanel(name);
+            layer.on('click', function() {
+                const mData = getMunicipalityData(name);
+                updateInfoPanel(name);
+                selectedMunicipality = mData; 
+                setSelectedBaseLayer(layer);
+                document.getElementById('infoTitle').innerText = name;
 
-    selectedMunicipality = data; // 🔥 SAVE IT
-    setSelectedBaseLayer(layer);
-    document.getElementById('infoTitle').innerText = name;
-
-if (data) {
-    // 🔥 Convert your real data into chart format
-    const landData = {
-        labels: [
-            "Total Land Area (ha)",
-            "Primary Crops", // Count of crop varieties
-            "Canals",
-            "Dams",
-            "Annual Crop Area (ha)"
-        ],
-        values: [
-            data.total_land_area_ha,
-            data.primary_crops.length,
-            data.infrastructure.canals,
-            data.infrastructure.dams.length,
-            data.annual_crop_ha
-        ],
-        colors: [
-            "#2e7d32", // Dark Green
-            "#ffa726", // Orange (Crops)
-            "#42a5f5", // Blue (Canals)
-            "#8d6e63",  // Brown (Dams)
-            "#4caf50"   // Green (Annual Crop Area)
-        ]
-    };
-
-    renderChart(landData);
-    renderLegend(landData);
-    openDetail();
-} else {
-        document.getElementById('extraData').innerHTML = "No data available";
-    }
-    showMiniMap(layer.toGeoJSON());
-    openPanel();
-});
+                if (mData) {
+                    const landData = {
+                        labels: ["Total Land Area (ha)", "Primary Crops", "Canals", "Dams", "Annual Crop Area (ha)"],
+                        values: [
+                            mData.total_land_area_ha,
+                            mData.primary_crops.length,
+                            mData.infrastructure.canals,
+                            mData.infrastructure.dams.length,
+                            mData.annual_crop_ha
+                        ],
+                        colors: ["#2e7d32", "#ffa726", "#42a5f5", "#8d6e63", "#4caf50"]
+                    };
+                    renderChart(landData);
+                    renderLegend(landData);
+                    openDetail();
+                } else {
+                    document.getElementById('extraData').innerHTML = "No data available";
+                }
+                showMiniMap(layer.toGeoJSON());
+                openPanel();
+            });
 
             const bounds = layer.getBounds();
+            const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
 
-// get size of polygon
-const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
+            if (size < 5000) return;
 
+            const center = bounds.getCenter();
 
-if (size < 5000) return;
+            // ✅ FIX: Assign the marker to a variable
+            const marker = L.marker(center, {
+                icon: L.divIcon({
+                    className: 'municipality-label',
+                    html: name
+                })
+            }).addTo(map);
 
-const center = bounds.getCenter();
-
-L.marker(center, {
-    icon: L.divIcon({
-        className: 'municipality-label',
-        html: name
-    })
-}).addTo(map);
-
-
+            // ✅ FIX: Push that variable into the array
+            municipalityMarkers.push(marker);
         }
     }).addTo(map);
 
-    const bounds = geoLayer.getBounds();
-    if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [20, 20] });
-    }
-const provinceName = "PANGASINAN";
-
-provinceLabelLayer = L.tooltip({
-    permanent: true,
-    direction: 'center',
-    className: 'province-label',
-    pane: 'provincePane'
-})
-.setLatLng(geoLayer.getBounds().getCenter())
-.setContent(provinceName)
-.addTo(map);
+    const provinceName = "PANGASINAN";
+    provinceLabelLayer = L.tooltip({
+        permanent: true,
+        direction: 'center',
+        className: 'province-label',
+        pane: 'provincePane'
+    })
+    .setLatLng(geoLayer.getBounds().getCenter())
+    .setContent(provinceName)
+    .addTo(map);
 }
 
 function normalizeGeoJson(data) {
