@@ -8,18 +8,65 @@
 
 
 <style>
-/* MAP CONTAINER */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+}
+
 #map-container {
     position: relative;
     width: 100%;
-    height: 100%;
+    height: 100vh; /* Use 100vh to fill the entire screen height */
+    overflow: hidden; /* This prevents the "scroll to the right" issue */
+    display: flex;
+    flex-direction: column;
+}
+
+.municipality-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
 }
 
 /* MAP */
 #map {
+    flex-grow: 1;
     width: 100%;
     height: 100%;
 }
+
+.province-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff;
+    font-weight: 900;
+    text-shadow: 2px 2px 4px #000;
+    font-size: 28px; /* Larger than municipality labels */
+    pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.municipality-label-base {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff;
+    font-weight: 600;
+    text-shadow: 1px 1px 3px #000;
+    font-size: 10px; /* Small and clean */
+    pointer-events: none;
+    text-transform: uppercase;
+}
+
 /* TOGGLE BUTTON */
 #toggleBtn {
     position: absolute;
@@ -77,40 +124,80 @@
     font-size: 13px;
 }
 
+/* LAYER CONTROLS CONTAINER */
 #layer-controls {
-    border-radius: 3px;
-    border: 1px solid #333;
-
     position: absolute;
     top: 70px;
     left: 20px;
     z-index: 1000;
-
-    padding: 12px 14px;
+    padding: 15px;
     border-radius: 12px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.18);
-    min-width: 200px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    min-width: 220px;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* INDIVIDUAL ITEM WRAPPERS */
+#layer-controls {
+    position: absolute;
+    top: 75px;
+    left: 20px;
+    z-index: 1000;
+    width: auto;
+    min-width: 160px;
+    padding: 8px 10px;
+
+    /* 2. Make it transparent */
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .layer-check {
-     width: 18px;
-    height: 18px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 13px;
+    gap: 6px;
+    padding: 4px 6px;
+    margin-bottom: 4px;
+    border-radius: 6px;
     cursor: pointer;
-      background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(1px);
 }
 
 .layer-check:last-child {
     margin-bottom: 0;
 }
 
+.legend-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
 .layer-check input {
+    margin-right: 10px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
     accent-color: #0b5e2c;
+}
+
+.layer-check span {
+    font-size: 11px;
+    font-weight: 500;
+    color: #1a1a1a;
+    white-space: nowrap;
+}
+
+.layer-check input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
 }
 
 #map-status {
@@ -167,7 +254,21 @@
     border-radius: 50%;
     transition: 0.3s;
 }
-
+.view-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #ebeef2;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 20%;
+    text-decoration: underline;
+    text-shadow:
+        -1px -1px 0 black,
+         1px -1px 0 black,
+        -1px  1px 0 black,
+         1px  1px 0 black;
+}
 input:checked + .slider {
     background-color: #0b5e2c;
 }
@@ -179,7 +280,7 @@ input:checked + .slider:before {
 #miniMap {
     position: absolute;
     bottom: 100px;
-    right: 20px;
+    left: 20px;
     width: 250px;
     height: 180px;
     z-index: 1000;
@@ -214,6 +315,186 @@ input:checked + .slider:before {
     background: #2196f3;
     color: white;
 }
+
+/* Sidebar Container */
+#admin-sidebar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 340px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    z-index: 2000;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid rgba(0,0,0,0.05);
+}
+
+.sidebar-closed {
+    transform: translateX(115%); /* Hide it completely including shadows */
+}
+
+/* Header Refinement */
+.sidebar-header {
+    background: #181818;
+    color: white;
+    padding: 24px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Sidebar Content Layout */
+.sidebar-content {
+    padding: 25px 20px;
+    overflow-y: auto;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.panel-header h4 {
+    margin: 0;
+    color: #333;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.files-link {
+    text-decoration: none;
+    color: #0b5e2c;
+    font-size: 12px;
+    font-weight: bold;
+    background: rgba(11, 94, 44, 0.1);
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+/* Form Styling */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+/* Styled Select */
+select[name="category"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+select[name="category"]:focus {
+    border-color: #0b5e2c;
+}
+
+/* File Upload Boxes - The "Big Fix" */
+.upload-box {
+    border: 2px dashed #cbd5e0;
+    padding: 20px 15px;
+    text-align: center;
+    border-radius: 12px;
+    background: #fdfdfd;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.upload-box:hover {
+    border-color: #0b5e2c;
+    background: rgba(11, 94, 44, 0.03);
+}
+
+.upload-box i {
+    font-size: 20px;
+    color: #0b5e2c;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.upload-box strong {
+    display: block;
+    font-size: 13px;
+    color: #2d3748;
+}
+
+.upload-box span {
+    font-size: 11px;
+    color: #718096;
+}
+
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: #0b5e2c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(11, 94, 44, 0.2);
+    transition: 0.3s;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    background: #084a22;
+    transform: translateY(-1px);
+}
+
+/* Floating Admin Trigger Button */
+#admin-toggle-btn {
+    position: fixed; /* Changed from absolute to fixed */
+    bottom: 30px;
+    right: 30px;
+    z-index: 1500; /* Higher than the map, lower than the sidebar */
+    background: #0b5e2c;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 50px; /* Pill shape */
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+#admin-toggle-btn:hover {
+    background: #084a22;
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
+/* Hide the floating button when the sidebar is open (optional) */
+#admin-sidebar:not(.sidebar-closed) ~ #admin-toggle-btn {
+    opacity: 0;
+    pointer-events: none;
+}
+
+
 
 .loader {
     display: inline-block;
@@ -276,7 +557,33 @@ input:checked + .slider:before {
 <a href="map/files">files</a>
 
 <div id="map-container">
+<div id="infoPanel" class="info-panel">
+    <div class="info-header">
+        <h2 id="infoTitle">Municipality</h2>
+        <button onclick="closePanel()">✖</button>
+    </div>
 
+    <div id="infoContent" class="info-content">
+<canvas id="landChart" class="chart-small"></canvas>
+        <!-- LEGEND -->
+        <div id="legendContainer"></div>
+
+        <!-- DATA -->
+            <div id="extraData"></div>
+          <button class="view-btn" onclick="openDetail()" style="">View Full Details</button>
+    </div>
+
+
+</div>
+<!-- DETAIL POPUP -->
+<div id="detailPanel" class="detail-panel">
+    <div class="detail-header">
+        <span id="municipalityName">Details</span>
+        <button onclick="closeDetail()">✖</button>
+    </div>
+
+    <div id="detailContent" class="detail-content"></div>
+</div>
     <div id="map-toggle">
     <span>🗺 Map</span>
 
@@ -288,39 +595,110 @@ input:checked + .slider:before {
     <span>🛰 Satellite</span>
 </div>
 
+<div id="map-status" style="padding: 5px; font-size: 12px; font-weight: bold;"></div>
+
     <div id="layer-controls">
-        <label class="layer-check" style="background-color: green; color: white;">
-            <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['files']) ? 'disabled' : '' }}>
-            <span>Irrigated Area</span>
-        </label>
-        <label class="layer-check" style="background-color: blue; color: white;">
-            <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
-            <span>Land Boundary</span>
-        </label>
-        <label class="layer-check" style="background-color: yellow;">
-            <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
-            <span>Potential Irrigable Area</span>
-        </label>
-    </div>
+    <!-- Irrigated Area -->
+    <label class="layer-check">
+        <div class="legend-indicator" style="background-color: #1b5e20;"></div>
+        <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['Irrigated Area']['files']) ? 'disabled' : '' }}>
+        <span>Irrigated Area</span>
+    </label>
+
+    <!-- Land Boundary -->
+    <label class="layer-check">
+        <div class="legend-indicator" style="background-color: #0d47a1;"></div>
+        <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['Pangasinan Land Boundary']['files']) ? 'disabled' : '' }}>
+        <span>Land Boundary</span>
+    </label>
+
+    <!-- Potential Irrigable Area -->
+    <label class="layer-check">
+        <div class="legend-indicator" style="background-color: #fbc02d;"></div>
+        <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['Potential Irrigable Area']['files']) ? 'disabled' : '' }}>
+        <span>Potential Irrigable Area</span>
+    </label>
+</div>
 
     <!-- MAP -->
     <div id="map"></div>
 
-<div id="map-status">Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.</div>
+
 <div id="miniMap"></div>
+
+<!-- Floating Admin Trigger Button -->
+<button id="admin-toggle-btn" title="Open Admin Panel">
+    <i class="fas fa-cog"></i> Upload
+</button>
+
+<!-- Side Admin Panel -->
+<div id="admin-sidebar" class="sidebar-closed">
+    <div class="sidebar-header">
+        <h3><i class="fas fa-tools"></i> Admin Panel</h3>
+        <button id="close-sidebar">&times;</button>
+    </div>
+
+    <div class="sidebar-content">
+        <div class="panel-section">
+            <div class="panel-header">
+                <h4>Data Management</h4>
+                <a href="{{ url('map/files') }}" class="files-link">Manage Files</a>
+            </div>
+
+            <form id="uploadForm">
+                @csrf
+                <div class="form-group">
+                    <label>Layer Category</label>
+                    <select name="category" required>
+                        <option value="">-- Choose Category --</option>
+                        <option value="Irrigated Area">Irrigated Area</option>
+                        <option value="Pangasinan Land Boundary">Pangasinan Land Boundary</option>
+                        <option value="Potential Irrigable Area">Potential Irrigable Area</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Source</label>
+                    <div class="upload-stack">
+                        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-file-upload"></i>
+                            <strong>Select Files</strong>
+                            <span>.shp, .kml, .json, .kmz</span>
+                            <input type="file" id="fileInput" multiple style="display:none;">
+                        </div>
+
+                        <div class="upload-box" onclick="document.getElementById('folderInput').click()">
+                            <i class="fas fa-folder-open"></i>
+                            <strong>Upload Folder</strong>
+                            <span>Select map directory</span>
+                            <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Data
+                </button>
+            </form>
+            <div id="uploadStatus" class="upload-status"></div>
+        </div>
+    </div>
+</div>
+
 </div>
 
 <div id="uploadStatus" class="upload-status" style="display:none;"></div>
 
 
 <!-- the map -->
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@6.2.0/dist/shp.min.js" crossorigin="anonymous"></script>
 <script>
-const overlayGroups = @json($overlayGroups);
-const appBaseUrl = @json(rtrim(request()->getBaseUrl(), '/'));
+const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
+const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 
 function buildAppUrl(path) {
     if (!path) {
@@ -352,28 +730,29 @@ let labelLayer = L.tileLayer(
     { maxZoom: 19 }
 );
 
-const toggle = document.getElementById('toggleSwitch');
 const statusBox = document.getElementById('map-status');
+const toggle = document.getElementById('toggleSwitch');
+
 const overlayToggles = {
-    irrigated: document.getElementById('toggleIrrigated'),
-    land_boundary: document.getElementById('toggleLandBoundary'),
-    potential: document.getElementById('togglePotential')
+    'Irrigated Area': document.getElementById('toggleIrrigated'),
+    'Pangasinan Land Boundary': document.getElementById('toggleLandBoundary'),
+    'Potential Irrigable Area': document.getElementById('togglePotential')
 };
 
 const overlayStyles = {
-    irrigated: {
+    'Irrigated Area': {
         color: '#1b5e20',
         weight: 2,
         fillColor: '#43a047',
-        fillOpacity: 0.6
+        fillOpacity: 0.9
     },
-    land_boundary: {
-        color: '#0d47a1',
-        weight: 3,
-        fillColor: '#64b5f6',
-        fillOpacity: 0.15
+    'Pangasinan Land Boundary': {
+        color: '#0d47a1', // Dark blue border
+        weight: 2,
+        fillColor: '#2196f3', // Vibrant blue fill
+        fillOpacity: 0.1    // Adjusted for visibility
     },
-    potential: {
+    'Potential Irrigable Area': {
         color: '#fbc02d',
         weight: 2,
         fillColor: '#ffeb3b',
@@ -384,17 +763,28 @@ const overlayStyles = {
 let geoLayer;
 let selectedBaseLayer;
 let miniGeoLayer;
+let provinceLabelLayer = null;
+let municipalityLabels = [];
 const overlayLayers = {};
 
 toggle.addEventListener('change', () => {
+    // Get the container that holds your checkboxes
+    const layerControls = document.getElementById('layer-controls');
+
     if (toggle.checked) {
         map.removeLayer(normalLayer);
         map.addLayer(satelliteLayer);
         map.addLayer(labelLayer);
+
+        // Add the class to turn text white
+        layerControls.classList.add('satellite-active');
     } else {
         map.removeLayer(satelliteLayer);
         map.removeLayer(labelLayer);
         map.addLayer(normalLayer);
+
+        // Remove the class to go back to dark text
+        layerControls.classList.remove('satellite-active');
     }
 });
 
@@ -406,7 +796,8 @@ function updateStatus(message, isError = false) {
 function getFeatureName(feature, fallback = 'Unknown') {
     const properties = feature?.properties || {};
 
-    return properties.name
+    return properties.ADM3_EN
+        || properties.name
         || properties.Name
         || properties.MUNICIPALI
         || properties.MUNICIPAL
@@ -429,12 +820,37 @@ function setSelectedBaseLayer(layer) {
     }
 
     selectedBaseLayer = layer;
-    selectedBaseLayer.setStyle({
-        color: '#ffd400',
-        weight: 2,
-        fillColor: '#ff5a36',
-        fillOpacity: 0.8
-    });
+    // selectedBaseLayer.setStyle({
+    //     color: '#ffd400',
+    //     weight: 2,
+    //     fillColor: '#ff5a36',
+    //     fillOpacity: 0.8
+    // });
+}
+
+function updateProvinceLabelVisibility() {
+    // Check if ANY checkbox is checked
+    const anyChecked = Object.values(overlayToggles).some(checkbox => checkbox && checkbox.checked);
+
+    if (anyChecked) {
+        // HIDE PROVINCE
+        if (provinceLabelLayer && map.hasLayer(provinceLabelLayer)) {
+            map.removeLayer(provinceLabelLayer);
+        }
+        // HIDE ALL MUNICIPALITIES
+        municipalityLabels.forEach(label => {
+            if (map.hasLayer(label)) map.removeLayer(label);
+        });
+    } else {
+        // SHOW PROVINCE
+        if (provinceLabelLayer && !map.hasLayer(provinceLabelLayer)) {
+            provinceLabelLayer.addTo(map);
+        }
+        // SHOW ALL MUNICIPALITIES
+        municipalityLabels.forEach(label => {
+            if (!map.hasLayer(label)) label.addTo(map);
+        });
+    }
 }
 
 async function loadBaseMap() {
@@ -445,18 +861,56 @@ async function loadBaseMap() {
     }
 
     const data = await response.json();
+    const labeledNames = new Set(); // To prevent duplicate labels for islands/multipolygons
 
     geoLayer = L.geoJSON(data, {
         style: getBaseStyle,
         onEachFeature: function(feature, layer) {
             const name = getFeatureName(feature);
 
+            // 1. Create Municipality Labels (Only once per unique name)
+            if (name && !labeledNames.has(name)) {
+                const bounds = layer.getBounds();
+                if (bounds.isValid()) {
+                    const center = bounds.getCenter();
+                    const labelMarker = L.marker(center, {
+                        opacity: 0,
+                        interactive: false
+                    });
+
+                    labelMarker.bindTooltip(name, {
+                        permanent: true,
+                        direction: 'center',
+                        className: 'municipality-label-base',
+                        offset: [0, 0]
+                    });
+
+                    municipalityLabels.push(labelMarker);
+                    labeledNames.add(name);
+                }
+            }
+
             layer.on('click', function() {
                 setSelectedBaseLayer(layer);
                 showMiniMap(feature);
             });
 
-            layer.bindPopup('<b>' + name + '</b>');
+            const bounds = layer.getBounds();
+
+// get size of polygon
+const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
+
+
+if (size < 5000) return;
+
+const center = bounds.getCenter();
+
+L.marker(center, {
+    icon: L.divIcon({
+        className: 'municipality-label',
+        html: name
+    })
+}).addTo(map);
         }
     }).addTo(map);
 
@@ -540,13 +994,12 @@ function styleOverlayFeature(categoryKey, feature) {
     const baseStyle = overlayStyles[categoryKey];
     const geometryType = feature?.geometry?.type || '';
 
-    if (categoryKey === 'land_boundary') {
+    if (categoryKey === 'Pangasinan Land Boundary') {
         return {
             color: baseStyle.color,
             weight: baseStyle.weight,
-            opacity: 1,
             fillColor: baseStyle.fillColor,
-            fillOpacity: geometryType.includes('Polygon') ? 0.04 : 0
+            fillOpacity: 0.3
         };
     }
 
@@ -573,33 +1026,43 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
 
     layer.bindPopup('<b>' + name + '</b><br>' + overlayGroups[categoryKey].label);
 
+    //If it's a Land Boundary, add the permanent floating label
+            if (categoryKey === 'Pangasinan Land Boundary') {
+                layer.bindTooltip(name, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'municipality-label'
+                }).openTooltip();
+            }
+
+
     layer.on('click', function(e) {
 
         // 🔥 highlight selected overlay
-        layer.setStyle({
-            color: '#ff0000',
-            weight: 3,
-            fillColor: '#ff5722',
-            fillOpacity: 0.9
-        });
+        // layer.setStyle({
+        //     color: '#ff0000',
+        //     weight: 3,
+        //     fillColor: '#ff5722',
+        //     fillOpacity: 0.9
+        // });
 
         // reset others
-        Object.values(overlayLayers).forEach(group => {
-            group.eachLayer(l => {
-                if (l !== layer) {
-                    l.setStyle(styleOverlayFeature(categoryKey, l.feature));
-                }
-            });
-        });
-// 🔥 bring overlays to front
-Object.values(overlayLayers).forEach(group => {
-    group.eachLayer(layer => layer.bringToFront());
-});
+//         Object.values(overlayLayers).forEach(group => {
+//             group.eachLayer(l => {
+//                 if (l !== layer) {
+//                     l.setStyle(styleOverlayFeature(categoryKey, l.feature));
+//                 }
+//             });
+//         });
+// // 🔥 bring overlays to front
+// Object.values(overlayLayers).forEach(group => {
+//     group.eachLayer(layer => layer.bringToFront());
+// });
 
-// 🔥 keep Pangasinan layer BELOW (but visible)
-if (geoLayer) {
-    geoLayer.eachLayer(layer => layer.bringToBack());
-}
+// // 🔥 keep Pangasinan layer BELOW (but visible)
+// if (geoLayer) {
+//     geoLayer.eachLayer(layer => layer.bringToBack());
+// }
         // 🔥 zoom to clicked overlay
         map.fitBounds(layer.getBounds());
 
@@ -715,19 +1178,7 @@ function hideOverlayCategory(categoryKey) {
     updateStatus((config?.label || 'Selected layer') + ' has been hidden.');
 }
 
-Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
-    if (!checkbox) {
-        return;
-    }
 
-    checkbox.addEventListener('change', async function() {
-        if (this.checked) {
-            await showOverlayCategory(categoryKey);
-        } else {
-            hideOverlayCategory(categoryKey);
-        }
-    });
-});
 
 let miniMap = L.map('miniMap', {
     attributionControl: false,
@@ -764,56 +1215,19 @@ function showMiniMap(feature) {
     miniMap.fitBounds(miniGeoLayer.getBounds(), { padding: [10,10] });
 }
 
-    // 👉 If there are active overlays
-//     activeCategories.forEach(categoryKey => {
-//         if (overlayLayers[categoryKey]) {
 
-//             overlayLayers[categoryKey].eachLayer(layer => {
-
-//                 // Check if overlay is inside municipality
-//                 if (feature.geometry && layer.getBounds().intersects(L.geoJSON(feature).getBounds())) {
-//                     layersToShow.push(layer.toGeoJSON());
-//                 }
-
-//             });
-//         }
-//     });
-
-//     // 👉 If overlays found → show them
-//     if (layersToShow.length > 0) {
-//         miniGeoLayer = L.geoJSON(layersToShow, {
-//     style: function(feature) {
-//         const category = feature.properties._category;
-
-//         if (category && overlayStyles[category]) {
-//             return overlayStyles[category]; // ✅ SAME COLOR AS MAIN MAP
-//         }
-
-//         return {
-//             color: 'red',
-//             weight: 2,
-//             fillOpacity: 0.5
-//         };
-//     }
-// }).addTo(miniMap);
-
-//         miniMap.fitBounds(miniGeoLayer.getBounds());
-//     } else {
-//         // 👉 fallback if no overlay matched
-//         miniGeoLayer = L.geoJSON(feature, {
-//             style: {
-//                 color: 'red',
-//                 weight: 2,
-//                 fillOpacity: 0.5
-//             }
-//         }).addTo(miniMap);
-
-//         miniMap.fitBounds(miniGeoLayer.getBounds());
-//     }
 
 (async function initializeMap() {
     try {
+        // 1. Create the high-priority layer (Pane) for the Province Label
+        // This ensures "PANGASINAN" stays above all other map layers
+        map.createPane('provincePane');
+        map.getPane('provincePane').style.zIndex = 650;
+        map.getPane('provincePane').style.pointerEvents = 'none';
+
+        // 2. Load the map data
         await loadBaseMap();
+
     } catch (error) {
         console.error(error);
         updateStatus(error.message, true);
@@ -899,8 +1313,8 @@ form.addEventListener('submit', async function (e) {
 });
 const overlayPriority = {
     irrigated: 3,       // highest
-    land_boundary: 2,   // middle
-    potential: 1        // lowest
+    land_boundary: 1,   // middle
+    potential: 2        // lowest
 };
 
 </script>

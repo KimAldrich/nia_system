@@ -120,13 +120,13 @@
         }
 
         .badge-dark {
-            background: #18181b;
+            background: #0c4d05;
             color: #fff;
         }
 
         .badge-light {
-            background: #f4f4f5;
-            color: #18181b;
+            background: #fda611;
+            color: #ffffff;
         }
 
         .badge-outline {
@@ -177,7 +177,7 @@
 
         .nav-btn {
             background: #fff;
-            border: 1px solid #e4e4e7;
+            border: 1px solid #0c4d05;
             border-radius: 50%;
             width: 32px;
             height: 32px;
@@ -203,7 +203,7 @@
 
         .cal-nav button {
             background: none;
-            border: 1px solid #e4e4e7;
+            border: 1px solid #0c4d05;
             border-radius: 50%;
             width: 28px;
             height: 28px;
@@ -259,7 +259,7 @@
 
         /* The black circle */
         .day-num.today {
-            background: #f4f4f5;
+            background: #4fc94d;
         }
 
         /* Mini Event List Below Calendar */
@@ -403,7 +403,7 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity
+                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color:#71717a;">Upload Activity
                         </p>
                         <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
                     </div>
@@ -561,7 +561,7 @@
                     datasets: [{
                         label: 'Uploads',
                         data: [5, 12, 8, 15],
-                        backgroundColor: '#18181b',
+                        backgroundColor: '#0c4d05',
                         borderRadius: 6,
                         barPercentage: 0.5
                     }]
@@ -603,7 +603,7 @@
                     labels: ['Validated', 'On-Going', 'Pending'],
                     datasets: [{
                         data: [45, 30, 25],
-                        backgroundColor: ['#18181b', '#d4d4d8', '#ffffff'],
+                        backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'],
                         borderColor: '#e4e4e7',
                         borderWidth: 2,
                         hoverOffset: 4
