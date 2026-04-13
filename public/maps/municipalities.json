@@ -1,0 +1,385 @@
+[
+  {
+    "name": "Agno",
+    "total_land_area_ha": 16975,
+    "classification": "Agricultural/Coastal",
+    "primary_crops": ["Rice", "Coconut"],
+    "annual_crop_ha": 4028,
+    "infrastructure": { "canals": 3, "dams": ["Palonapoy CIP", "Mabini-Agno RIS"] }
+  },
+  {
+    "name": "Aguilar",
+    "total_land_area_ha": 19507,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn", "Mango"],
+    "annual_crop_ha": 4629,
+    "infrastructure": { "canals": 4, "dams": ["Bayaoas SRIP"] }
+  },
+  {
+    "name": "Alaminos City",
+    "total_land_area_ha": 16426,
+    "classification": "Commercial/Agri-Tourism",
+    "primary_crops": ["Rice", "Coconut", "Corn"],
+    "annual_crop_ha": 3898,
+    "infrastructure": { "canals": 5, "dams": ["Quinaoayanan Dam", "PAED-ALOS"] }
+  },
+  {
+    "name": "Alcala",
+    "total_land_area_ha": 4571,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Tobacco", "Corn"],
+    "annual_crop_ha": 1085,
+    "infrastructure": { "canals": 6, "dams": ["Agno River System"] }
+  },
+  {
+    "name": "Anda",
+    "total_land_area_ha": 7455,
+    "classification": "Island/Coastal",
+    "primary_crops": ["Coconut", "Rice"],
+    "annual_crop_ha": 1768,
+    "infrastructure": { "canals": 2, "dams": ["Cabungan SIP"] }
+  },
+  {
+    "name": "Asingan",
+    "total_land_area_ha": 6664,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Vegetables"],
+    "annual_crop_ha": 1605,
+    "infrastructure": { "canals": 12, "dams": ["Agno RIS Diversion"] }
+  },
+  {
+    "name": "Balungao",
+    "total_land_area_ha": 7325,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1738,
+    "infrastructure": { "canals": 4, "dams": ["Balungao SRIP"] }
+  },
+  {
+    "name": "Bani",
+    "total_land_area_ha": 17965,
+    "classification": "Agricultural/Coastal",
+    "primary_crops": ["Watermelon", "Rice"],
+    "annual_crop_ha": 4263,
+    "infrastructure": { "canals": 3, "dams": ["Bani Irrigation System"] }
+  },
+  {
+    "name": "Basista",
+    "total_land_area_ha": 2400,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1200,
+    "infrastructure": { "canals": 2, "dams": ["Local Communal Systems"] }
+  },
+  {
+    "name": "Bautista",
+    "total_land_area_ha": 4633,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Vegetables"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 4, "dams": ["Agno River Control"] }
+  },
+  {
+    "name": "Bayambang",
+    "total_land_area_ha": 14394,
+    "classification": "Agricultural/Aquaculture",
+    "primary_crops": ["Onion", "Rice", "Corn"],
+    "annual_crop_ha": 4000,
+    "infrastructure": { "canals": 15, "dams": ["Agno RIS"] }
+  },
+  {
+    "name": "Binalonan",
+    "total_land_area_ha": 5805,
+    "classification": "Agricultural/Educational",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1400,
+    "infrastructure": { "canals": 9, "dams": ["Agno RIS"] }
+  },
+  {
+    "name": "Binmaley",
+    "total_land_area_ha": 11850,
+    "classification": "Aquaculture/Agri",
+    "primary_crops": ["Rice"],
+    "annual_crop_ha": 2000,
+    "infrastructure": { "canals": 4, "dams": ["Sinocalan RIS"] }
+  },
+  {
+    "name": "Bolinao",
+    "total_land_area_ha": 19722,
+    "classification": "Coastal/Tourism",
+    "primary_crops": ["Coconut", "Rice"],
+    "infrastructure": { "canals": 2, "dams": ["Zaragoza-Sampaloc PIP"] }
+  },
+  {
+    "name": "Bugallon",
+    "total_land_area_ha": 18964,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Mango"],
+    "annual_crop_ha": 4629,
+    "infrastructure": { "canals": 14, "dams": ["Dumuloc Dam", "Cayanga Dam"] }
+  },
+  {
+    "name": "Burgos",
+    "total_land_area_ha": 13132,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Coconut"],
+    "annual_crop_ha": 3898,
+    "infrastructure": { "canals": 2, "dams": ["Local Communal"] }
+  },
+  {
+    "name": "Calasiao",
+    "total_land_area_ha": 4836,
+    "classification": "Commercial/Agri",
+    "primary_crops": ["Rice", "Vegetables"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 7, "dams": ["Sinocalan RIS"] }
+  },
+  {
+    "name": "Dagupan City",
+    "total_land_area_ha": 3723,
+    "classification": "Urban/Aquaculture",
+    "primary_crops": ["Rice (Minimal)"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 3, "dams": ["Pantal River System"] }
+  },
+  {
+    "name": "Dasol",
+    "total_land_area_ha": 16660,
+    "classification": "Coastal/Salt-Industry",
+    "primary_crops": ["Rice", "Coconut"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 3, "dams": ["Macalang-Batang CIP"] }
+  },
+  {
+    "name": "Infanta",
+    "total_land_area_ha": 25429,
+    "classification": "Mining/Agricultural",
+    "primary_crops": ["Rice", "Coconut"],
+    "annual_crop_ha": 1768,
+    "infrastructure": { "canals": 3, "dams": ["Nayom River System"] }
+  },
+  {
+    "name": "Labrador",
+    "total_land_area_ha": 9099,
+    "classification": "Agricultural/Coastal",
+    "primary_crops": ["Rice", "Mango"],
+    "annual_crop_ha": 1605,
+    "infrastructure": { "canals": 2, "dams": ["Sikling SIP"] }
+  },
+  {
+    "name": "Laoac",
+    "total_land_area_ha": 4050,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1200,
+    "infrastructure": { "canals": 5, "dams": ["Angalacan RIS"] }
+  },
+  {
+    "name": "Lingayen",
+    "total_land_area_ha": 6276,
+    "classification": "Administrative/Agri",
+    "primary_crops": ["Rice", "Bagoong Industry"],
+    "annual_crop_ha": 1489,
+    "infrastructure": { "canals": 4, "dams": ["Agno River Diversion"] }
+  },
+  {
+    "name": "Mabini",
+    "total_land_area_ha": 29101,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Mango"],
+    "annual_crop_ha": 4000,
+    "infrastructure": { "canals": 2, "dams": ["Mabini-Agno System"] }
+  },
+  {
+    "name": "Malasiqui",
+    "total_land_area_ha": 13137,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn", "Vegetables"],
+    "annual_crop_ha": 1400,
+    "infrastructure": { "canals": 11, "dams": ["Agno RIS"] }
+  },
+  {
+    "name": "Manaoag",
+    "total_land_area_ha": 5595,
+    "classification": "Tourism/Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 8, "dams": ["San Fabian RIS"] }
+  },
+  {
+    "name": "Mangaldan",
+    "total_land_area_ha": 4817,
+    "classification": "Industrial/Agri",
+    "primary_crops": ["Rice"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 6, "dams": ["Sinocalan RIS"] }
+  },
+  {
+    "name": "Mangatarem",
+    "total_land_area_ha": 31750,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn", "Mango"],
+    "annual_crop_ha": 7534,
+    "infrastructure": { "canals": 12, "dams": ["Urbiztondo-Mangatarem RIS"] }
+  },
+  {
+    "name": "Mapandan",
+    "total_land_area_ha": 2101,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 498,
+    "infrastructure": { "canals": 4, "dams": ["Angalacan RIS"] }
+  },
+  {
+    "name": "Natividad",
+    "total_land_area_ha": 13436,
+    "classification": "Agricultural/Forest",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 5, "dams": ["Ambayoan RIS"] }
+  },
+  {
+    "name": "Pozorrubio",
+    "total_land_area_ha": 13460,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Mango", "Tobacco"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 7, "dams": ["Angalacan RIS"] }
+  },
+  {
+    "name": "Rosales",
+    "total_land_area_ha": 6639,
+    "classification": "Commercial/Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1100,
+    "infrastructure": { "canals": 10, "dams": ["Agno RIS"] }
+  },
+  {
+    "name": "San Carlos City",
+    "total_land_area_ha": 16903,
+    "classification": "Urban/Agricultural",
+    "primary_crops": ["Mango", "Rice", "Corn"],
+    "annual_crop_ha": 4011,
+    "infrastructure": { "canals": 18, "dams": ["Agno RIS", "Sinocalan RIS"] }
+  },
+  {
+    "name": "San Fabian",
+    "total_land_area_ha": 8128,
+    "classification": "Coastal/Agricultural",
+    "primary_crops": ["Rice", "Mango"],
+    "annual_crop_ha": 1928,
+    "infrastructure": { "canals": 9, "dams": ["Binday Dam (SFRIS)"] }
+  },
+  {
+    "name": "San Jacinto",
+    "total_land_area_ha": 4418,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn", "Tobacco"],
+    "annual_crop_ha": 808,
+    "infrastructure": { "canals": 5, "dams": ["San Fabian RIS"] }
+  },
+  {
+    "name": "San Manuel",
+    "total_land_area_ha": 12918,
+    "classification": "Power-Gen/Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 3065,
+    "infrastructure": { "canals": 8, "dams": ["San Roque Dam"] }
+  },
+  {
+    "name": "San Nicolas",
+    "total_land_area_ha": 21020,
+    "classification": "Agricultural/Upland",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 4988,
+    "infrastructure": { "canals": 6, "dams": ["Ambayoan RIS"] }
+  },
+  {
+    "name": "San Quintin",
+    "total_land_area_ha": 11590,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 2750,
+    "infrastructure": { "canals": 4, "dams": ["Dipalo SRIP"] }
+  },
+  {
+    "name": "Santa Barbara",
+    "total_land_area_ha": 6137,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Vegetables"],
+    "annual_crop_ha": 1456,
+    "infrastructure": { "canals": 13, "dams": ["Sinocalan RIS", "Agno RIS"] }
+  },
+  {
+    "name": "Santa Maria",
+    "total_land_area_ha": 6950,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1649,
+    "infrastructure": { "canals": 5, "dams": ["Agno RIS"] }
+  },
+  {
+    "name": "Santo Tomas",
+    "total_land_area_ha": 1343,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 308,
+    "infrastructure": { "canals": 2, "dams": ["Agno River Control"] }
+  },
+  {
+    "name": "Sison",
+    "total_land_area_ha": 8188,
+    "classification": "Industrial/Agricultural",
+    "primary_crops": ["Rice", "Tobacco"],
+    "annual_crop_ha": 1943,
+    "infrastructure": { "canals": 4, "dams": ["Bued River System"] }
+  },
+  {
+    "name": "Sual",
+    "total_land_area_ha": 13016,
+    "classification": "Industrial/Coastal",
+    "primary_crops": ["Rice", "Coconut"],
+    "annual_crop_ha": 3799,
+    "infrastructure": { "canals": 2, "dams": ["Local Communal"] }
+  },
+  {
+    "name": "Tayug",
+    "total_land_area_ha": 5124,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn", "Sunflower"],
+    "annual_crop_ha": 1216,
+    "infrastructure": { "canals": 7, "dams": ["Ambayoan-Dipalo RIS"] }
+  },
+  {
+    "name": "Umingan",
+    "total_land_area_ha": 25843,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 7044,
+    "infrastructure": { "canals": 12, "dams": ["Lower Agno RIS"] }
+  },
+  {
+    "name": "Urbiztondo",
+    "total_land_area_ha": 8180,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Corn"],
+    "annual_crop_ha": 1941,
+    "infrastructure": { "canals": 8, "dams": ["Agno RIS"] }
+  },
+  {
+    "name": "Urdaneta City",
+    "total_land_area_ha": 9821,
+    "classification": "Commercial/Agricultural",
+    "primary_crops": ["Rice", "Vegetables"],
+    "annual_crop_ha": 2377,
+    "infrastructure": { "canals": 14, "dams": ["Sinocalan RIS"] }
+  },
+  {
+    "name": "Villasis",
+    "total_land_area_ha": 7583,
+    "classification": "Agricultural",
+    "primary_crops": ["Rice", "Vegetables (Pinakbet)"],
+    "annual_crop_ha": 1799,
+    "infrastructure": { "canals": 9, "dams": ["Agno RIS"] }
+  }
+]

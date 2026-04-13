@@ -17,8 +17,8 @@
 .municipality-label {
     font-size: 13px;
     font-weight: 600;
-    color: #222;
-
+    color: #ffffff;
+    border-color: black;
     padding: 2px 6px;
     border-radius: 4px;
     pointer-events: none;
@@ -175,7 +175,21 @@
     border-radius: 50%;
     transition: 0.3s;
 }
-
+.view-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #ebeef2;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 20%;
+    text-decoration: underline;
+    text-shadow:
+        -1px -1px 0 black,
+         1px -1px 0 black,
+        -1px  1px 0 black,
+         1px  1px 0 black;
+}
 input:checked + .slider {
     background-color: #0b5e2c;
 }
@@ -187,7 +201,7 @@ input:checked + .slider:before {
 #miniMap {
     position: absolute;
     bottom: 100px;
-    right: 20px;
+    left: 20px;
     width: 250px;
     height: 180px;
     z-index: 1000;
@@ -252,6 +266,198 @@ input:checked + .slider:before {
 .leaflet-interactive:hover {
     transform: translateY(-3px) scale(1.02);
 }
+
+/* INFO PANEL */
+.info-panel {
+    position: absolute;
+    top: 0;
+    right: -400px;
+    width: 220px;
+    color: white;
+    text-shadow:
+        -1px -1px 0 black,
+         1px -1px 0 black,
+        -1px  1px 0 black,
+         1px  1px 0 black;
+    height: 100%;
+    background: #ffffff00;
+    box-shadow: -4px 0 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    transition: right 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-panel.active {
+    right: 0;
+}
+
+.info-header {
+    padding: 15px;
+    background: #2e7d32;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.info-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.data-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 6px;
+}
+/* CHART */
+.chart-small {
+    width: 200px !important;
+    height: 200px !important;
+    margin: 0 auto 10px auto;
+    display: block;
+    color: #cccccc00;
+}
+#infoContent {
+    padding: 25px;
+    text-align: center;
+}
+#legendContainer {
+    margin-top: 5px; /* reduce gap */
+    text-align: left;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px; /* tighter spacing */
+    font-size: 13px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    margin-right: 6px; /* closer text */
+}
+/* DATA TABLE */
+.data-table {
+    margin-top: 10px;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+    border: 1px solid #ccc;
+}
+
+/* HEADER */
+.data-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    background: #455a64;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+}
+
+/* ROWS */
+.data-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    padding: 8px;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+}
+
+/* ALTERNATE ROW COLOR */
+.data-row:nth-child(even) {
+    background: #f1f1f1;
+}
+
+/* TEXT STYLE */
+.data-row div,
+.data-header div {
+    padding: 2px 5px;
+}
+/* FLOATING PANEL */
+.detail-panel {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+
+    width: 350px;
+    max-height: 400px;
+
+    background: rgba(50, 60, 70, 0.95);
+    color: #fff;
+
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.25s;
+    z-index: 3000;
+
+    display: flex;
+    flex-direction: column;
+}
+
+/* SHOW */
+.detail-panel.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+}
+
+/* HEADER */
+.detail-header {
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-header button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+/* CONTENT */
+.detail-content {
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
+/* TABLE STYLE */
+.detail-table {
+    width: 100%;
+}
+
+.detail-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    margin-bottom: 6px;
+}
+
+.detail-header-row {
+    font-weight: bold;
+    border-bottom: 1px solid #aaa;
+    margin-bottom: 6px;
+}
 </style>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <form id="uploadForm" enctype="multipart/form-data">
@@ -284,7 +490,33 @@ input:checked + .slider:before {
 <a href="map/files">files</a>
 
 <div id="map-container">
+<div id="infoPanel" class="info-panel">
+    <div class="info-header">
+        <h2 id="infoTitle">Municipality</h2>
+        <button onclick="closePanel()">✖</button>
+    </div>
 
+    <div id="infoContent" class="info-content">
+<canvas id="landChart" class="chart-small"></canvas>
+        <!-- LEGEND -->
+        <div id="legendContainer"></div>
+
+        <!-- DATA -->
+            <div id="extraData"></div>
+          <button class="view-btn" onclick="openDetail()" style="">View Full Details</button>
+    </div>
+
+
+</div>
+<!-- DETAIL POPUP -->
+<div id="detailPanel" class="detail-panel">
+    <div class="detail-header">
+        <span id="municipalityName">Details</span>
+        <button onclick="closeDetail()">✖</button>
+    </div>
+
+    <div id="detailContent" class="detail-content"></div>
+</div>
     <div id="map-toggle">
     <span>🗺 Map</span>
 
@@ -322,6 +554,7 @@ input:checked + .slider:before {
 
 
 <!-- the map -->
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js" crossorigin="anonymous"></script>
@@ -329,6 +562,9 @@ input:checked + .slider:before {
 <script>
 const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
+let landChart = null;
+let selectedMunicipality = null;
+let activeSliceIndex = null;
 
 function buildAppUrl(path) {
     if (!path) {
@@ -459,10 +695,51 @@ async function loadBaseMap() {
         onEachFeature: function(feature, layer) {
             const name = getFeatureName(feature);
 
-            layer.on('click', function() {
-                setSelectedBaseLayer(layer);
-                showMiniMap(feature);
-            });
+layer.on('click', function() {
+    const name = getFeatureName(feature);
+    const data = getMunicipalityData(name);
+ // or municipality
+    updateInfoPanel(name);
+
+    selectedMunicipality = data; // 🔥 SAVE IT
+    setSelectedBaseLayer(layer);
+    document.getElementById('infoTitle').innerText = name;
+
+if (data) {
+    // 🔥 Convert your real data into chart format
+    const landData = {
+        labels: [
+            "Total Land Area (ha)",
+            "Primary Crops", // Count of crop varieties
+            "Canals",
+            "Dams",
+            "Annual Crop Area (ha)"
+        ],
+        values: [
+            data.total_land_area_ha,
+            data.primary_crops.length,
+            data.infrastructure.canals,
+            data.infrastructure.dams.length,
+            data.annual_crop_ha
+        ],
+        colors: [
+            "#2e7d32", // Dark Green
+            "#ffa726", // Orange (Crops)
+            "#42a5f5", // Blue (Canals)
+            "#8d6e63",  // Brown (Dams)
+            "#4caf50"   // Green (Annual Crop Area)
+        ]
+    };
+
+    renderChart(landData);
+    renderLegend(landData);
+    openDetail();
+} else {
+        document.getElementById('extraData').innerHTML = "No data available";
+    }
+    showMiniMap(layer.toGeoJSON());
+    openPanel();
+});
 
             const bounds = layer.getBounds();
 
@@ -787,52 +1064,7 @@ function showMiniMap(feature) {
     miniMap.fitBounds(miniGeoLayer.getBounds(), { padding: [10,10] });
 }
 
-    // 👉 If there are active overlays
-//     activeCategories.forEach(categoryKey => {
-//         if (overlayLayers[categoryKey]) {
 
-//             overlayLayers[categoryKey].eachLayer(layer => {
-
-//                 // Check if overlay is inside municipality
-//                 if (feature.geometry && layer.getBounds().intersects(L.geoJSON(feature).getBounds())) {
-//                     layersToShow.push(layer.toGeoJSON());
-//                 }
-
-//             });
-//         }
-//     });
-
-//     // 👉 If overlays found → show them
-//     if (layersToShow.length > 0) {
-//         miniGeoLayer = L.geoJSON(layersToShow, {
-//     style: function(feature) {
-//         const category = feature.properties._category;
-
-//         if (category && overlayStyles[category]) {
-//             return overlayStyles[category]; // ✅ SAME COLOR AS MAIN MAP
-//         }
-
-//         return {
-//             color: 'red',
-//             weight: 2,
-//             fillOpacity: 0.5
-//         };
-//     }
-// }).addTo(miniMap);
-
-//         miniMap.fitBounds(miniGeoLayer.getBounds());
-//     } else {
-//         // 👉 fallback if no overlay matched
-//         miniGeoLayer = L.geoJSON(feature, {
-//             style: {
-//                 color: 'red',
-//                 weight: 2,
-//                 fillOpacity: 0.5
-//             }
-//         }).addTo(miniMap);
-
-//         miniMap.fitBounds(miniGeoLayer.getBounds());
-//     }
 
 (async function initializeMap() {
     try {
@@ -922,10 +1154,180 @@ form.addEventListener('submit', async function (e) {
 });
 const overlayPriority = {
     irrigated: 3,       // highest
-    land_boundary: 1,   // middle
-    potential: 2        // lowest
+    land_boundary: 1,   // lowest
+    potential: 2        // middle
+};
+//Details
+
+let municipalityData = [];
+
+// load your dataset
+fetch(buildAppUrl('maps/municipalities.json'))
+    .then(res => res.json())
+    .then(data => {
+        municipalityData = data;
+        console.log("Municipality data loaded:", municipalityData);
+    });
+
+function getMunicipalityData(name) {
+    return municipalityData.find(m =>
+        m.name.toLowerCase() === name.toLowerCase()
+    );
+}
+function openPanel() {
+    document.getElementById('infoPanel').classList.add('active');
+}
+
+function closePanel() {
+    document.getElementById('infoPanel').classList.remove('active');
+}
+
+function openDetail() {
+
+    if (!selectedMunicipality) {
+        alert("No data selected");
+        return;
+    }
+
+    const data = selectedMunicipality;
+
+    document.getElementById('detailContent').innerHTML = `
+        <div class="detail-table">
+
+            <div class="detail-row detail-header-row">
+                <div>ATTRIBUTE</div>
+                <div>VALUE</div>
+                <div>DESCRIPTION</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Land Area</div>
+                <div>${data.total_land_area_ha.toLocaleString()} ha</div>
+                <div>Total land area</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Annual Crop</div>
+                <div>${data.annual_crop_ha.toLocaleString()} ha</div>
+                <div>Planted crop area</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Canals</div>
+                <div>${data.infrastructure?.canals || 0}</div>
+                <div>Irrigation canals</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Dams</div>
+                <div>${data.infrastructure?.dams?.join(', ') || 'None'}</div>
+                <div>Water infrastructure</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Primary Crops</div>
+                <div>${data.primary_crops.join(', ')}</div>
+                <div>Main crops grown</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Classification</div>
+                <div>${data.classification}</div>
+                <div>Land classification</div>
+            </div>
+
+        </div>
+    `;
+
+    document.getElementById('detailPanel').classList.add('active');
+}
+
+function renderChart(landData) {
+    const ctx = document.getElementById('landChart').getContext('2d');
+
+    if (landChart) {
+        landChart.destroy();
+    }
+
+    activeSliceIndex = null;
+
+    const total = landData.values.reduce((a, b) => a + b, 0);
+
+    landChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: landData.labels,
+            datasets: [{
+                data: landData.values,
+                backgroundColor: landData.colors,
+
+                // ✅ DYNAMIC OFFSET (PERSISTENT)
+                offset: (ctx) => {
+                    return ctx.dataIndex === activeSliceIndex ? 20 : 0;
+                },
+
+                // ✅ DYNAMIC BORDER
+                borderWidth: (ctx) => {
+                    return ctx.dataIndex === activeSliceIndex ? 3 : 1;
+                },
+
+                borderColor: (ctx) => {
+                    return ctx.dataIndex === activeSliceIndex ? '#000' : '#fff';
+                }
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const percent = ((value / total) * 100).toFixed(2);
+                            return `${context.label}: ${value} (${percent}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+function renderLegend(landData) {
+    const container = document.getElementById('legendContainer');
+    container.innerHTML = '';
+
+    const total = landData.values.reduce((a, b) => a + b, 0);
+
+    landData.labels.forEach((label, index) => {
+        const value = landData.values[index];
+        const percent = ((value / total) * 100).toFixed(2);
+
+        const item = document.createElement('div');
+        item.className = 'legend-item active';
+
+        item.innerHTML = `
+            <div class="legend-color" style="background:${landData.colors[index]}"></div>
+            ${label}: ${value.toLocaleString()} (${percent}%)
+        `;
+
+        // 🔥 CLICK TO TOGGLE SLICE
+        item.onclick = function () {
+     if (!landChart) return;
+
+    activeSliceIndex = index;
+    landChart.update();
+
 };
 
+        container.appendChild(item);
+    });
+}
+function updateInfoPanel(municipalityName) {
+    document.getElementById("municipalityName").textContent = municipalityName + " Details";
+}
 </script>
 
 @endsection
