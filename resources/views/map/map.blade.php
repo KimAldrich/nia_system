@@ -441,7 +441,7 @@ input:checked + .slider:before {
 /* HEADER */
 .detail-header {
     padding: 10px;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.3); 
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -500,12 +500,12 @@ input:checked + .slider:before {
     padding: 25px 20px;
     overflow-y: auto;
 }
-.sidebar-header {
-    background: #181818;
+/* .sidebar-header {
+    background: #181818; 
     color: white;
     padding: 24px 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
+} */
 .sidebar-closed {
     transform: translateX(115%); /* Hide it completely including shadows */
 }
