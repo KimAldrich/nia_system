@@ -96,7 +96,25 @@
     box-shadow: 0 3px 15px rgba(0,0,0,0.18);
     min-width: 200px;
 }
-
+#layer-controls,
+#map-toggle,
+#legend,
+#infoPanel,
+#miniMap,
+#admin-toggle-btn {
+    z-index: 9999 !important;
+}
+#map {
+    position: relative;
+    z-index: 1;
+}
+.leaflet-pane {
+    z-index: 1 !important;
+}
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 999 !important;
+}
 .layer-check {
     display: flex;
     align-items: center;
@@ -754,9 +772,12 @@ select[name="category"]:focus {
 
 <div id="map-status">Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.</div>
 <div id="miniMap"></div>
+
+@if(auth()->check() && auth()->user()->role === 'admin')
 <button id="admin-toggle-btn" title="Open Admin Panel">
     <i class="fas fa-cog"></i> Upload
 </button>
+
 <div id="admin-sidebar" class="sidebar-closed">
     <div class="sidebar-header">
         <h3><i class="fas fa-tools"></i> Admin Panel</h3>
@@ -812,7 +833,7 @@ select[name="category"]:focus {
 </div>
 
 <div id="uploadStatus" class="upload-status" style="display:none;"></div>
-
+@endif
 
 <!-- the map -->
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1319,15 +1340,16 @@ function hideOverlayCategory(categoryKey) {
 Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
     if (!checkbox) return;
 
-    checkbox.addEventListener('change', async function () {
+    checkbox.addEventListener('change', async () => {
 
-        if (this.checked) {
+        // load / hide overlay
+        if (checkbox.checked) {
             await showOverlayCategory(categoryKey);
         } else {
             hideOverlayCategory(categoryKey);
         }
 
-        // 🔥 THIS IS THE KEY
+        // update label visibility
         updateProvinceLabelVisibility();
     });
 });
@@ -1433,81 +1455,76 @@ function showMiniMap(feature) {
 
 
 const form = document.getElementById('uploadForm');
-const statusBoxUpload = document.getElementById('uploadStatus');
 
-form.addEventListener('submit', async function (e) {
-    e.preventDefault();
+if (form) {
+    const statusBoxUpload = document.getElementById('uploadStatus');
 
-    const fileInput = document.getElementById('fileInput');
-    const folderInput = document.getElementById('folderInput');
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
 
-    const files = fileInput.files;
-    const folderFiles = folderInput.files;
+        const fileInput = document.getElementById('fileInput');
+        const folderInput = document.getElementById('folderInput');
 
-    const formData = new FormData();
+        const files = fileInput.files;
+        const folderFiles = folderInput.files;
 
-    const category = document.querySelector('select[name="category"]').value;
-    formData.append('category', category);
+        const formData = new FormData();
 
-    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+        const category = document.querySelector('select[name="category"]').value;
+        formData.append('category', category);
 
-    // 🚨 VALIDATION
-    if (files.length === 0 && folderFiles.length === 0) {
-        alert('Please select files OR a folder');
-        return;
-    }
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
-    if (files.length > 0 && folderFiles.length > 0) {
-        alert('Please select only one: files OR folder');
-        return;
-    }
-
-    // 📄 FILE MODE
-    if (files.length > 0) {
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files[]', files[i]);
-            formData.append('paths[]', files[i].name);
-        }
-    }
-
-    // 📁 FOLDER MODE
-    if (folderFiles.length > 0) {
-        for (let i = 0; i < folderFiles.length; i++) {
-            formData.append('files[]', folderFiles[i]);
-            formData.append('paths[]', folderFiles[i].webkitRelativePath);
-        }
-    }
-
-    // UI
-    statusBoxUpload.style.display = 'block';
-    statusBoxUpload.className = 'upload-status upload-loading';
-    statusBoxUpload.innerHTML = 'Uploading...';
-
-    try {
-        const response = await fetch("{{ route('map.upload') }}", {
-            method: "POST",
-            body: formData
-        });
-
-        const result = await response.json();
-
-        console.log(result);
-
-        if (response.ok && result.files.length > 0) {
-            statusBoxUpload.className = 'upload-status upload-success';
-            statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
-
-            form.reset(); // keep form visible
-
-        } else {
-            throw new Error(result.message || 'Upload failed');
+        if (files.length === 0 && folderFiles.length === 0) {
+            alert('Please select files OR a folder');
+            return;
         }
 
-    } catch (error) {
-        statusBoxUpload.className = 'upload-status upload-error';
-        statusBoxUpload.innerHTML = '❌ ' + error.message;
-    }
-});
+        if (files.length > 0 && folderFiles.length > 0) {
+            alert('Please select only one: files OR folder');
+            return;
+        }
+
+        if (files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+                formData.append('paths[]', files[i].name);
+            }
+        }
+
+        if (folderFiles.length > 0) {
+            for (let i = 0; i < folderFiles.length; i++) {
+                formData.append('files[]', folderFiles[i]);
+                formData.append('paths[]', folderFiles[i].webkitRelativePath);
+            }
+        }
+
+        statusBoxUpload.style.display = 'block';
+        statusBoxUpload.className = 'upload-status upload-loading';
+        statusBoxUpload.innerHTML = 'Uploading...';
+
+        try {
+            const response = await fetch("{{ route('map.upload') }}", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.files.length > 0) {
+                statusBoxUpload.className = 'upload-status upload-success';
+                statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
+                form.reset();
+            } else {
+                throw new Error(result.message || 'Upload failed');
+            }
+
+        } catch (error) {
+            statusBoxUpload.className = 'upload-status upload-error';
+            statusBoxUpload.innerHTML = '❌ ' + error.message;
+        }
+    });
+}
 const overlayPriority = {
     irrigated: 3,       // highest
     land_boundary: 1,   // lowest

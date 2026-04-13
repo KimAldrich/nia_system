@@ -26,7 +26,7 @@ Route::post('/guest/accept-terms', [GuestController::class, 'acceptTerms'])->nam
 Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.dashboard');
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 
-
+Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
 Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'teamResolutions'])->name('guest.team.resolutions');
 // Routes that require login
@@ -44,7 +44,6 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     // Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
 
     //Map Routes
-    Route::get('/map', [MapController::class, 'Showmap'])->name('map');
     Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
     Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
     Route::delete('/map/delete', [MapController::class, 'deleteFile']);
