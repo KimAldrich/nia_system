@@ -15,13 +15,15 @@
     height: 100%;
 }
 .municipality-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #ffffff;
-    border-color: black;
-    padding: 2px 6px;
-    border-radius: 4px;
-    pointer-events: none;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff; /* White text for visibility on blue */
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; /* Outline to make it readable */
+    font-size: 12px;
+    pointer-events: none; /* Let clicks pass through to the map */
+
 }
 /* MAP */
 #map {
@@ -707,7 +709,7 @@ select[name="category"]:focus {
     box-shadow: none !important;
     color: rgb(255, 255, 255);
     font-weight: 900;
-    text-shadow: 2px 2px 6px #000;
+    text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; /* Outline to make it readable */
     font-size: 32px;
     letter-spacing: 3px;
 }
@@ -848,6 +850,7 @@ let landChart = null;
 let selectedMunicipality = null;
 let activeSliceIndex = null;
 let provinceLabelLayer = null;
+let municipalityMarkers = [];
 
 function buildAppUrl(path) {
     if (!path) {
@@ -897,10 +900,10 @@ const overlayStyles = {
         fillOpacity: 0.9
     },
     land_boundary: {
-        color: '#0d47a1',
-        weight: 3,
-        fillColor: '#64b5f6',
-        fillOpacity: 1
+        color: '#0d47a1', // Dark blue border
+        weight: 2,
+        fillColor: '#2196f3', // Vibrant blue fill
+        fillOpacity: 0.5    // Adjusted for visibility
     },
     potential: {
         color: '#fbc02d',
@@ -935,7 +938,8 @@ function updateStatus(message, isError = false) {
 function getFeatureName(feature, fallback = 'Unknown') {
     const properties = feature?.properties || {};
 
-    return properties.name
+    return properties.ADM3_EN
+        || properties.name
         || properties.Name
         || properties.MUNICIPALI
         || properties.MUNICIPAL
@@ -1164,11 +1168,11 @@ function styleOverlayFeature(categoryKey, feature) {
 
     if (categoryKey === 'land_boundary') {
         return {
-            // color: baseStyle.color,
-            // weight: baseStyle.weight,
+            color: baseStyle.color,
+            weight: baseStyle.weight,
             opacity: 1,
-            // fillColor: baseStyle.fillColor,
-            // fillOpacity: geometryType.includes('Polygon') ? 0.04 : 0
+            fillColor: baseStyle.fillColor,
+            fillOpacity: 0.6
         };
     }
 
@@ -1194,6 +1198,15 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
     const name = getFeatureName(feature, fileName);
 
     layer.bindPopup('<b>' + name + '</b><br>' + overlayGroups[categoryKey].label);
+
+            if (categoryKey === 'land_boundary') {
+                layer.bindTooltip(name, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'municipality-label'
+                }).openTooltip();
+            }
+
 
     layer.on('click', function(e) {
 
@@ -1526,9 +1539,9 @@ if (form) {
     });
 }
 const overlayPriority = {
-    irrigated: 3,       // highest
-    land_boundary: 1,   // lowest
-    potential: 2        // middle
+    irrigated: 3,    
+    potential: 2,
+    land_boundary: 1, 
 };
 //Details
 
