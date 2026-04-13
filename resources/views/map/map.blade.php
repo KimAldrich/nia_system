@@ -291,7 +291,7 @@ input:checked + .slider:before {
     position: absolute;
     top: 0;
     right: -400px;
-    width: 220px;
+    width: 250px;
     color: white;
     text-shadow:
         -1px -1px 0 black,
@@ -299,8 +299,8 @@ input:checked + .slider:before {
         -1px  1px 0 black,
          1px  1px 0 black;
     height: 100%;
-    background: #ffffff00;
-    box-shadow: -4px 0 10px rgba(0,0,0,0.2);
+    background: #81717187;
+    box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53);
     z-index: 1000;
     transition: right 0.3s ease;
     display: flex;
