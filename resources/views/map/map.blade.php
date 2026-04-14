@@ -11,6 +11,7 @@
 /* MAP CONTAINER */
 #map-container {
     position: relative;
+    /* position: absolute; */
     width: 100%;
     height: 100%;
 }
@@ -507,7 +508,7 @@ input:checked + .slider:before {
 /* HEADER */
 .detail-header {
     padding: 10px;
-    background: rgba(0,0,0,0.3); 
+    background: rgba(0,0,0,0.3);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -567,7 +568,7 @@ input:checked + .slider:before {
     overflow-y: auto;
 }
 /* .sidebar-header {
-    background: #181818; 
+    background: #181818;
     color: white;
     padding: 24px 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -1004,7 +1005,7 @@ toggle.addEventListener('change', () => {
         map.addLayer(labelLayer);
 
         toggleContainer.classList.add('satellite-active');
-        layerControls.classList.add('satellite-active'); 
+        layerControls.classList.add('satellite-active');
         if(statusBox) statusBox.classList.add('satellite-active');
     } else {
         map.removeLayer(satelliteLayer);
@@ -1043,7 +1044,7 @@ function updateProvinceLabelVisibility() {
         if (provinceLabelLayer && map.hasLayer(provinceLabelLayer)) {
             map.removeLayer(provinceLabelLayer);
         }
-        
+
         // HIDE ALL MUNICIPALITY MARKERS
         municipalityMarkers.forEach(marker => {
             if (map.hasLayer(marker)) {
@@ -1055,7 +1056,7 @@ function updateProvinceLabelVisibility() {
         if (provinceLabelLayer && !map.hasLayer(provinceLabelLayer)) {
             provinceLabelLayer.addTo(map);
         }
-        
+
         // SHOW ALL MUNICIPALITY MARKERS
         municipalityMarkers.forEach(marker => {
             if (!map.hasLayer(marker)) {
@@ -1112,7 +1113,7 @@ async function loadBaseMap() {
             layer.on('click', function() {
                 const mData = getMunicipalityData(name);
                 updateInfoPanel(name);
-                selectedMunicipality = mData; 
+                selectedMunicipality = mData;
                 setSelectedBaseLayer(layer);
                 document.getElementById('infoTitle').innerText = name;
 
@@ -1150,12 +1151,12 @@ async function loadBaseMap() {
                     const marker = L.marker(center, {
                         icon: L.divIcon({
                             className: 'municipality-label',
-                            html: name 
+                            html: name
                         })
                     }).addTo(map);
 
                     municipalityMarkers.push(marker);
-                    
+
                     // Mark this name as "Done"
                     labeledNames.add(name);
                 }
@@ -1163,8 +1164,8 @@ async function loadBaseMap() {
         }
     }).addTo(map);
 
-    const provinceName = "PANGASINAN"; 
-    
+    const provinceName = "PANGASINAN";
+
     provinceLabelLayer = L.tooltip({
         permanent: true,
         direction: 'center',
@@ -1636,9 +1637,9 @@ if (form) {
     });
 }
 const overlayPriority = {
-    irrigated: 3,    
+    irrigated: 3,
     potential: 2,
-    land_boundary: 1, 
+    land_boundary: 1,
 };
 //Details
 
@@ -1664,13 +1665,13 @@ function openPanel() {
 function closeAllPanels() {
     // Removes 'active' from the chart panel
     document.getElementById('infoPanel').classList.remove('active');
-    
+
     // Removes 'active' from the full details table
     document.getElementById('detailPanel').classList.remove('active');
-    
+
     // Optional: Hide the miniMap if you want it to disappear too
     document.getElementById('miniMap').style.display = 'none';
-    
+
     // Optional: Reset the map selection style
     if (selectedBaseLayer && geoLayer) {
         geoLayer.resetStyle(selectedBaseLayer);
