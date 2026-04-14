@@ -14,6 +14,47 @@
     width: 100%;
     height: 100%;
 }
+.map-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000; /* Must be higher than Leaflet layers */
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px 40px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    font-family: sans-serif;
+    font-weight: bold;
+    color: #333;
+}
+
+.spinner {
+    width: 25px;
+    height: 25px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2e7d32; /* PSU Green */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* Custom class to apply when in satellite mode */
+#map-toggle.satellite-active {
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Optional: adds a glow to make it pop */
+}
+
+/* Ensure the transition is smooth */
+#map-toggle {
+    transition: color 0.3s ease;
+}
 .municipality-label {
     background: transparent !important;
     border: none !important;
@@ -75,7 +116,7 @@
 #map-toggle {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 50px;
     z-index: 1000;
     background: rgba(255, 255, 255, 0);
     backdrop-filter: blur(6px);
@@ -105,6 +146,29 @@
 #miniMap,
 #admin-toggle-btn {
     z-index: 9999 !important;
+}
+.layer-check:has(#toggleIrrigated) { --glow-color: #43a047; } /* Green */
+.layer-check:has(#toggleLandBoundary) { --glow-color: #2196f3; } /* Blue */
+.layer-check:has(#togglePotential) { --glow-color: #ffeb3b; } /* Yellow */
+
+/* 2. Style the text and glow when Satellite is active */
+#layer-controls.satellite-active .layer-check span {
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+/* 3. Apply the dynamic glow to the checkbox text and box */
+#layer-controls.satellite-active .layer-check input[type="checkbox"]:checked + span,
+#layer-controls.satellite-active .layer-check:has(input:checked) span {
+    text-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color);
+    color: var(--glow-color) !important;
+    font-weight: bold;
+}
+
+/* 4. Optional: Glow the actual checkbox itself */
+#layer-controls.satellite-active input[type="checkbox"]:checked {
+    box-shadow: 0 0 15px var(--glow-color);
+    outline: none;
 }
 #map {
     position: relative;
@@ -412,7 +476,7 @@ input:checked + .slider:before {
 .detail-panel {
     position: fixed;
     top: 80px;
-    left: 50%;
+    left: 60%;
     transform: translateX(-50%) scale(0.9);
 
     width: 350px;
@@ -716,10 +780,14 @@ select[name="category"]:focus {
 </style>
 
 <div id="map-container">
+    <div id="map-loader" class="map-loader" style="display: none;">
+        <div class="spinner"></div>
+        <span id="loader-text">Loading Layer...</span>
+    </div>
 <div id="infoPanel" class="info-panel">
     <div class="info-header">
         <h2 id="infoTitle">Municipality</h2>
-        <button onclick="closePanel()">✖</button>
+        <button onclick="closeAllPanels()">✖</button>
     </div>
 
     <div id="infoContent" class="info-content">
@@ -738,7 +806,7 @@ select[name="category"]:focus {
 <div id="detailPanel" class="detail-panel">
     <div class="detail-header">
         <span id="municipalityName">Details</span>
-        <button onclick="closeDetail()">✖</button>
+        <button onclick="closeAllPanels()">✖</button>
     </div>
 
     <div id="detailContent" class="detail-content"></div>
@@ -844,6 +912,13 @@ select[name="category"]:focus {
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@6.2.0/dist/shp.min.js" crossorigin="anonymous"></script>
 <script>
+function toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+}
+
 const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 let landChart = null;
@@ -919,15 +994,26 @@ let selectedBaseLayer;
 let miniGeoLayer;
 const overlayLayers = {};
 
+const toggleContainer = document.getElementById('map-toggle');
+const layerControls = document.getElementById('layer-controls');
+
 toggle.addEventListener('change', () => {
     if (toggle.checked) {
         map.removeLayer(normalLayer);
         map.addLayer(satelliteLayer);
         map.addLayer(labelLayer);
+
+        toggleContainer.classList.add('satellite-active');
+        layerControls.classList.add('satellite-active'); 
+        if(statusBox) statusBox.classList.add('satellite-active');
     } else {
         map.removeLayer(satelliteLayer);
         map.removeLayer(labelLayer);
         map.addLayer(normalLayer);
+
+        toggleContainer.classList.remove('satellite-active');
+        layerControls.classList.remove('satellite-active');
+        if(statusBox) statusBox.classList.remove('satellite-active');
     }
 });
 
@@ -949,7 +1035,7 @@ function getFeatureName(feature, fallback = 'Unknown') {
 }
 
 function updateProvinceLabelVisibility() {
-    // Check if ANY layer checkbox is checked
+    // Check if ANY checkbox is checked
     const anyChecked = Object.values(overlayToggles).some(checkbox => checkbox && checkbox.checked);
 
     if (anyChecked) {
@@ -958,7 +1044,7 @@ function updateProvinceLabelVisibility() {
             map.removeLayer(provinceLabelLayer);
         }
         
-        // HIDE ALL MUNICIPALITY LABELS
+        // HIDE ALL MUNICIPALITY MARKERS
         municipalityMarkers.forEach(marker => {
             if (map.hasLayer(marker)) {
                 map.removeLayer(marker);
@@ -970,7 +1056,7 @@ function updateProvinceLabelVisibility() {
             provinceLabelLayer.addTo(map);
         }
         
-        // SHOW ALL MUNICIPALITY LABELS
+        // SHOW ALL MUNICIPALITY MARKERS
         municipalityMarkers.forEach(marker => {
             if (!map.hasLayer(marker)) {
                 marker.addTo(map);
@@ -1011,10 +1097,17 @@ async function loadBaseMap() {
 
     const data = await response.json();
 
+    // Clear previous markers
+    municipalityMarkers.forEach(m => map.removeLayer(m));
+    municipalityMarkers = [];
+
+    // ✅ TRACKER: Prevent multiple labels for the same municipality
+    const labeledNames = new Set();
+
     geoLayer = L.geoJSON(data, {
         style: getBaseStyle,
         onEachFeature: function(feature, layer) {
-            const name = getFeatureName(feature);
+            const name = toTitleCase(getFeatureName(feature));
 
             layer.on('click', function() {
                 const mData = getMunicipalityData(name);
@@ -1045,27 +1138,33 @@ async function loadBaseMap() {
                 openPanel();
             });
 
-            const bounds = layer.getBounds();
-            const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
+            // ✅ LOGIC: Only add a label if this name hasn't been used yet
+            if (!labeledNames.has(name)) {
+                const bounds = layer.getBounds();
+                const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
 
-            if (size < 5000) return;
+                // Skip small islands/polygons to ensure the label hits the main landmass
+                if (size > 5000) {
+                    const center = bounds.getCenter();
 
-            const center = bounds.getCenter();
+                    const marker = L.marker(center, {
+                        icon: L.divIcon({
+                            className: 'municipality-label',
+                            html: name 
+                        })
+                    }).addTo(map);
 
-            // ✅ FIX: Assign the marker to a variable
-            const marker = L.marker(center, {
-                icon: L.divIcon({
-                    className: 'municipality-label',
-                    html: name
-                })
-            }).addTo(map);
-
-            // ✅ FIX: Push that variable into the array
-            municipalityMarkers.push(marker);
+                    municipalityMarkers.push(marker);
+                    
+                    // Mark this name as "Done"
+                    labeledNames.add(name);
+                }
+            }
         }
     }).addTo(map);
 
-    const provinceName = "PANGASINAN";
+    const provinceName = "PANGASINAN"; 
+    
     provinceLabelLayer = L.tooltip({
         permanent: true,
         direction: 'center',
@@ -1334,19 +1433,33 @@ function hideOverlayCategory(categoryKey) {
     updateStatus((config?.label || 'Selected layer') + ' has been hidden.');
 }
 
+
+
 Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
     if (!checkbox) return;
 
     checkbox.addEventListener('change', async () => {
+        const loader = document.getElementById('map-loader');
 
-        // load / hide overlay
         if (checkbox.checked) {
-            await showOverlayCategory(categoryKey);
+            // 1. Show the loader immediately
+            if (loader) loader.style.display = 'flex';
+
+            try {
+                // 2. Wait for the heavy map data to load
+                await showOverlayCategory(categoryKey);
+            } catch (error) {
+                console.error("Error loading map layer:", error);
+                updateStatus("Failed to load layer.", true);
+            } finally {
+                // 3. Hide the loader once finished (or if it fails)
+                if (loader) loader.style.display = 'none';
+            }
         } else {
             hideOverlayCategory(categoryKey);
         }
 
-        // update label visibility
+        // Update label visibility
         updateProvinceLabelVisibility();
     });
 });
@@ -1548,12 +1661,23 @@ function openPanel() {
     document.getElementById('infoPanel').classList.add('active');
 }
 
-function closePanel() {
+function closeAllPanels() {
+    // Removes 'active' from the chart panel
     document.getElementById('infoPanel').classList.remove('active');
-}
-function closeDetail(){
+    
+    // Removes 'active' from the full details table
     document.getElementById('detailPanel').classList.remove('active');
-};
+    
+    // Optional: Hide the miniMap if you want it to disappear too
+    document.getElementById('miniMap').style.display = 'none';
+    
+    // Optional: Reset the map selection style
+    if (selectedBaseLayer && geoLayer) {
+        geoLayer.resetStyle(selectedBaseLayer);
+    }
+}
+
+
 // if (data) {
 
 //     // 🔥 Convert your real data into chart format
