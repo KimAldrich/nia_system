@@ -338,7 +338,8 @@
                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                         <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank"
                             style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
-                            title="Click to view document"></a>
+                            title="Click to view or download document"></a>
+
                         @if (strtolower($extension) === 'pdf')
                             <iframe src="{{ asset('storage/' . $file->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
                                 width="100%" height="100%" scrolling="no"
@@ -347,14 +348,14 @@
                             <div
                                 style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                                 @if (in_array(strtolower($extension), ['xls', 'xlsx']))
-                                    <div style="font-size: 32px; margin-bottom: 5px;">📊</div><span
-                                        style="font-size: 12px; font-weight: 600; color: #18181b;">Excel Sheet</span>
+                                    <div style="font-size: 32px; margin-bottom: 5px;">📊</div>
+                                    <span style="font-size: 12px; font-weight: 600; color: #18181b;">Excel Sheet</span>
                                 @elseif(in_array(strtolower($extension), ['doc', 'docx']))
-                                    <div style="font-size: 32px; margin-bottom: 5px;">📝</div><span
-                                        style="font-size: 12px; font-weight: 600; color: #18181b;">Word Doc</span>
+                                    <div style="font-size: 32px; margin-bottom: 5px;">📝</div>
+                                    <span style="font-size: 12px; font-weight: 600; color: #18181b;">Word Doc</span>
                                 @else
-                                    <div style="font-size: 32px; margin-bottom: 5px;">📁</div><span
-                                        style="font-size: 12px; font-weight: 600; color: #18181b;">Document</span>
+                                    <div style="font-size: 32px; margin-bottom: 5px;">📁</div>
+                                    <span style="font-size: 12px; font-weight: 600; color: #18181b;">Document</span>
                                 @endif
                             </div>
                         @endif
@@ -363,28 +364,33 @@
                     <div style="flex: 1;">
                         <h4
                             style="margin:0 0 2px 0; font-size: 14px; font-weight: 600; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->title ?? $file->original_name }}</h4>
+                            {{ $file->title ?? $file->original_name }}
+                        </h4>
                         <p
                             style="font-size: 11px; color: #a1a1aa; margin: 0 0 15px 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->original_name }}</p>
+                            {{ $file->original_name }}
+                        </p>
                     </div>
 
-                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark">Download</a>
+                    <!-- ✅ MATCHED FS BUTTON LOGIC -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
+                            style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
+                            Download
+                        </a>
 
-                    @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
-                        <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px; margin-top: 5px;">
-                        <form action="{{ route('rpwsis.downloadables.update', $file->id) }}" method="POST"
-                            enctype="multipart/form-data" style="margin:0;">
-                            @csrf
-                            <label
-                                style="font-size: 10px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update
-                                File</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" name="document" required class="file-input-sm">
-                                <button type="submit" class="btn-outline">Replace</button>
-                            </div>
-                        </form>
-                    @endif
+                        @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
+                            <form action="{{ route('rpwsis.downloadables.delete', $file->id) }}" method="POST"
+                                style="margin: 0; flex: 1;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline"
+                                    style="width: 100%; padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">
+                                    Delete
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <div

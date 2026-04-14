@@ -142,4 +142,25 @@ class FsTeamController extends Controller
 
         return back()->with('success', 'Resolution status updated successfully.');
     }
+
+    // 9. Delete IA Resolution
+    public function deleteResolution($id)
+    {
+        $resolution = IaResolution::findOrFail($id);
+
+        // Delete file from storage
+        if (Storage::disk('public')->exists($resolution->file_path)) {
+            Storage::disk('public')->delete($resolution->file_path);
+        }
+
+        // Optional: role/team check (same as your comment)
+        // if ($resolution->team !== 'fs_team') {
+        //     abort(403);
+        // }
+
+        // Delete record from database
+        $resolution->delete();
+
+        return back()->with('success', 'Resolution deleted successfully.');
+    }
 }
