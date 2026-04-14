@@ -8,7 +8,13 @@
 
 
 <style>
-/* MAP CONTAINER */
+.content {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+}
 #map-container {
     position: relative;
     /* position: absolute; */
@@ -942,7 +948,7 @@ function buildAppUrl(path) {
     return appBaseUrl ? `${appBaseUrl}/${normalizedPath}` : `/${normalizedPath}`;
 }
 
-let map = L.map('map').setView([15.8949, 120.2863], 9);
+let map = L.map('map').setView([16.0505, 120.5925], 10);
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1409,10 +1415,10 @@ async function showOverlayCategory(categoryKey) {
         }
     });
 
-    const bounds = overlayLayers[categoryKey].getBounds();
-    if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [25, 25] });
-    }
+    // const bounds = overlayLayers[categoryKey].getBounds();
+    // if (bounds.isValid()) {
+    //     map.fitBounds(bounds, { padding: [25, 25] });
+    // }
 
     updateStatus(config.label + ' is now highlighted on the map.');
 }
