@@ -11,7 +11,6 @@
 .content {
     padding: 0 !important;
     margin: 0 !important;
-    width: 100vw !important;
     height: 100vh !important;
     max-width: none !important;
 }
@@ -948,7 +947,8 @@ function buildAppUrl(path) {
     return appBaseUrl ? `${appBaseUrl}/${normalizedPath}` : `/${normalizedPath}`;
 }
 
-let map = L.map('map').setView([16.0505, 120.5925], 10);
+// Dagupan City Center
+let map = L.map('map').setView([16.0433, 120.3333], 10);
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
