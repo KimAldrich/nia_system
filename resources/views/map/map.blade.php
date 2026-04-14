@@ -834,7 +834,7 @@ select[name="category"]:focus {
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
-            <span>Land Boundary</span>
+            <span>Pangasinan Land Boundary</span>
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
