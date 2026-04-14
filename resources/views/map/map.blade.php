@@ -8,7 +8,13 @@
 
 
 <style>
-/* MAP CONTAINER */
+.content {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+}
 #map-container {
     position: relative;
     width: 100%;
