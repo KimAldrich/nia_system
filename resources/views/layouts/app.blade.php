@@ -141,7 +141,7 @@
             $roleLabels = [
                 'admin' => 'Administrator',
                 'fs_team' => 'FS Member',
-                'rpwsis_team' => 'RP-WSIS Team Member',
+                'rpwsis_team' => 'Social And Environmental Team Member',
                 'cm_team' => 'Contract Management Team Member',
                 'row_team' => 'Right Of Way Team Member',
                 'pcr_team' => 'Program Completion Report Team Member',
@@ -194,7 +194,7 @@
             @php
                 $teams = [
                     'fs-team' => 'Feasibility Study Team',
-                    'rpwsis_team' => 'RP-WSIS Team',
+                    'rpwsis_team' => 'Social And Environmental Team',
                     'cm_team' => 'Contract Management Team',
                     'row_team' => 'Right Of Way Team',
                     'pcr_team' => 'Program Completion Report Team',
