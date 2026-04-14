@@ -4,94 +4,229 @@
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
-<a href="/map">Back to Map</a>
-<h2>Uploaded Files</h2>
 
-<!-- 🔎 SEARCH + FILTERS -->
-<div style="margin-bottom: 15px;">
-    <input type="text" id="searchInput" placeholder="Search..." onkeyup="applyFilters()">
+<style>
+/* PAGE */
+.page-container {
+    padding: 25px;
+}
 
-    <select id="categoryFilter" onchange="applyFilters()">
-        <option value="">All Categories</option>
-    </select>
+/* HEADER */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
 
-    <select id="folderFilter" onchange="applyFilters()">
-        <option value="">All Folders</option>
-    </select>
+.page-header h2 {
+    margin: 0;
+}
 
-    <select id="municipalityFilter" onchange="applyFilters()">
-        <option value="">All Municipalities</option>
-    </select>
+.back-btn {
+    text-decoration: none;
+    background: #0b5e2c;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+}
+
+/* FILTER BAR */
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.filter-bar input,
+.filter-bar select {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* TABLE */
+.table-container {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background: #13311fd4;
+    color: #ffffff;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+tbody tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+tbody tr:hover {
+    background: #e8f5e9;
+}
+
+/* BUTTONS */
+.btn-open {
+    color: #0b5e2c;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.btn-delete {
+    background: #e53935;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: #c62828;
+}
+
+/* PAGINATION */
+.pagination {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.pagination button {
+    padding: 6px 12px;
+    border: none;
+    background: #0b5e2c;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.pagination button:hover {
+    background: #084a22;
+}
+
+/* EMPTY STATE */
+.empty {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+</style>
+
+<div class="page-container">
+
+    <!-- HEADER -->
+    <div class="page-header">
+        <h2>📁 Uploaded Files</h2>
+        <a href="/map" class="back-btn">← Back to Map</a>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Search..." onkeyup="applyFilters()">
+
+        <select id="categoryFilter" onchange="applyFilters()">
+            <option value="">All Categories</option>        </select>
+
+        <select id="folderFilter" onchange="applyFilters()">
+            <option value="">All Folders</option>
+        </select>
+
+        <select id="municipalityFilter" onchange="applyFilters()">
+            <option value="">All Municipalities</option>
+        </select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Folder</th>
+                    <th>Municipality</th>
+                    <th>View</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            @if(isset($filesData) && count($filesData))
+                @foreach($filesData as $index => $file)
+
+                @php
+                    $name = pathinfo($file['name'], PATHINFO_FILENAME);
+                    $name = preg_replace('/\s*\(.*?\)\s*/', '', $name);
+                    $name = str_replace('-', ' ', $name);
+                    $name = explode('_', $name)[0];
+                    $municipalityRaw = explode(' ', trim($name))[0];
+
+                    $municipality = strtolower($municipalityRaw);
+                    $municipalityDisplay = ucfirst($municipality);
+                @endphp
+
+                <tr class="data-row"
+                    data-name="{{ strtolower($file['name']) }}"
+                    data-category="{{ strtolower($file['category']) }}"
+                    data-folder="{{ strtolower($file['folder']) }}"
+                    data-municipality="{{ $municipality }}"
+                    id="row-{{ $index }}">
+
+                    <td>{{ $file['name'] }}</td>
+                    <td>{{ $file['category'] }}</td>
+                    <td>{{ $file['folder'] }}</td>
+                    <td>{{ $municipalityDisplay }}</td>
+
+                    <td>
+                        <a href="{{ $file['url'] }}" target="_blank" class="btn-open">Open</a>
+                    </td>
+
+                    <td>
+                        <button class="btn-delete"
+                            data-path="{{ $file['path'] }}"
+                            data-id="{{ $index }}"
+                            onclick="deleteFile(this)">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+
+                @endforeach
+            @else
+                <tr>
+                    <td colspan="6" class="empty">❌ No files found</td>
+                </tr>
+            @endif
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="pagination">
+        <button onclick="prevPage()">⬅ Prev</button>
+        <span id="pageInfo"></span>
+        <button onclick="nextPage()">Next ➡</button>
+    </div>
+
 </div>
-
-<table border="1" width="100%">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Folder</th>
-            <th>Municipality</th>
-            <th>View</th>
-            <th>Delete</th>
-        </tr>
-    </thead>
-
-<tbody>
-@if(isset($filesData) && count($filesData))
-    @foreach($filesData as $index => $file)
-
-@php
-    // 🔥 CLEAN MUNICIPALITY FROM FILENAME
-    $name = pathinfo($file['name'], PATHINFO_FILENAME);
-    $name = preg_replace('/\s*\(.*?\)\s*/', '', $name);
-    $name = str_replace('-', ' ', $name);
-    $name = explode('_', $name)[0];
-    $municipalityRaw = explode(' ', trim($name))[0];
-
-    $municipality = strtolower($municipalityRaw);
-    $municipalityDisplay = ucfirst($municipality);
-@endphp
-
-<tr class="data-row"
-    data-name="{{ strtolower($file['name']) }}"
-    data-category="{{ strtolower($file['category']) }}"
-    data-folder="{{ strtolower($file['folder']) }}"
-    data-municipality="{{ $municipality }}"
-    id="row-{{ $index }}">
-
-    <td>{{ $file['name'] }}</td>
-    <td>{{ $file['category'] }}</td>
-    <td>{{ $file['folder'] }}</td>
-    <td>{{ $municipalityDisplay }}</td>
-    <td>
-        <a href="{{ $file['url'] }}" target="_blank">Open</a>
-    </td>
-    <td>
-        <button
-            data-path="{{ $file['path'] }}"
-            data-id="{{ $index }}"
-            onclick="deleteFile(this)">
-            Delete
-        </button>
-    </td>
-</tr>
-
-    @endforeach
-@else
-<tr>
-    <td colspan="6">❌ No files found</td>
-</tr>
-@endif
-</tbody>
-</table>
-
-<!-- 📄 PAGINATION -->
-<div style="margin-top: 10px;">
-    <button onclick="prevPage()">Prev</button>
-    <span id="pageInfo"></span>
-    <button onclick="nextPage()">Next</button>
-</div>
-
 <script>
 let currentPage = 1;
 const rowsPerPage = 10;
