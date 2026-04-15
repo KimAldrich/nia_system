@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'RP-WSIS Team Dashboard')
+@section('title', 'Social And Environmental Team Dashboard')
 
 @section('content')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -315,7 +315,7 @@
         }
     </style>
 
-    <h1 class="header-title">RP-WSIS Team Dashboard</h1>
+    <h1 class="header-title">Social And Environmental Team Dashboard</h1>
 
     <div class="dashboard-grid">
 

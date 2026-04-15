@@ -393,15 +393,19 @@
 
                     <div style="display: flex; gap: 8px; margin-bottom: 15px;">
                         <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
-                            style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
+                            style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
+                            Download
+                        </a>
 
-                        @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
+                        @if (auth()->user()->role == 'row_team' || auth()->user()->role == 'admin')
                             <form action="{{ route('row.downloadables.delete', $file->id) }}" method="POST"
                                 style="margin: 0;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
-                                    style="padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">Delete</button>
+                                    style="padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">
+                                    Delete
+                                </button>
                             </form>
                         @endif
                     </div>

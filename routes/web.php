@@ -88,8 +88,13 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/downloadables/{id}/update', [FsTeamController::class, 'updateForm'])->name('fs.downloadables.update');
                 Route::delete('/downloadables/{id}/delete', [FsTeamController::class, 'deleteForm'])->name('fs.downloadables.delete');
 
+                //resolutions
+                
                 Route::post('/ia-resolutions/upload', [FsTeamController::class, 'uploadResolution'])->name('fs.resolutions.upload');
                 Route::post('/ia-resolutions/{id}/update', [FsTeamController::class, 'updateResolution'])->name('fs.resolutions.update');
+
+                Route::delete('/ia-resolutions/{id}/delete', [FsTeamController::class, 'deleteResolution'])->name('fs.resolutions.delete');
+                
                 Route::post('/ia-resolutions/{id}/status', [FsTeamController::class, 'updateResolutionStatus'])->name('fs.resolutions.update_status');
                 Route::post('/projects/{project}/update-status', [FsTeamController::class, 'updateStatus'])->name('fs.projects.update');
                 Route::post('/hydro-geo', [FsTeamController::class, 'storeHydroGeo'])->name('fs.hydro.store');
@@ -113,6 +118,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::delete('/downloadables/{id}/delete', [RpwsisTeamController::class, 'deleteForm'])->name('rpwsis.downloadables.delete');
 
                 Route::post('/ia-resolutions/upload', [RpwsisTeamController::class, 'uploadResolution'])->name('rpwsis.resolutions.upload');
+
+                //delete
+                Route::delete('/ia-resolutions/{id}/delete', [RpwsisTeamController::class, 'deleteResolution'])->name('rpwsis.resolutions.delete');
+
                 Route::post('/ia-resolutions/{id}/update', [RpwsisTeamController::class, 'updateResolution'])->name('rpwsis.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [RpwsisTeamController::class, 'updateResolutionStatus'])->name('rpwsis.resolutions.update_status');
             });
@@ -135,6 +144,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::delete('/downloadables/{id}/delete', [ContractManagementTeamController::class, 'deleteForm'])->name('cm.downloadables.delete');
 
                 Route::post('/ia-resolutions/upload', [ContractManagementTeamController::class, 'uploadResolution'])->name('cm.resolutions.upload');
+
+                //delete
+                Route::delete('/resolutions/{id}/delete', [ContractManagementTeamController::class, 'deleteResolution'])->name('cm.resolutions.delete');
+
                 Route::post('/ia-resolutions/{id}/update', [ContractManagementTeamController::class, 'updateResolution'])->name('cm.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [ContractManagementTeamController::class, 'updateResolutionStatus'])->name('cm.resolutions.update_status');
             });
@@ -157,6 +170,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::delete('/downloadables/{id}/delete', [RowTeamController::class, 'deleteForm'])->name('row.downloadables.delete');
 
                 Route::post('/ia-resolutions/upload', [RowTeamController::class, 'uploadResolution'])->name('row.resolutions.upload');
+
+                //delete 
+                Route::delete('/resolutions/{id}/delete', [RowTeamController::class, 'deleteResolution'])->name('row.resolutions.delete');
+
                 Route::post('/ia-resolutions/{id}/update', [RowTeamController::class, 'updateResolution'])->name('row.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [RowTeamController::class, 'updateResolutionStatus'])->name('row.resolutions.update_status');
             });
@@ -179,6 +196,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::delete('/downloadables/{id}/delete', [PcrTeamController::class, 'deleteForm'])->name('pcr.downloadables.delete');
 
                 Route::post('/ia-resolutions/upload', [PcrTeamController::class, 'uploadResolution'])->name('pcr.resolutions.upload');
+
+                //delete
+                Route::delete('/resolutions/{id}/delete', [PcrTeamController::class, 'deleteResolution'])->name('pcr.resolutions.delete');
+
                 Route::post('/ia-resolutions/{id}/update', [PcrTeamController::class, 'updateResolution'])->name('pcr.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [PcrTeamController::class, 'updateResolutionStatus'])->name('pcr.resolutions.update_status');
             });
@@ -201,6 +222,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::delete('/downloadables/{id}/delete', [PaoTeamController::class, 'deleteForm'])->name('pao.downloadables.delete');
 
                 Route::post('/ia-resolutions/upload', [PaoTeamController::class, 'uploadResolution'])->name('pao.resolutions.upload');
+
+                //delete
+                Route::delete('/resolutions/{id}/delete', [PaoTeamController::class, 'deleteResolution'])->name('pao.resolutions.delete');
+
                 Route::post('/ia-resolutions/{id}/update', [PaoTeamController::class, 'updateResolution'])->name('pao.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [PaoTeamController::class, 'updateResolutionStatus'])->name('pao.resolutions.update_status');
             });

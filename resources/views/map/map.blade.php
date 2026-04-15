@@ -8,20 +8,68 @@
 
 
 <style>
-/* MAP CONTAINER */
+.content {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100vh !important;
+    max-width: none !important;
+}
 #map-container {
     position: relative;
     width: 100%;
     height: 100%;
 }
+.map-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000; /* Must be higher than Leaflet layers */
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px 40px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    font-family: sans-serif;
+    font-weight: bold;
+    color: #333;
+}
+
+.spinner {
+    width: 25px;
+    height: 25px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2e7d32; /* PSU Green */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* Custom class to apply when in satellite mode */
+#map-toggle.satellite-active {
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Optional: adds a glow to make it pop */
+}
+
+/* Ensure the transition is smooth */
+#map-toggle {
+    transition: color 0.3s ease;
+}
 .municipality-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #ffffff;
-    border-color: black;
-    padding: 2px 6px;
-    border-radius: 4px;
-    pointer-events: none;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff; /* White text for visibility on blue */
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; /* Outline to make it readable */
+    font-size: 12px;
+    pointer-events: none; /* Let clicks pass through to the map */
+
 }
 /* MAP */
 #map {
@@ -73,7 +121,7 @@
 #map-toggle {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 50px;
     z-index: 1000;
     background: rgba(255, 255, 255, 0);
     backdrop-filter: blur(6px);
@@ -103,6 +151,29 @@
 #miniMap,
 #admin-toggle-btn {
     z-index: 9999 !important;
+}
+.layer-check:has(#toggleIrrigated) { --glow-color: #43a047; } /* Green */
+.layer-check:has(#toggleLandBoundary) { --glow-color: #2196f3; } /* Blue */
+.layer-check:has(#togglePotential) { --glow-color: #ffeb3b; } /* Yellow */
+
+/* 2. Style the text and glow when Satellite is active */
+#layer-controls.satellite-active .layer-check span {
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+/* 3. Apply the dynamic glow to the checkbox text and box */
+#layer-controls.satellite-active .layer-check input[type="checkbox"]:checked + span,
+#layer-controls.satellite-active .layer-check:has(input:checked) span {
+    text-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color);
+    color: var(--glow-color) !important;
+    font-weight: bold;
+}
+
+/* 4. Optional: Glow the actual checkbox itself */
+#layer-controls.satellite-active input[type="checkbox"]:checked {
+    box-shadow: 0 0 15px var(--glow-color);
+    outline: none;
 }
 #map {
     position: relative;
@@ -291,7 +362,7 @@ input:checked + .slider:before {
     position: absolute;
     top: 0;
     right: -400px;
-    width: 220px;
+    width: 250px;
     color: white;
     text-shadow:
         -1px -1px 0 black,
@@ -299,8 +370,8 @@ input:checked + .slider:before {
         -1px  1px 0 black,
          1px  1px 0 black;
     height: 100%;
-    background: #ffffff00;
-    box-shadow: -4px 0 10px rgba(0,0,0,0.2);
+    background: #81717187;
+    box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53);
     z-index: 1000;
     transition: right 0.3s ease;
     display: flex;
@@ -410,7 +481,7 @@ input:checked + .slider:before {
 .detail-panel {
     position: fixed;
     top: 80px;
-    left: 50%;
+    left: 60%;
     transform: translateX(-50%) scale(0.9);
 
     width: 350px;
@@ -707,17 +778,21 @@ select[name="category"]:focus {
     box-shadow: none !important;
     color: rgb(255, 255, 255);
     font-weight: 900;
-    text-shadow: 2px 2px 6px #000;
+    text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; /* Outline to make it readable */
     font-size: 32px;
     letter-spacing: 3px;
 }
 </style>
 
 <div id="map-container">
+    <div id="map-loader" class="map-loader" style="display: none;">
+        <div class="spinner"></div>
+        <span id="loader-text">Loading Layer...</span>
+    </div>
 <div id="infoPanel" class="info-panel">
     <div class="info-header">
         <h2 id="infoTitle">Municipality</h2>
-        <button onclick="closePanel()">✖</button>
+        <button onclick="closeAllPanels()">✖</button>
     </div>
 
     <div id="infoContent" class="info-content">
@@ -736,7 +811,7 @@ select[name="category"]:focus {
 <div id="detailPanel" class="detail-panel">
     <div class="detail-header">
         <span id="municipalityName">Details</span>
-        <button onclick="closeDetail()">✖</button>
+        <button onclick="closeAllPanels()">✖</button>
     </div>
 
     <div id="detailContent" class="detail-content"></div>
@@ -759,7 +834,7 @@ select[name="category"]:focus {
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
-            <span>Land Boundary</span>
+            <span>Pangasinan Land Boundary</span>
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
@@ -842,12 +917,21 @@ select[name="category"]:focus {
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@6.2.0/dist/shp.min.js" crossorigin="anonymous"></script>
 <script>
+function toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+}
+
 const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 let landChart = null;
 let selectedMunicipality = null;
 let activeSliceIndex = null;
+let municipalityMarkers = [];
 let provinceLabelLayer = null;
+
 
 function buildAppUrl(path) {
     if (!path) {
@@ -862,7 +946,8 @@ function buildAppUrl(path) {
     return appBaseUrl ? `${appBaseUrl}/${normalizedPath}` : `/${normalizedPath}`;
 }
 
-let map = L.map('map').setView([15.8949, 120.2863], 9);
+// Dagupan City Center
+let map = L.map('map').setView([16.0433, 120.3333], 10);
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -897,10 +982,10 @@ const overlayStyles = {
         fillOpacity: 0.9
     },
     land_boundary: {
-        color: '#0d47a1',
-        weight: 3,
-        fillColor: '#64b5f6',
-        fillOpacity: 1
+        color: '#0d47a1', // Dark blue border
+        weight: 2,
+        fillColor: '#2196f3', // Vibrant blue fill
+        fillOpacity: 0.5    // Adjusted for visibility
     },
     potential: {
         color: '#fbc02d',
@@ -915,15 +1000,26 @@ let selectedBaseLayer;
 let miniGeoLayer;
 const overlayLayers = {};
 
+const toggleContainer = document.getElementById('map-toggle');
+const layerControls = document.getElementById('layer-controls');
+
 toggle.addEventListener('change', () => {
     if (toggle.checked) {
         map.removeLayer(normalLayer);
         map.addLayer(satelliteLayer);
         map.addLayer(labelLayer);
+
+        toggleContainer.classList.add('satellite-active');
+        layerControls.classList.add('satellite-active'); 
+        if(statusBox) statusBox.classList.add('satellite-active');
     } else {
         map.removeLayer(satelliteLayer);
         map.removeLayer(labelLayer);
         map.addLayer(normalLayer);
+
+        toggleContainer.classList.remove('satellite-active');
+        layerControls.classList.remove('satellite-active');
+        if(statusBox) statusBox.classList.remove('satellite-active');
     }
 });
 
@@ -935,7 +1031,8 @@ function updateStatus(message, isError = false) {
 function getFeatureName(feature, fallback = 'Unknown') {
     const properties = feature?.properties || {};
 
-    return properties.name
+    return properties.ADM3_EN
+        || properties.name
         || properties.Name
         || properties.MUNICIPALI
         || properties.MUNICIPAL
@@ -948,22 +1045,28 @@ function updateProvinceLabelVisibility() {
     const anyChecked = Object.values(overlayToggles).some(checkbox => checkbox && checkbox.checked);
 
     if (anyChecked) {
-        // HIDE PROVINCE
+        // HIDE PROVINCE LABEL
         if (provinceLabelLayer && map.hasLayer(provinceLabelLayer)) {
             map.removeLayer(provinceLabelLayer);
         }
-        // HIDE ALL MUNICIPALITIES
-        municipalityLabels.forEach(label => {
-            if (map.hasLayer(label)) map.removeLayer(label);
+        
+        // HIDE ALL MUNICIPALITY MARKERS
+        municipalityMarkers.forEach(marker => {
+            if (map.hasLayer(marker)) {
+                map.removeLayer(marker);
+            }
         });
     } else {
-        // SHOW PROVINCE
+        // SHOW PROVINCE LABEL
         if (provinceLabelLayer && !map.hasLayer(provinceLabelLayer)) {
             provinceLabelLayer.addTo(map);
         }
-        // SHOW ALL MUNICIPALITIES
-        municipalityLabels.forEach(label => {
-            if (!map.hasLayer(label)) label.addTo(map);
+        
+        // SHOW ALL MUNICIPALITY MARKERS
+        municipalityMarkers.forEach(marker => {
+            if (!map.hasLayer(marker)) {
+                marker.addTo(map);
+            }
         });
     }
 }
@@ -1000,93 +1103,83 @@ async function loadBaseMap() {
 
     const data = await response.json();
 
+    // Clear previous markers
+    municipalityMarkers.forEach(m => map.removeLayer(m));
+    municipalityMarkers = [];
+
+    // ✅ TRACKER: Prevent multiple labels for the same municipality
+    const labeledNames = new Set();
+
     geoLayer = L.geoJSON(data, {
         style: getBaseStyle,
         onEachFeature: function(feature, layer) {
-            const name = getFeatureName(feature);
+            const name = toTitleCase(getFeatureName(feature));
 
-layer.on('click', function() {
-    const name = getFeatureName(feature);
-    const data = getMunicipalityData(name);
- // or municipality
-    updateInfoPanel(name);
+            layer.on('click', function() {
+                const mData = getMunicipalityData(name);
+                updateInfoPanel(name);
+                selectedMunicipality = mData; 
+                setSelectedBaseLayer(layer);
+                document.getElementById('infoTitle').innerText = name;
 
-    selectedMunicipality = data; // 🔥 SAVE IT
-    setSelectedBaseLayer(layer);
-    document.getElementById('infoTitle').innerText = name;
+                if (mData) {
+                    const landData = {
+                        labels: ["Total Land Area (ha)", "Primary Crops", "Canals", "Dams", "Annual Crop Area (ha)"],
+                        values: [
+                            mData.total_land_area_ha,
+                            mData.primary_crops.length,
+                            mData.infrastructure.canals,
+                            mData.infrastructure.dams.length,
+                            mData.annual_crop_ha
+                        ],
+                        colors: ["#2e7d32", "#ffa726", "#42a5f5", "#8d6e63", "#4caf50"]
+                    };
+                    renderChart(landData);
+                    renderLegend(landData);
+                    openDetail();
+                } else {
+                    document.getElementById('extraData').innerHTML = "No data available";
+                }
+                showMiniMap(layer.toGeoJSON());
+                openPanel();
+            });
 
-if (data) {
-    // 🔥 Convert your real data into chart format
-    const landData = {
-        labels: [
-            "Total Land Area (ha)",
-            "Primary Crops", // Count of crop varieties
-            "Canals",
-            "Dams",
-            "Annual Crop Area (ha)"
-        ],
-        values: [
-            data.total_land_area_ha,
-            data.primary_crops.length,
-            data.infrastructure.canals,
-            data.infrastructure.dams.length,
-            data.annual_crop_ha
-        ],
-        colors: [
-            "#2e7d32", // Dark Green
-            "#ffa726", // Orange (Crops)
-            "#42a5f5", // Blue (Canals)
-            "#8d6e63",  // Brown (Dams)
-            "#4caf50"   // Green (Annual Crop Area)
-        ]
-    };
+            // ✅ LOGIC: Only add a label if this name hasn't been used yet
+            if (!labeledNames.has(name)) {
+                const bounds = layer.getBounds();
+                const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
 
-    renderChart(landData);
-    renderLegend(landData);
-    openDetail();
-} else {
-        document.getElementById('extraData').innerHTML = "No data available";
-    }
-    showMiniMap(layer.toGeoJSON());
-    openPanel();
-});
+                // Skip small islands/polygons to ensure the label hits the main landmass
+                if (size > 5000) {
+                    const center = bounds.getCenter();
 
-            const bounds = layer.getBounds();
+                    const marker = L.marker(center, {
+                        icon: L.divIcon({
+                            className: 'municipality-label',
+                            html: name 
+                        })
+                    }).addTo(map);
 
-// get size of polygon
-const size = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
-
-
-if (size < 5000) return;
-
-const center = bounds.getCenter();
-
-L.marker(center, {
-    icon: L.divIcon({
-        className: 'municipality-label',
-        html: name
-    })
-}).addTo(map);
-
-
+                    municipalityMarkers.push(marker);
+                    
+                    // Mark this name as "Done"
+                    labeledNames.add(name);
+                }
+            }
         }
     }).addTo(map);
 
-    const bounds = geoLayer.getBounds();
-    if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [20, 20] });
-    }
-const provinceName = "PANGASINAN";
-
-provinceLabelLayer = L.tooltip({
-    permanent: true,
-    direction: 'center',
-    className: 'province-label',
-    pane: 'provincePane'
-})
-.setLatLng(geoLayer.getBounds().getCenter())
-.setContent(provinceName)
-.addTo(map);
+    const provinceName = "PANGASINAN"; 
+    
+    provinceLabelLayer = L.tooltip({
+        permanent: true,
+        direction: 'center',
+        className: 'province-label',
+        pane: 'provincePane'
+    })
+    .setLatLng(geoLayer.getBounds().getCenter())
+    .setContent(provinceName)
+    .addTo(map);
 }
 
 function normalizeGeoJson(data) {
@@ -1164,11 +1257,11 @@ function styleOverlayFeature(categoryKey, feature) {
 
     if (categoryKey === 'land_boundary') {
         return {
-            // color: baseStyle.color,
-            // weight: baseStyle.weight,
+            color: baseStyle.color,
+            weight: baseStyle.weight,
             opacity: 1,
-            // fillColor: baseStyle.fillColor,
-            // fillOpacity: geometryType.includes('Polygon') ? 0.04 : 0
+            fillColor: baseStyle.fillColor,
+            fillOpacity: 0.6
         };
     }
 
@@ -1194,6 +1287,15 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
     const name = getFeatureName(feature, fileName);
 
     layer.bindPopup('<b>' + name + '</b><br>' + overlayGroups[categoryKey].label);
+
+            if (categoryKey === 'land_boundary') {
+                layer.bindTooltip(name, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'municipality-label'
+                }).openTooltip();
+            }
+
 
     layer.on('click', function(e) {
 
@@ -1312,10 +1414,10 @@ async function showOverlayCategory(categoryKey) {
         }
     });
 
-    const bounds = overlayLayers[categoryKey].getBounds();
-    if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [25, 25] });
-    }
+    // const bounds = overlayLayers[categoryKey].getBounds();
+    // if (bounds.isValid()) {
+    //     map.fitBounds(bounds, { padding: [25, 25] });
+    // }
 
     updateStatus(config.label + ' is now highlighted on the map.');
 }
@@ -1337,19 +1439,33 @@ function hideOverlayCategory(categoryKey) {
     updateStatus((config?.label || 'Selected layer') + ' has been hidden.');
 }
 
+
+
 Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
     if (!checkbox) return;
 
     checkbox.addEventListener('change', async () => {
+        const loader = document.getElementById('map-loader');
 
-        // load / hide overlay
         if (checkbox.checked) {
-            await showOverlayCategory(categoryKey);
+            // 1. Show the loader immediately
+            if (loader) loader.style.display = 'flex';
+
+            try {
+                // 2. Wait for the heavy map data to load
+                await showOverlayCategory(categoryKey);
+            } catch (error) {
+                console.error("Error loading map layer:", error);
+                updateStatus("Failed to load layer.", true);
+            } finally {
+                // 3. Hide the loader once finished (or if it fails)
+                if (loader) loader.style.display = 'none';
+            }
         } else {
             hideOverlayCategory(categoryKey);
         }
 
-        // update label visibility
+        // Update label visibility
         updateProvinceLabelVisibility();
     });
 });
@@ -1526,9 +1642,9 @@ if (form) {
     });
 }
 const overlayPriority = {
-    irrigated: 3,       // highest
-    land_boundary: 1,   // lowest
-    potential: 2        // middle
+    irrigated: 3,    
+    potential: 2,
+    land_boundary: 1, 
 };
 //Details
 
@@ -1551,12 +1667,23 @@ function openPanel() {
     document.getElementById('infoPanel').classList.add('active');
 }
 
-function closePanel() {
+function closeAllPanels() {
+    // Removes 'active' from the chart panel
     document.getElementById('infoPanel').classList.remove('active');
-}
-function closeDetail(){
+    
+    // Removes 'active' from the full details table
     document.getElementById('detailPanel').classList.remove('active');
-};
+    
+    // Optional: Hide the miniMap if you want it to disappear too
+    document.getElementById('miniMap').style.display = 'none';
+    
+    // Optional: Reset the map selection style
+    if (selectedBaseLayer && geoLayer) {
+        geoLayer.resetStyle(selectedBaseLayer);
+    }
+}
+
+
 // if (data) {
 
 //     // 🔥 Convert your real data into chart format
