@@ -8,6 +8,7 @@ use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
+use App\Models\HydroGeoProject;
 
 class FsTeamController extends Controller
 {
@@ -24,7 +25,24 @@ class FsTeamController extends Controller
             ->get();
 
         $categories = EventCategory::all();
-        return view('fs-team.dashboard', compact('resolutions', 'events', 'categories'));
+        // 2. Calculate the dynamic KPI numbers for the top cards
+        $totalProjects = HydroGeoProject::count();
+        $conducted = HydroGeoProject::whereIn('status', ['For Interpretation', 'Interpreted', 'For Submission of Raw data'])->count();
+        $remaining = HydroGeoProject::where('status', 'For Schedule')->count();
+        $feasible = HydroGeoProject::where('result', 'Feasible')->count();
+
+        // 3. Fetch the table data with pagination (8 rows per page)
+        $hydroProjects = HydroGeoProject::paginate(8);
+        return view('fs-team.dashboard', compact(
+            'resolutions',
+            'events',
+            'categories',
+            'hydroProjects',
+            'totalProjects',
+            'conducted',
+            'remaining',
+            'feasible'
+        ));
     }
 
     // 2. View Downloadables Page
@@ -51,7 +69,7 @@ class FsTeamController extends Controller
         $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
-            Downloadable::create([
+        Downloadable::create([
             'title' => $cleanTitle,
             'file_path' => $path,
             'original_name' => $file->getClientOriginalName(),
@@ -141,5 +159,14 @@ class FsTeamController extends Controller
         $resolution->update(['status' => $request->status]);
 
         return back()->with('success', 'Resolution status updated successfully.');
+    }
+
+    public function storeHydroGeo(Request $request)
+    {
+        // Validate and save the new row
+        HydroGeoProject::create($request->all());
+
+        // Refresh the page
+        return redirect()->back()->with('success', 'New Hydro-Geo data added successfully!');
     }
 }

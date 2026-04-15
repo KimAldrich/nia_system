@@ -92,6 +92,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/ia-resolutions/{id}/update', [FsTeamController::class, 'updateResolution'])->name('fs.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [FsTeamController::class, 'updateResolutionStatus'])->name('fs.resolutions.update_status');
                 Route::post('/projects/{project}/update-status', [FsTeamController::class, 'updateStatus'])->name('fs.projects.update');
+                Route::post('/hydro-geo', [FsTeamController::class, 'storeHydroGeo'])->name('fs.hydro.store');
             });
         });
 
