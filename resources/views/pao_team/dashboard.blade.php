@@ -314,6 +314,55 @@
             height: 10px;
             border-radius: 50%;
         }
+
+        /* =========================================
+           🌟 NEW: ADD DATA MODAL STYLES 🌟
+           ========================================= */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        .modal-box { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modern-input { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; outline: none; background: #f8fafc; color: #1e293b; transition: 0.2s; margin-bottom: 15px; }
+        .modern-input:focus { border-color: #0c4d05; background: #ffffff; }
+        .modern-label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modern-btn { width: 100%; padding: 10px; background: #0c4d05; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-family: 'Poppins', sans-serif; }
+        .modern-btn:hover { background: #083803; }
+        .modern-btn-outline { background: white; border: 1px solid #cbd5e1; color: #475569; }
+        .modern-btn-outline:hover { background: #f1f5f9; color: #1e293b; }
+
+        /* Table styles for data monitoring */
+        .table-responsive { 
+            width: 100%; 
+            overflow-x: auto; 
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 15px; 
+            scrollbar-width: thin;
+            max-height: 580px;
+        }
+        
+        .table-responsive::-webkit-scrollbar { height: 8px; width: 8px; }
+        .table-responsive::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .sleek-table { border-collapse: collapse; width: max-content; min-width: 100%; }
+        .sleek-table th { text-align: left; padding: 12px 15px; color: #a0aec0; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; white-space: nowrap; }
+        .sleek-table td { padding: 15px 15px; border-bottom: 1px solid #f1f5f9; font-size: 12px; font-weight: 500; color: #475569; vertical-align: middle; white-space: normal; word-break: break-word; }
+        .sleek-table tr:hover td { background-color: #f8fafc; transition: 0.2s; }
+        .sleek-table tr:last-child td { border-bottom: none; }
+        
+        .col-system { font-weight: 700; color: #1e293b; white-space: nowrap; }
+        .col-desc { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Soft UI Pagination Styling */
+        .custom-pagination { display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; gap: 8px; font-family: 'Poppins', sans-serif;}
+        .custom-pagination svg { width: 16px; height: 16px; }
+        .custom-pagination .page-item { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; border-radius: 8px; background: #ffffff; color: #64748b; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: 0.2s; }
+        .custom-pagination .page-item:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+        .custom-pagination .page-item.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; }
+        .custom-pagination .page-item.disabled { background: #f8fafc; color: #cbd5e1; cursor: not-allowed; border-color: #f1f5f9; }
     </style>
 
     <h1 class="header-title">Programming Team Dashboard</h1>
@@ -550,6 +599,315 @@
         </div>
     </div>
 
+    <div class="ui-card">
+        <div class="section-title">
+            Program of Works Status Monitoring
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="openAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                    + Add Data
+                </button>
+                <button style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Export CSV
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="sleek-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">District</th>
+                        <th rowspan="2">No. of Projects</th>
+                        <th rowspan="2">Total Allocation</th>
+                        <th rowspan="2">No. of Plans Received</th>
+                        <th rowspan="2">No. of Project Estimate Received</th>
+                        <th colspan="3" style="text-align: center; font-weight: 600; color: #a0aec0;">Status of Program of Works</th>
+                        <th rowspan="2">On Going POW Preparation</th>
+                        <th rowspan="2">POW for Submission</th>
+                        <th rowspan="2">Remarks</th>
+                        <th rowspan="2">Actions</th>
+                    </tr>
+                    <tr>
+                        <th>NO. of POW Prepared</th>
+                        <th>No. of POW Approved</th>
+                        <th>No. of POW Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($powData ?? [] as $data)
+                        <tr>
+                            <td>{{ $data->district }}</td>
+                            <td>{{ $data->no_of_projects }}</td>
+                            <td>₱{{ number_format($data->total_allocation, 2) }}</td>
+                            <td>{{ $data->no_of_plans_received }}</td>
+                            <td>{{ $data->no_of_project_estimate_received }}</td>
+                            <td>{{ $data->pow_received }}</td>
+                            <td>{{ $data->pow_approved }}</td>
+                            <td>{{ $data->pow_submitted }}</td>
+                            <td>{{ $data->ongoing_pow_preparation }}</td>
+                            <td>{{ $data->pow_for_submission }}</td>
+                            <td class="col-desc">{{ $data->remarks }}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')" 
+                                        style="background: #4f46e5; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 5px;">
+                                    Edit
+                                </button>
+                                <button type="button" onclick="openDeleteModal({{ $data->id }})" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="12" style="text-align:center; padding: 30px 0; color: #a0aec0;">No data found in the database.</td>
+                        </tr>
+                    @endforelse
+
+                    @if(isset($powData) && $powData->count())
+                        <tr style="font-weight: 700; background: #f8fafc; border-top: 2px solid #0c4d05;">
+                            <td style="font-weight: 800; color: #0c4d05;">Total</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_projects') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">₱{{ number_format($powData->sum('total_allocation'), 2) }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_plans_received') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_project_estimate_received') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_received') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_approved') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_submitted') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('ongoing_pow_preparation') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_for_submission') }}</td>
+                            <td></td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+        @if(isset($powData) && $powData->hasPages())
+            <div class="custom-pagination">
+                {{-- Previous Page Link --}}
+                @if ($powData->onFirstPage())
+                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
+                @else
+                    <a href="{{ $powData->previousPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
+                @endif
+
+                {{-- Pagination Elements --}}
+                @foreach ($powData->links()->elements as $element)
+                    @if (is_string($element))
+                        <span class="page-item disabled">{{ $element }}</span>
+                    @endif
+
+                    @if (is_array($element))
+                        @foreach ($element as $page => $url)
+                            @if ($page == $powData->currentPage())
+                                <span class="page-item active">{{ $page }}</span>
+                            @else
+                                <a href="{{ $url }}" class="page-item">{{ $page }}</a>
+                            @endif
+                        @endforeach
+                    @endif
+                @endforeach
+
+                {{-- Next Page Link --}}
+                @if ($powData->hasMorePages())
+                    <a href="{{ $powData->nextPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
+                @else
+                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
+                @endif
+            </div>
+        @endif
+    </div>
+
+    <div class="modal-overlay" id="addDataModal">
+        <div class="modal-box">
+            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Program of Works Data</h3>
+            
+            <form action="{{ route('pao.pow.store') }}" method="POST">
+                @csrf
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">District</label>
+                        <select name="district" required class="modern-input">
+                            <option value="">Select District</option>
+                            <option value="District 1">District 1</option>
+                            <option value="District 2">District 2</option>
+                            <option value="District 3">District 3</option>
+                            <option value="District 4">District 4</option>
+                            <option value="District 5">District 5</option>
+                            <option value="District 6">District 6</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="modern-label">No. of Projects</label>
+                        <input type="number" name="no_of_projects" required placeholder="e.g. 5" class="modern-input" min="0">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">Total Allocation (₱)</label>
+                        <input type="number" name="total_allocation" required placeholder="e.g. 5000000" class="modern-input" min="0" step="0.01">
+                    </div>
+                    <div>
+                        <label class="modern-label">No. of Plans Received</label>
+                        <input type="number" name="no_of_plans_received" required placeholder="e.g. 3" class="modern-input" min="0">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="modern-label">No. of Project Estimate Received</label>
+                    <input type="number" name="no_of_project_estimate_received" required placeholder="e.g. 2" class="modern-input" min="0">
+                </div>
+
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f8fafc;">
+                    <label class="modern-label" style="margin-bottom: 10px; display: block;">Status of Program of Works</label>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="modern-label">NO. of POW Prepared</label>
+                            <input type="number" name="pow_received" required placeholder="e.g. 4" class="modern-input" min="0">
+                        </div>
+                        <div>
+                            <label class="modern-label">No. of POW Approved</label>
+                            <input type="number" name="pow_approved" required placeholder="e.g. 3" class="modern-input" min="0">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="modern-label">No. of POW Submitted</label>
+                            <input type="number" name="pow_submitted" required placeholder="e.g. 2" class="modern-input" min="0">
+                        </div>
+                        <div>
+                            <label class="modern-label">Ongoing POW Preparation</label>
+                            <input type="number" name="ongoing_pow_preparation" required placeholder="e.g. 1" class="modern-input" min="0">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="modern-label">POW for Submission</label>
+                        <input type="number" name="pow_for_submission" required placeholder="e.g. 1" class="modern-input" min="0">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="modern-label">Remarks</label>
+                    <textarea name="remarks" rows="3" class="modern-input" style="resize: none;" placeholder="Additional remarks..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" onclick="closeAddModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="modern-btn" style="flex: 1;">Save Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteConfirmModal">
+        <div class="modal-box">
+            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete Program of Works Data</h3>
+            <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
+            <form id="deleteForm" method="POST" action="">
+                @csrf
+                @method('DELETE')
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeDeleteModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="modern-btn" style="flex: 1; background: #ef4444;">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editDataModal">
+        <div class="modal-box">
+            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Program of Works Data</h3>
+            
+            <form action="{{ route('pao.pow.update') }}" method="POST">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="id" id="edit-id">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">District</label>
+                        <select name="district" id="edit-district" required class="modern-input">
+                            <option value="">Select District</option>
+                            <option value="District 1">District 1</option>
+                            <option value="District 2">District 2</option>
+                            <option value="District 3">District 3</option>
+                            <option value="District 4">District 4</option>
+                            <option value="District 5">District 5</option>
+                            <option value="District 6">District 6</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="modern-label">No. of Projects</label>
+                        <input type="number" name="no_of_projects" id="edit-no_of_projects" required placeholder="e.g. 5" class="modern-input" min="0">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">Total Allocation (₱)</label>
+                        <input type="number" name="total_allocation" id="edit-total_allocation" required placeholder="e.g. 5000000" class="modern-input" min="0" step="0.01">
+                    </div>
+                    <div>
+                        <label class="modern-label">No. of Plans Received</label>
+                        <input type="number" name="no_of_plans_received" id="edit-no_of_plans_received" required placeholder="e.g. 3" class="modern-input" min="0">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="modern-label">No. of Project Estimate Received</label>
+                    <input type="number" name="no_of_project_estimate_received" id="edit-no_of_project_estimate_received" required placeholder="e.g. 2" class="modern-input" min="0">
+                </div>
+
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f8fafc;">
+                    <label class="modern-label" style="margin-bottom: 10px; display: block;">Status of Program of Works</label>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="modern-label">NO. of POW Prepared</label>
+                            <input type="number" name="pow_received" id="edit-pow_received" required placeholder="e.g. 4" class="modern-input" min="0">
+                        </div>
+                        <div>
+                            <label class="modern-label">No. of POW Approved</label>
+                            <input type="number" name="pow_approved" id="edit-pow_approved" required placeholder="e.g. 3" class="modern-input" min="0">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="modern-label">No. of POW Submitted</label>
+                            <input type="number" name="pow_submitted" id="edit-pow_submitted" required placeholder="e.g. 2" class="modern-input" min="0">
+                        </div>
+                        <div>
+                            <label class="modern-label">Ongoing POW Preparation</label>
+                            <input type="number" name="ongoing_pow_preparation" id="edit-ongoing_pow_preparation" required placeholder="e.g. 1" class="modern-input" min="0">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="modern-label">POW for Submission</label>
+                        <input type="number" name="pow_for_submission" id="edit-pow_for_submission" required placeholder="e.g. 1" class="modern-input" min="0">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="modern-label">Remarks</label>
+                    <textarea name="remarks" id="edit-remarks" rows="3" class="modern-input" style="resize: none;" placeholder="Additional remarks..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" onclick="closeEditModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
@@ -652,6 +1010,45 @@
 
             document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
             document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
+        }
+
+        const deleteBaseUrl = "{{ url('pao_team/pow/delete') }}";
+
+        function openAddModal() {
+            document.getElementById('addDataModal').classList.add('active');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addDataModal').classList.remove('active');
+        }
+
+        function openDeleteModal(id) {
+            document.getElementById('deleteForm').action = deleteBaseUrl + '/' + id;
+            document.getElementById('deleteConfirmModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteConfirmModal').classList.remove('active');
+        }
+
+        function openEditModal(id, district, no_of_projects, total_allocation, no_of_plans_received, no_of_project_estimate_received, pow_received, pow_approved, pow_submitted, ongoing_pow_preparation, pow_for_submission, remarks) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-district').value = district;
+            document.getElementById('edit-no_of_projects').value = no_of_projects;
+            document.getElementById('edit-total_allocation').value = total_allocation;
+            document.getElementById('edit-no_of_plans_received').value = no_of_plans_received;
+            document.getElementById('edit-no_of_project_estimate_received').value = no_of_project_estimate_received;
+            document.getElementById('edit-pow_received').value = pow_received;
+            document.getElementById('edit-pow_approved').value = pow_approved;
+            document.getElementById('edit-pow_submitted').value = pow_submitted;
+            document.getElementById('edit-ongoing_pow_preparation').value = ongoing_pow_preparation;
+            document.getElementById('edit-pow_for_submission').value = pow_for_submission;
+            document.getElementById('edit-remarks').value = remarks;
+            document.getElementById('editDataModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editDataModal').classList.remove('active');
         }
     </script>
 @endsection

@@ -67,6 +67,7 @@
            MAIN CONTENT AREA
            ========================================= */
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; transition: all 0.3s ease-in-out; max-width: calc(100vw - 310px); }
+        .sidebar.collapsed ~ .main-wrapper { max-width: 100vw; }
         .content { padding: 30px; overflow-y: auto; overflow-x: hidden; flex: 1; width: 100%; box-sizing: border-box; }
 
         /* 🌟 NEW SOFT UI CARD STYLES (Matches Image) 🌟 */
@@ -141,7 +142,7 @@
             $roleLabels = [
                 'admin' => 'Administrator',
                 'fs_team' => 'FS Member',
-                'rpwsis_team' => 'RP-WSIS Team Member',
+                'rpwsis_team' => 'Social And Environmental Team Member',
                 'cm_team' => 'Contract Management Team Member',
                 'row_team' => 'Right Of Way Team Member',
                 'pcr_team' => 'Program Completion Report Team Member',
@@ -194,7 +195,7 @@
             @php
                 $teams = [
                     'fs-team' => 'Feasibility Study Team',
-                    'rpwsis_team' => 'RP-WSIS Team',
+                    'rpwsis_team' => 'Social And Environmental Team',
                     'cm_team' => 'Contract Management Team',
                     'row_team' => 'Right Of Way Team',
                     'pcr_team' => 'Program Completion Report Team',

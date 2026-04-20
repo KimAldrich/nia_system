@@ -8,6 +8,7 @@ use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
+use App\Models\PaoPowData;
 
 class PaoTeamController extends Controller
 {
@@ -20,7 +21,8 @@ class PaoTeamController extends Controller
             ->get();
 
         $categories = EventCategory::all();
-        return view('pao_team.dashboard', compact('resolutions', 'events', 'categories'));
+        $powData = PaoPowData::paginate(8);
+        return view('pao_team.dashboard', compact('resolutions', 'events', 'categories', 'powData'));
     }
 
     public function downloadables()
@@ -125,5 +127,46 @@ class PaoTeamController extends Controller
         $resolution->update(['status' => $request->status]);
 
         return back()->with('success', 'Resolution status updated successfully.');
+    }
+
+    // 9. Delete IA Resolution
+    public function deleteResolution($id)
+    {
+        $resolution = IaResolution::findOrFail($id);
+
+        // Delete file from storage
+        if (Storage::disk('public')->exists($resolution->file_path)) {
+            Storage::disk('public')->delete($resolution->file_path);
+        }
+
+        // Optional: role/team check (same as your comment)
+        // if ($resolution->team !== 'pao_team') {
+        //     abort(403);
+        // }
+
+        // Delete record from database
+        $resolution->delete();
+
+        return back()->with('success', 'Resolution deleted successfully.');
+    }
+
+    public function storePow(Request $request)
+    {
+        PaoPowData::create($request->all());
+        return redirect()->back()->with('success', 'New Program of Works data added successfully!');
+    }
+
+    public function updatePow(Request $request)
+    {
+        $powData = PaoPowData::findOrFail($request->id);
+        $powData->update($request->except('id'));
+        return redirect()->back()->with('success', 'Program of Works data updated successfully!');
+    }
+
+    public function deletePow($id)
+    {
+        $powData = PaoPowData::findOrFail($id);
+        $powData->delete();
+        return redirect()->back()->with('success', 'Program of Works data deleted successfully!');
     }
 }

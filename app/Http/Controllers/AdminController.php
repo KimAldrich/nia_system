@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Downloadable;  
+use App\Models\Downloadable;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
@@ -32,12 +32,13 @@ class AdminController extends Controller
 
         // Fetch custom tags for the legend
         $categories = EventCategory::all();
+        $downloadables = Downloadable::all();
 
-        return view('admin.dashboard', compact('resolutions', 'events', 'categories'));
+        return view('admin.dashboard', compact('resolutions', 'events', 'categories', 'downloadables'));
     }
 
     //UploadDownloadables
-        public function uploadDownloadable(Request $request)
+    public function uploadDownloadable(Request $request)
     {
         $this->checkAdmin();
 
@@ -64,29 +65,29 @@ class AdminController extends Controller
 
     //Upload IA Resolutions
     public function uploadResolution(Request $request)
-{
-    $this->checkAdmin();
+    {
+        $this->checkAdmin();
 
-    $request->validate([
-        'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
-        'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
-    ]);
+        $request->validate([
+            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
+            'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
+        ]);
 
-    $file = $request->file('document');
-    $path = $file->store('resolutions', 'public');
+        $file = $request->file('document');
+        $path = $file->store('resolutions', 'public');
 
-    $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-    $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
-    \App\Models\IaResolution::create([
-        'title' => $cleanTitle,
-        'file_path' => $path,
-        'original_name' => $file->getClientOriginalName(),
-        'team' => $request->team // 🔥 SAME LOGIC
-    ]);
+        \App\Models\IaResolution::create([
+            'title' => $cleanTitle,
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'team' => $request->team // 🔥 SAME LOGIC
+        ]);
 
-    return back()->with('success', 'Resolution uploaded to selected team.');
-}
+        return back()->with('success', 'Resolution uploaded to selected team.');
+    }
 
     // 2. Manage Users Page
     public function manageUsers()
@@ -127,7 +128,7 @@ class AdminController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        if (auth()->id() === $user->id && ! (bool) $validated['is_active']) {
+        if (auth()->id() === $user->id && !(bool) $validated['is_active']) {
             $message = 'You cannot deactivate your own account while logged in.';
 
             if ($request->expectsJson() || $request->ajax()) {

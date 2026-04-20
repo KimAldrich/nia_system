@@ -835,7 +835,7 @@ select[name="category"]:focus {
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
-            <span>Land Boundary</span>
+            <span>Pangasinan Land Boundary</span>
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
@@ -949,6 +949,18 @@ function buildAppUrl(path) {
 
 // Dagupan City Center
 let map = L.map('map').setView([16.0433, 120.3333], 10);
+
+// Add ResizeObserver to handle container size changes (like sidebar collapse/expand)
+const mapContainer = document.getElementById('map-container');
+if (mapContainer && window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(() => {
+        if (typeof map !== 'undefined' && map.invalidateSize) {
+            map.invalidateSize();
+        }
+    });
+    resizeObserver.observe(mapContainer);
+}
+
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1871,12 +1883,25 @@ const closeBtn = document.getElementById('close-sidebar');
 // OPEN sidebar
 openBtn.addEventListener('click', () => {
     adminSidebar.classList.remove('sidebar-closed');
+    // Allow time for CSS transition, then invalidate map size
+    setTimeout(() => {
+        if (typeof map !== 'undefined' && map.invalidateSize) {
+            map.invalidateSize();
+        }
+    }, 500);
 });
 
 // CLOSE sidebar
 closeBtn.addEventListener('click', () => {
     adminSidebar.classList.add('sidebar-closed');
+    // Allow time for CSS transition, then invalidate map size
+    setTimeout(() => {
+        if (typeof map !== 'undefined' && map.invalidateSize) {
+            map.invalidateSize();
+        }
+    }, 500);
 });
+
 </script>
 
 @endsection
