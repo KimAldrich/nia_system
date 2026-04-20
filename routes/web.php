@@ -238,6 +238,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 Route::post('/ia-resolutions/{id}/update', [PaoTeamController::class, 'updateResolution'])->name('pao.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [PaoTeamController::class, 'updateResolutionStatus'])->name('pao.resolutions.update_status');
+
+                Route::post('/pow/store', [PaoTeamController::class, 'storePow'])->name('pao.pow.store');
+                Route::put('/pow/update', [PaoTeamController::class, 'updatePow'])->name('pao.pow.update');
+                Route::delete('/pow/delete/{id}', [PaoTeamController::class, 'deletePow'])->name('pao.pow.delete');
             });
         });
 
