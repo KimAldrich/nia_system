@@ -12,9 +12,9 @@ class MapController extends Controller
     public function Showmap()
     {
         $overlayGroups = [
-            'irrigated' => $this->buildOverlayGroup('Irrigated Area', 'Irrigated Area'),
-            'land_boundary' => $this->buildOverlayGroup('Pangasinan Land Boundary', 'Pangasinan Land Boundary'),
-            'potential' => $this->buildOverlayGroup('Potential Irrigable Area', 'Potential Irrigable Area'),
+            'irrigated' => $this->buildOverlayGroup('Irrigated Area', 'irrigated'),
+            'land_boundary' => $this->buildOverlayGroup('Pangasinan Land Boundary', 'land_boundary'),
+            'potential' => $this->buildOverlayGroup('Potential Irrigable Area', 'potential'),
         ];
 
         return view('map.map', compact('overlayGroups'));
