@@ -1245,9 +1245,9 @@ async function convertStoredFileToGeoJson(fileUrl) {
         return toGeoJSON.kml(kmlDocument);
     }
 
-    if (lowerFileUrl.endsWith('.shp')) {
-        return await shp(safeUrl);
-    }
+if (lowerFileUrl.endsWith('.zip')) {
+    return await shp(safeUrl);
+}
 
     throw new Error('Unsupported map file type.');
 }
@@ -1300,37 +1300,13 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
 
     layer.on('click', function(e) {
 
-        // 🔥 highlight selected overlay
-        // layer.setStyle({
-        //     color: '#ff0000',
-        //     weight: 3,
-        //     fillColor: '#ff5722',
-        //     fillOpacity: 0.9
-        // });
-
-        // reset others
-//         Object.values(overlayLayers).forEach(group => {
-//             group.eachLayer(l => {
-//                 if (l !== layer) {
-//                     l.setStyle(styleOverlayFeature(categoryKey, l.feature));
-//                 }
-//             });
-//         });
-// // 🔥 bring overlays to front
-// Object.values(overlayLayers).forEach(group => {
-//     group.eachLayer(layer => layer.bringToFront());
-// });
-
-// // 🔥 keep Pangasinan layer BELOW (but visible)
-// if (geoLayer) {
-//     geoLayer.eachLayer(layer => layer.bringToBack());
-// }
         // 🔥 zoom to clicked overlay
         map.fitBounds(layer.getBounds());
 
         // 🔥 send ONLY this overlay to mini map
         showMiniMap(layer.toGeoJSON());
     });
+    console.log(feature.properties);
 }
     });
 }
@@ -1556,7 +1532,7 @@ function showMiniMap(feature) {
 (async function initializeMap() {
     try {
         // 1. Create the high-priority layer (Pane) for the Province Label
-        // This ensures "PANGASINAN" stays above all other map layers
+        // "PANGASINAN" stays above all other map layers
         map.createPane('provincePane');
         map.getPane('provincePane').style.zIndex = 650;
         map.getPane('provincePane').style.pointerEvents = 'none';
