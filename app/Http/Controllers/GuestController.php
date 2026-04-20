@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\IaResolution;
 use App\Models\Downloadable;
-use App\Models\EventCategory;
+use App\Models\IaResolution; // Or whatever Resolution model you are using here
 use App\Models\Event;
+use App\Models\EventCategory;
+use App\Models\HydroGeoProject;
+use App\Models\FsdeProject;
+use App\Models\ProcurementProject;
 
 class GuestController extends Controller
 {
@@ -70,22 +73,61 @@ class GuestController extends Controller
         return redirect('/login')->with('success', 'You have securely logged out of the Guest Portal.');
     }
 
-    public function teamDashboard($team_slug)
+    public function teamDashboard(Request $request, $team_slug)
     {
         if (!session('guest_terms_accepted'))
             return redirect()->route('guest.terms');
 
-        // THE FIX: Convert URL dash to Database underscore (e.g., 'fs-team' becomes 'fs_team')
         $db_team = str_replace('-', '_', $team_slug);
-
-        $downloadables = Downloadable::where('team', $db_team)->latest()->get();
-        $resolutions = IaResolution::where('team', $db_team)->latest()->get();
-
-        $events = Event::whereDate('event_date', '>=', now())->orderBy('event_date', 'asc')->take(5)->get();
-        $categories = EventCategory::all();
         $pageTitle = strtoupper(str_replace('_', ' ', $db_team)) . " Dashboard";
 
-        return view('guest.dashboard', compact('downloadables', 'resolutions', 'events', 'categories', 'pageTitle'));
+        // 🌟 1. Fetch the exact same data the Teams see!
+        $resolutions = IaResolution::orderBy('created_at', 'desc')->get();
+        $events = Event::all();
+        $categories = EventCategory::all();
+
+        // 🌟 2. Set default empty variables
+        $totalProjects = $conducted = $remaining = $feasible = 0;
+        $hydroProjects = $fsdeProjects = $procurementProjects = null;
+        $procCategories = collect();
+
+        // 🌟 3. Fetch FS TEAM specific data
+        if ($db_team === 'fs_team') {
+            $totalProjects = HydroGeoProject::count();
+            $conducted = HydroGeoProject::whereIn('status', ['For Interpretation', 'Interpreted', 'For Submission of Raw data'])->count();
+            $remaining = HydroGeoProject::where('status', 'For Schedule')->count();
+            $feasible = HydroGeoProject::where('result', 'LIKE', '%Feasible%')->count();
+
+            $hydroProjects = HydroGeoProject::paginate(8, ['*'], 'hydro_page');
+            $fsdeProjects = FsdeProject::paginate(8, ['*'], 'fsde_page');
+        }
+
+        // 🌟 4. Fetch CM TEAM specific data
+        if ($db_team === 'cm_team') {
+            $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
+
+            $procQuery = ProcurementProject::query();
+            if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
+                $procQuery->where('category', $request->proc_category);
+            }
+            $procurementProjects = $procQuery->paginate(10)->appends($request->query());
+        }
+
+        return view('guest.dashboard', compact(
+            'resolutions',
+            'events',
+            'categories',
+            'pageTitle',
+            'db_team',
+            'totalProjects',
+            'conducted',
+            'remaining',
+            'feasible',
+            'hydroProjects',
+            'fsdeProjects',
+            'procCategories',
+            'procurementProjects'
+        ));
     }
 
     // 2. Show Team Downloadables (Read-Only)

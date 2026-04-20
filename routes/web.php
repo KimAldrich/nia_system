@@ -28,6 +28,7 @@ Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.d
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 
 Route::get('/map', [MapController::class, 'Showmap'])->name('map');
+Route::get('/guest/{team_slug}/dashboard', [GuestController::class, 'teamDashboard'])->name('guest.team.dashboard');
 Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
 Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'teamResolutions'])->name('guest.team.resolutions');
 // Routes that require login
@@ -90,15 +91,18 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::delete('/downloadables/{id}/delete', [FsTeamController::class, 'deleteForm'])->name('fs.downloadables.delete');
 
                 //resolutions
-                
+
                 Route::post('/ia-resolutions/upload', [FsTeamController::class, 'uploadResolution'])->name('fs.resolutions.upload');
                 Route::post('/ia-resolutions/{id}/update', [FsTeamController::class, 'updateResolution'])->name('fs.resolutions.update');
 
                 Route::delete('/ia-resolutions/{id}/delete', [FsTeamController::class, 'deleteResolution'])->name('fs.resolutions.delete');
-                
+
                 Route::post('/ia-resolutions/{id}/status', [FsTeamController::class, 'updateResolutionStatus'])->name('fs.resolutions.update_status');
                 Route::post('/projects/{project}/update-status', [FsTeamController::class, 'updateStatus'])->name('fs.projects.update');
                 Route::post('/hydro-geo', [FsTeamController::class, 'storeHydroGeo'])->name('fs.hydro.store');
+                Route::post('/fsde/store', [FsTeamController::class, 'storeFsde'])->name('fs.fsde.store');
+                Route::delete('/hydro-geo/{id}', [FsTeamController::class, 'destroyHydroGeo'])->name('fs.hydro.destroy');
+                Route::delete('/fsde/{id}', [FsTeamController::class, 'destroyFsde'])->name('fs.fsde.destroy');
             });
         });
 
@@ -160,6 +164,9 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 Route::post('/ia-resolutions/{id}/update', [ContractManagementTeamController::class, 'updateResolution'])->name('cm.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [ContractManagementTeamController::class, 'updateResolutionStatus'])->name('cm.resolutions.update_status');
+
+                Route::post('/procurement/store', [ContractManagementTeamController::class, 'storeProcurement'])->name('cm.procurement.store');
+                Route::delete('/procurement/{id}', [ContractManagementTeamController::class, 'destroyProcurement'])->name('cm.procurement.destroy');
             });
         });
 

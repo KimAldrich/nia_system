@@ -8,10 +8,11 @@ use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
+use App\Models\ProcurementProject;
 
 class ContractManagementTeamController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $resolutions = IaResolution::where('team', 'cm_team')->latest()->get();
         $events = Event::whereDate('event_date', '>=', now())
@@ -20,7 +21,29 @@ class ContractManagementTeamController extends Controller
             ->get();
 
         $categories = EventCategory::all();
-        return view('cm_team.dashboard', compact('resolutions', 'events', 'categories'));
+        $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
+
+        // Filter logic
+        $procQuery = ProcurementProject::query();
+        if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
+            $procQuery->where('category', $request->proc_category);
+        }
+
+        // 🌟 THE FIX: Clone the query for the Excel Export BEFORE paginating! 🌟
+        // This grabs 100% of the rows matching your filter.
+        $procExportData = (clone $procQuery)->get();
+
+        // Now we can safely paginate the original query for the HTML table
+        $procurementProjects = $procQuery->paginate(10)->appends($request->query());
+
+        return view('cm_team.dashboard', compact(
+            'resolutions',
+            'events',
+            'categories',
+            'procCategories',
+            'procurementProjects',
+            'procExportData'
+        ));
     }
 
     public function downloadables()
@@ -147,4 +170,21 @@ class ContractManagementTeamController extends Controller
 
         return back()->with('success', 'Resolution deleted successfully.');
     }
+
+    public function storeProcurement(Request $request)
+    {
+        // Save the single row directly into the database
+        ProcurementProject::create($request->all());
+
+        // Refresh the page
+        return redirect()->back()->with('success', 'New Procurement project successfully added!');
+    }
+
+    public function destroyProcurement($id)
+    {
+        ProcurementProject::findOrFail($id)->delete();
+        return redirect()->back()->with('success', 'Project deleted!');
+    }
+
+
 }
