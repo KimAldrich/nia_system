@@ -4,248 +4,58 @@
 @section('content')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        .content {
-            background-color: #f7f8fa;
-            font-family: 'Poppins', sans-serif;
-            padding: 40px;
-            color: #0c4d05;
-        }
-
-        .header-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 30px;
-            letter-spacing: -0.5px;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-            gap: 24px;
-            align-items: start;
-        }
-
-        .main-column,
-        .side-column {
-            min-width: 0;
-            width: 100%;
-            overflow: hidden;
-        }
         * { box-sizing: border-box; }
         
-        .content { background-color: #f7f8fa; font-family: 'Poppins', sans-serif; padding: 40px; color: #0c4d05; max-width: 100vw; overflow-x: hidden; }
+        .content { 
+            background-color: #f7f8fa; 
+            font-family: 'Poppins', sans-serif; 
+            padding: 40px; 
+            color: #0c4d05; 
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+        
         .header-title { font-size: 32px; font-weight: 700; margin-bottom: 30px; letter-spacing: -0.5px; }
+        
         .dashboard-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+        
         .main-column, .side-column { min-width: 0; width: 100%; max-width: 100%; }
 
-        .ui-card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            margin-bottom: 24px;
-            border: none;
-            width: 100%;
+        .ui-card { 
+            background: #ffffff; 
+            border-radius: 16px; 
+            padding: 24px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); 
+            margin-bottom: 24px; 
+            border: none; 
+            width: 100%; 
+            min-width: 0;
             max-width: 100%;
-            overflow: hidden;
+            display: block;
+            box-sizing: border-box;
+            overflow: hidden; 
         }
-
-        .ui-card.dark {
-            background: #0c4d05;
-            color: #ffffff;
-            border: none;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .ui-card { background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); margin-bottom: 24px; border: none; width: 100%; min-width: 0; max-width: 100%; display: block; box-sizing: border-box; overflow: hidden; }
+        
         .ui-card.dark { background: #0c4d05; color: #ffffff; border: none; }
         .section-title { font-size: 18px; font-weight: 600; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
 
-        .status-hero {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .status-hero { display: flex; justify-content: space-between; align-items: center; }
+        .status-hero h3 { margin: 0 0 5px 0; font-size: 18px; font-weight: 600; }
+        .status-hero p { margin: 0; font-size: 13px; color: #a1a1aa; }
+        .squiggle-line { width: 80px; height: auto; opacity: 0.8; }
 
-        .status-hero h3 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .status-hero p {
-            margin: 0;
-            font-size: 13px;
-            color: #a1a1aa;
-        }
-
-        .squiggle-line {
-            width: 80px;
-            height: auto;
-            opacity: 0.8;
-        }
-
-        /* =========================================
-               SCROLLBAR & TABLE STYLES
-               ========================================= */
-        .table-responsive {
-            width: 100%;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 15px;
-            scrollbar-width: thin;
-        }
-
-        .table-responsive::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        .table-responsive::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 8px;
-        }
-
-        .table-responsive::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 8px;
-        }
-
-        .table-responsive::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
         /* SCROLLBAR & TABLE STYLES */
-        .table-responsive { width: 100%; max-width: 100%; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 15px; scrollbar-width: thin; }
+        .table-responsive { 
+            width: 100%; max-width: 100%; display: block; overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; padding-bottom: 15px; scrollbar-width: thin; 
+        }
         .table-responsive::-webkit-scrollbar { height: 8px; }
         .table-responsive::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
         .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
         .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .sleek-table {
-            border-collapse: collapse;
-            width: max-content;
-            min-width: 100%;
-        }
-
-        .sleek-table th {
-            text-align: left;
-            padding: 12px 15px;
-            color: #a0aec0;
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #f1f5f9;
-            background: #f8fafc;
-            white-space: nowrap;
-        }
-
-        .sleek-table td {
-            padding: 15px 15px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 12px;
-            font-weight: 500;
-            color: #475569;
-            vertical-align: middle;
-            white-space: normal;
-            word-break: break-word;
-        }
-
-        .sleek-table tr:hover td {
-            background-color: #f8fafc;
-            transition: 0.2s;
-        }
-
-        .sleek-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .col-system {
-            font-weight: 700;
-            color: #1e293b;
-            white-space: nowrap;
-        }
-
-        .col-desc {
-            max-width: 180px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Soft Badges for Statuses */
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 10px;
-            font-weight: 700;
-            display: inline-block;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            max-width: 120px;
-            white-space: normal;
-            word-break: break-word;
-            text-align: center;
-        }
-
-        .badge-schedule {
-            background: #ffedd5;
-            color: #ea580c;
-        }
-
-        .badge-interpretation {
-            background: #e0e7ff;
-            color: #4f46e5;
-        }
-
-        .badge-submission {
-            background: #f3e8ff;
-            color: #9333ea;
-        }
-
-        .badge-relocation {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-        .badge-feasible {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .badge-na {
-            background: #f1f5f9;
-            color: #64748b;
-        }
-
-        .badge-dark {
-            background: #0c4d05;
-            color: #fff;
-        }
-
-        .badge-light {
-            background: #fda611;
-            color: #ffffff;
-        }
-
-        .badge-outline {
-            border: 1px solid #e4e4e7;
-            color: #71717a;
-        }
         .sleek-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
         .sleek-table th { text-align: left; padding: 12px 15px; color: #a0aec0; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; white-space: normal; vertical-align: middle; line-height: 1.4;}
         .sleek-table td { padding: 15px 15px; border-bottom: 1px solid #f1f5f9; font-size: 12px; font-weight: 500; color: #475569; vertical-align: middle; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;}
@@ -256,6 +66,7 @@
         .col-desc { color: #64748b; line-height: 1.5; }
 
         .text-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; transition: color 0.2s; text-overflow: ellipsis; }
+        .text-clamp:hover { color: #0c4d05; }
         .text-clamp.expanded { display: block; -webkit-line-clamp: unset; }
 
         .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 700; display: inline-block; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; max-width: 100%; white-space: normal; word-wrap: break-word; text-align: center; }
@@ -268,171 +79,15 @@
         .badge-dark { background: #0c4d05; color: #fff; }
         .badge-light { background: #fda611; color: #ffffff; }
         .badge-outline { border: 1px solid #e4e4e7; color: #71717a; }
+        
         .acc-badge { background: #f8fafc; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; font-weight: 700; color: #1e293b; font-size: 11px; display: inline-block; white-space: nowrap;}
 
         .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 105px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px); }
 
-        .status-select {
-            padding: 6px 10px;
-            border-radius: 8px;
-            border: 1px solid #e4e4e7;
-            font-family: 'Poppins', sans-serif;
-            font-size: 11px;
-            font-weight: 600;
-            background: #ffffff;
-            color: #18181b;
-            cursor: pointer;
-            outline: none;
-            transition: 0.2s;
-        width: 100%; max-width: 150px; }
+        .status-select { padding: 6px 10px; border-radius: 8px; border: 1px solid #e4e4e7; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; background: #ffffff; color: #18181b; cursor: pointer; outline: none; transition: 0.2s; width: 100%; max-width: 150px; }
+        .status-select:hover { border-color: #18181b; }
 
-        .status-select:hover {
-            border-color: #18181b;
-        }
-
-        /* =========================================
-               CALENDAR STYLES (FIXED SQUISHING)
-               ========================================= */
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .calendar-header h4 {
-            margin: 0;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .calendar-carousel {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .nav-btn {
-            background: #fff;
-            border: 1px solid #0c4d05;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        .calendar-viewport {
-            flex: 1;
-        }
-
-        .month-block {
-            display: none;
-        }
-
-        .month-block.active {
-            display: block;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            text-align: center;
-            row-gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .day-name {
-            font-size: 11px;
-            font-weight: 600;
-            color: #a1a1aa;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .day-num {
-            font-size: 13px;
-            font-weight: 600;
-            width: 30px;
-            height: 30px;
-            min-width: 30px;
-            min-height: 30px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-            border-radius: 50%;
-            color: #18181b;
-        }
-
-        .day-num.empty {
-            visibility: hidden;
-        }
-
-        .day-num.has-event {
-            border: 2px solid #18181b;
-        }
-
-        .day-num.today {
-            background: #4fc94d;
-            color: white;
-            border: none;
-        }
-
-        .mini-event {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 0;
-            border-top: 1px solid #f4f4f5;
-        }
-
-        .mini-event-date {
-            font-size: 16px;
-            font-weight: 700;
-            color: #18181b;
-            min-width: 30px;
-            text-align: center;
-        }
-
-        .mini-event-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #18181b;
-            margin: 0;
-        }
-
-        .mini-event-time {
-            font-size: 11px;
-            color: #a1a1aa;
-            margin: 0;
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 220px;
-            width: 100%;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #71717a;
-            text-transform: uppercase;
-        }
-
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
         /* CALENDAR STYLES */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .calendar-header h4 { margin: 0; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
@@ -455,106 +110,6 @@
         .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #71717a; text-transform: uppercase; }
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
-        /* =========================================
-               KPI GRID STYLES
-               ========================================= */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .kpi-card {
-            position: relative;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            display: flex;
-            flex-direction: column;
-            border: none;
-        }
-
-        .kpi-title {
-            font-size: 14px;
-            color: #a0aec0;
-            font-weight: 500;
-        }
-
-        .kpi-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 8px 0;
-        }
-
-        .kpi-icon {
-            position: absolute;
-            top: 24px;
-            right: 24px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .kpi-icon.blue {
-            background: #e0e7ff;
-            color: #4f46e5;
-        }
-
-        .kpi-icon.green {
-            background: #dcfce7;
-            color: #10b981;
-        }
-
-        .kpi-icon.orange {
-            background: #ffedd5;
-            color: #f59e0b;
-        }
-
-        .kpi-icon.purple {
-            background: #f3e8ff;
-            color: #9333ea;
-        }
-
-        .kpi-trend {
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-top: auto;
-        }
-
-        .trend-up {
-            color: #10b981;
-            background: #dcfce7;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .trend-down {
-            color: #ef4444;
-            background: #fee2e2;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .trend-neutral {
-            color: #f59e0b;
-            background: #ffedd5;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .trend-text {
-            color: #a0aec0;
-            font-weight: 500;
-        }
         /* KPI GRID STYLES */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
         .kpi-card { position: relative; background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); display: flex; flex-direction: column; border: none; }
@@ -572,162 +127,13 @@
         .trend-text { color: #a0aec0; font-weight: 500; }
 
         /* Pagination & Modals */
-        .custom-pagination {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-top: 20px;
-            gap: 8px;
-            font-family: 'Poppins', sans-serif;
-        }
+        .custom-pagination { display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; gap: 8px; font-family: 'Poppins', sans-serif;}
+        .custom-pagination svg { width: 16px; height: 16px; }
+        .custom-pagination .page-item { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; border-radius: 8px; background: #ffffff; color: #64748b; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: 0.2s; }
+        .custom-pagination .page-item:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+        .custom-pagination .page-item.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; }
+        .custom-pagination .page-item.disabled { background: #f8fafc; color: #cbd5e1; cursor: not-allowed; border-color: #f1f5f9; }
 
-        .custom-pagination svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .custom-pagination .page-item {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: #ffffff;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            border: 1px solid #e2e8f0;
-            transition: 0.2s;
-        }
-
-        .custom-pagination .page-item:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
-            color: #1e293b;
-        }
-
-        .custom-pagination .page-item.active {
-            background: #4f46e5;
-            color: #ffffff;
-            border-color: #4f46e5;
-        }
-
-        .custom-pagination .page-item.disabled {
-            background: #f8fafc;
-            color: #cbd5e1;
-            cursor: not-allowed;
-            border-color: #f1f5f9;
-        }
-
-        @media (max-width: 1300px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* =========================================
-               🌟 NEW: ADD DATA MODAL STYLES 🌟
-               ========================================= */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(2px);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            animation: fadeIn 0.2s;
-        }
-
-        .modal-box {
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modern-input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 12px;
-            outline: none;
-            background: #f8fafc;
-            color: #1e293b;
-            transition: 0.2s;
-            margin-bottom: 15px;
-        }
-
-        .modern-input:focus {
-            border-color: #0c4d05;
-            background: #ffffff;
-        }
-
-        .modern-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .modern-btn {
-            width: 100%;
-            padding: 10px;
-            background: #0c4d05;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .modern-btn:hover {
-            background: #083803;
-        }
-
-        .modern-btn-outline {
-            background: white;
-            border: 1px solid #cbd5e1;
-            color: #475569;
-        }
-
-        .modern-btn-outline:hover {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1000; display: none; align-items: center; justify-content: center; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
         .modal-box { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
@@ -740,6 +146,7 @@
         .modern-btn-outline { background: white; border: 1px solid #cbd5e1; color: #475569; }
         .modern-btn-outline:hover { background: #f1f5f9; color: #1e293b; }
 
+        /* 🌟 NEW: Style for date picker icon consistency 🌟 */
         input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; transition: 0.2s; }
         input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
@@ -752,42 +159,25 @@
         <div class="kpi-card">
             <div class="kpi-title">Total SPIP Projects</div>
             <div class="kpi-value">{{ $totalProjects ?? 0 }}</div>
-            <div class="kpi-icon blue"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                    </path>
-                </svg></div>
+            <div class="kpi-icon blue"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></div>
             <div class="kpi-trend"><span class="trend-text">Recorded in database</span></div>
         </div>
         <div class="kpi-card">
             <div class="kpi-title">Georesistivity Conducted</div>
             <div class="kpi-value">{{ $conducted ?? 0 }}</div>
-            <div class="kpi-icon green"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
-                    </path>
-                </svg></div>
-            <div class="kpi-trend"><span class="trend-up">On Track</span><span class="trend-text">Successfully mapped</span>
-            </div>
+            <div class="kpi-icon green"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+            <div class="kpi-trend"><span class="trend-up">On Track</span><span class="trend-text">Successfully mapped</span></div>
         </div>
         <div class="kpi-card">
             <div class="kpi-title">Remaining Sites</div>
             <div class="kpi-value">{{ $remaining ?? 0 }}</div>
-            <div class="kpi-icon orange"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
-                    </path>
-                </svg></div>
-            <div class="kpi-trend"><span class="trend-neutral">Pending</span><span class="trend-text">Awaiting
-                    schedule</span></div>
+            <div class="kpi-icon orange"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+            <div class="kpi-trend"><span class="trend-neutral">Pending</span><span class="trend-text">Awaiting schedule</span></div>
         </div>
         <div class="kpi-card">
             <div class="kpi-title">Feasible Projects</div>
             <div class="kpi-value">{{ $feasible ?? 0 }}</div>
-            <div class="kpi-icon purple"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg></div>
+            <div class="kpi-icon purple"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
             <div class="kpi-trend"><span class="trend-text">Validated as feasible</span></div>
         </div>
     </div>
@@ -800,8 +190,7 @@
                         <h3>Project Status Overview</h3>
                         <p>Track your deliverables, resolutions, and milestones.</p>
                     </div>
-                    <svg class="squiggle-line" viewBox="0 0 100 30" fill="none" stroke="white" stroke-width="3"
-                        stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="squiggle-line" viewBox="0 0 100 30" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 15 Q 15 5, 25 15 T 45 15 T 65 15 T 85 15 T 95 5" />
                     </svg>
                 </div>
@@ -809,7 +198,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <div class="table-responsive" id="activeProjectsContainer">
+                <div class="table-responsive">
                     <table class="sleek-table">
                         <thead>
                             <tr>
@@ -825,8 +214,7 @@
                                 <tr>
                                     <td>
                                         <strong>{{ $res->title }}</strong><br>
-                                        <span
-                                            style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
+                                        <span style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
                                     </td>
                                     <td>
                                         @if ($res->status == 'validated')
@@ -839,26 +227,19 @@
                                     </td>
                                     @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                         <td style="text-align: right;">
-                                            <form action="{{ route('fs.resolutions.update_status', $res->id) }}"
-                                                method="POST" onsubmit="return handleAjaxSubmit(event, 'activeProjectsContainer')">
+                                            <form action="{{ route('fs.resolutions.update_status', $res->id) }}" method="POST">
                                                 @csrf
-                                                <select name="status" class="status-select" onchange="this.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))">
-                                                    <option value="not-validated"
-                                                        {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                                        Not-Validated</option>
-                                                    <option value="on-going"
-                                                        {{ $res->status == 'on-going' ? 'selected' : '' }}>On-Going</option>
-                                                    <option value="validated"
-                                                        {{ $res->status == 'validated' ? 'selected' : '' }}>Validated
-                                                    </option>
+                                                <select name="status" class="status-select" onchange="this.form.submit()">
+                                                    <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>Not-Validated</option>
+                                                    <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>On-Going</option>
+                                                    <option value="validated" {{ $res->status == 'validated' ? 'selected' : '' }}>Validated</option>
                                                 </select>
                                             </form>
                                         </td>
                                     @endif
                                 </tr>
                             @empty
-                                <tr><td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']) ? '3' : '2' }}"
-                                        style="text-align:center; color:#a1a1aa; padding: 30px 0;">No projects uploaded yet.</td></tr>
+                                <tr><td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']) ? '3' : '2' }}" style="text-align:center; color:#a1a1aa; padding: 30px 0;">No projects uploaded yet.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -870,17 +251,13 @@
                     Analytics
                     <span style="font-size: 12px; color: #a1a1aa; font-weight: 500;">Project Status</span>
                 </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity
-                        </p>
+                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity</p>
                         <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
                     </div>
                     <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate
-                        </p>
+                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate</p>
                         <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
                     </div>
                 </div>
@@ -892,8 +269,7 @@
                 <div class="section-title" style="margin-bottom: 15px;">New Events</div>
 
                 <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f4f4f5;">
-                    <p
-                        style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">Event Legend</p>
+                    <p style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">Event Legend</p>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                         @forelse($categories ?? [] as $cat)
                             <div class="legend-item"><div class="legend-dot" style="background: {{ $cat->color }};"></div>{{ $cat->name }}</div>
@@ -907,51 +283,38 @@
                     $today = \Carbon\Carbon::now();
                     $daysInMonth = $today->daysInMonth;
                     $firstDayOfWeek = $today->copy()->startOfMonth()->dayOfWeek;
-
-                    $eventDays = isset($events)
-                        ? $events
-                            ->map(function ($e) {
-                                return $e->event_date->format('j');
-                            })
-                            ->toArray()
-                        : [];
                 @endphp
 
                 <div class="calendar-carousel">
                     <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">&lt;</button>
+
                     <div class="calendar-viewport">
                         @php
                             $currentYear = \Carbon\Carbon::now()->year;
                             $today = \Carbon\Carbon::now();
                         @endphp
+
                         @for ($m = 1; $m <= 12; $m++)
                             @php
                                 $monthDate = \Carbon\Carbon::createFromDate($currentYear, $m, 1);
                                 $daysInMonth = $monthDate->daysInMonth;
                                 $firstDayOfWeek = $monthDate->dayOfWeek;
 
-                                $eventsForMonth = collect($events ?? [])
-                                    ->filter(function ($e) use ($currentYear, $m) {
-                                        return $e->event_date->year == $currentYear && $e->event_date->month == $m;
-                                    })
-                                    ->groupBy(function ($e) {
-                                        return $e->event_date->format('j');
-                                    });
                                 $eventsForMonth = collect($events ?? [])->filter(function ($e) use ($currentYear, $m) {
                                         return $e->event_date->year == $currentYear && $e->event_date->month == $m;
-                                    })->groupBy(function ($e) { return $e->event_date->format('j'); });
+                                    })->groupBy(function ($e) {
+                                        return $e->event_date->format('j');
+                                    });
                             @endphp
 
                             <div class="month-block" id="month-{{ $m }}">
-                                <div class="calendar-header"><h4>{{ $monthDate->format('F Y') }}</h4></div>
+                                <div class="calendar-header">
+                                    <h4>{{ $monthDate->format('F Y') }}</h4>
+                                </div>
+
                                 <div class="calendar-grid">
-                                    <div class="day-name">Sun</div>
-                                    <div class="day-name">Mon</div>
-                                    <div class="day-name">Tue</div>
-                                    <div class="day-name">Wed</div>
-                                    <div class="day-name">Thu</div>
-                                    <div class="day-name">Fri</div>
-                                    <div class="day-name">Sat</div>
+                                    <div class="day-name">Sun</div><div class="day-name">Mon</div><div class="day-name">Tue</div>
+                                    <div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div><div class="day-name">Sat</div>
 
                                     @for ($i = 0; $i < $firstDayOfWeek; $i++)
                                         <div class="day-num empty"></div>
@@ -962,12 +325,10 @@
                                             $dayEvents = $eventsForMonth->get($day);
                                             $hasEvent = $dayEvents ? true : false;
                                             $isToday = $day == $today->day && $m == $today->month;
-                                            $ringColor =
-                                                $hasEvent && $dayEvents->first()->category
-                                                    ? $dayEvents->first()->category->color
-                                                    : '#18181b';
+                                            $ringColor = $hasEvent && $dayEvents->first()->category ? $dayEvents->first()->category->color : '#18181b';
                                         @endphp
-                                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}" style="{{ $hasEvent && !$isToday ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
+                                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
+                                            style="{{ $hasEvent && !$isToday ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
                                             {{ $day }}
                                         </div>
                                     @endfor
@@ -979,19 +340,19 @@
                 </div>
 
                 <div style="margin-top: 10px;">
-                    <p
-                        style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
-                        Upcoming Schedule</p>
+                    <p style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">Upcoming Schedule</p>
                     @if (isset($events) && $events->count() > 0)
                         @foreach ($events as $event)
                             <div class="mini-event">
                                 <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
-                                <div><h4 class="mini-event-title">{{ $event->title }}</h4><p class="mini-event-time">{{ $event->event_time }}</p></div>
+                                <div>
+                                    <h4 class="mini-event-title">{{ $event->title }}</h4>
+                                    <p class="mini-event-time">{{ $event->event_time }}</p>
+                                </div>
                             </div>
                         @endforeach
                     @else
-                        <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming
-                            events.</p>
+                        <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming events.</p>
                     @endif
                 </div>
             </div>
@@ -1001,27 +362,19 @@
     <div class="ui-card" style="margin-top: 24px;">
         <div class="section-title">
             Hydro-Georesistivity Status Monitoring
-
             <div style="display: flex; gap: 10px;">
                 @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
-                    <button onclick="openAddModal()"
-                    style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                    <button onclick="openAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                         + Add Data
                     </button>
                 @endif
-                
-                <button
-                    onclick="exportHydroToExcel()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg> Export Excel
+                <button style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export CSV
                 </button>
             </div>
         </div>
-
-        <div class="table-responsive" id="hydroTableContainer">
+        
+        <div class="table-responsive">
             <table class="sleek-table" style="min-width: 1200px;">
                 <thead>
                     <tr>
@@ -1055,19 +408,6 @@
                                 @php
                                     $statusLower = strtolower($project->status ?? '');
                                     $badgeClass = 'badge-na';
-
-                                    if (str_contains($statusLower, 'schedule')) {
-                                        $badgeClass = 'badge-schedule';
-                                    } elseif (str_contains($statusLower, 'interpret')) {
-                                        $badgeClass = 'badge-interpretation';
-                                    } elseif (str_contains($statusLower, 'submission')) {
-                                        $badgeClass = 'badge-submission';
-                                    } elseif (
-                                        str_contains($statusLower, 'relocation') ||
-                                        str_contains($statusLower, 'c/o contractor')
-                                    ) {
-                                        $badgeClass = 'badge-relocation';
-                                    }
                                     if (str_contains($statusLower, 'schedule')) $badgeClass = 'badge-schedule';
                                     elseif (str_contains($statusLower, 'interpret')) $badgeClass = 'badge-interpretation';
                                     elseif (str_contains($statusLower, 'submission')) $badgeClass = 'badge-submission';
@@ -1076,7 +416,7 @@
                                 <span class="status-badge {{ $badgeClass }}">{{ $project->status }}</span>
                             </td>
                             <td>
-                                @if (str_contains(strtolower(trim($project->result ?? '')), 'feasible'))
+                                @if(str_contains(strtolower(trim($project->result ?? '')), 'feasible'))
                                     <span class="status-badge badge-feasible">{{ $project->result }}</span>
                                 @else
                                     {{ $project->result ?? '-' }}
@@ -1084,36 +424,29 @@
                             </td>
                             @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                 <td style="text-align: center;">
-                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, 'hydroTableContainer', 'Are you sure you want to delete this Hydro-Geo project?')">
+                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this Hydro-Geo project?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">
-                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Del
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     </form>
                                 </td>
                             @endif
                         </tr>
                     @empty
-                        <tr><td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin'])) ? '9' : '8' }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No projects
-                                found in the database.</td></tr>
+                        <tr><td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin'])) ? '9' : '8' }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No projects found in the database.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        @if (isset($hydroProjects) && $hydroProjects->hasPages())
+        @if(isset($hydroProjects) && $hydroProjects->hasPages())
             <div class="custom-pagination">
                 @if ($hydroProjects->onFirstPage())
-                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path d="M15 19l-7-7 7-7"></path>
-                        </svg></span>
+                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
                 @else
-                    <a href="{{ $hydroProjects->withQueryString()->previousPageUrl() }}" class="page-item"><svg fill="none"
-                            stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M15 19l-7-7 7-7"></path>
-                        </svg></a>
+                    <a href="{{ $hydroProjects->withQueryString()->previousPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
                 @endif
                 @foreach ($hydroProjects->withQueryString()->links()->elements as $element)
                     @if (is_string($element)) <span class="page-item disabled">{{ $element }}</span> @endif
@@ -1142,14 +475,13 @@
                         + Add Data
                     </button>
                 @endif
-                
-                <button onclick="exportFsdeToExcel()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
+                <button style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export CSV
                 </button>
             </div>
         </div>
         
-        <div class="table-responsive" id="fsdeTableContainer">
+        <div class="table-responsive">
             <table class="sleek-table" style="min-width: 1700px;">
                 <thead>
                     <tr>
@@ -1220,11 +552,11 @@
                             
                             @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                 <td style="text-align: center;">
-                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, 'fsdeTableContainer', 'Are you sure you want to delete this FSDE project?')">
+                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this FSDE project?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">
-                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Del
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> 
                                         </button>
                                     </form>
                                 </td>
@@ -1254,15 +586,9 @@
                     @endif
                 @endforeach
                 @if ($fsdeProjects->hasMorePages())
-                    <a href="{{ $fsdeProjects->withQueryString()->nextPageUrl() }}" class="page-item"><svg fill="none"
-                            stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M9 5l7 7-7 7"></path>
-                        </svg></a>
+                    <a href="{{ $fsdeProjects->withQueryString()->nextPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
                 @else
-                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path d="M9 5l7 7-7 7"></path>
-                        </svg></span>
+                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
                 @endif
             </div>
         @endif
@@ -1271,14 +597,11 @@
     <div class="modal-overlay" id="addDataModal">
         <div class="modal-box">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Hydro-Geo Data</h3>
-
             <form action="{{ route('fs.hydro.store') }}" method="POST">
-            <form action="{{ route('fs.hydro.store') }}" method="POST" onsubmit="return handleAjaxSubmit(event, 'hydroTableContainer', null, 'addDataModal')">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Year</label><input type="text" name="year" required placeholder="e.g. 2026" class="modern-input"></div>
-                    <div><label class="modern-label">District</label><input type="text" name="district" required placeholder="e.g. 1st District"
-                            class="modern-input"></div>
+                    <div><label class="modern-label">District</label><input type="text" name="district" required placeholder="e.g. 1st District" class="modern-input"></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Project Code</label><input type="text" name="project_code" required placeholder="e.g. EGPIP-Solar" class="modern-input"></div>
@@ -1303,20 +626,10 @@
                             <option value="Sual"></option><option value="Tayug"></option><option value="Umingan"></option>
                             <option value="Urbiztondo"></option><option value="Urdaneta City"></option><option value="Villasis"></option>
                         </datalist>
-                        <label class="modern-label">Project Code</label>
-                        <input type="text" name="project_code" required placeholder="e.g. EGPIP-Solar"
-                            class="modern-input">
-                    </div>
-                    <div>
-                        <label class="modern-label">Municipality</label>
-                        <input type="text" name="municipality" required placeholder="e.g. Dasol"
-                            class="modern-input">
                     </div>
                 </div>
-                <div><label class="modern-label">System Name</label><input type="text" name="system_name" required placeholder="e.g. Alilao SPIP"
-                        class="modern-input"></div>
-                <div><label class="modern-label">Description / Remarks</label><textarea name="description" required rows="3" class="modern-input" style="resize: none;"
-                        placeholder="Project description..."></textarea></div>
+                <div><label class="modern-label">System Name</label><input type="text" name="system_name" required placeholder="e.g. Alilao SPIP" class="modern-input"></div>
+                <div><label class="modern-label">Description / Remarks</label><textarea name="description" required rows="3" class="modern-input" style="resize: none;" placeholder="Project description..."></textarea></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
                         <label class="modern-label">Status</label>
@@ -1333,8 +646,7 @@
                     <div><label class="modern-label">Result</label><input type="text" name="result" placeholder="e.g. Feasible, -, etc." class="modern-input"></div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button type="button" onclick="closeAddModal()" class="modern-btn modern-btn-outline"
-                        style="flex: 1;">Cancel</button>
+                    <button type="button" onclick="closeAddModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
                     <button type="submit" class="modern-btn" style="flex: 1;">Save Data</button>
                 </div>
             </form>
@@ -1344,7 +656,7 @@
     <div class="modal-overlay" id="addFsdeModal">
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New FSDE Data</h3>
-            <form action="{{ route('fs.fsde.store') }}" method="POST" onsubmit="return handleAjaxSubmit(event, 'fsdeTableContainer', null, 'addFsdeModal')">
+            <form action="{{ route('fs.fsde.store') }}" method="POST">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Year</label><input type="text" name="year" required class="modern-input"></div>
@@ -1399,10 +711,18 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
                         <select name="acc_month" class="modern-input" required style="margin-bottom: 0;">
                             <option value="" disabled selected>Select Month...</option>
-                            <option value="jan">January</option><option value="feb">February</option><option value="mar">March</option>
-                            <option value="apr">April</option><option value="may">May</option><option value="jun">June</option>
-                            <option value="jul">July</option><option value="aug">August</option><option value="sep">September</option>
-                            <option value="oct">October</option><option value="nov">November</option><option value="dec">December</option>
+                            <option value="jan">January</option>
+                            <option value="feb">February</option>
+                            <option value="mar">March</option>
+                            <option value="apr">April</option>
+                            <option value="may">May</option>
+                            <option value="jun">June</option>
+                            <option value="jul">July</option>
+                            <option value="aug">August</option>
+                            <option value="sep">September</option>
+                            <option value="oct">October</option>
+                            <option value="nov">November</option>
+                            <option value="dec">December</option>
                         </select>
                         <input type="text" name="acc_year" class="modern-input" placeholder="Year (e.g. 2026)" style="margin-bottom: 0;" required>
                     </div>
@@ -1423,153 +743,87 @@
     </div>
 
     <script>
-        // 🌟 THE MAGIC SEAMLESS REFRESH SCRIPT (AJAX) 🌟
-        async function handleAjaxSubmit(event, targetContainerId, confirmMessage = null, modalToCloseId = null) {
-            event.preventDefault(); 
-            if (confirmMessage && !confirm(confirmMessage)) return false; 
-
-            const form = event.target;
-            const formData = new FormData(form);
-            const submitBtn = form.querySelector('button[type="submit"]');
-            let originalBtnText = "";
-
-            if (submitBtn) {
-                originalBtnText = submitBtn.innerHTML;
-                submitBtn.innerHTML = 'Processing...';
-                submitBtn.disabled = true;
-            } else {
-                form.style.opacity = '0.5';
-            }
-
-            try {
-                const response = await fetch(form.action, {
-                    method: form.method || 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                const newContent = doc.getElementById(targetContainerId);
-                const targetContainer = document.getElementById(targetContainerId);
-                
-                if (newContent && targetContainer) {
-                    targetContainer.innerHTML = newContent.innerHTML;
-                }
-
-                if (modalToCloseId) {
-                    const modal = document.getElementById(modalToCloseId);
-                    if (modal) modal.classList.remove('active');
-                    form.reset(); 
-                }
-
-            } catch (error) {
-                console.error("Error:", error);
-                alert("An error occurred while saving data.");
-            } finally {
-                if (submitBtn) {
-                    submitBtn.innerHTML = originalBtnText;
-                    submitBtn.disabled = false;
-                } else {
-                    form.style.opacity = '1';
-                }
-            }
-            return false;
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
             Chart.defaults.color = '#a1a1aa';
 
             const ctxBar = document.getElementById('barChart').getContext('2d');
-            new Chart(ctxBar, { type: 'bar', data: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], datasets: [{ label: 'Uploads', data: [5, 12, 8, 15], backgroundColor: '#0c4d05', borderRadius: 6, barPercentage: 0.5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }, scales: { y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f4f4f5'
-                            },
-                            border: {
-                                display: false
-                            }
-                        }, x: {
-                            grid: {
-                                display: false
-                            },
-                            border: {
-                                display: false
-                            }
-                        } } } });
+            new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Uploads',
+                        data: [5, 12, 8, 15],
+                        backgroundColor: '#0c4d05',
+                        borderRadius: 6,
+                        barPercentage: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f4f4f5' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+
             const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-            new Chart(ctxDoughnut, { type: 'doughnut', data: { labels: ['Validated', 'On-Going', 'Pending'], datasets: [{ data: [45, 30, 25], backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'], borderColor: '#e4e4e7', borderWidth: 2, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        } } } });
+            new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Validated', 'On-Going', 'Pending'],
+                    datasets: [{
+                        data: [45, 30, 25],
+                        backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'],
+                        borderColor: '#e4e4e7',
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, padding: 20 } } }
+                }
+            });
         });
 
         let activeMonth = new Date().getMonth() + 1;
         document.addEventListener('DOMContentLoaded', function() { updateCalendarView(); });
 
-        function changeMonth(direction) { activeMonth += direction; if (activeMonth < 1) activeMonth = 1; if (activeMonth > 12) activeMonth = 12; updateCalendarView(); }
-        function updateCalendarView() { document.querySelectorAll('.month-block').forEach(block => { block.classList.remove('active'); }); const current = document.getElementById('month-' + activeMonth); if (current) current.classList.add('active'); document.getElementById('prevMonthBtn').disabled = (activeMonth === 1); document.getElementById('nextMonthBtn').disabled = (activeMonth === 12); }
-        
+        function changeMonth(direction) {
+            activeMonth += direction;
+            if (activeMonth < 1) activeMonth = 1;
+            if (activeMonth > 12) activeMonth = 12;
+            updateCalendarView();
+        }
+
+        function updateCalendarView() {
+            document.querySelectorAll('.month-block').forEach(block => { block.classList.remove('active'); });
+            const current = document.getElementById('month-' + activeMonth);
+            if (current) current.classList.add('active');
+            document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
+            document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
+        }
+
         function openAddModal() { document.getElementById('addDataModal').classList.add('active'); }
         function closeAddModal() { document.getElementById('addDataModal').classList.remove('active'); }
+
         function openFsdeAddModal() { document.getElementById('addFsdeModal').classList.add('active'); }
         function closeFsdeAddModal() { document.getElementById('addFsdeModal').classList.remove('active'); }
 
         function toggleAccMonth(val) {
             const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
             months.forEach(m => {
-                document.querySelectorAll('.acc-data-' + m).forEach(el => { el.style.display = (m === val) ? 'block' : 'none'; });
+                document.querySelectorAll('.acc-data-' + m).forEach(el => {
+                    el.style.display = (m === val) ? 'block' : 'none';
+                });
             });
-        }
-
-        // 🌟 SMART EXCEL EXPORTERS 🌟
-        const rawHydroData = @json($hydroExportData ?? []);
-        function exportHydroToExcel() {
-            if (rawHydroData.length === 0) { alert("No data available to export."); return; }
-            const formattedData = rawHydroData.map(row => ({
-                "Year": row.year || '', "District": row.district || '', "Project Code": row.project_code || '',
-                "System Name": row.system_name || '', "Description": row.description || '', "Municipality": row.municipality || '',
-                "Status": row.status || '', "Result": row.result || ''
-            }));
-            const worksheet = XLSX.utils.json_to_sheet(formattedData);
-            worksheet['!cols'] = [ { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 25 }, { wch: 15 } ];
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Hydro-Geo");
-            XLSX.writeFile(workbook, "Hydro_Geo_Status_Report.xlsx");
-        }
-
-        const rawFsdeData = @json($fsdeExportData ?? []);
-        function exportFsdeToExcel() {
-            if (rawFsdeData.length === 0) { alert("No data available to export."); return; }
-            const formattedData = rawFsdeData.map(row => ({
-                "Year": row.year || '', "Project Name": row.project_name || '', "Municipality": row.municipality || '',
-                "Study Type": row.type_of_study || '', "Consultant": row.consultant || '', "Start Date": row.period_start || '', 
-                "End Date": row.period_end || '', "Contract Amount": row.contract_amount || '', "Actual Obligation": row.actual_obligation || '',
-                "Value of Acc": row.value_of_acc || '', "Actual Expend": row.actual_expenditures || '', "Acc Year": row.acc_year || '',
-                "Jan PHY": row.jan_phy || '', "Jan FIN": row.jan_fin || '', "Feb PHY": row.feb_phy || '', "Feb FIN": row.feb_fin || '',
-                "Mar PHY": row.mar_phy || '', "Mar FIN": row.mar_fin || '', "Apr PHY": row.apr_phy || '', "Apr FIN": row.apr_fin || '',
-                "May PHY": row.may_phy || '', "May FIN": row.may_fin || '', "Jun PHY": row.jun_phy || '', "Jun FIN": row.jun_fin || '',
-                "Jul PHY": row.jul_phy || '', "Jul FIN": row.jul_fin || '', "Aug PHY": row.aug_phy || '', "Aug FIN": row.aug_fin || '',
-                "Sep PHY": row.sep_phy || '', "Sep FIN": row.sep_fin || '', "Oct PHY": row.oct_phy || '', "Oct FIN": row.oct_fin || '',
-                "Nov PHY": row.nov_phy || '', "Nov FIN": row.nov_fin || '', "Dec PHY": row.dec_phy || '', "Dec FIN": row.dec_fin || '',
-                "Remarks": row.remarks || ''
-            }));
-            const worksheet = XLSX.utils.json_to_sheet(formattedData);
-            worksheet['!cols'] = [ { wch: 8 }, { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 10 } ];
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "FSDE");
-            XLSX.writeFile(workbook, "FSDE_Status_Report.xlsx");
         }
     </script>
 @endsection
