@@ -67,6 +67,7 @@
            MAIN CONTENT AREA
            ========================================= */
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; transition: all 0.3s ease-in-out; max-width: calc(100vw - 310px); }
+        .sidebar.collapsed ~ .main-wrapper { max-width: 100vw; }
         .content { padding: 30px; overflow-y: auto; overflow-x: hidden; flex: 1; width: 100%; box-sizing: border-box; }
 
         /* 🌟 NEW SOFT UI CARD STYLES (Matches Image) 🌟 */
