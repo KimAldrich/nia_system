@@ -7,6 +7,7 @@ use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
+use App\Models\RpwsisAccomplishment;
 use App\Models\EventCategory;
 
 class RpwsisTeamController extends Controller
@@ -17,8 +18,11 @@ class RpwsisTeamController extends Controller
         $resolutions = IaResolution::where('team', 'rpwsis_team')->latest()->get();
         $events = Event::whereDate('event_date', '>=', now())->orderBy('event_date', 'asc')->take(5)->get();
 
+        // ✅ ADDED THIS: Fetch records to fix the "undefined $records" error
+        $records = RpwsisAccomplishment::latest()->get();
+
         $categories = EventCategory::all();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories'));
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records'));
     }
 
     // 2. View Downloadables Page
@@ -149,5 +153,20 @@ class RpwsisTeamController extends Controller
         $resolution->delete();
 
         return back()->with('success', 'Resolution deleted successfully.');
+    }
+    //10
+    public function storeAccomplishment(Request $request)
+    {
+        $record = RpwsisAccomplishment::create($request->all());
+        return response()->json($record);
+    }
+
+    // 11. Delete Accomplishment
+    public function deleteAccomplishment($id)
+    {
+        $record = RpwsisAccomplishment::findOrFail($id);
+        $record->delete();
+
+        return response()->json(['success' => true]);
     }
 }

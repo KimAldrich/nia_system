@@ -313,6 +313,227 @@
             height: 10px;
             border-radius: 50%;
         }
+
+
+
+        /* STATUS MODULE ONLY */
+        .status-module table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        /* Header */
+        .status-module thead th {
+            background: #f9fafb;
+            font-size: 11px;
+            font-weight: 600;
+            color: #71717a;
+            padding: 10px;
+            text-align: center;
+            border: none;
+        }
+
+        /* Body */
+        .status-module tbody td {
+            background: #fff;
+            padding: 12px;
+            font-size: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+        }
+
+        /* Row hover */
+        .status-module tbody tr:hover td {
+            background: #f9fafb;
+        }
+
+        /* First column left align */
+        .status-module tbody td:first-child {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        /* Action button */
+        .status-action-btn {
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Modal UI */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 999;
+        }
+
+        .modal-box {
+            width: 95%;
+            max-width: 1000px;
+            background: #fff;
+            margin: 40px auto;
+            border-radius: 14px;
+            padding: 25px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* CLEAN TABLE UI FIX */
+        .custom-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 1200px;
+            /* prevents squishing */
+        }
+
+        .custom-table thead th {
+            font-size: 11px;
+            color: #71717a;
+            font-weight: 600;
+            text-align: center;
+            padding: 10px 6px;
+            border-bottom: 1px solid #e4e4e7;
+        }
+
+        .custom-table tbody td {
+            padding: 12px 8px;
+            font-size: 13px;
+            text-align: center;
+            border-bottom: 1px solid #f4f4f5;
+        }
+
+        .custom-table tbody tr:hover {
+            background: #f9fafb;
+            transition: 0.2s;
+        }
+
+        /* FIX INPUT LOOK */
+        .status-select {
+            width: 100%;
+        }
+
+        /* COLLAPSIBLE COLUMNS */
+        .hide-impl th.impl,
+        .hide-impl td.impl {
+            display: none;
+        }
+
+        /* smooth look */
+        .custom-table td,
+        .custom-table th {
+            transition: 0.2s;
+        }
+
+        /* 1. CLEAN TABLE UI FIX */
+        .custom-table {
+            border-collapse: collapse;
+            /* Changed to collapse for clean grid borders */
+            min-width: 2000px;
+            /* Ensures the table is wide enough to prevent squishing */
+            background: #fff;
+        }
+
+        .custom-table thead th {
+            font-size: 11px;
+            color: #3f3f46;
+            font-weight: 600;
+            text-align: center;
+            padding: 12px 8px;
+            border: 1px solid #e4e4e7;
+            /* Added full borders */
+            background: #f8fafc;
+            /* Slight grey background for headers */
+            vertical-align: middle;
+        }
+
+        .custom-table tbody td {
+            padding: 12px 10px;
+            font-size: 12px;
+            text-align: center;
+            border: 1px solid #e4e4e7;
+            /* Added full borders */
+            vertical-align: middle;
+            color: #18181b;
+            transition: 0.2s;
+        }
+
+        .custom-table tbody tr:hover td {
+            background: #f0f9ff;
+            /* Subtle blue highlight on hover */
+        }
+
+        /* ✅ SPECIFIC COLUMN WIDTHS TO FIX SQUISHING */
+        .col-activity {
+            min-width: 280px;
+            /* Gives the text plenty of room */
+            text-align: left !important;
+            /* Easier to read long sentences */
+            line-height: 1.5;
+            white-space: normal;
+            /* Allows natural wrapping */
+        }
+
+        .col-remarks {
+            min-width: 180px;
+            white-space: normal;
+        }
+
+        .col-amount {
+            min-width: 120px;
+            font-weight: 600;
+        }
+
+        /* 2. RESPONSIVE TABLE WRAPPER */
+        .table-responsive-wrapper {
+            width: 100%;
+            max-width: 100%;
+            /* ✅ Prevents the container from breaking out of the card */
+            overflow-x: scroll;
+            /* ✅ Changed from 'auto' to 'scroll' to FORCE the bar to always show */
+            max-height: 600px;
+            /* ✅ ADDED: Optional vertical scrolling if you have too many rows */
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid #e4e4e7;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
+
+            /* ✅ Firefox Support */
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f8fafc;
+        }
+
+        /* CUSTOM HORIZONTAL & VERTICAL SCROLLBARS (Chrome/Edge/Safari) */
+        .table-responsive-wrapper::-webkit-scrollbar {
+            height: 12px;
+            /* Bottom horizontal scrollbar thickness */
+            width: 12px;
+            /* Side vertical scrollbar thickness */
+        }
+
+        .table-responsive-wrapper::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 0 0 10px 10px;
+            border-top: 1px solid #e4e4e7;
+            /* Visual separation from table */
+        }
+
+        .table-responsive-wrapper::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+            border: 2px solid #f8fafc;
+            /* Adds padding inside the track */
+        }
+
+        .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 
     <h1 class="header-title">Social And Environmental Team Dashboard</h1>
@@ -549,6 +770,385 @@
         </div>
     </div>
 
+    {{-- //STATUS --}}
+    <div class="ui-card">
+
+        <!-- ACTION BUTTONS -->
+        <div class="section-title">
+            ACCOMPLISHMENT AS OF FEBRUARY 15, 2025 OF R&P WRSIS
+            <div style="display:flex; gap:8px;">
+                <button onclick="openModal()" class="status-select"
+                    style="background-color: #2563eb; color: white; border-color: #2563eb;">
+                    + Add Record
+                </button>
+
+                <button onclick="exportCSV()" class="status-select"
+                    style="background-color: #16a34a; color: white; border-color: #16a34a;">
+                    Export CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-responsive-wrapper">
+            <table class="sleek-table custom-table" id="simpleTable">
+                <thead>
+                    <!-- TOP HEADER -->
+                    <tr>
+                        <th rowspan="3">Region</th>
+                        <th rowspan="3">Batch</th>
+                        <th rowspan="3">Allocation</th>
+                        <th rowspan="3">NIS</th>
+                        <th rowspan="3">Activity Type</th>
+                        <th rowspan="3">Remarks</th>
+                        <th rowspan="3">Amount</th>
+
+                        <th colspan="12">B. Implementation Stage</th>
+
+                        <th rowspan="3">PHY %</th>
+                        <th rowspan="3">FIN %</th>
+                        <th rowspan="3">Expenditures</th>
+
+                        <th rowspan="3" style="text-align:right;">Action</th>
+                    </tr>
+
+                    <!-- SECOND HEADER -->
+                    <tr>
+                        <th colspan="8">1. Preparation and Establishment</th>
+                        <th colspan="3">2. Conduct of IEC</th>
+                        <th colspan="1">3. Monitoring and Evaluation</th>
+                    </tr>
+
+                    <!-- THIRD HEADER -->
+                    <tr>
+                        <th class="impl">POW Formulation</th>
+                        <th class="impl">Nursery area/Bunk House/STW</th>
+                        <th class="impl">Seedling Production</th>
+                        <th class="impl">Procurement </th>
+                        <th class="impl">Site Preparation</th>
+                        <th class="impl">Vegetative enhancement</th>
+                        <th class="impl">Establishment of Wattling</th>
+                        <th class="impl">Right of Way/Rent/ Wages of Caretaker/</th>
+                        <th class="impl">Conduct of consultative meetings</th>
+                        <th class="impl">Distribution of reading materials</th>
+                        <th class="impl">Installation of signboards/
+                            signages </th>
+                        <th class="impl">Supervision and Monitoring of implementations</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    @foreach ($records as $r)
+                        <tr>
+                            <td>{{ $r->region }}</td>
+                            <td>{{ $r->batch }}</td>
+                            <td>{{ $r->allocation }}</td>
+                            <td>{{ $r->nis }}</td>
+                            <td>{{ $r->activity }}</td>
+                            <td>{{ $r->remarks }}</td>
+                            <td>{{ $r->amount }}</td>
+
+                            <td>{{ $r->c1 }}</td>
+                            <td>{{ $r->c2 }}</td>
+                            <td>{{ $r->c3 }}</td>
+                            <td>{{ $r->c4 }}</td>
+                            <td>{{ $r->c5 }}</td>
+                            <td>{{ $r->c6 }}</td>
+                            <td>{{ $r->c7 }}</td>
+                            <td>{{ $r->c8 }}</td>
+                            <td>{{ $r->c9 }}</td>
+                            <td>{{ $r->c10 }}</td>
+                            <td>{{ $r->c11 }}</td>
+                            <td>{{ $r->c12 }}</td>
+
+                            <td>{{ $r->phy }}</td>
+                            <td>{{ $r->fin }}</td>
+                            <td>{{ $r->exp }}</td>
+
+                            <td>
+                                <button onclick="deleteAccomplishment({{ $r->id }}, this)"
+                                    class="status-select">Delete</button>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <!-- MODAL -->
+        <div id="statusModal"
+            style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    z-index:999;
+">
+
+            <div
+                style="
+        width:90%;
+        max-width:900px;
+        background:#fff;
+        margin:40px auto;
+        border-radius:12px;
+        padding:20px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.2);
+        font-family:'Poppins', sans-serif;
+        max-height:90vh;
+        overflow:auto;
+    ">
+
+                <!-- HEADER -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="margin:0; color:#0c4d05;">Add Accomplishment</h3>
+                    <button onclick="closeModal()"
+                        style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
+                        onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
+                        &times;
+                    </button>
+                </div>
+
+                <!-- FORM -->
+                <div style="display:flex; flex-direction:column; gap:15px;">
+
+                    <!-- PROJECT INFO -->
+                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Information
+                        </p>
+
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                            <input id="region" placeholder="Region" class="status-select">
+                            <input id="batch" placeholder="Batch" class="status-select">
+                            <input id="allocation" placeholder="Allocation" class="status-select">
+                            <input id="nis" placeholder="NIS" class="status-select">
+                            <input id="activity" placeholder="Activity Type" class="status-select">
+                            <input id="remarks" placeholder="Remarks" class="status-select">
+                            <input id="amount" placeholder="Amount" class="status-select">
+                        </div>
+                    </div>
+
+                    <!-- IMPLEMENTATION -->
+                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Implementation Stage
+                        </p>
+
+                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+                            <input id="c1" placeholder="POW" class="status-select">
+                            <input id="c2" placeholder="Nursery" class="status-select">
+                            <input id="c3" placeholder="Seedling" class="status-select">
+                            <input id="c4" placeholder="Procurement" class="status-select">
+                            <input id="c5" placeholder="Site Prep" class="status-select">
+                            <input id="c6" placeholder="Vegetative" class="status-select">
+                            <input id="c7" placeholder="Wattling" class="status-select">
+                            <input id="c8" placeholder="Right of Way" class="status-select">
+                            <input id="c9" placeholder="Consultative" class="status-select">
+                            <input id="c10" placeholder="Distribution" class="status-select">
+                            <input id="c11" placeholder="Signages" class="status-select">
+                            <input id="c12" placeholder="Monitoring" class="status-select">
+                        </div>
+                    </div>
+
+                    <!-- METRICS -->
+                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics</p>
+
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                            <input id="phy" placeholder="PHY %" class="status-select">
+                            <input id="fin" placeholder="FIN %" class="status-select">
+                            <input id="exp" placeholder="Expenditures" class="status-select">
+                        </div>
+                    </div>
+
+                    <!-- ACTIONS -->
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button onclick="closeModal()" class="status-select">Cancel</button>
+                        <button onclick="saveRecord()" class="status-select" style="background:#0c4d05; color:white;">
+                            Save Record
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addRow() {
+
+            const inputs = [
+                'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
+                'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12',
+                'phy', 'fin', 'exp' // ✅ include manual inputs
+            ];
+
+            let vals = inputs.map(id => {
+                const el = document.getElementById(id);
+                return el ? el.value : '';
+            });
+
+            if (!vals[0]) return alert("Region is required");
+
+            const row = `
+        <tr>
+            ${vals.map((v, i) => {
+                return `<td class="${(i >= 7 && i <= 18) ? 'impl' : ''}">${v || '-'}</td>`;
+            }).join('')}
+            <td style="text-align:right;">
+                <button onclick="deleteRow(this)" class="status-select">Delete</button>
+            </td>
+        </tr>
+        `;
+
+            document.getElementById('tableBody').innerHTML += row;
+
+            // ✅ OPTIONAL: clear inputs after adding
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
+        // ✅ NEW DELETE FUNCTION
+        function deleteAccomplishment(id, btn) {
+            if (!confirm("Are you sure you want to delete this record?")) return;
+
+            fetch(`/rpwsis_team/accomplishments/${id}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the row from the table visually
+                        btn.closest('tr').remove();
+                    } else {
+                        alert("Failed to delete the record.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("An error occurred while deleting.");
+                });
+        }
+
+        function exportCSV() {
+            let csv = "";
+
+            const headers = document.querySelectorAll("#simpleTable thead tr:last-child th");
+            let headerRow = [];
+
+            headers.forEach(th => {
+                headerRow.push(th.innerText.trim());
+            });
+
+            headerRow.push("PHY %", "FIN %", "Expenditures");
+
+            csv += headerRow.join(",") + "\n";
+
+            const rows = document.querySelectorAll("#simpleTable tbody tr");
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                let rowData = [];
+
+                cols.forEach((td, i) => {
+                    if (i !== cols.length - 1) {
+                        rowData.push(td.innerText.trim());
+                    }
+                });
+
+                csv += rowData.join(",") + "\n";
+            });
+
+            const blob = new Blob([csv], {
+                type: "text/csv"
+            });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "status_22_columns.csv";
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        // function toggleImplementation() {
+        //     document.getElementById('simpleTable').classList.toggle('hide-impl');
+        // }
+
+        function openModal() {
+            document.getElementById('statusModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('statusModal').style.display = 'none';
+        }
+
+        // click outside to close
+        window.onclick = function(e) {
+            const modal = document.getElementById('statusModal');
+            if (e.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+
+
+        function saveRecord() {
+
+            const fields = [
+                'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
+                'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12',
+                'phy', 'fin', 'exp'
+            ];
+
+            let data = {};
+
+            fields.forEach(id => {
+                data[id] = document.getElementById(id).value;
+            });
+
+            // ✅ FIX: Match the prefix group in your web.php
+            fetch('/rpwsis_team/accomplishments/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(res => {
+
+                    let row = `<tr>
+            <td>${res.region || '-'}</td>
+            <td>${res.batch || '-'}</td>
+            <td>${res.allocation || '-'}</td>
+            <td>${res.nis || '-'}</td>
+            <td>${res.activity || '-'}</td>
+            <td>${res.remarks || '-'}</td>
+            <td>${res.amount || '-'}</td>
+
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => `<td>${res['c'+i] || '-'}</td>`).join('')}
+
+            <td>${res.phy || '-'}</td>
+            <td>${res.fin || '-'}</td>
+            <td>${res.exp || '-'}</td>
+
+           <td><button onclick="deleteAccomplishment(${res.id}, this)" class="status-select">Delete</button></td>
+        </tr>`;
+
+                    document.getElementById('tableBody').innerHTML += row;
+
+                    closeModal();
+                });
+        }
+    </script>
+
+    {{-- //end of status --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
