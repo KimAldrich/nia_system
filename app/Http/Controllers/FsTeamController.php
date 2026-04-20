@@ -9,6 +9,7 @@ use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
 use App\Models\HydroGeoProject;
+use App\Models\FsdeProject;
 
 class FsTeamController extends Controller
 {
@@ -30,19 +31,26 @@ class FsTeamController extends Controller
         $conducted = HydroGeoProject::whereIn('status', ['For Interpretation', 'Interpreted', 'For Submission of Raw data'])->count();
         $remaining = HydroGeoProject::where('status', 'For Schedule')->count();
         $feasible = HydroGeoProject::where('result', 'Feasible')->count();
+        $hydroExportData = HydroGeoProject::all();
+        $fsdeExportData = FsdeProject::all();
 
         // 3. Fetch the table data with pagination (8 rows per page)
-        $hydroProjects = HydroGeoProject::paginate(8);
+        $hydroProjects = HydroGeoProject::paginate(8, ['*'], 'hydro_page');
+        $fsdeProjects = FsdeProject::paginate(8, ['*'], 'fsde_page');
         return view('fs-team.dashboard', compact(
+            'totalProjects',
+            'conducted',
+            'remaining',
+            'feasible',
             'resolutions',
             'events',
             'categories',
             'hydroProjects',
-            'totalProjects',
-            'conducted',
-            'remaining',
-            'feasible'
+            'fsdeProjects',
+            'hydroExportData',
+            'fsdeExportData'
         ));
+
     }
 
     // 2. View Downloadables Page
@@ -168,7 +176,46 @@ class FsTeamController extends Controller
 
         // Refresh the page
         return redirect()->back()->with('success', 'New Hydro-Geo data added successfully!');
+    }
+
+    public function storeFsde(Request $request)
+    {
+        // Extract everything EXCEPT the dynamic accomplishment inputs
+        $data = $request->except(['acc_month', 'acc_year', 'acc_phy', 'acc_fin']);
+
+        // Grab the dynamic inputs
+        $month = $request->input('acc_month'); // e.g., 'apr'
+        $phy = $request->input('acc_phy');
+        $fin = $request->input('acc_fin');
+        $year = $request->input('acc_year');
+
+        // Automatically map the data to the correct database column!
+        if ($month) {
+            $data[$month . '_phy'] = $phy;
+            $data[$month . '_fin'] = $fin;
+            $data['acc_year'] = $year;
         }
+
+        FsdeProject::create($data);
+
+        return redirect()->back()->with('success', 'FSDE data successfully added!');
+    }
+
+    public function destroyHydroGeo($id)
+    {
+        $project = HydroGeoProject::findOrFail($id);
+        $project->delete();
+
+        return redirect()->back()->with('success', 'Hydro-Geo data deleted successfully!');
+    }
+
+    public function destroyFsde($id)
+    {
+        $project = FsdeProject::findOrFail($id);
+        $project->delete();
+
+        return redirect()->back()->with('success', 'FSDE data deleted successfully!');
+    }
     // 9. Delete IA Resolution
     public function deleteResolution($id)
     {

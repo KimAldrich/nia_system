@@ -213,16 +213,17 @@
                     <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
 
-                <div class="sub-menu {{ $activeTeam == $slug ? 'open' : '' }}" id="menu-{{ $slug }}">
-                    @if(session('is_guest'))
-                        <a href="{{ route('guest.team.downloadables', $slug) }}" class="sub-item {{ request()->is('team/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
-                        <a href="{{ route('guest.team.resolutions', $slug) }}" class="sub-item {{ request()->is('team/' . $slug . '/resolutions') ? 'active' : '' }}">IA Resolutions</a>
-                    @else
-                        <a href="/{{ $slug }}/dashboard" class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
-                        <a href="/{{ $slug }}/downloadables" class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
-                        <a href="/{{ $slug }}/ia-resolutions" class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
-                    @endif
-                </div>
+<div class="sub-menu {{ $activeTeam == $slug ? 'open' : '' }}" id="menu-{{ $slug }}">
+    @if(session('is_guest'))
+        <a href="{{ route('guest.team.dashboard', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
+        <a href="{{ route('guest.team.downloadables', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+        <a href="{{ route('guest.team.resolutions', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/resolutions') ? 'active' : '' }}">IA Resolutions</a>
+    @else
+        <a href="/{{ $slug }}/dashboard" class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
+        <a href="/{{ $slug }}/downloadables" class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+        <a href="/{{ $slug }}/ia-resolutions" class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
+    @endif
+</div>
             @endforeach
 
             <div class="nav-label" style="margin-top: 15px;">Shared Hubs</div>
