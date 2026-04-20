@@ -13,6 +13,7 @@ use App\Http\Controllers\PaoTeamController;
 use App\Http\Controllers\AdministrativeController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\RpwsisAccomplishmentController;
 
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -124,8 +125,17 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 Route::post('/ia-resolutions/{id}/update', [RpwsisTeamController::class, 'updateResolution'])->name('rpwsis.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [RpwsisTeamController::class, 'updateResolutionStatus'])->name('rpwsis.resolutions.update_status');
+
+                //status table
+                Route::post('/accomplishments/store', [RpwsisTeamController::class, 'storeAccomplishment'])->name('rpwsis.accomplishments.store');
+                //delete
+                Route::delete('/accomplishments/{id}/delete', [RpwsisTeamController::class, 'deleteAccomplishment'])->name('rpwsis.accomplishments.delete');
             });
+
+
         });
+
+
 
         // ==========================================
         // Contract Management Team Routes
