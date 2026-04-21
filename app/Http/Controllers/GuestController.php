@@ -10,6 +10,7 @@ use App\Models\EventCategory;
 use App\Models\HydroGeoProject;
 use App\Models\FsdeProject;
 use App\Models\ProcurementProject;
+use App\Models\PaoPowData;
 
 class GuestController extends Controller
 {
@@ -90,6 +91,7 @@ class GuestController extends Controller
         $totalProjects = $conducted = $remaining = $feasible = 0;
         $hydroProjects = $fsdeProjects = $procurementProjects = null;
         $procCategories = collect();
+        $powData = null;
 
         // 🌟 3. Fetch FS TEAM specific data
         if ($db_team === 'fs_team') {
@@ -113,6 +115,10 @@ class GuestController extends Controller
             $procurementProjects = $procQuery->paginate(10)->appends($request->query());
         }
 
+        if ($db_team === 'pao_team') {
+            $powData = PaoPowData::paginate(8);
+        }
+
         return view('guest.dashboard', compact(
             'resolutions',
             'events',
@@ -125,6 +131,7 @@ class GuestController extends Controller
             'feasible',
             'hydroProjects',
             'fsdeProjects',
+            'powData',
             'procCategories',
             'procurementProjects'
         ));
