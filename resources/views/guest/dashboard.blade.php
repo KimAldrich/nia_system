@@ -425,6 +425,96 @@
         </div>
     @endif
 
+    @if(isset($db_team) && $db_team === 'pao_team' && isset($powData))
+        <div class="ui-card" style="margin-top: 24px;">
+            <div class="section-title">
+                Program of Works Status Monitoring
+                <a href="{{ route('guest.pao.pow.export') }}" onclick="handlePowExport(event, this.href)"
+                    style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Export Excel
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="sleek-table" style="min-width: 1400px;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">District</th>
+                            <th rowspan="2">No. of Projects</th>
+                            <th rowspan="2">Total Allocation</th>
+                            <th rowspan="2">No. of Plans Received</th>
+                            <th rowspan="2">No. of Project Estimate Received</th>
+                            <th colspan="3" style="text-align: center; font-weight: 600; color: #a0aec0;">Status of Program of Works</th>
+                            <th rowspan="2">On Going POW Preparation</th>
+                            <th rowspan="2">POW for Submission</th>
+                            <th rowspan="2">Remarks</th>
+                        </tr>
+                        <tr>
+                            <th>No. of POW Prepared</th>
+                            <th>No. of POW Approved</th>
+                            <th>No. of POW Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($powData as $data)
+                            <tr>
+                                <td>{{ $data->district }}</td>
+                                <td>{{ $data->no_of_projects }}</td>
+                                <td>&#8369;{{ number_format($data->total_allocation, 2) }}</td>
+                                <td>{{ $data->no_of_plans_received }}</td>
+                                <td>{{ $data->no_of_project_estimate_received }}</td>
+                                <td>{{ $data->pow_received }}</td>
+                                <td>{{ $data->pow_approved }}</td>
+                                <td>{{ $data->pow_submitted }}</td>
+                                <td>{{ $data->ongoing_pow_preparation }}</td>
+                                <td>{{ $data->pow_for_submission }}</td>
+                                <td class="col-desc">{{ $data->remarks }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="11" style="text-align:center; padding: 30px 0; color: #a0aec0;">No data found in the database.</td>
+                            </tr>
+                        @endforelse
+
+                        @if(isset($powData) && $powData->count())
+                            <tr style="font-weight: 700; background: #f8fafc; border-top: 2px solid #0c4d05;">
+                                <td style="font-weight: 800; color: #0c4d05;">Total</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_projects') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">&#8369;{{ number_format($powData->sum('total_allocation'), 2) }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_plans_received') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_project_estimate_received') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_received') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_approved') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_submitted') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('ongoing_pow_preparation') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_for_submission') }}</td>
+                                <td></td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+
+            @if(isset($powData) && $powData->hasPages())
+                <div class="custom-pagination">
+                    <a href="{{ $powData->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $powData->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+
+                    @php
+                        $pStart = max($powData->currentPage() - 2, 1);
+                        $pEnd = min($pStart + 4, $powData->lastPage());
+                        if ($pEnd - $pStart < 4) { $pStart = max($pEnd - 4, 1); }
+                    @endphp
+
+                    @for ($page = $pStart; $page <= $pEnd; $page++)
+                        <a href="{{ $powData->appends(request()->query())->url($page) }}" class="page-item {{ $page == $powData->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                    @endfor
+
+                    <a href="{{ $powData->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$powData->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                </div>
+            @endif
+        </div>
+    @endif
+
     @if(isset($db_team) && $db_team === 'cm_team' && isset($procurementProjects))
         <div class="ui-card" style="margin-top: 24px;">
             <div class="section-title">
@@ -531,6 +621,55 @@
     @endif
 
     <script>
+        async function handlePowExport(event, url) {
+            event.preventDefault();
+
+            const suggestedName = `program_of_works_status_monitoring_${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')}.xlsx`;
+
+            try {
+                const response = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Download failed.');
+                }
+
+                const blob = await response.blob();
+
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description: 'Excel Workbook',
+                            accept: {
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                            }
+                        }]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = suggestedName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                window.location.href = url;
+            }
+        }
+
         // 🌟 1. CHART RENDERER 🌟
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
