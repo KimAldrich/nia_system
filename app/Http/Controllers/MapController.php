@@ -232,6 +232,10 @@ private function readShapefileZip($zipPath)
 }
 public function getIrrigatedChartData()
 {
+    //time out for large file processing
+    set_time_limit(300);
+    ini_set('max_execution_time', 300);
+
     $basePath = 'maps/irrigated';
     $disk = Storage::disk('public');
 
@@ -319,26 +323,26 @@ private function getMunicipalityLandArea($municipality)
 
     return 0;
 }
-// private function calculateGeoJsonArea($geometry)
-// {
-//     $type = $geometry['type'];
-//     $coords = $geometry['coordinates'];
+private function calculateGeoJsonArea($geometry)
+{
+    $type = $geometry['type'];
+    $coords = $geometry['coordinates'];
 
-//     $totalArea = 0;
+    $totalArea = 0;
 
-//     if ($type === 'Polygon') {
-//         $totalArea += $this->polygonArea($coords[0]);
-//     }
+    if ($type === 'Polygon') {
+        $totalArea += $this->polygonArea($coords[0]);
+    }
 
-//     if ($type === 'MultiPolygon') {
-//         foreach ($coords as $polygon) {
-//             $totalArea += $this->polygonArea($polygon[0]);
-//         }
-//     }
+    if ($type === 'MultiPolygon') {
+        foreach ($coords as $polygon) {
+            $totalArea += $this->polygonArea($polygon[0]);
+        }
+    }
 
-//     // convert square meters to hectares
-//     return $totalArea / 10000;
-// }
+    // convert square meters to hectares
+    return $totalArea / 10000;
+}
 private function polygonArea($ring)
 {
     $area = 0;
