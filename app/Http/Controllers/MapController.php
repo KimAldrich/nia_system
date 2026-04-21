@@ -232,62 +232,55 @@ private function readShapefileZip($zipPath)
 }
 public function getIrrigatedChartData()
 {
-    //time out for large file processing
-    set_time_limit(300);
-    ini_set('max_execution_time', 300);
+    $jsonPath = public_path('maps/details.json');
 
-    $basePath = 'maps/irrigated';
-    $disk = Storage::disk('public');
+    if (!file_exists($jsonPath)) {
+        return response()->json([
+            'error' => 'details.json not found'
+        ], 404);
+    }
 
-    $municipalities = collect($disk->directories($basePath));
+    $rows = json_decode(file_get_contents($jsonPath), true);
+
+    if (!$rows) {
+        return response()->json([
+            'error' => 'Invalid JSON'
+        ], 500);
+    }
 
     $chartData = [];
 
-    foreach ($municipalities as $municipalityPath) {
+    foreach ($rows as $row) {
 
-        $municipality = basename($municipalityPath);
+        $name = $row['name'];
 
-        $ranges = $disk->directories($municipalityPath);
+        $totalLand = (float) $row['total_land_area_ha'];
+        $irrigated = (float) $row['area_developed_ha']; // developed = irrigated
+        $remaining = (float) $row['remaining_area_ha'];
+        $program   = (float) $row['program_area_ha'];
+        $potential = (float) $row['potential_irrigation_area_ha'];
 
-        $rangeAreas = [];
-        $slopesTotal = 0;
-
-        foreach ($ranges as $rangePath) {
-
-            $rangeName = basename($rangePath);
-            $files = $disk->files($rangePath);
-
-            $rangeTotal = 0;
-
-            foreach ($files as $file) {
-                if (str_ends_with($file, '.zip')) {
-                    $rangeTotal += $this->readShapefileZip($file);
-                }
-            }
-
-            $rangeAreas[$rangeName] = $rangeTotal;
-            $slopesTotal += $rangeTotal;
-        }
-
-        // ✅ Get real total land area
-        $totalLandArea = $this->getMunicipalityLandArea($municipality);
+        $ranges = [
+            'Irrigated Area'            => $irrigated,
+            'Remaining Area'           => $remaining,
+            'Program Area'             => $program,
+            'Potential Irrigation Area'=> $potential
+        ];
 
         $percentages = [];
 
-        foreach ($rangeAreas as $range => $area) {
-            $percentages[$range] = $totalLandArea > 0
-                ? round(($area / $totalLandArea) * 100, 2)
+        foreach ($ranges as $label => $value) {
+            $percentages[$label] = $totalLand > 0
+                ? round(($value / $totalLand) * 100, 2)
                 : 0;
         }
 
-$totalIrrigated = array_sum($rangeAreas);
-
-$chartData[$municipality] = [
-    'Area (ha)'        => $totalLandArea,
-    'irrigated_total'  => round($totalIrrigated, 2),
-    'ranges'           => $rangeAreas,
-    'percentages'      => $percentages
-];
+        $chartData[$name] = [
+            'Area (ha)'       => $totalLand,
+            'irrigated_total' => $irrigated,
+            'ranges'          => $ranges,
+            'percentages'     => $percentages
+        ];
     }
 
     return response()->json($chartData);
