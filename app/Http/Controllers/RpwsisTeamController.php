@@ -9,6 +9,7 @@ use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\RpwsisAccomplishment;
 use App\Models\EventCategory;
+use App\Models\RpwsisAccomplishmentSummary;
 
 class RpwsisTeamController extends Controller
 {
@@ -21,8 +22,11 @@ class RpwsisTeamController extends Controller
         // ✅ ADDED THIS: Fetch records to fix the "undefined $records" error
         $records = RpwsisAccomplishment::latest()->get();
 
+        // ✅ ADDED THIS: Fetch records for the new Summary Table
+        $summaryRecords = RpwsisAccomplishmentSummary::latest()->get();
+
         $categories = EventCategory::all();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records'));
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records', 'summaryRecords'));
     }
 
     // 2. View Downloadables Page
@@ -169,4 +173,45 @@ class RpwsisTeamController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    // ----------------------------------------------------------------------
+    // ✅ NEW METHODS FOR THE SUMMARY OF ACCOMPLISHMENT TABLE
+    // ----------------------------------------------------------------------
+
+    // 12. Store Summary Accomplishment
+    public function storeSummary(Request $request)
+    {
+        // Map the inputs from your JS variables to the database columns
+        $record = RpwsisAccomplishmentSummary::create([
+            'region'            => $request->sum_region,
+            'province'          => $request->sum_province,
+            'municipality'      => $request->sum_municipality,
+            'barangay'          => $request->sum_barangay,
+            'plantation_type'   => $request->sum_type,
+            'year_established'  => $request->sum_year,
+            'target_area_1'     => $request->sum_target_1,
+            'area_planted'      => $request->sum_area_planted,
+            'species_planted'   => $request->sum_species,
+            'spacing'           => $request->sum_spacing,
+            'maintenance'       => $request->sum_maintenance,
+            'target_area_2'     => $request->sum_target_2,
+            'actual_area'       => $request->sum_actual,
+            'mortality_rate'    => $request->sum_mortality,
+            'species_replanted' => $request->sum_replanted,
+            'nis_name'          => $request->sum_nis,
+            'remarks'           => $request->sum_remarks,
+        ]);
+
+        return response()->json($record);
+    }
+
+    // 13. Delete Summary Accomplishment
+    public function deleteSummary($id)
+    {
+        $record = RpwsisAccomplishmentSummary::findOrFail($id);
+        $record->delete();
+
+        return response()->json(['success' => true]);
+    }
+
 }

@@ -26,6 +26,7 @@ Route::get('/guest/terms', [GuestController::class, 'terms'])->name('guest.terms
 Route::post('/guest/accept-terms', [GuestController::class, 'acceptTerms'])->name('guest.accept');
 Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.dashboard');
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
+Route::get('/guest/pao-team/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('guest.pao.pow.export');
 
 Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/map', [MapController::class, 'Showmap'])->name('map');
@@ -135,6 +136,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/accomplishments/store', [RpwsisTeamController::class, 'storeAccomplishment'])->name('rpwsis.accomplishments.store');
                 //delete
                 Route::delete('/accomplishments/{id}/delete', [RpwsisTeamController::class, 'deleteAccomplishment'])->name('rpwsis.accomplishments.delete');
+                //summary table
+                //summary table
+                Route::post('/summary/store', [RpwsisTeamController::class, 'storeSummary'])->name('rpwsis.summary.store');
+                Route::delete('/summary/{id}/delete', [RpwsisTeamController::class, 'deleteSummary'])->name('rpwsis.summary.delete');
             });
 
 
@@ -250,6 +255,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/pow/store', [PaoTeamController::class, 'storePow'])->name('pao.pow.store');
                 Route::put('/pow/update', [PaoTeamController::class, 'updatePow'])->name('pao.pow.update');
                 Route::delete('/pow/delete/{id}', [PaoTeamController::class, 'deletePow'])->name('pao.pow.delete');
+                Route::get('/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('pao.pow.export');
             });
         });
 
