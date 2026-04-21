@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
@@ -10,9 +11,12 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
 use App\Models\HydroGeoProject;
 use App\Models\FsdeProject;
+use Illuminate\Validation\Rule;
 
 class FsTeamController extends Controller
 {
+    use HandlesAsyncRequests;
+
     // 1. Dashboard
     public function index()
     {
@@ -83,7 +87,7 @@ class FsTeamController extends Controller
             'original_name' => $file->getClientOriginalName(),
             'team' => 'fs_team' // 🔥 THIS IS THE FIX
         ]);
-        return back()->with('success', 'File uploaded successfully.');
+        return $this->successResponse($request, 'File uploaded successfully.');
     }
 
     // 5. Update Downloadable
@@ -99,11 +103,11 @@ class FsTeamController extends Controller
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'File updated successfully.');
+        return $this->successResponse($request, 'File updated successfully.');
     }
 
     // 6. Delete Downloadable
-    public function deleteForm($id)
+    public function deleteForm(Request $request, $id)
     {
         $downloadable = Downloadable::findOrFail($id);
 
@@ -117,7 +121,7 @@ class FsTeamController extends Controller
 // }
         $downloadable->delete();
 
-        return back()->with('success', 'File deleted successfully.');
+        return $this->successResponse($request, 'File deleted successfully.');
     }
 
     // 7. Upload Resolution
@@ -140,7 +144,7 @@ class FsTeamController extends Controller
             'team' => 'fs_team'
         ]);
 
-        return back()->with('success', 'Resolution uploaded successfully.');
+        return $this->successResponse($request, 'Resolution uploaded successfully.');
     }
 
     // 7. Update Resolution File
@@ -156,7 +160,7 @@ class FsTeamController extends Controller
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'Resolution updated successfully.');
+        return $this->successResponse($request, 'Resolution updated successfully.');
     }
 
     // 8. Update Resolution Status
@@ -166,58 +170,87 @@ class FsTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $resolution->update(['status' => $request->status]);
 
-        return back()->with('success', 'Resolution status updated successfully.');
+        return $this->successResponse($request, 'Resolution status updated successfully.');
     }
 
     public function storeHydroGeo(Request $request)
     {
-        // Validate and save the new row
-        HydroGeoProject::create($request->all());
+        $validated = $request->validate([
+            'year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
+            'district' => ['required', 'string', 'max:100'],
+            'project_code' => ['required', 'string', 'max:100'],
+            'system_name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:2000'],
+            'municipality' => ['required', 'string', 'max:100'],
+            'status' => ['required', Rule::in([
+                'For Schedule',
+                'For Interpretation',
+                'For Submission of Raw data',
+                'Relocation',
+                'Interpreted',
+                'Not Applicable',
+                'C/O Contractor',
+            ])],
+            'result' => ['nullable', 'string', 'max:100'],
+        ]);
 
-        // Refresh the page
-        return redirect()->back()->with('success', 'New Hydro-Geo data added successfully!');
+        HydroGeoProject::create($validated);
+
+        return $this->successResponse($request, 'New Hydro-Geo data added successfully!');
     }
 
     public function storeFsde(Request $request)
     {
-        // Extract everything EXCEPT the dynamic accomplishment inputs
-        $data = $request->except(['acc_month', 'acc_year', 'acc_phy', 'acc_fin']);
+        $validated = $request->validate([
+            'year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
+            'type_of_study' => ['required', 'string', 'max:255'],
+            'project_name' => ['required', 'string', 'max:1000'],
+            'municipality' => ['required', 'string', 'max:100'],
+            'consultant' => ['required', 'string', 'max:255'],
+            'period_start' => ['nullable', 'date'],
+            'period_end' => ['nullable', 'date', 'after_or_equal:period_start'],
+            'contract_amount' => ['nullable', 'numeric', 'min:0'],
+            'actual_obligation' => ['nullable', 'numeric', 'min:0'],
+            'value_of_acc' => ['nullable', 'numeric', 'min:0'],
+            'actual_expenditures' => ['nullable', 'numeric', 'min:0'],
+            'acc_month' => ['required', Rule::in(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'])],
+            'acc_year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
+            'acc_phy' => ['nullable', 'numeric', 'between:0,100'],
+            'acc_fin' => ['nullable', 'numeric', 'between:0,100'],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ]);
 
-        // Grab the dynamic inputs
-        $month = $request->input('acc_month'); // e.g., 'apr'
-        $phy = $request->input('acc_phy');
-        $fin = $request->input('acc_fin');
-        $year = $request->input('acc_year');
+        $data = collect($validated)
+            ->except(['acc_month', 'acc_year', 'acc_phy', 'acc_fin'])
+            ->toArray();
 
-        // Automatically map the data to the correct database column!
-        if ($month) {
-            $data[$month . '_phy'] = $phy;
-            $data[$month . '_fin'] = $fin;
-            $data['acc_year'] = $year;
-        }
+        $month = $validated['acc_month'];
+        $data[$month . '_phy'] = $validated['acc_phy'] ?? null;
+        $data[$month . '_fin'] = $validated['acc_fin'] ?? null;
+        $data['acc_year'] = $validated['acc_year'];
 
         FsdeProject::create($data);
 
-        return redirect()->back()->with('success', 'FSDE data successfully added!');
+        return $this->successResponse($request, 'FSDE data successfully added!');
     }
 
-    public function destroyHydroGeo($id)
+    public function destroyHydroGeo(Request $request, $id)
     {
         $project = HydroGeoProject::findOrFail($id);
         $project->delete();
 
-        return redirect()->back()->with('success', 'Hydro-Geo data deleted successfully!');
+        return $this->successResponse($request, 'Hydro-Geo data deleted successfully.');
     }
 
-    public function destroyFsde($id)
+    public function destroyFsde(Request $request, $id)
     {
         $project = FsdeProject::findOrFail($id);
         $project->delete();
 
-        return redirect()->back()->with('success', 'FSDE data deleted successfully!');
+        return $this->successResponse($request, 'FSDE data deleted successfully.');
     }
     // 9. Delete IA Resolution
-    public function deleteResolution($id)
+    public function deleteResolution(Request $request, $id)
     {
         $resolution = IaResolution::findOrFail($id);
 
@@ -234,6 +267,6 @@ class FsTeamController extends Controller
         // Delete record from database
         $resolution->delete();
 
-        return back()->with('success', 'Resolution deleted successfully.');
+        return $this->successResponse($request, 'Resolution deleted successfully.');
     }
 }

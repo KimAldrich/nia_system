@@ -339,25 +339,58 @@ async function deleteFile(btn) {
 
     if (!confirm('Delete this file?')) return;
 
-    const response = await fetch('/map/delete', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ path: path })
-    });
+    btn.disabled = true;
+    btn.classList.add('is-loading');
 
-    const result = await response.json();
+    if (typeof showAppLoader === 'function') {
+        showAppLoader('Deleting file...');
+    }
 
-    if (response.ok) {
-        document.getElementById('row-' + rowId).remove();
-        alert('Deleted');
+    try {
+        const response = await fetch('/map/delete', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ path: path })
+        });
 
-        // 🔥 update rows after delete
-        location.reload(); // simplest reliable fix
-    } else {
-        alert(result.message);
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Unable to delete file.');
+        }
+
+        const row = document.getElementById('row-' + rowId);
+        if (row) {
+            row.remove();
+        }
+
+        const rowIndex = rows.findIndex(row => row.id === 'row-' + rowId);
+        if (rowIndex !== -1) {
+            rows.splice(rowIndex, 1);
+        }
+
+        filteredRows = filteredRows.filter(row => row.id !== 'row-' + rowId);
+        paginate();
+
+        if (typeof showLiveAlert === 'function') {
+            showLiveAlert(result.message || 'File deleted successfully.', 'success');
+        }
+    } catch (error) {
+        if (typeof showLiveAlert === 'function') {
+            showLiveAlert(error.message || 'Unable to delete file.', 'error');
+        } else {
+            alert(error.message || 'Unable to delete file.');
+        }
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+
+        if (typeof hideAppLoader === 'function') {
+            hideAppLoader();
+        }
     }
 }
 

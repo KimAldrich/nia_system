@@ -198,7 +198,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <div class="table-responsive">
+                <div class="table-responsive" id="activeProjectsContainer">
                     <table class="sleek-table">
                         <thead>
                             <tr>
@@ -227,9 +227,9 @@
                                     </td>
                                     @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                         <td style="text-align: right;">
-                                            <form action="{{ route('fs.resolutions.update_status', $res->id) }}" method="POST">
+                                            <form action="{{ route('fs.resolutions.update_status', $res->id) }}" method="POST" data-async-target="#activeProjectsContainer">
                                                 @csrf
-                                                <select name="status" class="status-select" onchange="this.form.submit()">
+                                                <select name="status" class="status-select" data-auto-submit>
                                                     <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>Not-Validated</option>
                                                     <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>On-Going</option>
                                                     <option value="validated" {{ $res->status == 'validated' ? 'selected' : '' }}>Validated</option>
@@ -359,7 +359,7 @@
         </div>
     </div>
 
-    <div class="ui-card" style="margin-top: 24px;">
+    <div class="ui-card" id="hydroSection" style="margin-top: 24px;">
         <div class="section-title">
             Hydro-Georesistivity Status Monitoring
             <div style="display: flex; gap: 10px;">
@@ -374,7 +374,7 @@
             </div>
         </div>
         
-        <div class="table-responsive">
+                <div class="table-responsive" id="hydroTableContainer">
             <table class="sleek-table" style="min-width: 1200px;">
                 <thead>
                     <tr>
@@ -424,7 +424,7 @@
                             </td>
                             @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                 <td style="text-align: center;">
-                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this Hydro-Geo project?');">
+                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" data-async-target="#hydroSection" data-async-confirm="Are you sure you want to delete this Hydro-Geo project?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">
@@ -446,19 +446,19 @@
                 @if ($hydroProjects->onFirstPage())
                     <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
                 @else
-                    <a href="{{ $hydroProjects->withQueryString()->previousPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
+                    <a href="{{ $hydroProjects->withQueryString()->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#hydroSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
                 @endif
                 @foreach ($hydroProjects->withQueryString()->links()->elements as $element)
                     @if (is_string($element)) <span class="page-item disabled">{{ $element }}</span> @endif
                     @if (is_array($element))
                         @foreach ($element as $page => $url)
                             @if ($page == $hydroProjects->currentPage()) <span class="page-item active">{{ $page }}</span>
-                            @else <a href="{{ $url }}" class="page-item">{{ $page }}</a> @endif
+                            @else <a href="{{ $url }}" class="page-item" data-async-pagination="true" data-async-target="#hydroSection">{{ $page }}</a> @endif
                         @endforeach
                     @endif
                 @endforeach
                 @if ($hydroProjects->hasMorePages())
-                    <a href="{{ $hydroProjects->withQueryString()->nextPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
+                    <a href="{{ $hydroProjects->withQueryString()->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#hydroSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
                 @else
                     <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
                 @endif
@@ -466,7 +466,7 @@
         @endif
     </div>
 
-    <div class="ui-card">
+    <div class="ui-card" id="fsdeSection">
         <div class="section-title">
             Monthly FSDE Status Report
             <div style="display: flex; gap: 10px;">
@@ -481,7 +481,7 @@
             </div>
         </div>
         
-        <div class="table-responsive">
+                <div class="table-responsive" id="fsdeTableContainer">
             <table class="sleek-table" style="min-width: 1700px;">
                 <thead>
                     <tr>
@@ -552,7 +552,7 @@
                             
                             @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
                                 <td style="text-align: center;">
-                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this FSDE project?');">
+                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" data-async-target="#fsdeSection" data-async-confirm="Are you sure you want to delete this FSDE project?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">
@@ -574,19 +574,19 @@
                 @if ($fsdeProjects->onFirstPage())
                     <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
                 @else
-                    <a href="{{ $fsdeProjects->withQueryString()->previousPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
+                    <a href="{{ $fsdeProjects->withQueryString()->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#fsdeSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
                 @endif
                 @foreach ($fsdeProjects->withQueryString()->links()->elements as $element)
                     @if (is_string($element)) <span class="page-item disabled">{{ $element }}</span> @endif
                     @if (is_array($element))
                         @foreach ($element as $page => $url)
                             @if ($page == $fsdeProjects->currentPage()) <span class="page-item active">{{ $page }}</span>
-                            @else <a href="{{ $url }}" class="page-item">{{ $page }}</a> @endif
+                            @else <a href="{{ $url }}" class="page-item" data-async-pagination="true" data-async-target="#fsdeSection">{{ $page }}</a> @endif
                         @endforeach
                     @endif
                 @endforeach
                 @if ($fsdeProjects->hasMorePages())
-                    <a href="{{ $fsdeProjects->withQueryString()->nextPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
+                    <a href="{{ $fsdeProjects->withQueryString()->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#fsdeSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
                 @else
                     <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
                 @endif
@@ -597,17 +597,17 @@
     <div class="modal-overlay" id="addDataModal">
         <div class="modal-box">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Hydro-Geo Data</h3>
-            <form action="{{ route('fs.hydro.store') }}" method="POST">
+            <form action="{{ route('fs.hydro.store') }}" method="POST" data-async-target="#hydroSection" data-async-reset="true" data-async-close="#addDataModal">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Year</label><input type="text" name="year" required placeholder="e.g. 2026" class="modern-input"></div>
-                    <div><label class="modern-label">District</label><input type="text" name="district" required placeholder="e.g. 1st District" class="modern-input"></div>
+                    <div><label class="modern-label">Year</label><input type="number" name="year" required placeholder="e.g. 2026" class="modern-input" min="2000" max="2100" step="1"></div>
+                    <div><label class="modern-label">District</label><input type="text" name="district" required placeholder="e.g. 1st District" class="modern-input" maxlength="100"></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Project Code</label><input type="text" name="project_code" required placeholder="e.g. EGPIP-Solar" class="modern-input"></div>
+                    <div><label class="modern-label">Project Code</label><input type="text" name="project_code" required placeholder="e.g. EGPIP-Solar" class="modern-input" maxlength="100"></div>
                     <div>
                         <label class="modern-label">Municipality / City</label>
-                        <input type="text" name="municipality" list="pangasinanMunisHydro" class="modern-input" placeholder="Select or type..." required>
+                        <input type="text" name="municipality" list="pangasinanMunisHydro" class="modern-input" placeholder="Select or type..." required maxlength="100">
                         <datalist id="pangasinanMunisHydro">
                             <option value="Agno"></option><option value="Aguilar"></option><option value="Alaminos City"></option>
                             <option value="Alcala"></option><option value="Anda"></option><option value="Asingan"></option>
@@ -628,8 +628,8 @@
                         </datalist>
                     </div>
                 </div>
-                <div><label class="modern-label">System Name</label><input type="text" name="system_name" required placeholder="e.g. Alilao SPIP" class="modern-input"></div>
-                <div><label class="modern-label">Description / Remarks</label><textarea name="description" required rows="3" class="modern-input" style="resize: none;" placeholder="Project description..."></textarea></div>
+                <div><label class="modern-label">System Name</label><input type="text" name="system_name" required placeholder="e.g. Alilao SPIP" class="modern-input" maxlength="255"></div>
+                <div><label class="modern-label">Description / Remarks</label><textarea name="description" required rows="3" class="modern-input" style="resize: none;" placeholder="Project description..." maxlength="2000"></textarea></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
                         <label class="modern-label">Status</label>
@@ -643,7 +643,7 @@
                             <option value="C/O Contractor">C/O Contractor</option>
                         </select>
                     </div>
-                    <div><label class="modern-label">Result</label><input type="text" name="result" placeholder="e.g. Feasible, -, etc." class="modern-input"></div>
+                    <div><label class="modern-label">Result</label><input type="text" name="result" placeholder="e.g. Feasible, -, etc." class="modern-input" maxlength="100"></div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button type="button" onclick="closeAddModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
@@ -656,19 +656,19 @@
     <div class="modal-overlay" id="addFsdeModal">
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New FSDE Data</h3>
-            <form action="{{ route('fs.fsde.store') }}" method="POST">
+            <form action="{{ route('fs.fsde.store') }}" method="POST" data-async-target="#fsdeSection" data-async-reset="true" data-async-close="#addFsdeModal">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Year</label><input type="text" name="year" required class="modern-input"></div>
-                    <div><label class="modern-label">Type of Study</label><input type="text" name="type_of_study" required class="modern-input"></div>
+                    <div><label class="modern-label">Year</label><input type="number" name="year" required class="modern-input" min="2000" max="2100" step="1"></div>
+                    <div><label class="modern-label">Type of Study</label><input type="text" name="type_of_study" required class="modern-input" maxlength="255"></div>
                 </div>
                 
-                <div><label class="modern-label">Project Name</label><input type="text" name="project_name" required class="modern-input"></div>
+                <div><label class="modern-label">Project Name</label><input type="text" name="project_name" required class="modern-input" maxlength="1000"></div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
                         <label class="modern-label">Municipality / City</label>
-                        <input type="text" name="municipality" list="pangasinanMunisFsde" class="modern-input" placeholder="Select or type..." required>
+                        <input type="text" name="municipality" list="pangasinanMunisFsde" class="modern-input" placeholder="Select or type..." required maxlength="100">
                         <datalist id="pangasinanMunisFsde">
                             <option value="Agno"></option><option value="Aguilar"></option><option value="Alaminos City"></option>
                             <option value="Alcala"></option><option value="Anda"></option><option value="Asingan"></option>
@@ -688,7 +688,7 @@
                             <option value="Urbiztondo"></option><option value="Urdaneta City"></option><option value="Villasis"></option>
                         </datalist>
                     </div>
-                    <div><label class="modern-label">Consultant</label><input type="text" name="consultant" required class="modern-input"></div>
+                    <div><label class="modern-label">Consultant</label><input type="text" name="consultant" required class="modern-input" maxlength="255"></div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -697,13 +697,13 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Contract Amount</label><input type="text" name="contract_amount" class="modern-input"></div>
-                    <div><label class="modern-label">Actual Obligation</label><input type="text" name="actual_obligation" class="modern-input"></div>
+                    <div><label class="modern-label">Contract Amount</label><input type="number" name="contract_amount" class="modern-input" min="0" step="0.01"></div>
+                    <div><label class="modern-label">Actual Obligation</label><input type="number" name="actual_obligation" class="modern-input" min="0" step="0.01"></div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Value of Acc.</label><input type="text" name="value_of_acc" class="modern-input"></div>
-                    <div><label class="modern-label">Actual Expend.</label><input type="text" name="actual_expenditures" class="modern-input"></div>
+                    <div><label class="modern-label">Value of Acc.</label><input type="number" name="value_of_acc" class="modern-input" min="0" step="0.01"></div>
+                    <div><label class="modern-label">Actual Expend.</label><input type="number" name="actual_expenditures" class="modern-input" min="0" step="0.01"></div>
                 </div>
 
                 <div style="margin-bottom: 15px; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; background: #f8fafc;">
@@ -724,15 +724,15 @@
                             <option value="nov">November</option>
                             <option value="dec">December</option>
                         </select>
-                        <input type="text" name="acc_year" class="modern-input" placeholder="Year (e.g. 2026)" style="margin-bottom: 0;" required>
+                        <input type="number" name="acc_year" class="modern-input" placeholder="Year (e.g. 2026)" style="margin-bottom: 0;" required min="2000" max="2100" step="1">
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div><input type="text" name="acc_phy" class="modern-input" placeholder="PHY (%)" style="background: #ffffff; margin-bottom: 0;"></div>
-                        <div><input type="text" name="acc_fin" class="modern-input" placeholder="FIN (%)" style="background: #ffffff; margin-bottom: 0;"></div>
+                        <div><input type="number" name="acc_phy" class="modern-input" placeholder="PHY (%)" style="background: #ffffff; margin-bottom: 0;" min="0" max="100" step="0.01"></div>
+                        <div><input type="number" name="acc_fin" class="modern-input" placeholder="FIN (%)" style="background: #ffffff; margin-bottom: 0;" min="0" max="100" step="0.01"></div>
                     </div>
                 </div>
 
-                <div><label class="modern-label">Remarks</label><textarea name="remarks" rows="2" class="modern-input" style="resize: none;"></textarea></div>
+                <div><label class="modern-label">Remarks</label><textarea name="remarks" rows="2" class="modern-input" style="resize: none;" maxlength="2000"></textarea></div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button type="button" onclick="closeFsdeAddModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>

@@ -11,11 +11,6 @@
             {{ session('success') }}
         </div>
     @endif
-    @if($errors->any())
-        <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500;">
-            @foreach ($errors->all() as $error) <div>⚠️ {{ $error }}</div> @endforeach
-        </div>
-    @endif
 
     <div class="dashboard-grid" style="grid-template-columns: 2fr 1fr;">
         <div class="main-column">
@@ -39,7 +34,7 @@
                                         <div style="display: flex; gap: 8px; justify-content: flex-end;">
                                             <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" style="padding: 6px 12px; background: #18181b; color: white; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">View</a>
                                             @if(auth()->user()->role == $doc->team_role || auth()->user()->role == 'admin')
-                                                <form action="{{ route('administrative.destroy', $doc->id) }}" method="POST" style="margin: 0;">
+                                                <form action="{{ route('administrative.destroy', $doc->id) }}" method="POST" style="margin: 0;" data-async-target="#tab-memorandums, #tab-minutes" data-async-confirm="Delete this document?">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" style="padding: 6px 12px; background: #f87171; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Delete</button>
                                                 </form>
@@ -67,7 +62,7 @@
                                         <div style="display: flex; gap: 8px; justify-content: flex-end;">
                                             <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" style="padding: 6px 12px; background: #18181b; color: white; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">View</a>
                                             @if(auth()->id() == $doc->user_id || auth()->user()->role == 'admin')
-                                                <form action="{{ route('administrative.destroy', $doc->id) }}" method="POST" style="margin: 0;">
+                                                <form action="{{ route('administrative.destroy', $doc->id) }}" method="POST" style="margin: 0;" data-async-target="#tab-memorandums, #tab-minutes" data-async-confirm="Delete this document?">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" style="padding: 6px 12px; background: #f87171; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Delete</button>
                                                 </form>
@@ -88,7 +83,7 @@
         <div class="side-column">
             <div class="ui-card card">
                 <h3 style="margin-top: 0; font-size: 16px; color: #0f172a; margin-bottom: 20px;">Upload Document</h3>
-                <form action="{{ route('administrative.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('administrative.store') }}" method="POST" enctype="multipart/form-data" data-async-target="#tab-memorandums, #tab-minutes" data-async-reset="true">
                     @csrf
                     
                     <div style="margin-bottom: 15px;">
@@ -101,7 +96,7 @@
 
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Document Title</label>
-                        <input type="text" name="title" required placeholder="e.g. Q3 Regional Update" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none;">
+                        <input type="text" name="title" required placeholder="e.g. Q3 Regional Update" maxlength="255" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none;">
                     </div>
 
                     <div style="margin-bottom: 25px;">

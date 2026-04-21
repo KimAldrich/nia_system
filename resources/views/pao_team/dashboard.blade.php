@@ -386,7 +386,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table">
+                <table class="sleek-table" id="activeProjectsContainer">
                     <thead>
                         <tr>
                             <th>Document Name</th>
@@ -418,9 +418,9 @@
                                 @if (auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
                                     <td style="text-align: right;">
                                         <form action="{{ route('pao.resolutions.update_status', $res->id) }}"
-                                            method="POST">
+                                            method="POST" data-async-target="#activeProjectsContainer">
                                             @csrf
-                                            <select name="status" class="status-select" onchange="this.form.submit()">
+                                            <select name="status" class="status-select" data-auto-submit>
                                                 <option value="not-validated"
                                                     {{ $res->status == 'not-validated' ? 'selected' : '' }}>
                                                     Not-Validated</option>
@@ -620,7 +620,7 @@
             </div>
         </div>
         
-        <div class="table-responsive">
+        <div class="table-responsive" id="powTableContainer">
             <table class="sleek-table">
                 <thead>
                     <tr>
@@ -702,7 +702,7 @@
                 @if ($powData->onFirstPage())
                     <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
                 @else
-                    <a href="{{ $powData->previousPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
+                    <a href="{{ $powData->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#powSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
                 @endif
 
                 {{-- Pagination Elements --}}
@@ -716,7 +716,7 @@
                             @if ($page == $powData->currentPage())
                                 <span class="page-item active">{{ $page }}</span>
                             @else
-                                <a href="{{ $url }}" class="page-item">{{ $page }}</a>
+                                <a href="{{ $url }}" class="page-item" data-async-pagination="true" data-async-target="#powSection">{{ $page }}</a>
                             @endif
                         @endforeach
                     @endif
@@ -724,7 +724,7 @@
 
                 {{-- Next Page Link --}}
                 @if ($powData->hasMorePages())
-                    <a href="{{ $powData->nextPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
+                    <a href="{{ $powData->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#powSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
                 @else
                     <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
                 @endif
@@ -807,7 +807,7 @@
 
                 <div>
                     <label class="modern-label">Remarks</label>
-                    <textarea name="remarks" rows="3" class="modern-input" style="resize: none;" placeholder="Additional remarks..."></textarea>
+                    <textarea name="remarks" rows="3" class="modern-input" style="resize: none;" placeholder="Additional remarks..." maxlength="2000"></textarea>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -910,7 +910,7 @@
 
                 <div>
                     <label class="modern-label">Remarks</label>
-                    <textarea name="remarks" id="edit-remarks" rows="3" class="modern-input" style="resize: none;" placeholder="Additional remarks..."></textarea>
+                    <textarea name="remarks" id="edit-remarks" rows="3" class="modern-input" style="resize: none;" placeholder="Additional remarks..." maxlength="2000"></textarea>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">

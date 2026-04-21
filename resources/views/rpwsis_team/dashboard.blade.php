@@ -746,7 +746,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table">
+                <table class="sleek-table" id="activeProjectsContainer">
                     <thead>
                         <tr>
                             <th>Document Name</th>
@@ -778,9 +778,9 @@
                                 @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
                                     <td style="text-align: right;">
                                         <form action="{{ route('rpwsis.resolutions.update_status', $res->id) }}"
-                                            method="POST">
+                                            method="POST" data-async-target="#activeProjectsContainer">
                                             @csrf
-                                            <select name="status" class="status-select" onchange="this.form.submit()">
+                                            <select name="status" class="status-select" data-auto-submit>
                                                 <option value="not-validated"
                                                     {{ $res->status == 'not-validated' ? 'selected' : '' }}>
                                                     Not-Validated</option>
@@ -1133,13 +1133,13 @@
                         </p>
 
                         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                            <input id="region" placeholder="Region" class="status-select">
-                            <input id="batch" placeholder="Batch" class="status-select">
-                            <input id="allocation" placeholder="Allocation" class="status-select">
-                            <input id="nis" placeholder="NIS" class="status-select">
-                            <input id="activity" placeholder="Activity Type" class="status-select">
-                            <input id="remarks" placeholder="Remarks" class="status-select">
-                            <input id="amount" placeholder="Amount" class="status-select">
+                            <input id="region" placeholder="Region" class="status-select" maxlength="100" required>
+                            <input id="batch" placeholder="Batch" class="status-select" maxlength="100">
+                            <input id="allocation" placeholder="Allocation" class="status-select" maxlength="255">
+                            <input id="nis" placeholder="NIS" class="status-select" maxlength="255">
+                            <input id="activity" placeholder="Activity Type" class="status-select" maxlength="255" required>
+                            <input id="remarks" placeholder="Remarks" class="status-select" maxlength="1000">
+                            <input id="amount" placeholder="Amount" class="status-select" type="number" min="0" step="0.01">
                         </div>
                     </div>
 
@@ -1149,18 +1149,18 @@
                         </p>
 
                         <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                            <input id="c1" placeholder="POW" class="status-select">
-                            <input id="c2" placeholder="Nursery" class="status-select">
-                            <input id="c3" placeholder="Seedling" class="status-select">
-                            <input id="c4" placeholder="Procurement" class="status-select">
-                            <input id="c5" placeholder="Site Prep" class="status-select">
-                            <input id="c6" placeholder="Vegetative" class="status-select">
-                            <input id="c7" placeholder="Wattling" class="status-select">
-                            <input id="c8" placeholder="Right of Way" class="status-select">
-                            <input id="c9" placeholder="Consultative" class="status-select">
-                            <input id="c10" placeholder="Distribution" class="status-select">
-                            <input id="c11" placeholder="Signages" class="status-select">
-                            <input id="c12" placeholder="Monitoring" class="status-select">
+                            <input id="c1" placeholder="POW" class="status-select" maxlength="255">
+                            <input id="c2" placeholder="Nursery" class="status-select" maxlength="255">
+                            <input id="c3" placeholder="Seedling" class="status-select" maxlength="255">
+                            <input id="c4" placeholder="Procurement" class="status-select" maxlength="255">
+                            <input id="c5" placeholder="Site Prep" class="status-select" maxlength="255">
+                            <input id="c6" placeholder="Vegetative" class="status-select" maxlength="255">
+                            <input id="c7" placeholder="Wattling" class="status-select" maxlength="255">
+                            <input id="c8" placeholder="Right of Way" class="status-select" maxlength="255">
+                            <input id="c9" placeholder="Consultative" class="status-select" maxlength="255">
+                            <input id="c10" placeholder="Distribution" class="status-select" maxlength="255">
+                            <input id="c11" placeholder="Signages" class="status-select" maxlength="255">
+                            <input id="c12" placeholder="Monitoring" class="status-select" maxlength="255">
                         </div>
                     </div>
 
@@ -1169,9 +1169,9 @@
                         <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics</p>
 
                         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                            <input id="phy" placeholder="PHY %" class="status-select">
-                            <input id="fin" placeholder="FIN %" class="status-select">
-                            <input id="exp" placeholder="Expenditures" class="status-select">
+                            <input id="phy" placeholder="PHY %" class="status-select" type="number" min="0" max="100" step="0.01">
+                            <input id="fin" placeholder="FIN %" class="status-select" type="number" min="0" max="100" step="0.01">
+                            <input id="exp" placeholder="Expenditures" class="status-select" type="number" min="0" step="0.01">
                         </div>
                     </div>
 
@@ -1293,6 +1293,12 @@
                 return;
             }
 
+            btn.disabled = true;
+            btn.classList.add('is-loading');
+            if (typeof showAppLoader === 'function') {
+                showAppLoader('Deleting record...');
+            }
+
             fetch(`/rpwsis_team/accomplishments/${id}/delete`, {
                     method: 'DELETE',
                     headers: {
@@ -1301,19 +1307,37 @@
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     }
                 })
-                .then(res => res.json())
+                .then(async res => {
+                    const payload = await res.json();
+
+                    if (!res.ok || !payload.success) {
+                        throw new Error(payload.message || 'Failed to delete the record.');
+                    }
+
+                    return payload;
+                })
                 .then(data => {
-                    if (data.success) {
-                        // Remove the row from the table visually
-                        btn.closest('tr').remove();
+                    btn.closest('tr').remove();
                         closeDeleteModal();
-                    } else {
-                        alert("Failed to delete the record.");
+
+                    if (typeof showLiveAlert === 'function') {
+                        showLiveAlert(data.message || 'Record deleted successfully.', 'success');
                     }
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    alert("An error occurred while deleting.");
+                    if (typeof showLiveAlert === 'function') {
+                        showLiveAlert(error.message || 'An error occurred while deleting.', 'error');
+                    } else {
+                        alert(error.message || 'An error occurred while deleting.');
+                    }
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.classList.remove('is-loading');
+                    if (typeof hideAppLoader === 'function') {
+                        hideAppLoader();
+                    }
                 });
         }
 
@@ -1393,12 +1417,31 @@
             }
 
             let data = {};
+            const saveButton = document.querySelector('#statusModal button[onclick="saveRecord()"]');
+
+            const requiredFields = ['region', 'activity'];
+            for (const id of requiredFields) {
+                const input = document.getElementById(id);
+                if (!input.checkValidity()) {
+                    input.reportValidity();
+                    input.focus();
+                    return;
+                }
+            }
 
             fields.forEach(id => {
                 data[id] = document.getElementById(id).value.trim();
             });
 
-            // ✅ FIX: Match the prefix group in your web.php
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.classList.add('is-loading');
+            }
+
+            if (typeof showAppLoader === 'function') {
+                showAppLoader('Saving record...');
+            }
+
             fetch('/rpwsis_team/accomplishments/store', {
                     method: 'POST',
                     headers: {
@@ -1407,8 +1450,20 @@
                     },
                     body: JSON.stringify(data)
                 })
-                .then(res => res.json())
-                .then(res => {
+                .then(async res => {
+                    const payload = await res.json();
+
+                    if (!res.ok) {
+                        const message = payload.errors
+                            ? Object.values(payload.errors).flat().join(' ')
+                            : (payload.message || 'Unable to save record.');
+                        throw new Error(message);
+                    }
+
+                    return payload;
+                })
+                .then(payload => {
+                    const res = payload.record;
 
                     let row = `<tr>
             ${[

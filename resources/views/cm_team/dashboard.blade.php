@@ -147,7 +147,7 @@
                                     </td>
                                     @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
                                         <td style="text-align: right;">
-                                            <form action="{{ route('cm.resolutions.update_status', $res->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, 'activeProjectsContainer')">
+                                            <form action="{{ route('cm.resolutions.update_status', $res->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#activeProjectsContainer')">
                                                 @csrf
                                                 <select name="status" class="status-select" onchange="this.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))">
                                                     <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>Not-Validated</option>
@@ -268,7 +268,7 @@
         </div>
     </div>
 
-    <div class="ui-card" style="margin-top: 24px;">
+<div class="ui-card" id="procurementSection" style="margin-top: 24px;">
     <div class="section-title">
         Procurement Status Monitoring
         
@@ -334,7 +334,7 @@
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->project_description }}</div></td>
                         @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
                             <td style="text-align: center;">
-                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, 'procurementTableContainer', 'Are you sure you want to delete this project?')">
+                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Are you sure you want to delete this project?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn-delete" title="Delete Project">
@@ -353,7 +353,7 @@
 
     @if(isset($procurementProjects) && $procurementProjects->hasPages())
         <div class="custom-pagination">
-            <a href="{{ $procurementProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $procurementProjects->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $procurementProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $procurementProjects->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#procurementSection">&lt;</a>
             
             @php
                 $pStart = max($procurementProjects->currentPage() - 2, 1);
@@ -362,63 +362,38 @@
             @endphp
             
             @for ($page = $pStart; $page <= $pEnd; $page++)
-                <a href="{{ $procurementProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $procurementProjects->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                <a href="{{ $procurementProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $procurementProjects->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#procurementSection">{{ $page }}</a>
             @endfor
             
-            <a href="{{ $procurementProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$procurementProjects->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+            <a href="{{ $procurementProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$procurementProjects->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#procurementSection">&gt;</a>
         </div>
     @endif
 </div>
-
-        @if(isset($procurementProjects) && $procurementProjects->hasPages())
-            <div class="custom-pagination">
-                @if ($procurementProjects->onFirstPage())
-                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
-                @else
-                    <a href="{{ $procurementProjects->withQueryString()->previousPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
-                @endif
-                @foreach ($procurementProjects->withQueryString()->links()->elements as $element)
-                    @if (is_string($element)) <span class="page-item disabled">{{ $element }}</span> @endif
-                    @if (is_array($element))
-                        @foreach ($element as $page => $url)
-                            @if ($page == $procurementProjects->currentPage()) <span class="page-item active">{{ $page }}</span>
-                            @else <a href="{{ $url }}" class="page-item">{{ $page }}</a> @endif
-                        @endforeach
-                    @endif
-                @endforeach
-                @if ($procurementProjects->hasMorePages())
-                    <a href="{{ $procurementProjects->withQueryString()->nextPageUrl() }}" class="page-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
-                @else
-                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
-                @endif
-            </div>
-        @endif
-    </div>
 
     <div class="modal-overlay" id="addProcModal">
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Procurement Data</h3>
             
-            <form action="{{ route('cm.procurement.store') }}" method="POST" onsubmit="return handleAjaxSubmit(event, 'procurementTableContainer', null, true)">
+            <form action="{{ route('cm.procurement.store') }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#addProcModal')">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
                         <label class="modern-label">Category</label>
-                        <input type="text" name="category" list="catList" class="modern-input" placeholder="Select or type new category..." required>
+                        <input type="text" name="category" list="catList" class="modern-input" placeholder="Select or type new category..." required maxlength="255">
                         <datalist id="catList">
                             @foreach($procCategories ?? [] as $cat)
                                 <option value="{{ $cat }}"></option>
                             @endforeach
                         </datalist>
                     </div>
-                    <div><label class="modern-label">Project No.</label><input type="text" name="proj_no" class="modern-input" placeholder="e.g. 1" required></div>
+                    <div><label class="modern-label">Project No.</label><input type="text" name="proj_no" class="modern-input" placeholder="e.g. 1" required maxlength="50"></div>
                 </div>
                 
-                <div><label class="modern-label">Name of Project</label><input type="text" name="name_of_project" required class="modern-input"></div>
+                <div><label class="modern-label">Name of Project</label><input type="text" name="name_of_project" required class="modern-input" maxlength="1000"></div>
                 
                 <div>
                     <label class="modern-label">Municipality / City</label>
-                    <input type="text" name="municipality" list="pangasinanMunis" class="modern-input" placeholder="Select or type municipality..." required>
+                    <input type="text" name="municipality" list="pangasinanMunis" class="modern-input" placeholder="Select or type municipality..." required maxlength="100">
                     <datalist id="pangasinanMunis">
                         <option value="Agno"></option><option value="Aguilar"></option><option value="Alaminos City"></option>
                         <option value="Alcala"></option><option value="Anda"></option><option value="Asingan"></option>
@@ -440,30 +415,30 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Allocation</label><input type="text" name="allocation" class="modern-input" placeholder="0.00"></div>
-                    <div><label class="modern-label">ABC</label><input type="text" name="abc" class="modern-input" placeholder="0.00"></div>
+                    <div><label class="modern-label">Allocation</label><input type="number" name="allocation" class="modern-input" placeholder="0.00" min="0" step="0.01"></div>
+                    <div><label class="modern-label">ABC</label><input type="number" name="abc" class="modern-input" placeholder="0.00" min="0" step="0.01"></div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Bid-Out</label><input type="text" name="bid_out" class="modern-input"></div>
-                    <div><label class="modern-label">For Bidding</label><input type="text" name="for_bidding" class="modern-input"></div>
+                    <div><label class="modern-label">Bid-Out</label><input type="number" name="bid_out" class="modern-input" min="0" step="1"></div>
+                    <div><label class="modern-label">For Bidding</label><input type="number" name="for_bidding" class="modern-input" min="0" step="1"></div>
                     <div><label class="modern-label">Date of Bidding</label><input type="date" name="date_of_bidding" class="modern-input"></div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Awarded</label><input type="text" name="awarded" class="modern-input"></div>
+                    <div><label class="modern-label">Awarded</label><input type="number" name="awarded" class="modern-input" min="0" step="1"></div>
                     <div><label class="modern-label">Date of Award</label><input type="date" name="date_of_award" class="modern-input"></div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><label class="modern-label">Contract No.</label><input type="text" name="contract_no" class="modern-input"></div>
-                    <div><label class="modern-label">Contract Amount</label><input type="text" name="contract_amount" class="modern-input"></div>
+                    <div><label class="modern-label">Contract No.</label><input type="text" name="contract_no" class="modern-input" maxlength="100"></div>
+                    <div><label class="modern-label">Contract Amount</label><input type="number" name="contract_amount" class="modern-input" min="0" step="0.01"></div>
                 </div>
 
-                <div><label class="modern-label">Contractor Name</label><input type="text" name="name_of_contractor" class="modern-input"></div>
+                <div><label class="modern-label">Contractor Name</label><input type="text" name="name_of_contractor" class="modern-input" maxlength="255"></div>
                 
-                <div><label class="modern-label">Remarks</label><input type="text" name="remarks" class="modern-input"></div>
-                <div><label class="modern-label">Project Description</label><textarea name="project_description" rows="2" class="modern-input" style="resize: none;"></textarea></div>
+                <div><label class="modern-label">Remarks</label><input type="text" name="remarks" class="modern-input" maxlength="1000"></div>
+                <div><label class="modern-label">Project Description</label><textarea name="project_description" rows="2" class="modern-input" style="resize: none;" maxlength="2000"></textarea></div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button type="button" onclick="closeProcAddModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>

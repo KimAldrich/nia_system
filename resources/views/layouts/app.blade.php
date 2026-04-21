@@ -78,7 +78,62 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); /* Soft, blurred shadow */
             margin-bottom: 20px;
             border: none; /* Removed the hard border! */
-            max-width: 100%; box-sizing: border-box; overflow-x: auto;
+            max-width: 100%;
+            width: 100%;
+            min-width: 0;
+            display: block;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .content .ui-card,
+        .content .card {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            display: block;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .content .ui-card > *,
+        .content .card > * {
+            min-width: 0;
+            max-width: 100%;
+        }
+        .content .ui-card img,
+        .content .ui-card svg,
+        .content .ui-card canvas,
+        .content .card img,
+        .content .card svg,
+        .content .card canvas {
+            max-width: 100%;
+        }
+        .content .dashboard-grid,
+        .content .dashboard-main-grid,
+        .content .kpi-grid {
+            width: 100%;
+            min-width: 0;
+            align-items: start;
+        }
+        .content .dashboard-grid {
+            grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+        }
+        .content .main-column,
+        .content .side-column {
+            width: 100%;
+            min-width: 0;
+        }
+        .content .section-title {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .content .ui-card table,
+        .content .card table {
+            width: 100%;
+            max-width: 100%;
+        }
+        .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
+        .content .card [style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
         }
 
         .page-title { margin-top: 0; color: #1e293b; font-size: 22px; margin-bottom: 15px; font-weight: 700; }
@@ -115,15 +170,160 @@
         .mobile-menu-btn { background: var(--sidebar-bg); border: none; color: #ffffff; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         .mobile-title { font-weight: 700; color: var(--primary-dark); font-size: 14px; letter-spacing: 0.5px; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
+        .app-alert-stack { display: grid; gap: 12px; margin-bottom: 20px; }
+        .app-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 1px solid transparent; font-size: 13px; font-weight: 500; line-height: 1.5; }
+        .app-alert-success { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+        .app-alert-error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        .app-alert-info { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .app-alert-icon { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; background: currentColor; color: #ffffff; }
+        .app-alert-title { font-weight: 700; margin-bottom: 4px; }
+        .app-alert-list { margin: 0; padding-left: 18px; }
+        .app-alert-list li + li { margin-top: 4px; }
+        .app-global-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.28);
+            backdrop-filter: blur(3px);
+            z-index: 5000;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .app-global-loader.is-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .app-global-loader__card {
+            min-width: 220px;
+            max-width: min(90vw, 320px);
+            padding: 20px 22px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .app-global-loader__spinner {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 3px solid #dbeafe;
+            border-top-color: #110d9e;
+            animation: appGlobalSpin 0.85s linear infinite;
+            flex-shrink: 0;
+        }
+        .app-global-loader__text {
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .app-confirm-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.38);
+            backdrop-filter: blur(4px);
+            z-index: 5100;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .app-confirm-modal.is-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .app-confirm-modal__dialog {
+            width: min(100%, 440px);
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+            padding: 26px 24px 22px;
+        }
+        .app-confirm-modal__title {
+            margin: 0 0 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .app-confirm-modal__message {
+            margin: 0 0 24px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+        }
+        .app-confirm-modal__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .app-confirm-modal__button {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 11px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .app-confirm-modal__button--cancel {
+            background: #ffffff;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .app-confirm-modal__button--cancel:hover {
+            background: #f8fafc;
+        }
+        .app-confirm-modal__button--confirm {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+        .app-confirm-modal__button--confirm:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+        .is-loading {
+            opacity: 0.65;
+            pointer-events: none;
+        }
+        @keyframes appGlobalSpin {
+            to { transform: rotate(360deg); }
+        }
+        input.is-invalid, select.is-invalid, textarea.is-invalid,
+        input:invalid:not(:placeholder-shown), select:invalid, textarea:invalid:not(:placeholder-shown) {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+        }
 
         @media (max-width: 1150px) {
             .dashboard-main-grid { grid-template-columns: 1fr; }
+            .content .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
         }
 
         @media (max-width: 900px) {
             .main-wrapper { max-width: 100vw; }
             .mobile-header { display: flex; }
             .content { padding: 20px 15px; }
+            .content .ui-card,
+            .content .card {
+                padding: 20px;
+            }
+            .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
+            .content .card [style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
             .menu-toggle-btn { display: none; }
             .sidebar { position: fixed; top: 0; bottom: 0; left: 0; margin-left: 0 !important; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
@@ -133,6 +333,23 @@
 </head>
 
 <body>
+    <div id="appGlobalLoader" class="app-global-loader" aria-hidden="true" role="status" aria-live="polite">
+        <div class="app-global-loader__card">
+            <div class="app-global-loader__spinner" aria-hidden="true"></div>
+            <div id="appGlobalLoaderText" class="app-global-loader__text">Loading, please wait...</div>
+        </div>
+    </div>
+
+    <div id="appConfirmModal" class="app-confirm-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="appConfirmModalTitle">
+        <div class="app-confirm-modal__dialog">
+            <h3 id="appConfirmModalTitle" class="app-confirm-modal__title">Confirm delete</h3>
+            <p id="appConfirmModalMessage" class="app-confirm-modal__message">Are you sure you want to continue?</p>
+            <div class="app-confirm-modal__actions">
+                <button type="button" id="appConfirmModalCancel" class="app-confirm-modal__button app-confirm-modal__button--cancel">Cancel</button>
+                <button type="button" id="appConfirmModalApprove" class="app-confirm-modal__button app-confirm-modal__button--confirm">Delete</button>
+            </div>
+        </div>
+    </div>
 
     @php
         if(session('is_guest')) {
@@ -278,11 +495,427 @@
         </div>
 
         <div class="content">
+            <div id="appLiveAlerts"></div>
+            @include('partials.alerts')
             @yield('content')
         </div>
     </div>
 
     <script>
+        function setFieldValidityState(field) {
+            if (!(field instanceof HTMLElement) || typeof field.checkValidity !== 'function' || !field.willValidate) {
+                return;
+            }
+
+            const isInvalid = !field.checkValidity();
+            field.classList.toggle('is-invalid', isInvalid);
+            field.setAttribute('aria-invalid', isInvalid ? 'true' : 'false');
+        }
+
+        function validateFormBeforeSubmit(form) {
+            if (!(form instanceof HTMLFormElement) || typeof form.checkValidity !== 'function') {
+                return true;
+            }
+
+            Array.from(form.elements).forEach(setFieldValidityState);
+
+            if (form.checkValidity()) {
+                return true;
+            }
+
+            const firstInvalidField = form.querySelector(':invalid');
+            if (typeof form.reportValidity === 'function') {
+                form.reportValidity();
+            }
+
+            if (firstInvalidField instanceof HTMLElement) {
+                firstInvalidField.focus();
+                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            showLiveAlert('Please review the highlighted fields and try again.', 'error');
+            return false;
+        }
+
+        function showLiveAlert(message, type = 'success') {
+            const host = document.getElementById('appLiveAlerts');
+            if (!host || !message) return;
+
+            const alert = document.createElement('div');
+            alert.className = `app-alert-stack`;
+            alert.innerHTML = `
+                <div class="app-alert app-alert-${type}" role="status" aria-live="polite">
+                    <span class="app-alert-icon" aria-hidden="true">${type === 'error' ? '!' : type === 'info' ? 'i' : '✓'}</span>
+                    <div>
+                        <div class="app-alert-title">${type === 'error' ? 'Something went wrong' : 'Success'}</div>
+                        <div>${message}</div>
+                    </div>
+                </div>
+            `;
+
+            host.innerHTML = '';
+            host.appendChild(alert);
+
+            window.clearTimeout(showLiveAlert.timeoutId);
+            showLiveAlert.timeoutId = window.setTimeout(() => {
+                if (host.contains(alert)) {
+                    host.removeChild(alert);
+                }
+            }, 4000);
+        }
+
+        const appLoaderState = {
+            activeCount: 0,
+            hideTimer: null
+        };
+
+        function setAppLoaderMessage(message = 'Loading, please wait...') {
+            const textNode = document.getElementById('appGlobalLoaderText');
+            if (textNode) {
+                textNode.textContent = message;
+            }
+        }
+
+        function showAppLoader(message = 'Loading, please wait...') {
+            const loader = document.getElementById('appGlobalLoader');
+            if (!loader) {
+                return;
+            }
+
+            window.clearTimeout(appLoaderState.hideTimer);
+            appLoaderState.activeCount += 1;
+            setAppLoaderMessage(message);
+            loader.classList.add('is-visible');
+            loader.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideAppLoader() {
+            const loader = document.getElementById('appGlobalLoader');
+            if (!loader) {
+                return;
+            }
+
+            appLoaderState.activeCount = Math.max(0, appLoaderState.activeCount - 1);
+
+            if (appLoaderState.activeCount > 0) {
+                return;
+            }
+
+            appLoaderState.hideTimer = window.setTimeout(() => {
+                if (appLoaderState.activeCount === 0) {
+                    loader.classList.remove('is-visible');
+                    loader.setAttribute('aria-hidden', 'true');
+                    setAppLoaderMessage('Loading, please wait...');
+                }
+            }, 150);
+        }
+
+        async function withAppLoader(task, message = 'Loading, please wait...') {
+            showAppLoader(message);
+
+            try {
+                return await task();
+            } finally {
+                hideAppLoader();
+            }
+        }
+
+        const appConfirmState = {
+            resolver: null
+        };
+
+        function closeAppConfirmModal(confirmed = false) {
+            const modal = document.getElementById('appConfirmModal');
+            if (modal) {
+                modal.classList.remove('is-visible');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            if (appConfirmState.resolver) {
+                appConfirmState.resolver(confirmed);
+                appConfirmState.resolver = null;
+            }
+        }
+
+        function requestAppConfirmation(message, options = {}) {
+            const modal = document.getElementById('appConfirmModal');
+            const titleNode = document.getElementById('appConfirmModalTitle');
+            const messageNode = document.getElementById('appConfirmModalMessage');
+            const cancelButton = document.getElementById('appConfirmModalCancel');
+            const confirmButton = document.getElementById('appConfirmModalApprove');
+
+            if (!modal || !titleNode || !messageNode || !cancelButton || !confirmButton) {
+                return Promise.resolve(window.confirm(message || 'Are you sure you want to continue?'));
+            }
+
+            titleNode.textContent = options.title || 'Delete item';
+            messageNode.textContent = message || 'Are you sure you want to continue?';
+            confirmButton.textContent = options.confirmText || 'Delete';
+            cancelButton.textContent = options.cancelText || 'Cancel';
+
+            modal.classList.add('is-visible');
+            modal.setAttribute('aria-hidden', 'false');
+
+            return new Promise((resolve) => {
+                appConfirmState.resolver = resolve;
+                cancelButton.focus();
+            });
+        }
+
+        document.addEventListener('click', function(event) {
+            if (event.target?.id === 'appConfirmModalCancel') {
+                closeAppConfirmModal(false);
+            }
+
+            if (event.target?.id === 'appConfirmModalApprove') {
+                closeAppConfirmModal(true);
+            }
+
+            if (event.target?.id === 'appConfirmModal') {
+                closeAppConfirmModal(false);
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            const modal = document.getElementById('appConfirmModal');
+            if (!modal || !modal.classList.contains('is-visible')) {
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                closeAppConfirmModal(false);
+            }
+        });
+
+        window.showAppLoader = showAppLoader;
+        window.hideAppLoader = hideAppLoader;
+        window.withAppLoader = withAppLoader;
+        window.requestAppConfirmation = requestAppConfirmation;
+
+        async function refreshAsyncTargets(targets) {
+            return refreshAsyncTargetsFromUrl(window.location.href, targets, false);
+        }
+
+        async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true) {
+            if (!targets || !targets.length) return;
+
+            return withAppLoader(async () => {
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to refresh the updated section.');
+                }
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const nextDocument = parser.parseFromString(html, 'text/html');
+
+                targets.forEach((selector) => {
+                    const currentNode = document.querySelector(selector);
+                    const nextNode = nextDocument.querySelector(selector);
+
+                    if (currentNode && nextNode) {
+                        currentNode.replaceWith(nextNode);
+                    }
+                });
+
+                if (updateHistory) {
+                    window.history.pushState({}, '', url);
+                }
+            }, 'Loading content...');
+        }
+
+        async function submitAsyncForm(form, options = {}) {
+            const targetSelectors = (options.targets ?? form.dataset.asyncTarget ?? '')
+                .split(',')
+                .map((selector) => selector.trim())
+                .filter(Boolean);
+            const resetForm = options.resetForm ?? form.dataset.asyncReset === 'true';
+            const closeSelector = options.closeSelector ?? form.dataset.asyncClose;
+            const confirmMessage = options.confirmMessage ?? form.dataset.asyncConfirm;
+
+            if (!validateFormBeforeSubmit(form)) {
+                return false;
+            }
+
+            if (confirmMessage) {
+                const confirmed = await requestAppConfirmation(confirmMessage, {
+                    title: 'Delete item',
+                    confirmText: 'Delete'
+                });
+
+                if (!confirmed) {
+                    return false;
+                }
+            }
+
+            const submitter = options.submitter ?? document.activeElement;
+            if (submitter && typeof submitter.disabled !== 'undefined') {
+                submitter.disabled = true;
+            }
+
+            form.classList.add('is-loading');
+            showAppLoader(form.dataset.asyncLoadingText || 'Processing request...');
+
+            try {
+                const response = await fetch(form.action, {
+                    method: form.method || 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: new FormData(form)
+                });
+
+                const contentType = response.headers.get('content-type') || '';
+                const payload = contentType.includes('application/json') ? await response.json() : {};
+
+                if (!response.ok) {
+                    if (payload.errors && Object.keys(payload.errors).length > 0) {
+                        throw new Error(Object.values(payload.errors).flat().join(' '));
+                    }
+                    throw new Error(payload.message || 'Unable to save changes.');
+                }
+
+                if (targetSelectors.length > 0) {
+                    await refreshAsyncTargets(targetSelectors);
+                }
+
+                if (resetForm) {
+                    form.reset();
+                }
+
+                if (closeSelector) {
+                    const modal = document.querySelector(closeSelector);
+                    if (modal) {
+                        modal.classList.remove('active');
+                    }
+                }
+
+                showLiveAlert(payload.message || 'Changes saved successfully.', 'success');
+                return false;
+            } catch (error) {
+                showLiveAlert(error.message || 'Unable to save changes.', 'error');
+                return false;
+            } finally {
+                form.classList.remove('is-loading');
+                hideAppLoader();
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = false;
+                }
+            }
+        }
+
+        function handleAjaxSubmit(event, targets = '', confirmMessage = null, resetForm = false, closeSelector = null) {
+            event.preventDefault();
+            const form = event.target.closest('form');
+            if (!form) return false;
+
+            submitAsyncForm(form, {
+                targets,
+                confirmMessage,
+                resetForm,
+                closeSelector,
+                submitter: event.submitter
+            });
+
+            return false;
+        }
+
+        document.addEventListener('submit', function(event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement)) return;
+
+            if (!form.dataset.asyncTarget && form.dataset.async !== 'true') {
+                if (!validateFormBeforeSubmit(form)) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            event.preventDefault();
+            submitAsyncForm(form, {
+                submitter: event.submitter
+            });
+        });
+
+        document.addEventListener('change', function(event) {
+            const input = event.target;
+            if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
+                setFieldValidityState(input);
+            }
+
+            if (!(input instanceof HTMLSelectElement) || !input.hasAttribute('data-auto-submit')) {
+                return;
+            }
+
+            const form = input.closest('form');
+            if (!form) return;
+
+            submitAsyncForm(form, { submitter: input });
+        });
+
+        document.addEventListener('click', function(event) {
+            const link = event.target.closest('a[data-async-pagination]');
+            if (!link || link.classList.contains('disabled') || !link.getAttribute('href')) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const targets = (link.dataset.asyncTarget || '')
+                .split(',')
+                .map((selector) => selector.trim())
+                .filter(Boolean);
+
+            refreshAsyncTargetsFromUrl(link.href, targets, true).catch((error) => {
+                showLiveAlert(error.message || 'Unable to change page.', 'error');
+            });
+        });
+
+        document.addEventListener('input', function(event) {
+            const input = event.target;
+            if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) {
+                return;
+            }
+
+            setFieldValidityState(input);
+        });
+
+        document.addEventListener('invalid', function(event) {
+            const input = event.target;
+            if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement)) {
+                return;
+            }
+
+            setFieldValidityState(input);
+        }, true);
+
+        document.addEventListener('reset', function(event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            const fileInput = form.querySelector('#file-input');
+            const fileList = document.getElementById('file-list');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (!fileInput || !fileList || !submitBtn) {
+                return;
+            }
+
+            window.setTimeout(() => {
+                fileList.innerHTML = '<div class="empty-state">No file selected.</div>';
+                submitBtn.style.display = 'none';
+            }, 0);
+        });
+
         function toggleMenu(menuId, element) {
             const menu = document.getElementById(menuId);
             if(menu) { menu.classList.toggle('open'); element.classList.toggle('open'); }

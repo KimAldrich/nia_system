@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\AdministrativeDocument;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class AdministrativeController extends Controller
 {
+    use HandlesAsyncRequests;
+
     // 1. Load the Shared Page
     public function index()
     {
@@ -43,14 +46,14 @@ class AdministrativeController extends Controller
                 'team_role' => Auth::user()->role,
             ]);
 
-            return back()->with('success', 'Document uploaded successfully to ' . ucfirst($request->document_type) . '.');
+            return $this->successResponse($request, 'Document uploaded successfully to ' . ucfirst($request->document_type) . '.');
         }
 
-        return back()->withErrors(['file' => 'File upload failed.']);
+        return $this->errorResponse($request, 'File upload failed.');
     }
 
     // 3. Securely Delete a Document
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $document = AdministrativeDocument::findOrFail($id);
 
@@ -67,6 +70,6 @@ class AdministrativeController extends Controller
         // Delete database record
         $document->delete();
 
-        return back()->with('success', 'Document removed successfully.');
+        return $this->successResponse($request, 'Document removed successfully.');
     }
 }

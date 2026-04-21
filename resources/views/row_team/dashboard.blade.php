@@ -337,7 +337,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table">
+                <table class="sleek-table" id="activeProjectsContainer">
                     <thead>
                         <tr>
                             <th>Document Name</th>
@@ -369,9 +369,9 @@
                                 @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
                                     <td style="text-align: right;">
                                         <form action="{{ route('row.resolutions.update_status', $res->id) }}"
-                                            method="POST">
+                                            method="POST" data-async-target="#activeProjectsContainer">
                                             @csrf
-                                            <select name="status" class="status-select" onchange="this.form.submit()">
+                                            <select name="status" class="status-select" data-auto-submit>
                                                 <option value="not-validated"
                                                     {{ $res->status == 'not-validated' ? 'selected' : '' }}>
                                                     Not-Validated</option>
