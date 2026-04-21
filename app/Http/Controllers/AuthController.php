@@ -12,6 +12,18 @@ class AuthController extends Controller
 
     public function showLogin()
     {
+        if (Auth::check()) {
+            return redirect()->route('terms.show');
+        }
+
+        if (session('guest_terms_accepted')) {
+            return redirect()->route('guest.dashboard');
+        }
+
+        if (session('is_guest')) {
+            return redirect()->route('guest.terms');
+        }
+
         return view('auth.login');
     }
 
@@ -33,6 +45,12 @@ class AuthController extends Controller
                 ]);
         }
 
+        $request->session()->forget([
+            'is_guest',
+            'guest_terms_accepted',
+            'agreed_to_terms',
+        ]);
+
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             // Send them to the terms page; middleware will handle routing
@@ -47,6 +65,11 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+        $request->session()->forget([
+            'is_guest',
+            'guest_terms_accepted',
+            'agreed_to_terms',
+        ]);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect('/login');

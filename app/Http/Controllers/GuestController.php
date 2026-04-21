@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Downloadable;
 use App\Models\IaResolution; // Or whatever Resolution model you are using here
 use App\Models\Event;
@@ -16,8 +17,14 @@ class GuestController extends Controller
     // 1. Process the 1-Click Guest Login
     public function authenticate(Request $request)
     {
-        // Give them a secure guest badge in their session
-        session(['is_guest' => true]);
+        if (Auth::check()) {
+            Auth::logout();
+        }
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        $request->session()->regenerate();
+        $request->session()->put('is_guest', true);
 
         // Send them straight to the terms page
         return redirect()->route('guest.terms');
@@ -38,7 +45,7 @@ class GuestController extends Controller
     public function acceptTerms(Request $request)
     {
         // Log that they accepted the rules
-        session(['guest_terms_accepted' => true]);
+        $request->session()->put('guest_terms_accepted', true);
 
         return redirect()->route('guest.dashboard');
     }
@@ -68,7 +75,9 @@ class GuestController extends Controller
     public function logout(Request $request)
     {
         // Destroy the guest session variables so they lose access
-        $request->session()->forget(['is_guest', 'guest_terms_accepted']);
+        $request->session()->forget(['is_guest', 'guest_terms_accepted', 'agreed_to_terms']);
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect('/login')->with('success', 'You have securely logged out of the Guest Portal.');
     }

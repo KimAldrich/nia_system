@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Downloadable;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
@@ -12,6 +13,8 @@ use App\Models\EventCategory;
 
 class AdminController extends Controller
 {
+    use HandlesAsyncRequests;
+
     // Security check
     private function checkAdmin()
     {
@@ -60,7 +63,7 @@ class AdminController extends Controller
             'team' => $request->team // 🔥 ADMIN CHOOSES TEAM
         ]);
 
-        return back()->with('success', 'File uploaded to selected team.');
+        return $this->successResponse($request, 'File uploaded to selected team.');
     }
 
     //Upload IA Resolutions
@@ -86,7 +89,7 @@ class AdminController extends Controller
             'team' => $request->team // 🔥 SAME LOGIC
         ]);
 
-        return back()->with('success', 'Resolution uploaded to selected team.');
+        return $this->successResponse($request, 'Resolution uploaded to selected team.');
     }
 
     // 2. Manage Users Page
@@ -117,7 +120,7 @@ class AdminController extends Controller
             'is_active' => true,
         ]);
 
-        return back()->with('success', 'User account created successfully.');
+        return $this->successResponse($request, 'User account created successfully.');
     }
 
     public function updateUserStatus(Request $request, User $user)
@@ -138,7 +141,7 @@ class AdminController extends Controller
                 ], 422);
             }
 
-            return back()->with('error', $message);
+            return $this->errorResponse($request, $message);
         }
 
         $user->update([
@@ -159,18 +162,18 @@ class AdminController extends Controller
         return back()->with('success', $message);
     }
 
-    public function destroyUser(User $user)
+    public function destroyUser(Request $request, User $user)
     {
         $this->checkAdmin();
 
         if (auth()->id() === $user->id) {
-            return back()->with('error', 'You cannot delete your own account while logged in.');
+            return $this->errorResponse($request, 'You cannot delete your own account while logged in.');
         }
 
         $userName = $user->name;
         $user->delete();
 
-        return back()->with('success', "{$userName}'s account was deleted successfully.");
+        return $this->successResponse($request, "{$userName}'s account was deleted successfully.");
     }
 
     public function storeEvent(Request $request)
@@ -191,7 +194,7 @@ class AdminController extends Controller
             'event_category_id' => $request->event_category_id, // Save the ID!
         ]);
 
-        return back()->with('success', 'Event added to the calendar!');
+        return $this->successResponse($request, 'Event added to the calendar!');
     }
 
     // Delete an Event
@@ -200,24 +203,24 @@ class AdminController extends Controller
         $this->checkAdmin();
         $request->validate(['name' => 'required|string|max:50', 'color' => 'required|string|max:10']);
         EventCategory::create(['name' => $request->request->get('name'), 'color' => $request->request->get('color')]);
-        return back()->with('success', 'New tag added to legend!');
+        return $this->successResponse($request, 'New tag added to legend!');
     }
 
     // 4. New! Delete a Custom Tag
-    public function destroyCategory($id)
+    public function destroyCategory(Request $request, $id)
     {
         $this->checkAdmin();
         EventCategory::findOrFail($id)->delete();
-        return back()->with('success', 'Tag removed.');
+        return $this->successResponse($request, 'Tag removed.');
     }
 
-    public function destroyEvent($id)
+    public function destroyEvent(Request $request, $id)
     {
         $this->checkAdmin();
 
         Event::findOrFail($id)->delete();
 
-        return back()->with('success', 'Event removed from schedule.');
+        return $this->successResponse($request, 'Event removed from schedule.');
     }
 }
 

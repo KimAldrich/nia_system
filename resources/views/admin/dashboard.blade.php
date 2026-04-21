@@ -111,13 +111,6 @@
         </div>
     @endif
 
-    @if($errors->any())
-        <div style="background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 600;">
-            @foreach ($errors->all() as $error)
-                <div style="margin-bottom: 4px;">⚠️ {{ $error }}</div>
-            @endforeach
-        </div>
-    @endif
 
     @php
         $validatedResolutions = isset($resolutions) ? $resolutions->where('status', 'validated')->count() : 0;
@@ -211,7 +204,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Upload Downloadable File to Team</div>
-                <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true">
                     @csrf
                     <div style="margin-bottom: 15px;">
                         <label class="modern-label">Select Team</label>
@@ -235,7 +228,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Upload IA Resolution File to Team</div>
-                <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true">
                     @csrf
                     <div style="margin-bottom: 15px;">
                         <label class="modern-label">Select Team</label>
@@ -257,7 +250,7 @@
                 </form>
             </div>
 
-            <div class="ui-card">
+            <div class="ui-card" id="eventManagerCard">
                 <div class="section-title">Analytics</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
@@ -364,7 +357,7 @@
                                         @endif
                                     </div>
                                 </div>
-                                <form action="{{ route('admin.events.destroy', $event->id ?? 0) }}" method="POST" style="margin: 0;">
+                                <form action="{{ route('admin.events.destroy', $event->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard" data-async-confirm="Delete this event?">
                                     @csrf @method('DELETE')
                                     <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 18px; padding: 0 5px; transition: 0.2s;" title="Delete Event" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#f87171'">×</button>
                                 </form>
@@ -383,7 +376,7 @@
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;">Schedule Event</h3>
             <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">Adding event for: <strong id="displayDate" style="color: #4f46e5;"></strong></p>
             
-            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm">
+            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard" data-async-reset="true" data-async-close="#eventModal">
                 @csrf
                 <div style="margin-bottom: 15px;">
                     <label class="modern-label">Event Date</label>
@@ -430,7 +423,7 @@
                     @foreach($categories as $cat)
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
                             <div class="legend-item"><div class="legend-dot" style="background: {{ $cat->color }};"></div>{{ $cat->name }}</div>
-                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;">
+                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard, #eventModal, #categoryModal" data-async-confirm="Delete this tag?">
                                 @csrf @method('DELETE')
                                 <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px; font-weight: 600;">Delete</button>
                             </form>
@@ -440,7 +433,7 @@
                     <p style="font-size: 12px; color: #a0aec0; text-align: center;">No custom tags created yet.</p>
                 @endif
             </div>
-            <form action="{{ route('admin.categories.store') }}" method="POST">
+            <form action="{{ route('admin.categories.store') }}" method="POST" data-async-target="#eventManagerCard, #eventModal, #categoryModal" data-async-reset="true">
                 @csrf
                 <p style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 10px;">Add New Tag</p>
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">

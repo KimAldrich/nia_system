@@ -11,6 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(append: [
+            \App\Http\Middleware\NormalizeSessionState::class,
+            \App\Http\Middleware\PreventBackHistory::class,
+        ]);
+
         $middleware->alias([
             'check.terms' => \App\Http\Middleware\CheckTerms::class,
             'check.role' => \App\Http\Middleware\CheckRole::class,

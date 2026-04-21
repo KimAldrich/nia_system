@@ -932,6 +932,25 @@ let activeSliceIndex = null;
 let municipalityMarkers = [];
 let provinceLabelLayer = null;
 
+function showMapLoader(message = 'Loading map data...') {
+    const loader = document.getElementById('map-loader');
+    const loaderText = document.getElementById('loader-text');
+
+    if (loaderText) {
+        loaderText.textContent = message;
+    }
+
+    if (loader) {
+        loader.style.display = 'flex';
+    }
+}
+
+function hideMapLoader() {
+    const loader = document.getElementById('map-loader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+}
 
 function buildAppUrl(path) {
     if (!path) {
@@ -1457,21 +1476,16 @@ Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
     if (!checkbox) return;
 
     checkbox.addEventListener('change', async () => {
-        const loader = document.getElementById('map-loader');
-
         if (checkbox.checked) {
-            // 1. Show the loader immediately
-            if (loader) loader.style.display = 'flex';
+            showMapLoader('Loading layer...');
 
             try {
-                // 2. Wait for the heavy map data to load
                 await showOverlayCategory(categoryKey);
             } catch (error) {
                 console.error("Error loading map layer:", error);
                 updateStatus("Failed to load layer.", true);
             } finally {
-                // 3. Hide the loader once finished (or if it fails)
-                if (loader) loader.style.display = 'none';
+                hideMapLoader();
             }
         } else {
             hideOverlayCategory(categoryKey);
@@ -1564,7 +1578,20 @@ function showMiniMap(feature) {
 //         miniMap.fitBounds(miniGeoLayer.getBounds());
 //     }
 
+async function loadMunicipalityDataset() {
+    const response = await fetch(buildAppUrl('maps/municipalities.json'));
+
+    if (!response.ok) {
+        throw new Error('Unable to load municipality data.');
+    }
+
+    municipalityData = await response.json();
+    console.log("Municipality data loaded:", municipalityData);
+}
+
 (async function initializeMap() {
+    showMapLoader('Loading map...');
+
     try {
         // 1. Create the high-priority layer (Pane) for the Province Label
         // This ensures "PANGASINAN" stays above all other map layers
@@ -1572,12 +1599,18 @@ function showMiniMap(feature) {
         map.getPane('provincePane').style.zIndex = 650;
         map.getPane('provincePane').style.pointerEvents = 'none';
 
-        // 2. Load the map data
-        await loadBaseMap();
+        // 2. Load the map data needed on first render
+        await Promise.all([
+            loadBaseMap(),
+            loadMunicipalityDataset()
+        ]);
 
+        updateStatus('Map is ready. Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.');
     } catch (error) {
         console.error(error);
         updateStatus(error.message, true);
+    } finally {
+        hideMapLoader();
     }
 })();
 
@@ -1592,6 +1625,7 @@ if (form) {
 
         const fileInput = document.getElementById('fileInput');
         const folderInput = document.getElementById('folderInput');
+        const submitButton = form.querySelector('.submit-btn');
 
         const files = fileInput.files;
         const folderFiles = folderInput.files;
@@ -1631,6 +1665,15 @@ if (form) {
         statusBoxUpload.className = 'upload-status upload-loading';
         statusBoxUpload.innerHTML = 'Uploading...';
 
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.classList.add('is-loading');
+        }
+
+        if (typeof showAppLoader === 'function') {
+            showAppLoader('Uploading map data...');
+        }
+
         try {
             const response = await fetch("{{ route('map.upload') }}", {
                 method: "POST",
@@ -1643,6 +1686,10 @@ if (form) {
                 statusBoxUpload.className = 'upload-status upload-success';
                 statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
                 form.reset();
+
+                if (typeof showLiveAlert === 'function') {
+                    showLiveAlert(result.message || `Uploaded ${result.files.length} file(s) successfully.`, 'success');
+                }
             } else {
                 throw new Error(result.message || 'Upload failed');
             }
@@ -1650,6 +1697,19 @@ if (form) {
         } catch (error) {
             statusBoxUpload.className = 'upload-status upload-error';
             statusBoxUpload.innerHTML = '❌ ' + error.message;
+
+            if (typeof showLiveAlert === 'function') {
+                showLiveAlert(error.message || 'Upload failed.', 'error');
+            }
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('is-loading');
+            }
+
+            if (typeof hideAppLoader === 'function') {
+                hideAppLoader();
+            }
         }
     });
 }
@@ -1661,14 +1721,6 @@ const overlayPriority = {
 //Details
 
 let municipalityData = [];
-
-// load your dataset
-fetch(buildAppUrl('maps/municipalities.json'))
-    .then(res => res.json())
-    .then(data => {
-        municipalityData = data;
-        console.log("Municipality data loaded:", municipalityData);
-    });
 
 function getMunicipalityData(name) {
     return municipalityData.find(m =>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
@@ -11,6 +12,8 @@ use App\Models\EventCategory;
 
 class PcrTeamController extends Controller
 {
+    use HandlesAsyncRequests;
+
     public function index()
     {
         $resolutions = IaResolution::where('team', 'pcr_team')->latest()->get();
@@ -51,7 +54,7 @@ class PcrTeamController extends Controller
             'team' => 'pcr_team'
         ]);
 
-        return back()->with('success', 'File uploaded successfully.');
+        return $this->successResponse($request, 'File uploaded successfully.');
     }
 
     public function updateForm(Request $request, $id)
@@ -67,10 +70,10 @@ class PcrTeamController extends Controller
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'File updated successfully.');
+        return $this->successResponse($request, 'File updated successfully.');
     }
 
-    public function deleteForm($id)
+    public function deleteForm(Request $request, $id)
     {
         $downloadable = Downloadable::findOrFail($id);
 
@@ -80,7 +83,7 @@ class PcrTeamController extends Controller
 
         $downloadable->delete();
 
-        return back()->with('success', 'File deleted successfully.');
+        return $this->successResponse($request, 'File deleted successfully.');
     }
 
     public function uploadResolution(Request $request)
@@ -99,7 +102,7 @@ class PcrTeamController extends Controller
             'team' => 'pcr_team'
         ]);
 
-        return back()->with('success', 'Resolution uploaded successfully.');
+        return $this->successResponse($request, 'Resolution uploaded successfully.');
     }
 
     public function updateResolution(Request $request, $id)
@@ -115,7 +118,7 @@ class PcrTeamController extends Controller
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'Resolution updated successfully.');
+        return $this->successResponse($request, 'Resolution updated successfully.');
     }
 
     public function updateResolutionStatus(Request $request, $id)
@@ -124,11 +127,11 @@ class PcrTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $resolution->update(['status' => $request->status]);
 
-        return back()->with('success', 'Resolution status updated successfully.');
+        return $this->successResponse($request, 'Resolution status updated successfully.');
     }
 
     // 9. Delete IA Resolution
-    public function deleteResolution($id)
+    public function deleteResolution(Request $request, $id)
     {
         $resolution = IaResolution::findOrFail($id);
 
@@ -145,6 +148,6 @@ class PcrTeamController extends Controller
         // Delete record from database
         $resolution->delete();
 
-        return back()->with('success', 'Resolution deleted successfully.');
+        return $this->successResponse($request, 'Resolution deleted successfully.');
     }
 }

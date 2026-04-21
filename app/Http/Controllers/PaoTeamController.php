@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
@@ -12,6 +13,31 @@ use App\Models\PaoPowData;
 
 class PaoTeamController extends Controller
 {
+    use HandlesAsyncRequests;
+
+    private function validatePowData(Request $request, bool $requireId = false): array
+    {
+        $rules = [
+            'district' => ['required', 'in:District 1,District 2,District 3,District 4,District 5,District 6'],
+            'no_of_projects' => ['required', 'integer', 'min:0'],
+            'total_allocation' => ['required', 'numeric', 'min:0'],
+            'no_of_plans_received' => ['required', 'integer', 'min:0'],
+            'no_of_project_estimate_received' => ['required', 'integer', 'min:0'],
+            'pow_received' => ['required', 'integer', 'min:0'],
+            'pow_approved' => ['required', 'integer', 'min:0'],
+            'pow_submitted' => ['required', 'integer', 'min:0'],
+            'ongoing_pow_preparation' => ['required', 'integer', 'min:0'],
+            'pow_for_submission' => ['required', 'integer', 'min:0'],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ];
+
+        if ($requireId) {
+            $rules['id'] = ['required', 'integer', 'exists:pao_pow_data,id'];
+        }
+
+        return $request->validate($rules);
+    }
+
     public function index()
     {
         $resolutions = IaResolution::where('team', 'pao_team')->latest()->get();
@@ -53,7 +79,7 @@ class PaoTeamController extends Controller
             'team' => 'pao_team'
         ]);
 
-        return back()->with('success', 'File uploaded successfully.');
+        return $this->successResponse($request, 'File uploaded successfully.');
     }
 
     public function updateForm(Request $request, $id)
@@ -69,10 +95,10 @@ class PaoTeamController extends Controller
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'File updated successfully.');
+        return $this->successResponse($request, 'File updated successfully.');
     }
 
-    public function deleteForm($id)
+    public function deleteForm(Request $request, $id)
     {
         $downloadable = Downloadable::findOrFail($id);
 
@@ -82,7 +108,7 @@ class PaoTeamController extends Controller
 
         $downloadable->delete();
 
-        return back()->with('success', 'File deleted successfully.');
+        return $this->successResponse($request, 'File deleted successfully.');
     }
 
     public function uploadResolution(Request $request)
@@ -101,7 +127,7 @@ class PaoTeamController extends Controller
             'team' => 'pao_team'
         ]);
 
-        return back()->with('success', 'Resolution uploaded successfully.');
+        return $this->successResponse($request, 'Resolution uploaded successfully.');
     }
 
     public function updateResolution(Request $request, $id)
@@ -117,7 +143,7 @@ class PaoTeamController extends Controller
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'Resolution updated successfully.');
+        return $this->successResponse($request, 'Resolution updated successfully.');
     }
 
     public function updateResolutionStatus(Request $request, $id)
@@ -126,11 +152,11 @@ class PaoTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $resolution->update(['status' => $request->status]);
 
-        return back()->with('success', 'Resolution status updated successfully.');
+        return $this->successResponse($request, 'Resolution status updated successfully.');
     }
 
     // 9. Delete IA Resolution
-    public function deleteResolution($id)
+    public function deleteResolution(Request $request, $id)
     {
         $resolution = IaResolution::findOrFail($id);
 
@@ -147,26 +173,27 @@ class PaoTeamController extends Controller
         // Delete record from database
         $resolution->delete();
 
-        return back()->with('success', 'Resolution deleted successfully.');
+        return $this->successResponse($request, 'Resolution deleted successfully.');
     }
 
     public function storePow(Request $request)
     {
-        PaoPowData::create($request->all());
-        return redirect()->back()->with('success', 'New Program of Works data added successfully!');
+        PaoPowData::create($this->validatePowData($request));
+        return $this->successResponse($request, 'New Program of Works data added successfully!');
     }
 
     public function updatePow(Request $request)
     {
-        $powData = PaoPowData::findOrFail($request->id);
-        $powData->update($request->except('id'));
-        return redirect()->back()->with('success', 'Program of Works data updated successfully!');
+        $validated = $this->validatePowData($request, true);
+        $powData = PaoPowData::findOrFail($validated['id']);
+        $powData->update(collect($validated)->except('id')->toArray());
+        return $this->successResponse($request, 'Program of Works data updated successfully!');
     }
 
-    public function deletePow($id)
+    public function deletePow(Request $request, $id)
     {
         $powData = PaoPowData::findOrFail($id);
         $powData->delete();
-        return redirect()->back()->with('success', 'Program of Works data deleted successfully!');
+        return $this->successResponse($request, 'Program of Works data deleted successfully.');
     }
 }

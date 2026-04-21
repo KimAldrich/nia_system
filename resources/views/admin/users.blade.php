@@ -47,7 +47,7 @@
         /* ADJUSTED GRID FOR SCREEN VISIBILITY */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1.6fr 1fr; /* Use fractions instead of fixed pixels */
+            grid-template-columns: minmax(0, 1.75fr) minmax(320px, 0.95fr);
             gap: 24px;
             align-items: start;
         }
@@ -59,11 +59,11 @@
 
         .ui-card {
             background: #ffffff;
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 28px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            overflow: hidden; /* Keeps content inside the card */
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
         }
 
         .section-header {
@@ -83,92 +83,189 @@
         }
 
         /* Form Styling */
-        .form-group { margin-bottom: 20px; }
+        .form-card-header {
+            margin-bottom: 24px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .form-card-header .section-title {
+            margin-bottom: 8px;
+        }
+
+        .form-card-subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .register-form {
+            display: grid;
+            gap: 18px;
+        }
+
+        .form-group { margin-bottom: 0; }
 
         .form-label {
             display: block;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-main);
             margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
         }
 
         .form-input {
             width: 100%;
-            padding: 12px 14px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
+            min-height: 52px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #dbe3ee;
             font-size: 14px;
-            background: #fff;
-            transition: all 0.2s;
+            background: #f8fafc;
+            transition: all 0.2s ease;
             outline: none;
             color: var(--text-main);
+            box-sizing: border-box;
+        }
+
+        .form-input:hover {
+            border-color: #cbd5e1;
+            background: #ffffff;
         }
 
         .form-input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08);
+        }
+
+        .form-helper {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
         }
 
         .btn-dark {
-            background: var(--primary);
+            background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
             color: white;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 15px 18px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
             width: 100%;
             border: none;
             cursor: pointer;
             transition: 0.2s;
-            margin-top: 10px;
+            margin-top: 6px;
+            box-shadow: 0 12px 24px rgba(24, 24, 27, 0.14);
         }
 
-        .btn-dark:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-dark:hover { background: linear-gradient(135deg, #09090b 0%, #18181b 100%); transform: translateY(-1px); }
 
         /* Table Styling */
-        .table-container { 
-            overflow-x: auto; 
+        .table-container {
+            overflow: visible;
             width: 100%;
+            border: 1px solid #eef2f7;
+            border-radius: 18px;
+            background: #fbfdff;
         }
 
         .sleek-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 600px; /* Ensures table doesn't get too squished */
+            min-width: 0;
+            table-layout: fixed;
         }
 
         .sleek-table th {
             text-align: left;
-            padding: 12px 16px;
-            color: var(--text-muted);
-            font-weight: 600;
+            padding: 14px 14px;
+            color: #64748b;
+            font-weight: 700;
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border-color);
+            letter-spacing: 0.07em;
+            border-bottom: 1px solid #e9eef5;
+            background: #f8fafc;
+            white-space: normal;
+            line-height: 1.4;
         }
 
         .sleek-table td {
-            padding: 16px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 14px;
+            padding: 14px;
+            border-bottom: 1px solid #eef2f7;
+            font-size: 13px;
             color: var(--text-main);
+            vertical-align: middle;
+            background: #ffffff;
         }
 
-        .sleek-table tr:hover td { background-color: #fafafa; }
+        .sleek-table tbody tr:hover td { background-color: #fcfdff; }
+        .sleek-table tbody tr:last-child td { border-bottom: none; }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #18181b 0%, #334155 100%);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+        }
+
+        .user-meta {
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 2px;
+            line-height: 1.3;
+            font-size: 13px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: var(--text-muted);
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.45;
+        }
 
         /* Badges & Pills */
         .role-badge {
-            padding: 4px 10px;
-            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            min-height: 30px;
+            padding: 6px 10px;
+            border-radius: 999px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             background: #f1f5f9;
             color: #475569;
+            line-height: 1.35;
+            max-width: 100%;
+            white-space: normal;
+            text-align: center;
         }
 
         .role-badge.admin { background: #e0e7ff; color: #4338ca; }
@@ -176,42 +273,97 @@
         .status-pill {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
-            border-radius: 99px;
-            font-size: 12px;
-            font-weight: 600;
+            justify-content: center;
+            min-height: 30px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
             background: #ecfdf5;
             color: #065f46;
+            white-space: normal;
+            text-align: center;
         }
 
         .status-pill.inactive { background: #fff1f2; color: #9f1239; }
 
+        .actions-cell {
+            width: 1%;
+        }
+
+        .action-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            justify-content: center;
+            align-items: stretch;
+            width: 100%;
+            max-width: 118px;
+            margin-left: auto;
+        }
+
         .status-select {
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            font-size: 13px;
-            background: #fff;
+            width: 100%;
+            min-width: 0;
+            height: 40px;
+            padding: 0 34px 0 12px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ee;
+            font-size: 12px;
+            font-weight: 600;
+            background: #ffffff;
+            color: var(--text-main);
             cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08);
         }
 
         .btn-danger {
-            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+            height: 40px;
+            padding: 0 12px;
+            background: #ffffff;
             color: var(--danger);
-            border: 1px solid #fee2e2;
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: 600;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
+            line-height: 1;
+            box-sizing: border-box;
         }
 
-        .btn-danger:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
+        .btn-danger:hover:not(:disabled) { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
 
         .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .muted-note { color: var(--text-muted); font-size: 11px; font-weight: 500; margin-top: 4px; }
+        .muted-note { color: var(--text-muted); font-size: 11px; font-weight: 600; margin-top: 6px; }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 24px 14px;
+            }
+
+            .ui-card {
+                padding: 20px;
+            }
+
+            .action-stack {
+                max-width: 100%;
+            }
+        }
 
         /* Ajax & Sessions */
         .alert-box {
@@ -257,16 +409,9 @@
             </div>
         @endif
 
-        @if(session('error'))
-            <div class="alert-box alert-error">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                {{ session('error') }}
-            </div>
-        @endif
-
         <div id="account-feedback" class="ajax-feedback"></div>
 
-        <div class="dashboard-grid">
+        <div class="dashboard-grid" id="userManagementGrid">
             <div class="ui-card">
                 <div class="section-header">
                     <h3 class="section-title">Team Directory</h3>
@@ -277,11 +422,11 @@
                     <table class="sleek-table">
                         <thead>
                             <tr>
-                                <th>User Details</th>
-                                <th>Role / Team</th>
-                                <th>Status</th>
-                                <th>Joined</th>
-                                <th style="text-align: right;">Actions</th>
+                                <th style="width: 30%;">User Details</th>
+                                <th style="width: 22%;">Role / Team</th>
+                                <th style="width: 14%;">Status</th>
+                                <th style="width: 14%;">Joined</th>
+                                <th style="width: 20%; text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -289,8 +434,13 @@
                                 @php $isCurrentUser = auth()->id() === $user->id; @endphp
                                 <tr>
                                     <td>
-                                        <div style="font-weight: 600; color: var(--primary);">{{ $user->name }}</div>
-                                        <div style="font-size: 12px; color: var(--text-muted);">{{ $user->email }}</div>
+                                        <div class="user-cell">
+                                            <div class="user-avatar">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+                                            <div class="user-meta">
+                                                <div class="user-name">{{ $user->name }}</div>
+                                                <div class="user-email">{{ $user->email }}</div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="role-badge {{ $user->role == 'admin' ? 'admin' : '' }}">
@@ -313,16 +463,16 @@
                                             {{ $user->is_active ? 'Active' : 'Deactivated' }}
                                         </span>
                                     </td>
-                                    <td style="color: var(--text-muted); font-size: 12px;">
+                                    <td style="color: var(--text-muted); font-size: 12px; line-height: 1.4;">
                                         {{ $user->created_at->format('M d, Y') }}
                                     </td>
-                                    <td>
-                                        <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                                    <td class="actions-cell">
+                                        <div class="action-stack">
                                             <form action="{{ route('admin.users.status', $user) }}" method="POST" class="js-status-form" style="margin:0;">
                                                 @csrf
                                                 @method('PATCH')
-                                                <select name="is_active" class="status-select js-status-select" 
-                                                    data-current-value="{{ $user->is_active ? '1' : '0' }}" 
+                                                <select name="is_active" class="status-select js-status-select"
+                                                    data-current-value="{{ $user->is_active ? '1' : '0' }}"
                                                     {{ $isCurrentUser ? 'disabled' : '' }}>
                                                     <option value="1" {{ $user->is_active ? 'selected' : '' }}>Activate</option>
                                                     <option value="0" {{ ! $user->is_active ? 'selected' : '' }}>Deactivate</option>
@@ -330,15 +480,16 @@
                                             </form>
 
                                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" style="margin:0;"
-                                                onsubmit="return confirm('Permanently delete this user account?')">
+                                                data-async-target="#userManagementGrid" data-async-confirm="Permanently delete this user account?">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="btn-danger" {{ $isCurrentUser ? 'disabled' : '' }}>
-                                                    Delete
+                                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    <span>Delete</span>
                                                 </button>
                                             </form>
                                         </div>
                                         @if($isCurrentUser)
-                                            <div class="muted-note" style="text-align: right;">(You)</div>
+                                            <div class="muted-note" style="text-align: right;">Current account</div>
                                         @endif
                                     </td>
                                 </tr>
@@ -349,28 +500,33 @@
             </div>
 
             <div class="ui-card">
-                <h3 class="section-title" style="margin-bottom: 24px;">Register User</h3>
-                <form action="{{ route('admin.users.store') }}" method="POST">
+                <div class="form-card-header">
+                    <h3 class="section-title">Register User</h3>
+                    <p class="form-card-subtitle">Create a clean agency account profile with the correct team assignment and initial access credentials.</p>
+                </div>
+
+                <form action="{{ route('admin.users.store') }}" method="POST" data-async-target="#userManagementGrid" class="register-form">
                     @csrf
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="name" class="form-input" required placeholder="John Doe">
+                        <input type="text" name="name" class="form-input" required placeholder="Enter full name" maxlength="255">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Email Address</label>
-                        <input type="email" name="email" class="form-input" required placeholder="name@agency.gov">
+                        <input type="email" name="email" class="form-input" required placeholder="name@agency.gov" maxlength="255">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Initial Password</label>
-                        <input type="password" name="password" class="form-input" required placeholder="Min. 8 characters">
+                        <input type="password" name="password" class="form-input" required placeholder="Create a temporary password" minlength="8" maxlength="255">
+                        <div class="form-helper">Use at least 8 characters for the temporary login password.</div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Assign Team</label>
                         <select name="role" class="form-input" required>
-                            <option value="" disabled selected>Select Team...</option>
+                            <option value="" disabled selected>Select team access level</option>
                             <option value="admin">Admin (Full Access)</option>
                             <option value="fs_team">Feasibility Study Team</option>
                             <option value="rpwsis_team">RP-WSIS Team</option>
@@ -379,6 +535,7 @@
                             <option value="pcr_team">Program Completion Report Team</option>
                             <option value="pao_team">Programming Team</option>
                         </select>
+                        <div class="form-helper">Choose the department that will control this account's dashboard and permissions.</div>
                     </div>
 
                     <button type="submit" class="btn-dark">Create Account</button>
@@ -402,51 +559,62 @@
                 }, 3000);
             }
 
-            document.querySelectorAll('.js-status-select').forEach((select) => {
-                select.addEventListener('change', async function() {
-                    const form = this.closest('.js-status-form');
-                    const row = this.closest('tr');
-                    const statusPill = row ? row.querySelector('.js-status-pill') : null;
-                    const previousValue = this.dataset.currentValue || '1';
-                    const wasDisabled = this.disabled;
-                    const formData = new FormData(form);
+            document.addEventListener('change', async function(event) {
+                const select = event.target.closest('.js-status-select');
+                if (!select) {
+                    return;
+                }
 
-                    this.disabled = true;
-                    this.classList.add('is-loading');
+                const form = select.closest('.js-status-form');
+                const row = select.closest('tr');
+                const statusPill = row ? row.querySelector('.js-status-pill') : null;
+                const previousValue = select.dataset.currentValue || '1';
+                const wasDisabled = select.disabled;
+                const formData = new FormData(form);
 
-                    try {
-                        const response = await fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            },
-                            body: formData
-                        });
+                select.disabled = true;
+                select.classList.add('is-loading');
 
-                        const contentType = response.headers.get('content-type') || '';
-                        const data = contentType.includes('application/json') ? await response.json() : {};
+                if (typeof showAppLoader === 'function') {
+                    showAppLoader('Updating account status...');
+                }
 
-                        if (!response.ok) throw new Error(data.message || 'Unable to update account status.');
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    });
 
-                        const isActive = data.is_active === true || data.is_active === 1 || data.is_active === '1';
-                        this.value = isActive ? '1' : '0';
-                        this.dataset.currentValue = this.value;
+                    const contentType = response.headers.get('content-type') || '';
+                    const data = contentType.includes('application/json') ? await response.json() : {};
 
-                        if (statusPill) {
-                            statusPill.textContent = isActive ? 'Active' : 'Deactivated';
-                            statusPill.classList.toggle('inactive', !isActive);
-                        }
+                    if (!response.ok) throw new Error(data.message || 'Unable to update account status.');
 
-                        showFeedback(data.message || 'Account status updated successfully.', 'success');
-                    } catch (error) {
-                        this.value = previousValue;
-                        showFeedback(error.message || 'Unable to update account status.', 'error');
-                    } finally {
-                        this.disabled = wasDisabled;
-                        this.classList.remove('is-loading');
+                    const isActive = data.is_active === true || data.is_active === 1 || data.is_active === '1';
+                    select.value = isActive ? '1' : '0';
+                    select.dataset.currentValue = select.value;
+
+                    if (statusPill) {
+                        statusPill.textContent = isActive ? 'Active' : 'Deactivated';
+                        statusPill.classList.toggle('inactive', !isActive);
                     }
-                });
+
+                    showFeedback(data.message || 'Account status updated successfully.', 'success');
+                } catch (error) {
+                    select.value = previousValue;
+                    showFeedback(error.message || 'Unable to update account status.', 'error');
+                } finally {
+                    select.disabled = wasDisabled;
+                    select.classList.remove('is-loading');
+
+                    if (typeof hideAppLoader === 'function') {
+                        hideAppLoader();
+                    }
+                }
             });
         });
     </script>

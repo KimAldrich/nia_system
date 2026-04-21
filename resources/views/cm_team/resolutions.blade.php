@@ -333,7 +333,7 @@
     </div>
 
     <div id="available-resolutions" class="tab-pane active">
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+        <div id="resolutionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
 
             @forelse($resolutions as $resolution)
                 @php
@@ -391,7 +391,7 @@
 
                         @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
                             <form action="{{ route('cm.resolutions.delete', $resolution->id) }}" method="POST"
-                                style="margin: 0; flex: 1;">
+                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -412,7 +412,7 @@
     </div>
 
     <div id="upload-resolution" class="tab-pane">
-        <form action="{{ route('cm.resolutions.upload') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('cm.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#resolutionsList" data-async-reset="true">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
@@ -458,6 +458,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.querySelector('#upload-resolution form');
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
@@ -492,3 +493,6 @@
         });
     </script>
 @endsection
+
+
+

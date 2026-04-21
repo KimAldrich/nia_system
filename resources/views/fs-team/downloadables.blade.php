@@ -340,7 +340,7 @@
     </div>
 
     <div id="available-forms" class="tab-pane active">
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+        <div id="downloadablesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
 
             @forelse($files as $file)
                 @php
@@ -393,8 +393,7 @@
                             style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
 
                         @if (auth()->user()->role == 'fs_team' || auth()->user()->role == 'admin')
-                            <form action="{{ route('fs.downloadables.delete', $file->id) }}" method="POST"
-                                style="margin: 0;">
+                            <form action="{{ route('fs.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;" data-async-target="#downloadablesList" data-async-confirm="Delete this file?">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -413,7 +412,7 @@
     </div>
 
     <div id="upload-form" class="tab-pane">
-        <form action="{{ route('fs.downloadables.upload') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('fs.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#downloadablesList" data-async-reset="true">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
@@ -459,6 +458,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.querySelector('#upload-form form');
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
@@ -493,3 +493,5 @@
         });
     </script>
 @endsection
+
+

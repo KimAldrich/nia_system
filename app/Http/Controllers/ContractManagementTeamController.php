@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
@@ -12,6 +13,8 @@ use App\Models\ProcurementProject;
 
 class ContractManagementTeamController extends Controller
 {
+    use HandlesAsyncRequests;
+
     public function index(Request $request)
     {
         $resolutions = IaResolution::where('team', 'cm_team')->latest()->get();
@@ -74,7 +77,7 @@ class ContractManagementTeamController extends Controller
             'team' => 'cm_team'
         ]);
 
-        return back()->with('success', 'File uploaded successfully.');
+        return $this->successResponse($request, 'File uploaded successfully.');
     }
 
     public function updateForm(Request $request, $id)
@@ -90,10 +93,10 @@ class ContractManagementTeamController extends Controller
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'File updated successfully.');
+        return $this->successResponse($request, 'File updated successfully.');
     }
 
-    public function deleteForm($id)
+    public function deleteForm(Request $request, $id)
     {
         $downloadable = Downloadable::findOrFail($id);
 
@@ -103,7 +106,7 @@ class ContractManagementTeamController extends Controller
 
         $downloadable->delete();
 
-        return back()->with('success', 'File deleted successfully.');
+        return $this->successResponse($request, 'File deleted successfully.');
     }
 
     public function uploadResolution(Request $request)
@@ -122,7 +125,7 @@ class ContractManagementTeamController extends Controller
             'team' => 'cm_team'
         ]);
 
-        return back()->with('success', 'Resolution uploaded successfully.');
+        return $this->successResponse($request, 'Resolution uploaded successfully.');
     }
 
     public function updateResolution(Request $request, $id)
@@ -138,7 +141,7 @@ class ContractManagementTeamController extends Controller
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'Resolution updated successfully.');
+        return $this->successResponse($request, 'Resolution updated successfully.');
     }
 
     public function updateResolutionStatus(Request $request, $id)
@@ -147,11 +150,11 @@ class ContractManagementTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $resolution->update(['status' => $request->status]);
 
-        return back()->with('success', 'Resolution status updated successfully.');
+        return $this->successResponse($request, 'Resolution status updated successfully.');
     }
 
     // 9. Delete IA Resolution
-    public function deleteResolution($id)
+    public function deleteResolution(Request $request, $id)
     {
         $resolution = IaResolution::findOrFail($id);
 
@@ -168,22 +171,39 @@ class ContractManagementTeamController extends Controller
         // Delete record from database
         $resolution->delete();
 
-        return back()->with('success', 'Resolution deleted successfully.');
+        return $this->successResponse($request, 'Resolution deleted successfully.');
     }
 
     public function storeProcurement(Request $request)
     {
-        // Save the single row directly into the database
-        ProcurementProject::create($request->all());
+        $validated = $request->validate([
+            'category' => ['required', 'string', 'max:255'],
+            'proj_no' => ['required', 'string', 'max:50'],
+            'name_of_project' => ['required', 'string', 'max:1000'],
+            'municipality' => ['required', 'string', 'max:100'],
+            'allocation' => ['nullable', 'numeric', 'min:0'],
+            'abc' => ['nullable', 'numeric', 'min:0'],
+            'bid_out' => ['nullable', 'integer', 'min:0'],
+            'for_bidding' => ['nullable', 'integer', 'min:0'],
+            'date_of_bidding' => ['nullable', 'date'],
+            'awarded' => ['nullable', 'integer', 'min:0'],
+            'date_of_award' => ['nullable', 'date', 'after_or_equal:date_of_bidding'],
+            'contract_no' => ['nullable', 'string', 'max:100'],
+            'contract_amount' => ['nullable', 'numeric', 'min:0'],
+            'name_of_contractor' => ['nullable', 'string', 'max:255'],
+            'remarks' => ['nullable', 'string', 'max:1000'],
+            'project_description' => ['nullable', 'string', 'max:2000'],
+        ]);
 
-        // Refresh the page
-        return redirect()->back()->with('success', 'New Procurement project successfully added!');
+        ProcurementProject::create($validated);
+
+        return $this->successResponse($request, 'New Procurement project successfully added!');
     }
 
-    public function destroyProcurement($id)
+    public function destroyProcurement(Request $request, $id)
     {
         ProcurementProject::findOrFail($id)->delete();
-        return redirect()->back()->with('success', 'Project deleted!');
+        return $this->successResponse($request, 'Project deleted!');
     }
 
 

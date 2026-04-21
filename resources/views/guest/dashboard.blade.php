@@ -294,7 +294,7 @@
     </div>
 
     @if(isset($db_team) && $db_team === 'fs_team' && isset($hydroProjects) && isset($fsdeProjects))
-        <div class="ui-card" style="margin-top: 24px;">
+        <div class="ui-card" id="guestHydroSection" style="margin-top: 24px;">
             <div class="section-title">Hydro-Georesistivity Status Monitoring</div>
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1200px;">
@@ -339,7 +339,7 @@
 
             @if($hydroProjects->hasPages())
                 <div class="custom-pagination">
-                    <a href="{{ $hydroProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $hydroProjects->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $hydroProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $hydroProjects->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestHydroSection">&lt;</a>
                     
                     @php
                         $hStart = max($hydroProjects->currentPage() - 2, 1);
@@ -348,15 +348,15 @@
                     @endphp
                     
                     @for ($page = $hStart; $page <= $hEnd; $page++)
-                        <a href="{{ $hydroProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $hydroProjects->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                        <a href="{{ $hydroProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $hydroProjects->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestHydroSection">{{ $page }}</a>
                     @endfor
                     
-                    <a href="{{ $hydroProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$hydroProjects->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                    <a href="{{ $hydroProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$hydroProjects->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestHydroSection">&gt;</a>
                 </div>
             @endif
         </div>
 
-        <div class="ui-card">
+        <div class="ui-card" id="guestFsdeSection">
             <div class="section-title">Monthly FSDE Status Report</div>
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1500px;">
@@ -407,7 +407,7 @@
             
             @if($fsdeProjects->hasPages())
                 <div class="custom-pagination">
-                    <a href="{{ $fsdeProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $fsdeProjects->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $fsdeProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $fsdeProjects->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestFsdeSection">&lt;</a>
                     
                     @php
                         $fStart = max($fsdeProjects->currentPage() - 2, 1);
@@ -416,17 +416,17 @@
                     @endphp
                     
                     @for ($page = $fStart; $page <= $fEnd; $page++)
-                        <a href="{{ $fsdeProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $fsdeProjects->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                        <a href="{{ $fsdeProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $fsdeProjects->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestFsdeSection">{{ $page }}</a>
                     @endfor
                     
-                    <a href="{{ $fsdeProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$fsdeProjects->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                    <a href="{{ $fsdeProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$fsdeProjects->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestFsdeSection">&gt;</a>
                 </div>
             @endif
         </div>
     @endif
 
     @if(isset($db_team) && $db_team === 'cm_team' && isset($procurementProjects))
-        <div class="ui-card" style="margin-top: 24px;">
+        <div class="ui-card" id="guestProcurementSection" style="margin-top: 24px;">
             <div class="section-title">
                 Procurement Status Monitoring
                 
@@ -512,7 +512,7 @@
 
             @if($procurementProjects->hasPages())
                 <div class="custom-pagination">
-                    <a href="{{ $procurementProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $procurementProjects->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $procurementProjects->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $procurementProjects->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestProcurementSection">&lt;</a>
                     
                     @php
                         $pStart = max($procurementProjects->currentPage() - 2, 1);
@@ -521,10 +521,10 @@
                     @endphp
                     
                     @for ($page = $pStart; $page <= $pEnd; $page++)
-                        <a href="{{ $procurementProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $procurementProjects->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                        <a href="{{ $procurementProjects->appends(request()->query())->url($page) }}" class="page-item {{ $page == $procurementProjects->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestProcurementSection">{{ $page }}</a>
                     @endfor
                     
-                    <a href="{{ $procurementProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$procurementProjects->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                    <a href="{{ $procurementProjects->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$procurementProjects->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestProcurementSection">&gt;</a>
                 </div>
             @endif
         </div>

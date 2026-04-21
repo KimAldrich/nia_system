@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
@@ -12,6 +13,8 @@ use App\Models\EventCategory;
 
 class RpwsisTeamController extends Controller
 {
+    use HandlesAsyncRequests;
+
     // 1. Dashboard
     public function index()
     {
@@ -55,7 +58,7 @@ class RpwsisTeamController extends Controller
             'original_name' => $file->getClientOriginalName(),
             'team' => 'rpwsis_team' // 🔥 IMPORTANT
         ]);
-        return back()->with('success', 'File uploaded successfully.');
+        return $this->successResponse($request, 'File uploaded successfully.');
     }
 
     // 5. Update Downloadable
@@ -71,11 +74,11 @@ class RpwsisTeamController extends Controller
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'File updated successfully.');
+        return $this->successResponse($request, 'File updated successfully.');
     }
 
     // 6. Delete Downloadable
-    public function deleteForm($id)
+    public function deleteForm(Request $request, $id)
     {
         $downloadable = Downloadable::findOrFail($id);
 
@@ -85,7 +88,7 @@ class RpwsisTeamController extends Controller
 
         $downloadable->delete();
 
-        return back()->with('success', 'File deleted successfully.');
+        return $this->successResponse($request, 'File deleted successfully.');
     }
 
     // 7. Upload Resolution
@@ -105,7 +108,7 @@ class RpwsisTeamController extends Controller
             'original_name' => $file->getClientOriginalName(),
             'team' => 'rpwsis_team' // 🔥 IMPORTANT
         ]);
-        return back()->with('success', 'Resolution uploaded successfully.');
+        return $this->successResponse($request, 'Resolution uploaded successfully.');
     }
 
     // 7. Update Resolution File
@@ -121,7 +124,7 @@ class RpwsisTeamController extends Controller
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        return back()->with('success', 'Resolution updated successfully.');
+        return $this->successResponse($request, 'Resolution updated successfully.');
     }
 
     // 8. Update Resolution Status
@@ -131,11 +134,11 @@ class RpwsisTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $resolution->update(['status' => $request->status]);
 
-        return back()->with('success', 'Resolution status updated successfully.');
+        return $this->successResponse($request, 'Resolution status updated successfully.');
     }
 
     // 9. Delete IA Resolution
-    public function deleteResolution($id)
+    public function deleteResolution(Request $request, $id)
     {
         $resolution = IaResolution::findOrFail($id);
 
@@ -152,13 +155,33 @@ class RpwsisTeamController extends Controller
         // Delete record from database
         $resolution->delete();
 
-        return back()->with('success', 'Resolution deleted successfully.');
+        return $this->successResponse($request, 'Resolution deleted successfully.');
     }
     //10
     public function storeAccomplishment(Request $request)
     {
-        $record = RpwsisAccomplishment::create($request->all());
-        return response()->json($record);
+        $validated = $request->validate([
+            'region' => ['required', 'string', 'max:100'],
+            'batch' => ['nullable', 'string', 'max:100'],
+            'allocation' => ['nullable', 'string', 'max:255'],
+            'nis' => ['nullable', 'string', 'max:255'],
+            'activity' => ['required', 'string', 'max:255'],
+            'remarks' => ['nullable', 'string', 'max:1000'],
+            'amount' => ['nullable', 'numeric', 'min:0'],
+            'phy' => ['nullable', 'numeric', 'between:0,100'],
+            'fin' => ['nullable', 'numeric', 'between:0,100'],
+            'exp' => ['nullable', 'numeric', 'min:0'],
+        ] + collect(range(1, 12))->mapWithKeys(fn ($index) => [
+            'c' . $index => ['nullable', 'string', 'max:255'],
+        ])->toArray());
+
+        $record = RpwsisAccomplishment::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Accomplishment record saved successfully.',
+            'record' => $record,
+        ]);
     }
 
     // 11. Delete Accomplishment
