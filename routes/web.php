@@ -27,6 +27,7 @@ Route::post('/guest/accept-terms', [GuestController::class, 'acceptTerms'])->nam
 Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.dashboard');
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 
+Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 Route::get('/guest/{team_slug}/dashboard', [GuestController::class, 'teamDashboard'])->name('guest.team.dashboard');
 Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
@@ -188,7 +189,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 Route::post('/ia-resolutions/upload', [RowTeamController::class, 'uploadResolution'])->name('row.resolutions.upload');
 
-                //delete 
+                //delete
                 Route::delete('/resolutions/{id}/delete', [RowTeamController::class, 'deleteResolution'])->name('row.resolutions.delete');
 
                 Route::post('/ia-resolutions/{id}/update', [RowTeamController::class, 'updateResolution'])->name('row.resolutions.update');
