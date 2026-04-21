@@ -599,18 +599,24 @@
         </div>
     </div>
 
-    <div class="ui-card" id="powSection">
+    @php
+        $canManagePow = auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']);
+    @endphp
+
+    <div class="ui-card">
         <div class="section-title">
             Program of Works Status Monitoring
             
             <div style="display: flex; gap: 10px;">
-                <button onclick="openAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
-                    + Add Data
-                </button>
-                <button style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                @if ($canManagePow)
+                    <button onclick="openAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                        + Add Data
+                    </button>
+                @endif
+                <a href="{{ route('pao.pow.export') }}" onclick="handlePowExport(event, this.href)" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Export CSV
-                </button>
+                    Export Excel
+                </a>
             </div>
         </div>
         
@@ -627,7 +633,9 @@
                         <th rowspan="2">On Going POW Preparation</th>
                         <th rowspan="2">POW for Submission</th>
                         <th rowspan="2">Remarks</th>
-                        <th rowspan="2">Actions</th>
+                        @if ($canManagePow)
+                            <th rowspan="2">Actions</th>
+                        @endif
                     </tr>
                     <tr>
                         <th>NO. of POW Prepared</th>
@@ -649,19 +657,21 @@
                             <td>{{ $data->ongoing_pow_preparation }}</td>
                             <td>{{ $data->pow_for_submission }}</td>
                             <td class="col-desc">{{ $data->remarks }}</td>
-                            <td style="text-align: center;">
-                                <button onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')" 
-                                        style="background: #4f46e5; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 5px;">
-                                    Edit
-                                </button>
-                                <button type="button" onclick="openDeleteModal({{ $data->id }})" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
-                                    Delete
-                                </button>
-                            </td>
+                            @if ($canManagePow)
+                                <td style="text-align: center;">
+                                    <button onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')" 
+                                            style="background: #4f46e5; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 5px;">
+                                        Edit
+                                    </button>
+                                    <button type="button" onclick="openDeleteModal({{ $data->id }})" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                                        Delete
+                                    </button>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" style="text-align:center; padding: 30px 0; color: #a0aec0;">No data found in the database.</td>
+                            <td colspan="{{ $canManagePow ? 12 : 11 }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No data found in the database.</td>
                         </tr>
                     @endforelse
 
@@ -677,7 +687,9 @@
                             <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_submitted') }}</td>
                             <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('ongoing_pow_preparation') }}</td>
                             <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_for_submission') }}</td>
-                            <td></td>
+                            @if ($canManagePow)
+                                <td></td>
+                            @endif
                         </tr>
                     @endif
                 </tbody>
@@ -720,30 +732,31 @@
         @endif
     </div>
 
-    <div class="modal-overlay" id="addDataModal">
-        <div class="modal-box">
-            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Program of Works Data</h3>
-            
-            <form action="{{ route('pao.pow.store') }}" method="POST" data-async-target="#powSection" data-async-reset="true" data-async-close="#addDataModal">
-                @csrf
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <label class="modern-label">District</label>
-                        <select name="district" required class="modern-input">
-                            <option value="">Select District</option>
-                            <option value="District 1">District 1</option>
-                            <option value="District 2">District 2</option>
-                            <option value="District 3">District 3</option>
-                            <option value="District 4">District 4</option>
-                            <option value="District 5">District 5</option>
-                            <option value="District 6">District 6</option>
-                        </select>
+    @if ($canManagePow)
+        <div class="modal-overlay" id="addDataModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Program of Works Data</h3>
+                
+                <form action="{{ route('pao.pow.store') }}" method="POST">
+                    @csrf
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="modern-label">District</label>
+                            <select name="district" required class="modern-input">
+                                <option value="">Select District</option>
+                                <option value="District 1">District 1</option>
+                                <option value="District 2">District 2</option>
+                                <option value="District 3">District 3</option>
+                                <option value="District 4">District 4</option>
+                                <option value="District 5">District 5</option>
+                                <option value="District 6">District 6</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="modern-label">No. of Projects</label>
+                            <input type="number" name="no_of_projects" required placeholder="e.g. 5" class="modern-input" min="0">
+                        </div>
                     </div>
-                    <div>
-                        <label class="modern-label">No. of Projects</label>
-                        <input type="number" name="no_of_projects" required placeholder="e.g. 5" class="modern-input" min="0">
-                    </div>
-                </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
@@ -801,52 +814,52 @@
                     <button type="button" onclick="closeAddModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
                     <button type="submit" class="modern-btn" style="flex: 1;">Save Data</button>
                 </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <div class="modal-overlay" id="deleteConfirmModal">
-        <div class="modal-box">
-            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete Program of Works Data</h3>
-            <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
-            <form id="deleteForm" method="POST" action="" data-async-target="#powSection" data-async-close="#deleteConfirmModal">
-                @csrf
-                @method('DELETE')
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" onclick="closeDeleteModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="modern-btn" style="flex: 1; background: #ef4444;">Delete</button>
-                </div>
-            </form>
+        <div class="modal-overlay" id="deleteConfirmModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete Program of Works Data</h3>
+                <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
+                <form id="deleteForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="closeDeleteModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                        <button type="submit" class="modern-btn" style="flex: 1; background: #ef4444;">Delete</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <div class="modal-overlay" id="editDataModal">
-        <div class="modal-box">
-            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Program of Works Data</h3>
-            
-            <form action="{{ route('pao.pow.update') }}" method="POST" data-async-target="#powSection" data-async-close="#editDataModal">
-                @csrf
-                @method('PUT')
-                <input type="hidden" name="id" id="edit-id">
+        <div class="modal-overlay" id="editDataModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Program of Works Data</h3>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <label class="modern-label">District</label>
-                        <select name="district" id="edit-district" required class="modern-input">
-                            <option value="">Select District</option>
-                            <option value="District 1">District 1</option>
-                            <option value="District 2">District 2</option>
-                            <option value="District 3">District 3</option>
-                            <option value="District 4">District 4</option>
-                            <option value="District 5">District 5</option>
-                            <option value="District 6">District 6</option>
-                        </select>
+                <form action="{{ route('pao.pow.update') }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="id" id="edit-id">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="modern-label">District</label>
+                            <select name="district" id="edit-district" required class="modern-input">
+                                <option value="">Select District</option>
+                                <option value="District 1">District 1</option>
+                                <option value="District 2">District 2</option>
+                                <option value="District 3">District 3</option>
+                                <option value="District 4">District 4</option>
+                                <option value="District 5">District 5</option>
+                                <option value="District 6">District 6</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="modern-label">No. of Projects</label>
+                            <input type="number" name="no_of_projects" id="edit-no_of_projects" required placeholder="e.g. 5" class="modern-input" min="0">
+                        </div>
                     </div>
-                    <div>
-                        <label class="modern-label">No. of Projects</label>
-                        <input type="number" name="no_of_projects" id="edit-no_of_projects" required placeholder="e.g. 5" class="modern-input" min="0">
-                    </div>
-                </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
@@ -904,11 +917,61 @@
                     <button type="button" onclick="closeEditModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
                     <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
                 </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
+    @endif
 
     <script>
+        async function handlePowExport(event, url) {
+            event.preventDefault();
+
+            const suggestedName = `program_of_works_status_monitoring_${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')}.xlsx`;
+
+            try {
+                const response = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Download failed.');
+                }
+
+                const blob = await response.blob();
+
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description: 'Excel Workbook',
+                            accept: {
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                            }
+                        }]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = suggestedName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                window.location.href = url;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
             Chart.defaults.color = '#a1a1aa';

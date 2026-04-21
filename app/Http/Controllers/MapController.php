@@ -4,15 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Shapefile\ShapefileReader;
+use ZipArchive;
 
 class MapController extends Controller
 {
     public function Showmap()
     {
         $overlayGroups = [
-            'irrigated' => $this->buildOverlayGroup('Irrigated Area', 'Irrigated Area'),
-            'land_boundary' => $this->buildOverlayGroup('Pangasinan Land Boundary', 'Pangasinan Land Boundary'),
-            'potential' => $this->buildOverlayGroup('Potential Irrigable Area', 'Potential Irrigable Area'),
+            'irrigated' => $this->buildOverlayGroup('Irrigated Area', 'irrigated'),
+            'land_boundary' => $this->buildOverlayGroup('Pangasinan Land Boundary', 'land_boundary'),
+            'potential' => $this->buildOverlayGroup('Potential Irrigable Area', 'potential'),
         ];
 
         return view('map.map', compact('overlayGroups'));
@@ -157,4 +159,200 @@ class MapController extends Controller
             'message' => 'File not found'
         ], 404);
     }
+
+private function readShapefileZip($zipPath)
+{
+    $fullPath = storage_path('app/public/' . $zipPath);
+
+    if (!file_exists($fullPath)) return 0;
+
+    $extractPath = storage_path('app/temp/' . uniqid());
+    mkdir($extractPath, 0777, true);
+
+    $zip = new ZipArchive;
+
+    if ($zip->open($fullPath) === TRUE) {
+        $zip->extractTo($extractPath);
+        $zip->close();
+    } else {
+        return 0;
+    }
+
+    // find shp
+    $shpFile = null;
+
+    $iterator = new \RecursiveIteratorIterator(
+        new \RecursiveDirectoryIterator($extractPath)
+    );
+
+    foreach ($iterator as $file) {
+        if ($file->isFile() && strtolower($file->getExtension()) === 'shp') {
+            $shpFile = $file->getPathname();
+            break;
+        }
+    }
+
+    if (!$shpFile) return 0;
+
+    try {
+        $reader = new ShapefileReader($shpFile);
+        $reader->setCharset('CP1252');
+
+        $totalArea = 0;
+
+        while ($record = $reader->fetchRecord()) {
+
+            if ($record->isDeleted()) continue;
+
+            $data = $record->getDataArray();
+
+            $area = 0;
+
+            foreach ($data as $key => $value) {
+
+                $cleanKey = strtoupper(trim($key));
+
+                if (
+                    $cleanKey === 'AREA__HA_' ||
+                    str_contains($cleanKey, 'AREA')
+                ) {
+                    $area = (float) str_replace(',', '', $value);
+                    break;
+                }
+            }
+
+            $totalArea += $area;
+        }
+
+        return round($totalArea, 2);
+
+    } catch (\Exception $e) {
+        return 0;
+    }
+}
+public function getIrrigatedChartData()
+{
+    $basePath = 'maps/irrigated';
+    $disk = Storage::disk('public');
+
+    $municipalities = collect($disk->directories($basePath));
+
+    $chartData = [];
+
+    foreach ($municipalities as $municipalityPath) {
+
+        $municipality = basename($municipalityPath);
+
+        $ranges = $disk->directories($municipalityPath);
+
+        $rangeAreas = [];
+        $slopesTotal = 0;
+
+        foreach ($ranges as $rangePath) {
+
+            $rangeName = basename($rangePath);
+            $files = $disk->files($rangePath);
+
+            $rangeTotal = 0;
+
+            foreach ($files as $file) {
+                if (str_ends_with($file, '.zip')) {
+                    $rangeTotal += $this->readShapefileZip($file);
+                }
+            }
+
+            $rangeAreas[$rangeName] = $rangeTotal;
+            $slopesTotal += $rangeTotal;
+        }
+
+        // ✅ Get real total land area
+        $totalLandArea = $this->getMunicipalityLandArea($municipality);
+
+        $percentages = [];
+
+        foreach ($rangeAreas as $range => $area) {
+            $percentages[$range] = $totalLandArea > 0
+                ? round(($area / $totalLandArea) * 100, 2)
+                : 0;
+        }
+
+$totalIrrigated = array_sum($rangeAreas);
+
+$chartData[$municipality] = [
+    'Area (ha)'        => $totalLandArea,
+    'irrigated_total'  => round($totalIrrigated, 2),
+    'ranges'           => $rangeAreas,
+    'percentages'      => $percentages
+];
+    }
+
+    return response()->json($chartData);
+}
+
+private function getMunicipalityLandArea($municipality)
+{
+    $jsonPath = public_path('maps/municipalities.json');
+
+    if (!file_exists($jsonPath)) {
+        return 0;
+    }
+
+    $data = json_decode(file_get_contents($jsonPath), true);
+
+    if (!$data) {
+        return 0;
+    }
+
+    foreach ($data as $item) {
+
+        $jsonName = strtolower(trim($item['name']));
+        $clickedName = strtolower(trim($municipality));
+
+        // normalize city names
+        $jsonName = str_replace(' city', '', $jsonName);
+        $clickedName = str_replace(' city', '', $clickedName);
+
+        if ($jsonName === $clickedName) {
+            return (float) $item['total_land_area_ha'];
+        }
+    }
+
+    return 0;
+}
+// private function calculateGeoJsonArea($geometry)
+// {
+//     $type = $geometry['type'];
+//     $coords = $geometry['coordinates'];
+
+//     $totalArea = 0;
+
+//     if ($type === 'Polygon') {
+//         $totalArea += $this->polygonArea($coords[0]);
+//     }
+
+//     if ($type === 'MultiPolygon') {
+//         foreach ($coords as $polygon) {
+//             $totalArea += $this->polygonArea($polygon[0]);
+//         }
+//     }
+
+//     // convert square meters to hectares
+//     return $totalArea / 10000;
+// }
+private function polygonArea($ring)
+{
+    $area = 0;
+    $points = count($ring);
+
+    for ($i = 0; $i < $points - 1; $i++) {
+        $x1 = $ring[$i][0];
+        $y1 = $ring[$i][1];
+        $x2 = $ring[$i + 1][0];
+        $y2 = $ring[$i + 1][1];
+
+        $area += ($x1 * $y2) - ($x2 * $y1);
+    }
+
+    return abs($area) * 111319.9 * 111319.9 / 2;
+}
 }

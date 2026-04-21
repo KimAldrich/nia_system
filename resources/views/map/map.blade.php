@@ -16,8 +16,9 @@
 }
 #map-container {
     position: relative;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
+    transition: margin-right 0.3s ease;
 }
 .map-loader {
     position: absolute;
@@ -358,25 +359,7 @@ input:checked + .slider:before {
 }
 
 /* INFO PANEL */
-.info-panel {
-    position: absolute;
-    top: 0;
-    right: -400px;
-    width: 250px;
-    color: white;
-    text-shadow:
-        -1px -1px 0 black,
-         1px -1px 0 black,
-        -1px  1px 0 black,
-         1px  1px 0 black;
-    height: 100%;
-    background: #81717187;
-    box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53);
-    z-index: 1000;
-    transition: right 0.3s ease;
-    display: flex;
-    flex-direction: column;
-}
+.info-panel { position: fixed; /* 🔥 CHANGE from absolute */ top: 0; right: -400px; width: 250px; height: 100vh; background: #81717187; box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53); z-index: 10000 !important; /* 🔥 STRONGER than everything */ transition: right 0.3s ease; display: flex; flex-direction: column; }
 
 .info-panel.active {
     right: 0;
@@ -512,7 +495,7 @@ input:checked + .slider:before {
 /* HEADER */
 .detail-header {
     padding: 10px;
-    background: rgba(0,0,0,0.3); 
+    background: rgba(0,0,0,0.3);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -572,7 +555,7 @@ input:checked + .slider:before {
     overflow-y: auto;
 }
 /* .sidebar-header {
-    background: #181818; 
+    background: #181818;
     color: white;
     padding: 24px 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -797,6 +780,7 @@ select[name="category"]:focus {
 
     <div id="infoContent" class="info-content">
 <canvas id="landChart" class="chart-small"></canvas>
+<canvas id="irrigatedChart"></canvas>
         <!-- LEGEND -->
         <div id="legendContainer"></div>
 
@@ -834,7 +818,7 @@ select[name="category"]:focus {
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
-            <span>Pangasinan Land Boundary</span>
+            <span>Land Boundary</span>
         </label>
         <label class="layer-check" >
             <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
@@ -931,7 +915,13 @@ let selectedMunicipality = null;
 let activeSliceIndex = null;
 let municipalityMarkers = [];
 let provinceLabelLayer = null;
+let irrigatedStats = {};
 
+fetch('/irrigated-chart-data')
+    .then(res => res.json())
+    .then(data => {
+        irrigatedStats = data;
+    });
 function showMapLoader(message = 'Loading map data...') {
     const loader = document.getElementById('map-loader');
     const loaderText = document.getElementById('loader-text');
@@ -967,18 +957,6 @@ function buildAppUrl(path) {
 
 // Dagupan City Center
 let map = L.map('map').setView([16.0433, 120.3333], 10);
-
-// Add ResizeObserver to handle container size changes (like sidebar collapse/expand)
-const mapContainer = document.getElementById('map-container');
-if (mapContainer && window.ResizeObserver) {
-    const resizeObserver = new ResizeObserver(() => {
-        if (typeof map !== 'undefined' && map.invalidateSize) {
-            map.invalidateSize();
-        }
-    });
-    resizeObserver.observe(mapContainer);
-}
-
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1041,7 +1019,7 @@ toggle.addEventListener('change', () => {
         map.addLayer(labelLayer);
 
         toggleContainer.classList.add('satellite-active');
-        layerControls.classList.add('satellite-active'); 
+        layerControls.classList.add('satellite-active');
         if(statusBox) statusBox.classList.add('satellite-active');
     } else {
         map.removeLayer(satelliteLayer);
@@ -1080,7 +1058,7 @@ function updateProvinceLabelVisibility() {
         if (provinceLabelLayer && map.hasLayer(provinceLabelLayer)) {
             map.removeLayer(provinceLabelLayer);
         }
-        
+
         // HIDE ALL MUNICIPALITY MARKERS
         municipalityMarkers.forEach(marker => {
             if (map.hasLayer(marker)) {
@@ -1092,7 +1070,7 @@ function updateProvinceLabelVisibility() {
         if (provinceLabelLayer && !map.hasLayer(provinceLabelLayer)) {
             provinceLabelLayer.addTo(map);
         }
-        
+
         // SHOW ALL MUNICIPALITY MARKERS
         municipalityMarkers.forEach(marker => {
             if (!map.hasLayer(marker)) {
@@ -1117,12 +1095,7 @@ function setSelectedBaseLayer(layer) {
     }
 
     selectedBaseLayer = layer;
-    // selectedBaseLayer.setStyle({
-    //     color: '#ffd400',
-    //     weight: 2,
-    //     fillColor: '#ff5a36',
-    //     fillOpacity: 0.8
-    // });
+
 }
 
 async function loadBaseMap() {
@@ -1149,25 +1122,47 @@ async function loadBaseMap() {
             layer.on('click', function() {
                 const mData = getMunicipalityData(name);
                 updateInfoPanel(name);
-                selectedMunicipality = mData; 
+                selectedMunicipality = mData;
                 setSelectedBaseLayer(layer);
                 document.getElementById('infoTitle').innerText = name;
-
+                // updateChart(feature.properties.name, chartData);
                 if (mData) {
-                    const landData = {
-                        labels: ["Total Land Area (ha)", "Primary Crops", "Canals", "Dams", "Annual Crop Area (ha)"],
-                        values: [
-                            mData.total_land_area_ha,
-                            mData.primary_crops.length,
-                            mData.infrastructure.canals,
-                            mData.infrastructure.dams.length,
-                            mData.annual_crop_ha
-                        ],
-                        colors: ["#2e7d32", "#ffa726", "#42a5f5", "#8d6e63", "#4caf50"]
-                    };
+const stat = getIrrigatedStatByName(name);
+const rangeData = stat?.ranges || {};
+const irrigatedTotal = Object.values(rangeData).reduce((a, b) => a + Number(b), 0);
+const landData = {
+    labels: [
+        "Total Land Area (ha)",
+        "Primary Crops",
+        "Canals",
+        "Dams",
+        "Annual Crop Area (ha)",
+        "Irrigated Area"
+    ],
+values: [
+    Number(mData.total_land_area_ha) || 0,
+    mData.primary_crops?.length || 0,
+    mData.infrastructure?.canals || 0,
+    mData.infrastructure?.dams?.length || 0,
+    Number(mData.annual_crop_ha) || 0,
+    Number(irrigatedTotal) || 0
+],
+    colors: [
+        "#2e7d32",
+        "#ffa726",
+        "#42a5f5",
+        "#8d6e63",
+        "#4caf50",
+        "#1b5e20"
+    ]
+};
                     renderChart(landData);
                     renderLegend(landData);
                     openDetail();
+                    console.log("Clicked:", name);
+console.log("Matched Stat:", stat);
+console.log("Range Data:", rangeData);
+console.log("Total:", irrigatedTotal);
                 } else {
                     document.getElementById('extraData').innerHTML = "No data available";
                 }
@@ -1187,12 +1182,12 @@ async function loadBaseMap() {
                     const marker = L.marker(center, {
                         icon: L.divIcon({
                             className: 'municipality-label',
-                            html: name 
+                            html: name
                         })
                     }).addTo(map);
 
                     municipalityMarkers.push(marker);
-                    
+
                     // Mark this name as "Done"
                     labeledNames.add(name);
                 }
@@ -1200,8 +1195,8 @@ async function loadBaseMap() {
         }
     }).addTo(map);
 
-    const provinceName = "PANGASINAN"; 
-    
+    const provinceName = "PANGASINAN";
+
     provinceLabelLayer = L.tooltip({
         permanent: true,
         direction: 'center',
@@ -1330,31 +1325,6 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
 
     layer.on('click', function(e) {
 
-        // 🔥 highlight selected overlay
-        // layer.setStyle({
-        //     color: '#ff0000',
-        //     weight: 3,
-        //     fillColor: '#ff5722',
-        //     fillOpacity: 0.9
-        // });
-
-        // reset others
-//         Object.values(overlayLayers).forEach(group => {
-//             group.eachLayer(l => {
-//                 if (l !== layer) {
-//                     l.setStyle(styleOverlayFeature(categoryKey, l.feature));
-//                 }
-//             });
-//         });
-// // 🔥 bring overlays to front
-// Object.values(overlayLayers).forEach(group => {
-//     group.eachLayer(layer => layer.bringToFront());
-// });
-
-// // 🔥 keep Pangasinan layer BELOW (but visible)
-// if (geoLayer) {
-//     geoLayer.eachLayer(layer => layer.bringToBack());
-// }
         // 🔥 zoom to clicked overlay
         map.fitBounds(layer.getBounds());
 
@@ -1365,41 +1335,6 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
     });
 }
 
-// async function showOverlayCategory(categoryKey) {
-//     const config = overlayGroups[categoryKey];
-
-//     if (!config || !config.files.length) {
-//         updateStatus('No files found for ' + (config?.label || categoryKey) + '.', true);
-//         return;
-//     }
-
-//     if (!overlayLayers[categoryKey]) {
-//         const layers = [];
-
-//         for (let index = 0; index < config.files.length; index++) {
-//             const file = config.files[index];
-
-//             updateStatus(`Loading ${config.label} (${index + 1}/${config.files.length})...`);
-
-//             try {
-//                 const geoJson = await convertStoredFileToGeoJson(file.url);
-//                 layers.push(createOverlayLayer(categoryKey, geoJson, file.name));
-//             } catch (error) {
-//                 console.error('Failed to load file:', file.name, error);
-//             }
-//         }
-
-//         if (!layers.length) {
-//             updateStatus('No valid polygons could be loaded for ' + config.label + '.', true);
-//             return;
-//         }
-
-//         overlayLayers[categoryKey] = L.featureGroup(layers);
-//     }
-
-//     if (!map.hasLayer(overlayLayers[categoryKey])) {
-//         overlayLayers[categoryKey].addTo(map);
-//     }
 
 async function showOverlayCategory(categoryKey) {
     const config = overlayGroups[categoryKey];
@@ -1445,21 +1380,9 @@ async function showOverlayCategory(categoryKey) {
         }
     });
 
-    // const bounds = overlayLayers[categoryKey].getBounds();
-    // if (bounds.isValid()) {
-    //     map.fitBounds(bounds, { padding: [25, 25] });
-    // }
-
     updateStatus(config.label + ' is now highlighted on the map.');
 }
 
-//     const bounds = overlayLayers[categoryKey].getBounds();
-//     if (bounds.isValid()) {
-//         map.fitBounds(bounds, { padding: [25, 25] });
-//     }
-
-//     updateStatus(config.label + ' is now highlighted on the map.');
-// }
 
 function hideOverlayCategory(categoryKey) {
     if (overlayLayers[categoryKey] && map.hasLayer(overlayLayers[categoryKey])) {
@@ -1714,9 +1637,9 @@ if (form) {
     });
 }
 const overlayPriority = {
-    irrigated: 3,    
+    irrigated: 3,
     potential: 2,
-    land_boundary: 1, 
+    land_boundary: 1,
 };
 //Details
 
@@ -1734,13 +1657,13 @@ function openPanel() {
 function closeAllPanels() {
     // Removes 'active' from the chart panel
     document.getElementById('infoPanel').classList.remove('active');
-    
+
     // Removes 'active' from the full details table
     document.getElementById('detailPanel').classList.remove('active');
-    
+
     // Optional: Hide the miniMap if you want it to disappear too
     document.getElementById('miniMap').style.display = 'none';
-    
+
     // Optional: Reset the map selection style
     if (selectedBaseLayer && geoLayer) {
         geoLayer.resetStyle(selectedBaseLayer);
@@ -1748,63 +1671,7 @@ function closeAllPanels() {
 }
 
 
-// if (data) {
 
-//     // 🔥 Convert your real data into chart format
-//     const landData = {
-//         labels: [
-//             "Land Area (ha)",
-//             "Annual Palay (MT)",
-//             "Canals",
-//             "Dams"
-//         ],
-//         values: [
-//             data.land_area_ha,
-//             data.annual_palay_mt,
-//             data.canals_count,
-//             data.dams.length
-//         ],
-//         colors: [
-//             "#2e7d32",
-//             "#66bb6a",
-//             "#42a5f5",
-//             "#8d6e63"
-//         ]
-//     };
-
-//     renderChart(landData);
-//     renderLegend(landData);
-
-// // if (data) {
-
-// //     const landData = {
-// //         labels: [
-// //             "Land Area (ha)",
-// //             "Annual Crop (ha)",
-// //             "Canals",
-// //             "Dams"
-// //         ],
-// //         values: [
-// //             data.total_land_area_ha || 0,
-// //             data.annual_crop_ha || 0,
-// //             data.infrastructure?.canals || 0,
-// //             data.infrastructure?.dams?.length || 0
-// //         ],
-// //         colors: [
-// //             "#2e7d32",
-// //             "#66bb6a",
-// //             "#42a5f5",
-// //             "#8d6e63"
-// //         ]
-// //     };
-
-// //     renderChart(landData);
-// //     renderLegend(landData);
-// //     openDetail();
-
-// // }
-
-// }
 function openDetail() {
 
     if (!selectedMunicipality) {
@@ -1922,11 +1789,14 @@ function renderLegend(landData) {
     const container = document.getElementById('legendContainer');
     container.innerHTML = '';
 
-    const total = landData.values.reduce((a, b) => a + b, 0);
+    const safeValues = landData.values.map(v => Number(v) || 0);
+    const total = safeValues.reduce((a, b) => a + b, 0);
 
     landData.labels.forEach((label, index) => {
-        const value = landData.values[index];
-        const percent = ((value / total) * 100).toFixed(2);
+        const value = safeValues[index];
+        const percent = total > 0
+            ? ((value / total) * 100).toFixed(2)
+            : 0;
 
         const item = document.createElement('div');
         item.className = 'legend-item active';
@@ -1936,18 +1806,17 @@ function renderLegend(landData) {
             ${label}: ${value.toLocaleString()} (${percent}%)
         `;
 
-        // 🔥 CLICK TO TOGGLE SLICE
         item.onclick = function () {
-     if (!landChart) return;
+            if (!landChart) return;
 
-    activeSliceIndex = index;
-    landChart.update();
-
-};
+            activeSliceIndex = index;
+            landChart.update();
+        };
 
         container.appendChild(item);
     });
 }
+
 function updateInfoPanel(municipalityName) {
     document.getElementById("municipalityName").textContent = municipalityName + " Details";
 }
@@ -1958,25 +1827,77 @@ const closeBtn = document.getElementById('close-sidebar');
 // OPEN sidebar
 openBtn.addEventListener('click', () => {
     adminSidebar.classList.remove('sidebar-closed');
-    // Allow time for CSS transition, then invalidate map size
-    setTimeout(() => {
-        if (typeof map !== 'undefined' && map.invalidateSize) {
-            map.invalidateSize();
-        }
-    }, 500);
 });
 
 // CLOSE sidebar
 closeBtn.addEventListener('click', () => {
     adminSidebar.classList.add('sidebar-closed');
-    // Allow time for CSS transition, then invalidate map size
-    setTimeout(() => {
-        if (typeof map !== 'undefined' && map.invalidateSize) {
-            map.invalidateSize();
-        }
-    }, 500);
 });
 
+async function loadChart() {
+    const res = await fetch('/irrigated-chart-data');
+    const data = await res.json();
+
+    // Example: show first municipality
+    const firstMunicipality = Object.keys(data)[0];
+    const values = data[firstMunicipality];
+
+    const labels = Object.keys(values);
+    const percentages = Object.values(values);
+
+    const ctx = document.getElementById('irrigatedChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: firstMunicipality + ' Irrigated %',
+                data: percentages
+            }]
+        }
+    });
+}
+
+loadChart();
+function updateChart(municipality, data) {
+    const values = data[municipality];
+
+    chart.data.labels = Object.keys(values);
+    chart.data.datasets[0].data = Object.values(values);
+    chart.data.datasets[0].label = municipality;
+
+    chart.update();
+}
+function normalizeName(name) {
+    return String(name || '')
+        .toLowerCase()
+        .replace(/city of/g, '')
+        .replace(/municipality of/g, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function normalizeName(name) {
+    return String(name || '')
+        .toLowerCase()
+        .replace(/city of/g, '')
+        .replace(/municipality of/g, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function getIrrigatedStatByName(name) {
+    const target = normalizeName(name);
+
+    const key = Object.keys(irrigatedStats).find(k => {
+        return normalizeName(k) === target;
+    });
+
+    return key ? irrigatedStats[key] : null;
+}
 </script>
 
 @endsection

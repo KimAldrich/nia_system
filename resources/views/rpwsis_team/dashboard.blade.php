@@ -2,6 +2,10 @@
 @section('title', 'Social And Environmental Team Dashboard')
 
 @section('content')
+    @php
+        $canManageRpwsis = auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']);
+    @endphp
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -468,15 +472,14 @@
             /* Subtle blue highlight on hover */
         }
 
-        /* ✅ SPECIFIC COLUMN WIDTHS TO FIX SQUISHING */
+        /* //new april 2021 */
+
+        /* ✅ FIRST TABLE SPECIFIC COLUMN WIDTHS */
         .col-activity {
             min-width: 280px;
-            /* Gives the text plenty of room */
             text-align: left !important;
-            /* Easier to read long sentences */
             line-height: 1.5;
             white-space: normal;
-            /* Allows natural wrapping */
         }
 
         .col-remarks {
@@ -489,50 +492,236 @@
             font-weight: 600;
         }
 
+        /* ✅ NEW FEATURE: SUMMARY TABLE SPECIFIC COLUMN WIDTHS */
+        #summaryTable {
+            min-width: 2600px;
+            /* Wider to accommodate 18 distinct columns */
+        }
+
+        #simpleTable {
+            min-width: 2200px;
+            table-layout: fixed;
+        }
+
+        #simpleTable thead th {
+            min-width: 120px;
+            max-width: 140px;
+            white-space: normal;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        #simpleTable tbody td {
+            max-width: 140px;
+            vertical-align: top;
+        }
+
+        #simpleTable .status-compact-cell {
+            white-space: normal;
+            text-align: left;
+        }
+
+        #summaryTable .col-standard {
+            min-width: 120px;
+        }
+
+        #summaryTable .col-medium {
+            min-width: 160px;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        #summaryTable .col-wide {
+            min-width: 260px;
+            text-align: left !important;
+            white-space: normal;
+            line-height: 1.6;
+        }
+
+        #summaryTable .col-expandable {
+            min-width: 190px;
+            max-width: 220px;
+            white-space: normal;
+            text-align: left !important;
+        }
+
+        .expandable-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .expandable-preview,
+        .expandable-full {
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .expandable-full {
+            display: none;
+        }
+
+        .expandable-cell.is-expanded .expandable-preview {
+            display: none;
+        }
+
+        .expandable-cell.is-expanded .expandable-full {
+            display: block;
+        }
+
+        .expand-toggle {
+            border: none;
+            background: transparent;
+            color: #0c4d05;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 0;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .expand-toggle:hover {
+            color: #083a04;
+        }
+
+        #summaryTable .col-action {
+            min-width: 80px;
+            text-align: right;
+        }
+
+        /* COLLAPSIBLE COLUMNS */
+        .hide-impl th.impl,
+        .hide-impl td.impl {
+            display: none;
+        }
+
         /* 2. RESPONSIVE TABLE WRAPPER */
         .table-responsive-wrapper {
             width: 100%;
             max-width: 100%;
-            /* ✅ Prevents the container from breaking out of the card */
             overflow-x: scroll;
-            /* ✅ Changed from 'auto' to 'scroll' to FORCE the bar to always show */
             max-height: 600px;
-            /* ✅ ADDED: Optional vertical scrolling if you have too many rows */
             overflow-y: auto;
             border-radius: 10px;
             border: 1px solid #e4e4e7;
             -webkit-overflow-scrolling: touch;
             margin-bottom: 20px;
-
-            /* ✅ Firefox Support */
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 #f8fafc;
         }
 
-        /* CUSTOM HORIZONTAL & VERTICAL SCROLLBARS (Chrome/Edge/Safari) */
+        /* CUSTOM HORIZONTAL & VERTICAL SCROLLBARS */
         .table-responsive-wrapper::-webkit-scrollbar {
             height: 12px;
-            /* Bottom horizontal scrollbar thickness */
             width: 12px;
-            /* Side vertical scrollbar thickness */
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-track {
             background: #f8fafc;
             border-radius: 0 0 10px 10px;
             border-top: 1px solid #e4e4e7;
-            /* Visual separation from table */
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 10px;
             border: 2px solid #f8fafc;
-            /* Adds padding inside the track */
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
+        }
+
+        .delete-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .delete-modal-overlay.active {
+            display: flex;
+            animation: fadeDeleteModalIn 0.2s ease;
+        }
+
+        .delete-modal-box {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .delete-modal-title {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #1e293b;
+        }
+
+        .delete-modal-text {
+            font-size: 14px;
+            color: #475569;
+            margin-bottom: 25px;
+        }
+
+        .delete-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .delete-modal-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+        }
+
+        .delete-modal-btn.cancel {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+        }
+
+        .delete-modal-btn.cancel:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .delete-modal-btn.confirm {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .delete-modal-btn.confirm:hover {
+            background: #dc2626;
+        }
+
+        @keyframes fadeDeleteModalIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 
@@ -777,10 +966,12 @@
         <div class="section-title">
             ACCOMPLISHMENT AS OF FEBRUARY 15, 2025 OF R&P WRSIS
             <div style="display:flex; gap:8px;">
-                <button onclick="openModal()" class="status-select"
-                    style="background-color: #2563eb; color: white; border-color: #2563eb;">
-                    + Add Record
-                </button>
+                @if ($canManageRpwsis)
+                    <button onclick="openModal()" class="status-select"
+                        style="background-color: #2563eb; color: white; border-color: #2563eb;">
+                        + Add Record
+                    </button>
+                @endif
 
                 <button onclick="exportCSV()" class="status-select"
                     style="background-color: #16a34a; color: white; border-color: #16a34a;">
@@ -809,7 +1000,9 @@
                         <th rowspan="3">FIN %</th>
                         <th rowspan="3">Expenditures</th>
 
-                        <th rowspan="3" style="text-align:right;">Action</th>
+                        @if ($canManageRpwsis)
+                            <th rowspan="3" style="text-align:right;">Action</th>
+                        @endif
                     </tr>
 
                     <!-- SECOND HEADER -->
@@ -838,44 +1031,68 @@
                 </thead>
                 <tbody id="tableBody">
                     @foreach ($records as $r)
+                        @php
+                            $statusValues = [
+                                $r->region,
+                                $r->batch,
+                                $r->allocation,
+                                $r->nis,
+                                $r->activity,
+                                $r->remarks,
+                                $r->amount,
+                                $r->c1,
+                                $r->c2,
+                                $r->c3,
+                                $r->c4,
+                                $r->c5,
+                                $r->c6,
+                                $r->c7,
+                                $r->c8,
+                                $r->c9,
+                                $r->c10,
+                                $r->c11,
+                                $r->c12,
+                                $r->phy,
+                                $r->fin,
+                                $r->exp,
+                            ];
+                        @endphp
                         <tr>
-                            <td>{{ $r->region }}</td>
-                            <td>{{ $r->batch }}</td>
-                            <td>{{ $r->allocation }}</td>
-                            <td>{{ $r->nis }}</td>
-                            <td>{{ $r->activity }}</td>
-                            <td>{{ $r->remarks }}</td>
-                            <td>{{ $r->amount }}</td>
-
-                            <td>{{ $r->c1 }}</td>
-                            <td>{{ $r->c2 }}</td>
-                            <td>{{ $r->c3 }}</td>
-                            <td>{{ $r->c4 }}</td>
-                            <td>{{ $r->c5 }}</td>
-                            <td>{{ $r->c6 }}</td>
-                            <td>{{ $r->c7 }}</td>
-                            <td>{{ $r->c8 }}</td>
-                            <td>{{ $r->c9 }}</td>
-                            <td>{{ $r->c10 }}</td>
-                            <td>{{ $r->c11 }}</td>
-                            <td>{{ $r->c12 }}</td>
-
-                            <td>{{ $r->phy }}</td>
-                            <td>{{ $r->fin }}</td>
-                            <td>{{ $r->exp }}</td>
-
-                            <td>
-                                <button onclick="deleteAccomplishment({{ $r->id }}, this)"
-                                    class="status-select">Delete</button>
-                            </td>
+                            @foreach ($statusValues as $index => $value)
+                                <td class="{{ $index >= 7 && $index <= 18 ? 'impl ' : '' }}status-compact-cell"
+                                    data-export-value="{{ $value }}">
+                                    {!! !empty($value)
+                                        ? '<div class="expandable-cell' .
+                                            (mb_strlen((string) $value) <= 28 ? ' is-expanded' : '') .
+                                            '">' .
+                                            '<div class="expandable-preview">' .
+                                            e(\Illuminate\Support\Str::limit(preg_replace("/\s+/", ' ', (string) $value), 28)) .
+                                            '</div>' .
+                                            '<div class="expandable-full">' .
+                                            nl2br(e($value)) .
+                                            '</div>' .
+                                            (mb_strlen((string) $value) > 28
+                                                ? '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>'
+                                                : '') .
+                                            '</div>'
+                                        : '-' !!}
+                                </td>
+                            @endforeach
+                            @if ($canManageRpwsis)
+                                <td>
+                                    <button onclick="openDeleteModal('accomplishment', {{ $r->id }}, this)"
+                                        class="status-select">Delete</button>
+                                </td>
+                            @endif
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-        <!-- MODAL -->
-        <div id="statusModal"
-            style="
+        @if ($canManageRpwsis)
+            <!-- MODAL -->
+            <div id="statusModal"
+                style="
     display:none;
     position:fixed;
     inset:0;
@@ -883,8 +1100,8 @@
     z-index:999;
 ">
 
-            <div
-                style="
+                <div
+                    style="
         width:90%;
         max-width:900px;
         background:#fff;
@@ -961,17 +1178,76 @@
                     <!-- ACTIONS -->
                     <div style="display:flex; justify-content:flex-end; gap:10px;">
                         <button onclick="closeModal()" class="status-select">Cancel</button>
-                        <button onclick="saveRecord()" class="status-select" style="background:#0c4d05; color:white;">
+                        <button onclick="saveRecord(this)" class="status-select" style="background:#0c4d05; color:white;">
                             Save Record
                         </button>
                     </div>
 
                 </div>
             </div>
-        </div>
+        @endif
     </div>
 
     <script>
+        function validateRequiredFields(fieldIds) {
+            const emptyFields = [];
+
+            fieldIds.forEach(id => {
+                const field = document.getElementById(id);
+                if (!field) {
+                    return;
+                }
+
+                const value = String(field.value ?? '').trim();
+                if (!value) {
+                    emptyFields.push(field);
+                    field.style.borderColor = '#ef4444';
+                    field.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.12)';
+                } else {
+                    field.style.borderColor = '';
+                    field.style.boxShadow = '';
+                }
+            });
+
+            if (emptyFields.length > 0) {
+                emptyFields[0].focus();
+                alert('Please complete all required fields before saving.');
+                return false;
+            }
+
+            return true;
+        }
+
+        function renderStatusExpandableCell(value, extraClass = '') {
+            const text = String(value ?? '').trim();
+            const className = extraClass ? ` class="${extraClass}"` : '';
+
+            if (!text) {
+                return `<td${className}>-</td>`;
+            }
+
+            const normalizedText = text.replace(/\s+/g, ' ').trim();
+            const previewLimit = 28;
+            const preview = normalizedText.length > previewLimit ?
+                `${normalizedText.slice(0, previewLimit).trimEnd()}...` :
+                normalizedText;
+            const escapedPreview = escapeSummaryHtml(preview);
+            const escapedFull = escapeSummaryHtml(text).replace(/\n/g, '<br>');
+            const expandedClass = normalizedText.length <= previewLimit ? ' is-expanded' : '';
+            const toggleButton = normalizedText.length > previewLimit ?
+                '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>' :
+                '';
+            const exportValue = escapeSummaryHtml(text);
+
+            return `<td${className} data-export-value="${exportValue}">
+                <div class="expandable-cell${expandedClass}">
+                    <div class="expandable-preview">${escapedPreview}</div>
+                    <div class="expandable-full">${escapedFull}</div>
+                    ${toggleButton}
+                </div>
+            </td>`;
+        }
+
         function addRow() {
 
             const inputs = [
@@ -990,11 +1266,14 @@
             const row = `
         <tr>
             ${vals.map((v, i) => {
-                return `<td class="${(i >= 7 && i <= 18) ? 'impl' : ''}">${v || '-'}</td>`;
+                const className = `${(i >= 7 && i <= 18) ? 'impl ' : ''}status-compact-cell`.trim();
+                return renderStatusExpandableCell(v, className);
             }).join('')}
-            <td style="text-align:right;">
-                <button onclick="deleteRow(this)" class="status-select">Delete</button>
-            </td>
+            @if ($canManageRpwsis)
+                <td style="text-align:right;">
+                    <button onclick="deleteRow(this)" class="status-select">Delete</button>
+                </td>
+            @endif
         </tr>
         `;
 
@@ -1008,8 +1287,11 @@
         }
 
         // ✅ NEW DELETE FUNCTION
-        function deleteAccomplishment(id, btn) {
-            if (!confirm("Are you sure you want to delete this record?")) return;
+        function deleteAccomplishment(id, btn, skipPrompt = false) {
+            if (!skipPrompt) {
+                openDeleteModal('accomplishment', id, btn);
+                return;
+            }
 
             btn.disabled = true;
             btn.classList.add('is-loading');
@@ -1036,6 +1318,7 @@
                 })
                 .then(data => {
                     btn.closest('tr').remove();
+                        closeDeleteModal();
 
                     if (typeof showLiveAlert === 'function') {
                         showLiveAlert(data.message || 'Record deleted successfully.', 'success');
@@ -1080,7 +1363,7 @@
 
                 cols.forEach((td, i) => {
                     if (i !== cols.length - 1) {
-                        rowData.push(td.innerText.trim());
+                        rowData.push(td.dataset.exportValue ?? td.innerText.trim());
                     }
                 });
 
@@ -1129,6 +1412,10 @@
                 'phy', 'fin', 'exp'
             ];
 
+            if (!validateRequiredFields(fields)) {
+                return;
+            }
+
             let data = {};
             const saveButton = document.querySelector('#statusModal button[onclick="saveRecord()"]');
 
@@ -1143,7 +1430,7 @@
             }
 
             fields.forEach(id => {
-                data[id] = document.getElementById(id).value;
+                data[id] = document.getElementById(id).value.trim();
             });
 
             if (saveButton) {
@@ -1179,52 +1466,701 @@
                     const res = payload.record;
 
                     let row = `<tr>
-            <td>${res.region || '-'}</td>
-            <td>${res.batch || '-'}</td>
-            <td>${res.allocation || '-'}</td>
-            <td>${res.nis || '-'}</td>
-            <td>${res.activity || '-'}</td>
-            <td>${res.remarks || '-'}</td>
-            <td>${res.amount || '-'}</td>
+            ${[
+                res.region, res.batch, res.allocation, res.nis, res.activity, res.remarks, res.amount,
+                res.c1, res.c2, res.c3, res.c4, res.c5, res.c6, res.c7, res.c8, res.c9, res.c10, res.c11, res.c12,
+                res.phy, res.fin, res.exp
+            ].map((value, index) => {
+                const className = `${(index >= 7 && index <= 18) ? 'impl ' : ''}status-compact-cell`.trim();
+                return renderStatusExpandableCell(value, className);
+            }).join('')}
 
-            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => `<td>${res['c'+i] || '-'}</td>`).join('')}
-
-            <td>${res.phy || '-'}</td>
-            <td>${res.fin || '-'}</td>
-            <td>${res.exp || '-'}</td>
-
-           <td><button onclick="deleteAccomplishment(${res.id}, this)" class="status-select">Delete</button></td>
+            @if ($canManageRpwsis)
+                <td><button onclick="deleteAccomplishment(${res.id}, this)" class="status-select">Delete</button></td>
+            @endif
         </tr>`;
 
                     document.getElementById('tableBody').innerHTML += row;
-                    document.querySelectorAll('#statusModal input').forEach(input => input.value = '');
-
+                    fields.forEach(id => {
+                        const field = document.getElementById(id);
+                        if (field) {
+                            field.value = '';
+                            field.style.borderColor = '';
+                            field.style.boxShadow = '';
+                        }
+                    });
                     closeModal();
-                    if (typeof showLiveAlert === 'function') {
-                        showLiveAlert(payload.message || 'Record saved successfully.', 'success');
-                    }
-                })
-                .catch(error => {
-                    if (typeof showLiveAlert === 'function') {
-                        showLiveAlert(error.message || 'Unable to save record.', 'error');
-                    } else {
-                        alert(error.message || 'Unable to save record.');
-                    }
-                })
-                .finally(() => {
-                    if (saveButton) {
-                        saveButton.disabled = false;
-                        saveButton.classList.remove('is-loading');
-                    }
-
-                    if (typeof hideAppLoader === 'function') {
-                        hideAppLoader();
-                    }
                 });
         }
     </script>
 
+    {{-- // -------------------------------------------------------------------------------- --}}
+    {{-- // NEW FEATURE: REHABILITATION AND PROTECTION SUMMARY TABLE                           --}}
+    {{-- // -------------------------------------------------------------------------------- --}}
+
+    <div class="ui-card" style="margin-top: 2rem;">
+
+        <div class="section-title">
+            REHABILITATION AND PROTECTION OF WATER RESOURCES SUPPORTING IRRIGATION SYSTEM (R&P WRSIS)
+            <div style="font-size: 14px; font-weight: normal; margin-top: 4px; opacity: 0.9;">
+                Summary of Accomplishment
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top: 12px;">
+                @if ($canManageRpwsis)
+                    <button onclick="openSummaryModal()" class="status-select"
+                        style="background-color: #2563eb; color: white; border-color: #2563eb;">
+                        + Add Record
+                    </button>
+                @endif
+
+                <button onclick="exportSummaryCSV()" class="status-select"
+                    style="background-color: #16a34a; color: white; border-color: #16a34a;">
+                    Export CSV
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive-wrapper">
+            <table class="sleek-table custom-table" id="summaryTable">
+                <thead>
+                    <tr>
+                        <th>Region</th>
+                        <th>Province</th>
+                        <th>Municipality</th>
+                        <th>Barangay</th>
+                        <th>Type of Plantation</th>
+                        <th>Year Established</th>
+                        <th>Target Area</th>
+                        <th>Area Planted</th>
+                        <th>Species and Number of Seedlings Planted</th>
+                        <th class="col-expandable">Spacing</th>
+                        <th>1st Year Maintenance and Protection</th>
+                        <th>Replanting Target Area</th>
+                        <th>Replanting Actual Area</th>
+                        <th>Mortality Rate</th>
+                        <th class="col-expandable">Species Replanted</th>
+                        <th>Name of NIS</th>
+                        <th>Remarks</th>
+                        @if ($canManageRpwsis)
+                            <th style="text-align:right;">Action</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                    {{-- Make sure to pass $summaryRecords from your Controller --}}
+                    @foreach ($summaryRecords ?? [] as $row)
+                        <tr>
+                            <td>{{ $row->region }}</td>
+                            <td>{{ $row->province }}</td>
+                            <td>{{ $row->municipality }}</td>
+                            <td>{{ $row->barangay }}</td>
+                            <td>{{ $row->plantation_type }}</td>
+                            <td>{{ $row->year_established }}</td>
+                            <td>{{ $row->target_area_1 }}</td>
+                            <td>{{ $row->area_planted }}</td>
+                            <td>{!! nl2br(e($row->species_planted)) !!}</td>
+                            <td class="col-expandable" data-export-value="{{ $row->spacing }}">
+                                {!! !empty($row->spacing)
+                                    ? '<div class="expandable-cell' .
+                                        (mb_strlen((string) $row->spacing) <= 45 ? ' is-expanded' : '') .
+                                        '">' .
+                                        '<div class="expandable-preview">' .
+                                        e(\Illuminate\Support\Str::limit(preg_replace("/\s+/", ' ', (string) $row->spacing), 45)) .
+                                        '</div>' .
+                                        '<div class="expandable-full">' .
+                                        nl2br(e($row->spacing)) .
+                                        '</div>' .
+                                        (mb_strlen((string) $row->spacing) > 45
+                                            ? '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>'
+                                            : '') .
+                                        '</div>'
+                                    : '-' !!}
+                            </td>
+                            <td>{{ $row->maintenance }}</td>
+                            <td>{{ $row->target_area_2 }}</td>
+                            <td>{{ $row->actual_area }}</td>
+                            <td>{{ $row->mortality_rate }}</td>
+                            <td class="col-expandable" data-export-value="{{ $row->species_replanted }}">
+                                {!! !empty($row->species_replanted)
+                                    ? '<div class="expandable-cell' .
+                                        (mb_strlen((string) $row->species_replanted) <= 60 ? ' is-expanded' : '') .
+                                        '">' .
+                                        '<div class="expandable-preview">' .
+                                        e(\Illuminate\Support\Str::limit(preg_replace("/\s+/", ' ', (string) $row->species_replanted), 60)) .
+                                        '</div>' .
+                                        '<div class="expandable-full">' .
+                                        nl2br(e($row->species_replanted)) .
+                                        '</div>' .
+                                        (mb_strlen((string) $row->species_replanted) > 60
+                                            ? '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>'
+                                            : '') .
+                                        '</div>'
+                                    : '-' !!}
+                            </td>
+                            <td>{{ $row->nis_name }}</td>
+                            <td>{{ $row->remarks }}</td>
+                            @if ($canManageRpwsis)
+                                <td style="text-align:right;">
+                                    <button onclick="openDeleteModal('summary', {{ $row->id }}, this)"
+                                        class="status-select">Delete</button>
+                                </td>
+                            @endif
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        @if ($canManageRpwsis)
+            <div id="summaryModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
+                <div
+                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); font-family:'Poppins', sans-serif; max-height:90vh; overflow:auto;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="margin:0; color:#0c4d05;">Add Summary Record</h3>
+                        <button onclick="closeSummaryModal()"
+                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
+                            onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
+                            &times;
+                        </button>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details</p>
+                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+                                <input id="sum_region" placeholder="Region" class="status-select">
+                                <input id="sum_province" placeholder="Province" class="status-select">
+                                <input id="sum_municipality" placeholder="Municipality" class="status-select">
+                                <input id="sum_barangay" placeholder="Barangay" class="status-select">
+                            </div>
+                        </div>
+
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Plantation Info</p>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                                <input id="sum_type" placeholder="Type of Plantation" class="status-select">
+                                <input id="sum_year" placeholder="Year Established" class="status-select">
+                                <input id="sum_target_1" placeholder="Target Area" class="status-select">
+                                <input id="sum_area_planted" placeholder="Area Planted" class="status-select">
+                                <input id="sum_spacing" placeholder="Spacing" class="status-select">
+                                <input id="sum_maintenance" placeholder="1st Year M&P" class="status-select">
+                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="status-select"
+                                    style="grid-column: span 3; height: 60px;"></textarea>
+                            </div>
+                        </div>
+
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Replanting Status &
+                                Extras</p>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                                <input id="sum_target_2" placeholder="Replanting Target Area" class="status-select">
+                                <input id="sum_actual" placeholder="Replanting Actual Area" class="status-select">
+                                <input id="sum_mortality" placeholder="Mortality Rate" class="status-select">
+                                <input id="sum_nis" placeholder="Name of NIS" class="status-select">
+                                <input id="sum_remarks" placeholder="Remarks" class="status-select">
+                                <div style="grid-column: span 1;"></div>
+                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="status-select"
+                                    style="grid-column: span 3; height: 60px;"></textarea>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end; gap:10px;">
+                            <button onclick="closeSummaryModal()" class="status-select">Cancel</button>
+                            <button onclick="saveSummaryRecord(this)" class="status-select"
+                                style="background:#0c4d05; color:white;">
+                                Save Record
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if ($canManageRpwsis)
+            <div class="delete-modal-overlay" id="deleteConfirmModal">
+                <div class="delete-modal-box">
+                    <h3 class="delete-modal-title" id="deleteModalTitle">Delete Record</h3>
+                    <p class="delete-modal-text" id="deleteModalMessage">Are you sure you want to delete this record? This action cannot be undone.</p>
+                    <div class="delete-modal-actions">
+                        <button type="button" onclick="closeDeleteModal()" class="delete-modal-btn cancel">Cancel</button>
+                        <button type="button" id="confirmDeleteBtn" class="delete-modal-btn confirm">Delete</button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <script>
+        function escapeSummaryHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, function(char) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                } [char];
+            });
+        }
+
+        function renderExpandableSummaryCell(value, previewLength) {
+            const text = String(value ?? '').trim();
+
+            if (!text) {
+                return '-';
+            }
+
+            const normalizedText = text.replace(/\s+/g, ' ').trim();
+            const preview = normalizedText.length > previewLength ?
+                `${normalizedText.slice(0, previewLength).trimEnd()}...` :
+                normalizedText;
+            const escapedPreview = escapeSummaryHtml(preview);
+            const escapedFull = escapeSummaryHtml(text).replace(/\n/g, '<br>');
+            const expandedClass = normalizedText.length <= previewLength ? ' is-expanded' : '';
+            const toggleButton = normalizedText.length > previewLength ?
+                '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>' :
+                '';
+
+            return `
+                <div class="expandable-cell${expandedClass}">
+                    <div class="expandable-preview">${escapedPreview}</div>
+                    <div class="expandable-full">${escapedFull}</div>
+                    ${toggleButton}
+                </div>
+            `;
+        }
+
+        function toggleSummaryCell(button) {
+            const container = button.closest('.expandable-cell');
+            const isExpanded = container.classList.toggle('is-expanded');
+            button.textContent = isExpanded ? 'Show less' : 'Show more';
+        }
+
+        function openSummaryModal() {
+            document.getElementById('summaryModal').style.display = 'block';
+        }
+
+        function closeSummaryModal() {
+            document.getElementById('summaryModal').style.display = 'none';
+        }
+
+        function saveSummaryRecord() {
+            const fields = [
+                'sum_region', 'sum_province', 'sum_municipality', 'sum_barangay',
+                'sum_type', 'sum_year', 'sum_target_1', 'sum_area_planted',
+                'sum_species', 'sum_spacing', 'sum_maintenance', 'sum_target_2',
+                'sum_actual', 'sum_mortality', 'sum_replanted', 'sum_nis', 'sum_remarks'
+            ];
+
+            if (!validateRequiredFields(fields)) {
+                return;
+            }
+
+            let data = {};
+            fields.forEach(id => {
+                data[id] = document.getElementById(id).value.trim();
+            });
+
+            // Ensure this matches a route in your web.php (e.g., Route::post('/rpwsis_team/summary/store', ...))
+            fetch('/rpwsis_team/summary/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(res => {
+                    // Using replace to convert newlines to <br> for HTML display
+                    const formatText = (text) => text ? text.replace(/\n/g, '<br>') : '-';
+
+                    let row = `<tr>
+                <td>${res.region || '-'}</td>
+                <td>${res.province || '-'}</td>
+                <td>${res.municipality || '-'}</td>
+                <td>${res.barangay || '-'}</td>
+                <td>${res.plantation_type || '-'}</td>
+                <td>${res.year_established || '-'}</td>
+                <td>${res.target_area_1 || '-'}</td>
+                <td>${res.area_planted || '-'}</td>
+                <td>${formatText(res.species_planted)}</td>
+                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.spacing || '')}">${renderExpandableSummaryCell(res.spacing, 45)}</td>
+                <td>${res.maintenance || '-'}</td>
+                <td>${res.target_area_2 || '-'}</td>
+                <td>${res.actual_area || '-'}</td>
+                <td>${res.mortality_rate || '-'}</td>
+                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.species_replanted || '')}">${renderExpandableSummaryCell(res.species_replanted, 60)}</td>
+                <td>${res.nis_name || '-'}</td>
+                <td>${res.remarks || '-'}</td>
+                @if ($canManageRpwsis)
+                    <td style="text-align:right;">
+                        <button onclick="deleteSummaryRecord(${res.id}, this)" class="status-select">Delete</button>
+                    </td>
+                @endif
+            </tr>`;
+
+                    document.getElementById('summaryTableBody').innerHTML += row;
+                    closeSummaryModal();
+
+                    // Clear inputs
+                    fields.forEach(id => {
+                        const field = document.getElementById(id);
+                        field.value = '';
+                        field.style.borderColor = '';
+                        field.style.boxShadow = '';
+                    });
+                })
+                .catch(error => {
+                    console.error("Error saving summary record:", error);
+                    alert(
+                        "Ensure you have created the backend Route and Controller method for /rpwsis_team/summary/store"
+                    );
+                });
+        }
+
+        function deleteSummaryRecord(id, btn, skipPrompt = false) {
+            if (!skipPrompt) {
+                openDeleteModal('summary', id, btn);
+                return;
+            }
+
+            // Ensure this matches a route in your web.php
+            fetch(`/rpwsis_team/summary/${id}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.closest('tr').remove();
+                        closeDeleteModal();
+                    } else {
+                        alert("Failed to delete the record.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("An error occurred while deleting. Have you set up the delete Route?");
+                });
+        }
+
+        function exportSummaryCSV() {
+            let csv = "";
+
+            // Update CSV to match single-row header
+            csv +=
+                "Region,Province,Municipality,Barangay,Type of Plantation,Year Established,Target Area,Area Planted,Species and Number Planted,Spacing,1st Year Maintenance,Replanting Target Area,Replanting Actual Area,Mortality Rate,Species Replanted,Name of NIS,Remarks\n";
+
+            // Extract Data
+            const rows = document.querySelectorAll("#summaryTable tbody tr");
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                let rowData = [];
+
+                cols.forEach((td, i) => {
+                    // Ignore the Action button column (last column)
+                    if (i !== cols.length - 1) {
+                        // Wrap text in quotes to prevent CSV breaking on newlines or commas
+                        let text = (td.dataset.exportValue ?? td.innerText.trim()).replace(/"/g, '""');
+                        rowData.push(`"${text}"`);
+                    }
+                });
+
+                csv += rowData.join(",") + "\n";
+            });
+
+            const blob = new Blob([csv], {
+                type: "text/csv"
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "summary_of_accomplishment.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
     {{-- //end of status --}}
+    <script>
+        function setButtonLoading(button, isLoading, loadingText = 'Saving...') {
+            if (!button) return;
+
+            if (!button.dataset.originalText) {
+                button.dataset.originalText = button.textContent.trim();
+            }
+
+            button.disabled = isLoading;
+            button.style.opacity = isLoading ? '0.7' : '1';
+            button.style.cursor = isLoading ? 'not-allowed' : 'pointer';
+            button.textContent = isLoading ? loadingText : button.dataset.originalText;
+        }
+
+        let pendingDelete = {
+            type: null,
+            id: null,
+            button: null
+        };
+
+        function openModal() {
+            const modal = document.getElementById('statusModal');
+            if (modal) modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('statusModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openSummaryModal() {
+            const modal = document.getElementById('summaryModal');
+            if (modal) modal.style.display = 'block';
+        }
+
+        function closeSummaryModal() {
+            const modal = document.getElementById('summaryModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openDeleteModal(type, id, button) {
+            const modal = document.getElementById('deleteConfirmModal');
+            const title = document.getElementById('deleteModalTitle');
+            const message = document.getElementById('deleteModalMessage');
+
+            if (!modal) return;
+
+            pendingDelete = {
+                type,
+                id,
+                button
+            };
+
+            const isSummary = type === 'summary';
+            if (title) {
+                title.textContent = isSummary ? 'Delete Summary Record' : 'Delete Accomplishment Record';
+            }
+            if (message) {
+                message.textContent = isSummary ?
+                    'Are you sure you want to delete this summary record? This action cannot be undone.' :
+                    'Are you sure you want to delete this record? This action cannot be undone.';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteConfirmModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+
+            pendingDelete = {
+                type: null,
+                id: null,
+                button: null
+            };
+        }
+
+        function performDelete() {
+            if (!pendingDelete.type || !pendingDelete.id || !pendingDelete.button) {
+                closeDeleteModal();
+                return;
+            }
+
+            if (pendingDelete.type === 'summary') {
+                deleteSummaryRecord(pendingDelete.id, pendingDelete.button, true);
+                return;
+            }
+
+            deleteAccomplishment(pendingDelete.id, pendingDelete.button, true);
+        }
+
+        document.addEventListener('click', function(e) {
+            const statusModal = document.getElementById('statusModal');
+            const summaryModal = document.getElementById('summaryModal');
+            const deleteModal = document.getElementById('deleteConfirmModal');
+
+            if (statusModal && e.target === statusModal) {
+                closeModal();
+            }
+
+            if (summaryModal && e.target === summaryModal) {
+                closeSummaryModal();
+            }
+
+             if (deleteModal && e.target === deleteModal) {
+                closeDeleteModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', performDelete);
+            }
+        });
+
+        function saveRecord(button = null) {
+            const fields = [
+                'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
+                'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12',
+                'phy', 'fin', 'exp'
+            ];
+
+            if (!validateRequiredFields(fields)) {
+                return;
+            }
+
+            const data = {};
+            fields.forEach(id => {
+                const field = document.getElementById(id);
+                data[id] = field ? field.value.trim() : '';
+            });
+
+            setButtonLoading(button, true);
+
+            fetch('/rpwsis_team/accomplishments/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(async res => {
+                    const payload = await res.json().catch(() => null);
+                    if (!res.ok || !payload) {
+                        throw new Error(payload?.message || 'Unable to save the record right now.');
+                    }
+                    return payload;
+                })
+                .then(res => {
+                    const row = `<tr>
+            ${[
+                res.region, res.batch, res.allocation, res.nis, res.activity, res.remarks, res.amount,
+                res.c1, res.c2, res.c3, res.c4, res.c5, res.c6, res.c7, res.c8, res.c9, res.c10, res.c11, res.c12,
+                res.phy, res.fin, res.exp
+            ].map((value, index) => {
+                const className = `${(index >= 7 && index <= 18) ? 'impl ' : ''}status-compact-cell`.trim();
+                return renderStatusExpandableCell(value, className);
+            }).join('')}
+            @if ($canManageRpwsis)
+                <td><button onclick="openDeleteModal('accomplishment', ${res.id}, this)" class="status-select">Delete</button></td>
+            @endif
+        </tr>`;
+
+                    document.getElementById('tableBody').insertAdjacentHTML('beforeend', row);
+
+                    fields.forEach(id => {
+                        const field = document.getElementById(id);
+                        if (field) {
+                            field.value = '';
+                            field.style.borderColor = '';
+                            field.style.boxShadow = '';
+                        }
+                    });
+
+                    closeModal();
+                })
+                .catch(error => {
+                    console.error('Error saving accomplishment:', error);
+                    alert(error.message || 'Unable to save the record. Please try again.');
+                })
+                .finally(() => {
+                    setButtonLoading(button, false);
+                });
+        }
+
+        function saveSummaryRecord(button = null) {
+            const fields = [
+                'sum_region', 'sum_province', 'sum_municipality', 'sum_barangay',
+                'sum_type', 'sum_year', 'sum_target_1', 'sum_area_planted',
+                'sum_species', 'sum_spacing', 'sum_maintenance', 'sum_target_2',
+                'sum_actual', 'sum_mortality', 'sum_replanted', 'sum_nis', 'sum_remarks'
+            ];
+
+            if (!validateRequiredFields(fields)) {
+                return;
+            }
+
+            const data = {};
+            fields.forEach(id => {
+                const field = document.getElementById(id);
+                data[id] = field ? field.value.trim() : '';
+            });
+
+            setButtonLoading(button, true);
+
+            fetch('/rpwsis_team/summary/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(async res => {
+                    const payload = await res.json().catch(() => null);
+                    if (!res.ok || !payload) {
+                        throw new Error(payload?.message || 'Unable to save the summary record right now.');
+                    }
+                    return payload;
+                })
+                .then(res => {
+                    const formatText = (text) => text ? text.replace(/\n/g, '<br>') : '-';
+                    const row = `<tr>
+                <td>${res.region || '-'}</td>
+                <td>${res.province || '-'}</td>
+                <td>${res.municipality || '-'}</td>
+                <td>${res.barangay || '-'}</td>
+                <td>${res.plantation_type || '-'}</td>
+                <td>${res.year_established || '-'}</td>
+                <td>${res.target_area_1 || '-'}</td>
+                <td>${res.area_planted || '-'}</td>
+                <td>${formatText(res.species_planted)}</td>
+                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.spacing || '')}">${renderExpandableSummaryCell(res.spacing, 45)}</td>
+                <td>${res.maintenance || '-'}</td>
+                <td>${res.target_area_2 || '-'}</td>
+                <td>${res.actual_area || '-'}</td>
+                <td>${res.mortality_rate || '-'}</td>
+                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.species_replanted || '')}">${renderExpandableSummaryCell(res.species_replanted, 60)}</td>
+                <td>${res.nis_name || '-'}</td>
+                <td>${res.remarks || '-'}</td>
+                @if ($canManageRpwsis)
+                    <td style="text-align:right;">
+                        <button onclick="openDeleteModal('summary', ${res.id}, this)" class="status-select">Delete</button>
+                    </td>
+                @endif
+            </tr>`;
+
+                    document.getElementById('summaryTableBody').insertAdjacentHTML('beforeend', row);
+
+                    fields.forEach(id => {
+                        const field = document.getElementById(id);
+                        if (field) {
+                            field.value = '';
+                            field.style.borderColor = '';
+                            field.style.boxShadow = '';
+                        }
+                    });
+
+                    closeSummaryModal();
+                })
+                .catch(error => {
+                    console.error('Error saving summary record:', error);
+                    alert(error.message || 'Unable to save the summary record. Please try again.');
+                })
+                .finally(() => {
+                    setButtonLoading(button, false);
+                });
+        }
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
