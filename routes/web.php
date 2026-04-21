@@ -134,6 +134,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/accomplishments/store', [RpwsisTeamController::class, 'storeAccomplishment'])->name('rpwsis.accomplishments.store');
                 //delete
                 Route::delete('/accomplishments/{id}/delete', [RpwsisTeamController::class, 'deleteAccomplishment'])->name('rpwsis.accomplishments.delete');
+                //summary table
+                //summary table
+                Route::post('/summary/store', [RpwsisTeamController::class, 'storeSummary'])->name('rpwsis.summary.store');
+                Route::delete('/summary/{id}/delete', [RpwsisTeamController::class, 'deleteSummary'])->name('rpwsis.summary.delete');
             });
 
 
