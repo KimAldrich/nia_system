@@ -408,7 +408,6 @@ input:checked + .slider:before {
 #legendContainer {
     margin-top: 5px; /* reduce gap */
     text-align: left;
-    text-shadow: #cbd5e0 1px 1px 1px 1px;
 }
 
 .legend-item {
@@ -1414,9 +1413,7 @@ let miniMap = L.map('miniMap', {
 let miniLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 );
-
 miniLayer.addTo(miniMap);
-
 function showMiniMap(feature) {
     document.getElementById('miniMap').style.display = 'block';
 

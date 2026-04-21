@@ -232,6 +232,10 @@ private function readShapefileZip($zipPath)
 }
 public function getIrrigatedChartData()
 {
+    //time out for large file processing
+    set_time_limit(300);
+    ini_set('max_execution_time', 300);
+
     $basePath = 'maps/irrigated';
     $disk = Storage::disk('public');
 
