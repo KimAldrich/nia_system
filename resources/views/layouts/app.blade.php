@@ -35,6 +35,14 @@
         .menu-toggle-btn { position: absolute; top: 20px; right: -16px; width: 32px; height: 32px; background-color: var(--sidebar-bg); color: #ffffff; border: 3px solid var(--bg-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1001; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: right 0.3s ease-in-out, transform 0.2s; }
         .menu-toggle-btn:hover { transform: scale(1.05); }
         .sidebar.collapsed .menu-toggle-btn { right: -50px; border-color: transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .sidebar-toggle-icon { position: relative; width: 16px; height: 12px; display: inline-flex; align-items: center; justify-content: center; }
+        .sidebar-toggle-icon span { position: absolute; left: 0; width: 100%; height: 2px; border-radius: 999px; background: currentColor; transform-origin: center; transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease; }
+        .sidebar-toggle-icon span:nth-child(1) { top: 0; }
+        .sidebar-toggle-icon span:nth-child(2) { top: 5px; }
+        .sidebar-toggle-icon span:nth-child(3) { top: 10px; }
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(1) { top: 5px; transform: rotate(45deg); }
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(3) { top: 5px; transform: rotate(-45deg); }
         .sidebar-header { padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; }
         .sidebar-logo { width: 100px; height: auto; margin-bottom: 8px; }
         .sidebar-title { font-size: 13px; font-weight: 700; color: #ffffff; letter-spacing: 1px; line-height: 1.3; }
@@ -374,10 +382,12 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <div class="sidebar" id="sidebar">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
+        <button class="menu-toggle-btn sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar" aria-expanded="true">
+            <span class="sidebar-toggle-icon" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
         </button>
 
         <div class="sidebar-header">
@@ -487,8 +497,12 @@
 
     <div class="main-wrapper">
         <div class="mobile-header">
-            <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <button class="mobile-menu-btn sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar" aria-expanded="false">
+                <span class="sidebar-toggle-icon" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
             </button>
             <div class="mobile-title">NIA PIMO Portal</div>
             <div style="width: 24px;"></div>
@@ -956,6 +970,19 @@
             if(menu) { menu.classList.toggle('open'); element.classList.toggle('open'); }
         }
 
+        function syncSidebarToggleButtons() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+
+            const isDesktop = window.innerWidth > 900;
+            const isOpen = isDesktop ? !sidebar.classList.contains('collapsed') : sidebar.classList.contains('open');
+
+            document.querySelectorAll('.sidebar-toggle-btn').forEach((button) => {
+                button.classList.toggle('is-active', isOpen);
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -970,6 +997,8 @@
                     overlay.classList.remove('show');
                 }
             }
+
+            syncSidebarToggleButtons();
         }
 
         window.addEventListener('resize', () => {
@@ -979,7 +1008,11 @@
             } else {
                 document.getElementById('sidebar').classList.remove('collapsed');
             }
+
+            syncSidebarToggleButtons();
         });
+
+        document.addEventListener('DOMContentLoaded', syncSidebarToggleButtons);
     </script>
 </body>
 
