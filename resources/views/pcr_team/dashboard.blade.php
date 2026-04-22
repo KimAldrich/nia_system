@@ -314,6 +314,173 @@
             height: 10px;
             border-radius: 50%;
         }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            scrollbar-width: thin;
+        }
+
+        .table-responsive::-webkit-scrollbar { height: 8px; width: 8px; }
+        .table-responsive::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
+        .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+
+        .sleek-table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 1500px;
+            table-layout: fixed;
+        }
+
+        .sleek-table th {
+            text-align: left;
+            padding: 12px 15px;
+            color: #a0aec0;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            white-space: normal;
+            word-break: break-word;
+            vertical-align: middle;
+        }
+
+        .sleek-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 12px;
+            font-weight: 500;
+            color: #475569;
+            vertical-align: middle;
+        }
+
+        .custom-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+            flex-wrap: wrap;
+        }
+
+        .custom-pagination .page-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid #e2e8f0;
+        }
+
+        .custom-pagination .page-item.active {
+            background: #4f46e5;
+            color: #ffffff;
+            border-color: #4f46e5;
+        }
+
+        .custom-pagination .page-item.disabled {
+            background: #f8fafc;
+            color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 720px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modern-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            outline: none;
+            background: #ffffff;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+
+        .modern-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modern-btn {
+            background: #0c4d05;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modern-btn-outline {
+            background: #fff;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 105px;
+            line-height: 1;
+        }
     </style>
 
     <h1 class="header-title">Project Completion Report Team Dashboard</h1>
@@ -550,6 +717,206 @@
         </div>
     </div>
 
+    @php
+        $canManagePcr = auth()->check() && in_array(auth()->user()->role, ['pcr_team', 'admin']);
+    @endphp
+
+    <div class="ui-card" id="pcrStatusSection">
+        <div class="section-title">
+            Project Completion Report Status Monitoring
+            @if ($canManagePcr)
+                <button onclick="openPcrAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                    + Add Data
+                </button>
+            @endif
+        </div>
+
+        <div class="table-responsive">
+            <table class="sleek-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="width: 100px;">Fund Source</th>
+                        <th rowspan="2" style="width: 120px;">No. of Contracts</th>
+                        <th rowspan="2" style="width: 140px;">Allocation</th>
+                        <th rowspan="2" style="width: 130px;">No. of PCR Prepared</th>
+                        <th rowspan="2" style="width: 170px;">No. of PCR Submitted to Regional Office</th>
+                        <th rowspan="2" style="width: 150px;">Accomplishment (Prepared/No. of Contracts)</th>
+                        <th colspan="3" style="width: 360px; text-align: center;">Remarks</th>
+                        @if ($canManagePcr)
+                            <th rowspan="2" style="width: 140px;">Actions</th>
+                        @endif
+                    </tr>
+                    <tr>
+                        <th style="width: 120px;">For Signing of IA, Chief, DM, RM</th>
+                        <th style="width: 120px;">For Submission to RO1</th>
+                        <th style="width: 120px;">Not Yet Prepared / Pending Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($pcrStatusReports ?? [] as $report)
+                        <tr>
+                            <td>{{ $report->fund_source }}</td>
+                            <td>{{ $report->no_of_contracts }}</td>
+                            <td>&#8369;{{ number_format($report->allocation, 2) }}</td>
+                            <td>{{ $report->no_of_pcr_prepared }}</td>
+                            <td>{{ $report->no_of_pcr_submitted_to_regional_office }}</td>
+                            <td>{{ number_format($report->accomplishment_percentage, 2) }}%</td>
+                            <td>{{ $report->for_signing_of_ia_chief_dm_rm }}</td>
+                            <td>{{ $report->for_submission_to_ro1 }}</td>
+                            <td>{{ $report->not_yet_prepared_pending_details }}</td>
+                            @if ($canManagePcr)
+                                <td style="text-align: center; white-space: nowrap;">
+                                    <button type="button" onclick="openPcrEditModal({{ $report->id }}, '{{ $report->fund_source }}', {{ $report->no_of_contracts }}, {{ $report->allocation }}, {{ $report->no_of_pcr_prepared }}, {{ $report->no_of_pcr_submitted_to_regional_office }}, {{ $report->accomplishment_percentage }}, {{ $report->for_signing_of_ia_chief_dm_rm }}, {{ $report->for_submission_to_ro1 }}, {{ $report->not_yet_prepared_pending_details }})"
+                                        style="background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-right: 5px; min-width: 105px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;">
+                                        Edit
+                                    </button>
+                                    <button type="button" onclick="openPcrDeleteModal({{ $report->id }})" class="btn-delete" title="Delete Data">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </td>
+                            @endif
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="{{ $canManagePcr ? 10 : 9 }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No PCR status data found.</td>
+                        </tr>
+                    @endforelse
+
+                    @if(isset($pcrStatusReports) && $pcrStatusReports->count())
+                        <tr style="font-weight: 700; background: #f8fafc; border-top: 2px solid #0c4d05;">
+                            <td style="font-weight: 800; color: #0c4d05;">Total</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('no_of_contracts') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">&#8369;{{ number_format($pcrStatusReports->sum('allocation'), 2) }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('no_of_pcr_prepared') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('no_of_pcr_submitted_to_regional_office') }}</td>
+                            <td></td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('for_signing_of_ia_chief_dm_rm') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('for_submission_to_ro1') }}</td>
+                            <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('not_yet_prepared_pending_details') }}</td>
+                            @if ($canManagePcr)
+                                <td></td>
+                            @endif
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+        @if(isset($pcrStatusReports) && $pcrStatusReports->hasPages())
+            <div class="custom-pagination">
+                @if ($pcrStatusReports->onFirstPage())
+                    <span class="page-item disabled">&lt;</span>
+                @else
+                    <a href="{{ $pcrStatusReports->previousPageUrl() }}" class="page-item">&lt;</a>
+                @endif
+                @foreach ($pcrStatusReports->links()->elements as $element)
+                    @if (is_string($element))
+                        <span class="page-item disabled">{{ $element }}</span>
+                    @endif
+                    @if (is_array($element))
+                        @foreach ($element as $page => $url)
+                            @if ($page == $pcrStatusReports->currentPage())
+                                <span class="page-item active">{{ $page }}</span>
+                            @else
+                                <a href="{{ $url }}" class="page-item">{{ $page }}</a>
+                            @endif
+                        @endforeach
+                    @endif
+                @endforeach
+                @if ($pcrStatusReports->hasMorePages())
+                    <a href="{{ $pcrStatusReports->nextPageUrl() }}" class="page-item">&gt;</a>
+                @else
+                    <span class="page-item disabled">&gt;</span>
+                @endif
+            </div>
+        @endif
+    </div>
+
+    @if ($canManagePcr)
+        <div class="modal-overlay" id="pcrAddModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add PCR Status Data</h3>
+                <form action="{{ route('pcr.status.store') }}" method="POST">
+                    @csrf
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><label class="modern-label">Fund Source</label><input type="text" name="fund_source" required class="modern-input" placeholder="e.g. 2024"></div>
+                        <div><label class="modern-label">No. of Contracts</label><input type="number" name="no_of_contracts" required class="modern-input" min="0"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><label class="modern-label">Allocation</label><input type="number" name="allocation" required class="modern-input" min="0" step="0.01"></div>
+                        <div><label class="modern-label">No. of PCR Prepared</label><input type="number" name="no_of_pcr_prepared" required class="modern-input" min="0"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><label class="modern-label">No. of PCR Submitted to Regional Office</label><input type="number" name="no_of_pcr_submitted_to_regional_office" required class="modern-input" min="0"></div>
+                        <div><label class="modern-label">Accomplishment (%)</label><input type="number" name="accomplishment_percentage" required class="modern-input" min="0" max="100" step="0.01"></div>
+                    </div>
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f8fafc;">
+                        <label class="modern-label" style="margin-bottom: 10px; display: block;">Remarks</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div><label class="modern-label">For Signing of IA, Chief, DM, RM</label><input type="number" name="for_signing_of_ia_chief_dm_rm" required class="modern-input" min="0"></div>
+                            <div><label class="modern-label">For Submission to RO1</label><input type="number" name="for_submission_to_ro1" required class="modern-input" min="0"></div>
+                            <div><label class="modern-label">Not Yet Prepared / Pending Details</label><input type="number" name="not_yet_prepared_pending_details" required class="modern-input" min="0"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="button" onclick="closePcrAddModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                        <button type="submit" class="modern-btn" style="flex: 1;">Save Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="pcrEditModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit PCR Status Data</h3>
+                <form action="{{ route('pcr.status.update') }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="id" id="pcr-edit-id">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><label class="modern-label">Fund Source</label><input type="text" name="fund_source" id="pcr-edit-fund_source" required class="modern-input"></div>
+                        <div><label class="modern-label">No. of Contracts</label><input type="number" name="no_of_contracts" id="pcr-edit-no_of_contracts" required class="modern-input" min="0"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><label class="modern-label">Allocation</label><input type="number" name="allocation" id="pcr-edit-allocation" required class="modern-input" min="0" step="0.01"></div>
+                        <div><label class="modern-label">No. of PCR Prepared</label><input type="number" name="no_of_pcr_prepared" id="pcr-edit-no_of_pcr_prepared" required class="modern-input" min="0"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><label class="modern-label">No. of PCR Submitted to Regional Office</label><input type="number" name="no_of_pcr_submitted_to_regional_office" id="pcr-edit-no_of_pcr_submitted_to_regional_office" required class="modern-input" min="0"></div>
+                        <div><label class="modern-label">Accomplishment (%)</label><input type="number" name="accomplishment_percentage" id="pcr-edit-accomplishment_percentage" required class="modern-input" min="0" max="100" step="0.01"></div>
+                    </div>
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f8fafc;">
+                        <label class="modern-label" style="margin-bottom: 10px; display: block;">Remarks</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div><label class="modern-label">For Signing of IA, Chief, DM, RM</label><input type="number" name="for_signing_of_ia_chief_dm_rm" id="pcr-edit-for_signing" required class="modern-input" min="0"></div>
+                            <div><label class="modern-label">For Submission to RO1</label><input type="number" name="for_submission_to_ro1" id="pcr-edit-for_submission" required class="modern-input" min="0"></div>
+                            <div><label class="modern-label">Not Yet Prepared / Pending Details</label><input type="number" name="not_yet_prepared_pending_details" id="pcr-edit-pending" required class="modern-input" min="0"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="button" onclick="closePcrEditModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                        <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="pcrDeleteModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete PCR Status Data</h3>
+                <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
+                <form id="pcrDeleteForm" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="closePcrDeleteModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                        <button type="submit" class="modern-btn" style="flex: 1; background: #ef4444;">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
@@ -652,6 +1019,41 @@
 
             document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
             document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
+        }
+
+        function openPcrAddModal() {
+            document.getElementById('pcrAddModal').classList.add('active');
+        }
+
+        function closePcrAddModal() {
+            document.getElementById('pcrAddModal').classList.remove('active');
+        }
+
+        function openPcrEditModal(id, fundSource, noOfContracts, allocation, noOfPcrPrepared, noOfPcrSubmitted, accomplishmentPercentage, forSigning, forSubmission, pending) {
+            document.getElementById('pcr-edit-id').value = id;
+            document.getElementById('pcr-edit-fund_source').value = fundSource;
+            document.getElementById('pcr-edit-no_of_contracts').value = noOfContracts;
+            document.getElementById('pcr-edit-allocation').value = allocation;
+            document.getElementById('pcr-edit-no_of_pcr_prepared').value = noOfPcrPrepared;
+            document.getElementById('pcr-edit-no_of_pcr_submitted_to_regional_office').value = noOfPcrSubmitted;
+            document.getElementById('pcr-edit-accomplishment_percentage').value = accomplishmentPercentage;
+            document.getElementById('pcr-edit-for_signing').value = forSigning;
+            document.getElementById('pcr-edit-for_submission').value = forSubmission;
+            document.getElementById('pcr-edit-pending').value = pending;
+            document.getElementById('pcrEditModal').classList.add('active');
+        }
+
+        function closePcrEditModal() {
+            document.getElementById('pcrEditModal').classList.remove('active');
+        }
+
+        function openPcrDeleteModal(id) {
+            document.getElementById('pcrDeleteForm').action = `/pcr_team/status/delete/${id}`;
+            document.getElementById('pcrDeleteModal').classList.add('active');
+        }
+
+        function closePcrDeleteModal() {
+            document.getElementById('pcrDeleteModal').classList.remove('active');
         }
     </script>
 @endsection

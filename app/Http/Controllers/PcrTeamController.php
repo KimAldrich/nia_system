@@ -9,10 +9,32 @@ use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
+use App\Models\PcrStatusReport;
 
 class PcrTeamController extends Controller
 {
     use HandlesAsyncRequests;
+
+    private function validatePcrStatus(Request $request, bool $requireId = false): array
+    {
+        $rules = [
+            'fund_source' => ['required', 'string', 'max:50'],
+            'no_of_contracts' => ['required', 'integer', 'min:0'],
+            'allocation' => ['required', 'numeric', 'min:0'],
+            'no_of_pcr_prepared' => ['required', 'integer', 'min:0'],
+            'no_of_pcr_submitted_to_regional_office' => ['required', 'integer', 'min:0'],
+            'accomplishment_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'for_signing_of_ia_chief_dm_rm' => ['required', 'integer', 'min:0'],
+            'for_submission_to_ro1' => ['required', 'integer', 'min:0'],
+            'not_yet_prepared_pending_details' => ['required', 'integer', 'min:0'],
+        ];
+
+        if ($requireId) {
+            $rules['id'] = ['required', 'integer', 'exists:pcr_status_reports,id'];
+        }
+
+        return $request->validate($rules);
+    }
 
     public function index()
     {
@@ -23,7 +45,8 @@ class PcrTeamController extends Controller
             ->get();
 
         $categories = EventCategory::all();
-        return view('pcr_team.dashboard', compact('resolutions', 'events', 'categories'));
+        $pcrStatusReports = PcrStatusReport::orderByDesc('fund_source')->paginate(8);
+        return view('pcr_team.dashboard', compact('resolutions', 'events', 'categories', 'pcrStatusReports'));
     }
 
     public function downloadables()
@@ -149,5 +172,28 @@ class PcrTeamController extends Controller
         $resolution->delete();
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
+    }
+
+    public function storePcrStatus(Request $request)
+    {
+        PcrStatusReport::create($this->validatePcrStatus($request));
+
+        return $this->successResponse($request, 'PCR status data added successfully.');
+    }
+
+    public function updatePcrStatus(Request $request)
+    {
+        $validated = $this->validatePcrStatus($request, true);
+        $report = PcrStatusReport::findOrFail($validated['id']);
+        $report->update(collect($validated)->except('id')->toArray());
+
+        return $this->successResponse($request, 'PCR status data updated successfully.');
+    }
+
+    public function deletePcrStatus(Request $request, $id)
+    {
+        PcrStatusReport::findOrFail($id)->delete();
+
+        return $this->successResponse($request, 'PCR status data deleted successfully.');
     }
 }

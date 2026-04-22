@@ -231,6 +231,9 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 Route::post('/ia-resolutions/{id}/update', [PcrTeamController::class, 'updateResolution'])->name('pcr.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [PcrTeamController::class, 'updateResolutionStatus'])->name('pcr.resolutions.update_status');
+                Route::post('/status/store', [PcrTeamController::class, 'storePcrStatus'])->name('pcr.status.store');
+                Route::put('/status/update', [PcrTeamController::class, 'updatePcrStatus'])->name('pcr.status.update');
+                Route::delete('/status/delete/{id}', [PcrTeamController::class, 'deletePcrStatus'])->name('pcr.status.delete');
             });
         });
 
