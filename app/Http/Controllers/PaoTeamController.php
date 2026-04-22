@@ -212,7 +212,7 @@ class PaoTeamController extends Controller
 
         abort_unless($isAuthorizedGuest || $isAuthorizedUser, 403);
 
-        $filename = 'program_of_works_status_monitoring_' . now()->format('Ymd_His') . '.xlsx';
+        $filename = 'STATUS OF POW CY ' . now()->format('Y') . ' AS OF ' . now()->format('F j, Y') . '.xlsx';
         $headers = [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',

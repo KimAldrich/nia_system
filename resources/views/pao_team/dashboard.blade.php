@@ -668,8 +668,8 @@
                         + Add Data
                     </button>
                 @endif
-                <a href="{{ route('pao.pow.export') }}" onclick="handlePowExport(event, this.href)" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; flex-shrink: 0;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <a href="{{ route('pao.pow.export') }}" onclick="handlePowExport(event, this.href)" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; flex-shrink: 0;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export Excel
                 </a>
             </div>
@@ -984,7 +984,13 @@
         async function handlePowExport(event, url) {
             event.preventDefault();
 
-            const suggestedName = `program_of_works_status_monitoring_${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')}.xlsx`;
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            const suggestedName = `STATUS OF POW CY ${now.getFullYear()} - as of ${formattedDate}.xlsx`;
 
             try {
                 const response = await fetch(url, {
