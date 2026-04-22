@@ -156,6 +156,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [ContractManagementTeamController::class, 'index'])->name('cm.dashboard');
             Route::get('/downloadables', [ContractManagementTeamController::class, 'downloadables'])->name('cm.downloadables');
             Route::get('/ia-resolutions', [ContractManagementTeamController::class, 'resolutions'])->name('cm.resolutions');
+            Route::get('/procurement/export-excel', [ContractManagementTeamController::class, 'exportProcurementExcel'])->name('cm.procurement.export');
 
             // 🔒 EDITORS ONLY (Locked to Contract Management Team and Admin)
             Route::middleware(['check.role:cm_team,admin'])->group(function () {
@@ -172,6 +173,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/ia-resolutions/{id}/status', [ContractManagementTeamController::class, 'updateResolutionStatus'])->name('cm.resolutions.update_status');
 
                 Route::post('/procurement/store', [ContractManagementTeamController::class, 'storeProcurement'])->name('cm.procurement.store');
+                Route::put('/procurement/update', [ContractManagementTeamController::class, 'updateProcurement'])->name('cm.procurement.update');
                 Route::delete('/procurement/{id}', [ContractManagementTeamController::class, 'destroyProcurement'])->name('cm.procurement.destroy');
             });
         });
