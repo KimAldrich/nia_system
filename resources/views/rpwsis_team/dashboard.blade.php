@@ -370,22 +370,96 @@
 
         /* Modal UI */
         .modal-overlay {
-            display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s;
         }
 
         .modal-box {
-            width: 95%;
-            max-width: 1000px;
-            background: #fff;
-            margin: 40px auto;
-            border-radius: 14px;
-            padding: 25px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             max-height: 90vh;
             overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modern-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            outline: none;
+            background: #ffffff;
+            color: #1e293b;
+            transition: 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .modern-input:focus {
+            border-color: #0c4d05;
+            box-shadow: 0 0 0 3px rgba(12, 77, 5, 0.1);
+        }
+
+        .modern-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modern-btn {
+            width: 100%;
+            padding: 10px;
+            background: #0c4d05;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .modern-btn:hover {
+            background: #083803;
+        }
+
+        .modern-btn-outline {
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+        }
+
+        .modern-btn-outline:hover {
+            background: #f1f5f9;
+            color: #1e293b;
         }
 
         /* CLEAN TABLE UI FIX */
