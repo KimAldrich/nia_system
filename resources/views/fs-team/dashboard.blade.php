@@ -84,6 +84,11 @@
 
         .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 105px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px); }
+        .btn-edit-icon { background: #e0e7ff; color: #4f46e5; border: none; min-width: 40px; height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12); flex-shrink: 0; white-space: nowrap; }
+        .btn-edit-icon:hover { background: #c7d2fe; color: #3730a3; transform: translateY(-1px); }
+        .action-cell { text-align: center; white-space: nowrap !important; word-wrap: normal !important; overflow-wrap: normal !important; word-break: normal !important; }
+        .action-buttons { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 5px; min-width: max-content; }
+        .action-buttons form { display: inline-flex; margin: 0; }
 
         .status-select { padding: 6px 10px; border-radius: 8px; border: 1px solid #e4e4e7; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; background: #ffffff; color: #18181b; cursor: pointer; outline: none; transition: 0.2s; width: 100%; max-width: 150px; }
         .status-select:hover { border-color: #18181b; }
@@ -368,9 +373,9 @@
                         + Add Data
                     </button>
                 @endif
-                <button style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export CSV
-                </button>
+                <a href="{{ route('fs.hydro.export') }}" onclick="handleHydroExport(event, this.href)" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
+                </a>
             </div>
         </div>
         
@@ -423,14 +428,24 @@
                                 @endif
                             </td>
                             @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
-                                <td style="text-align: center;">
-                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" data-async-target="#hydroSection" data-async-confirm="Are you sure you want to delete this Hydro-Geo project?">
+                                <td class="action-cell">
+                                    <div class="action-buttons">
+                                    <button type="button"
+                                        class="btn-edit-icon"
+                                        title="Edit Project"
+                                        onclick="openHydroEditModal({{ $project->id }}, {{ $project->year }}, '{{ addslashes($project->district) }}', '{{ addslashes($project->project_code) }}', '{{ addslashes($project->system_name) }}', '{{ addslashes($project->description) }}', '{{ addslashes($project->municipality) }}', '{{ addslashes($project->status) }}', '{{ addslashes($project->result ?? '') }}')"
+                                        >
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                        Edit
+                                    </button>
+                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" data-async-target="#hydroSection" data-async-confirm="Are you sure you want to delete this Hydro-Geo project?" data-async-success="silent">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">
                                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     </form>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -475,9 +490,9 @@
                         + Add Data
                     </button>
                 @endif
-                <button style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export CSV
-                </button>
+                <a href="{{ route('fs.fsde.export') }}" onclick="handleFsdeExport(event, this.href)" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
+                </a>
             </div>
         </div>
         
@@ -551,14 +566,50 @@
                             </td>
                             
                             @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
-                                <td style="text-align: center;">
-                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" data-async-target="#fsdeSection" data-async-confirm="Are you sure you want to delete this FSDE project?">
+                                <td class="action-cell">
+                                    <div class="action-buttons">
+                                    <button type="button"
+                                        class="btn-edit-icon"
+                                        title="Edit Project"
+                                        onclick="openFsdeEditModal({{ Illuminate\Support\Js::from([
+                                            "id" => $project->id,
+                                            "year" => $project->year,
+                                            "project_name" => $project->project_name,
+                                            "municipality" => $project->municipality,
+                                            "type_of_study" => $project->type_of_study,
+                                            "consultant" => $project->consultant,
+                                            "period_start" => $project->period_start,
+                                            "period_end" => $project->period_end,
+                                            "contract_amount" => $project->contract_amount,
+                                            "actual_obligation" => $project->actual_obligation,
+                                            "value_of_acc" => $project->value_of_acc,
+                                            "actual_expenditures" => $project->actual_expenditures,
+                                            "acc_year" => $project->acc_year,
+                                            "remarks" => $project->remarks,
+                                            "jan_phy" => $project->jan_phy, "jan_fin" => $project->jan_fin,
+                                            "feb_phy" => $project->feb_phy, "feb_fin" => $project->feb_fin,
+                                            "mar_phy" => $project->mar_phy, "mar_fin" => $project->mar_fin,
+                                            "apr_phy" => $project->apr_phy, "apr_fin" => $project->apr_fin,
+                                            "may_phy" => $project->may_phy, "may_fin" => $project->may_fin,
+                                            "jun_phy" => $project->jun_phy, "jun_fin" => $project->jun_fin,
+                                            "jul_phy" => $project->jul_phy, "jul_fin" => $project->jul_fin,
+                                            "aug_phy" => $project->aug_phy, "aug_fin" => $project->aug_fin,
+                                            "sep_phy" => $project->sep_phy, "sep_fin" => $project->sep_fin,
+                                            "oct_phy" => $project->oct_phy, "oct_fin" => $project->oct_fin,
+                                            "nov_phy" => $project->nov_phy, "nov_fin" => $project->nov_fin,
+                                            "dec_phy" => $project->dec_phy, "dec_fin" => $project->dec_fin,
+                                        ]) }})">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                        Edit
+                                    </button>
+                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" data-async-target="#fsdeSection" data-async-confirm="Are you sure you want to delete this FSDE project?" data-async-success="silent">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">
                                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> 
                                         </button>
                                     </form>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -597,7 +648,7 @@
     <div class="modal-overlay" id="addDataModal">
         <div class="modal-box">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Hydro-Geo Data</h3>
-            <form action="{{ route('fs.hydro.store') }}" method="POST" data-async-target="#hydroSection" data-async-reset="true" data-async-close="#addDataModal">
+            <form action="{{ route('fs.hydro.store') }}" method="POST" data-async-target="#hydroSection" data-async-reset="true" data-async-close="#addDataModal" data-async-success-modal="#fsSuccessModal">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Year</label><input type="number" name="year" required placeholder="e.g. 2026" class="modern-input" min="2000" max="2100" step="1"></div>
@@ -656,7 +707,7 @@
     <div class="modal-overlay" id="addFsdeModal">
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New FSDE Data</h3>
-            <form action="{{ route('fs.fsde.store') }}" method="POST" data-async-target="#fsdeSection" data-async-reset="true" data-async-close="#addFsdeModal">
+            <form action="{{ route('fs.fsde.store') }}" method="POST" data-async-target="#fsdeSection" data-async-reset="true" data-async-close="#addFsdeModal" data-async-success-modal="#fsSuccessModal">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Year</label><input type="number" name="year" required class="modern-input" min="2000" max="2100" step="1"></div>
@@ -742,6 +793,116 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="editHydroModal">
+        <div class="modal-box">
+            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Hydro-Geo Data</h3>
+            <form id="editHydroForm" method="POST" data-async-target="#hydroSection" data-async-close="#editHydroModal" data-async-success-modal="#fsSuccessModal">
+                @csrf
+                @method('PUT')
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Year</label><input type="number" id="edit-hydro-year" name="year" required class="modern-input" min="2000" max="2100" step="1"></div>
+                    <div><label class="modern-label">District</label><input type="text" id="edit-hydro-district" name="district" required class="modern-input" maxlength="100"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Project Code</label><input type="text" id="edit-hydro-project_code" name="project_code" required class="modern-input" maxlength="100"></div>
+                    <div><label class="modern-label">System Name</label><input type="text" id="edit-hydro-system_name" name="system_name" required class="modern-input" maxlength="255"></div>
+                </div>
+                <div><label class="modern-label">Description / Remarks</label><textarea id="edit-hydro-description" name="description" rows="3" class="modern-input" style="resize: none;" maxlength="2000"></textarea></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">Municipality / City</label>
+                        <input type="text" id="edit-hydro-municipality" name="municipality" list="pangasinanMunisHydro" class="modern-input" required maxlength="100">
+                    </div>
+                    <div>
+                        <label class="modern-label">Status</label>
+                        <select id="edit-hydro-status" name="status" required class="modern-input">
+                            <option value="For Schedule">For Schedule</option>
+                            <option value="For Interpretation">For Interpretation</option>
+                            <option value="For Submission of Raw data">For Submission of Raw data</option>
+                            <option value="Relocation">Relocation</option>
+                            <option value="Interpreted">Interpreted</option>
+                            <option value="Not Applicable">Not Applicable</option>
+                            <option value="C/O Contractor">C/O Contractor</option>
+                            <option value="Open Source">Open Source</option>
+                            <option value="With Geo-res">With Geo-res</option>
+                        </select>
+                    </div>
+                </div>
+                <div><label class="modern-label">Result</label><input type="text" id="edit-hydro-result" name="result" class="modern-input" maxlength="100"></div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" onclick="closeHydroEditModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editFsdeModal">
+        <div class="modal-box" style="max-width: 600px;">
+            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit FSDE Data</h3>
+            <form id="editFsdeForm" method="POST" data-async-target="#fsdeSection" data-async-close="#editFsdeModal" data-async-success-modal="#fsSuccessModal">
+                @csrf
+                @method('PUT')
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Year</label><input type="number" id="edit-fsde-year" name="year" required class="modern-input" min="2000" max="2100" step="1"></div>
+                    <div><label class="modern-label">Type of Study</label><input type="text" id="edit-fsde-type_of_study" name="type_of_study" required class="modern-input" maxlength="255"></div>
+                </div>
+                <div><label class="modern-label">Project Name</label><input type="text" id="edit-fsde-project_name" name="project_name" required class="modern-input" maxlength="1000"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">Municipality / City</label>
+                        <input type="text" id="edit-fsde-municipality" name="municipality" list="pangasinanMunisHydro" class="modern-input" required maxlength="100">
+                    </div>
+                    <div><label class="modern-label">Consultant</label><input type="text" id="edit-fsde-consultant" name="consultant" required class="modern-input" maxlength="255"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Period Start</label><input type="date" id="edit-fsde-period_start" name="period_start" class="modern-input"></div>
+                    <div><label class="modern-label">Period End</label><input type="date" id="edit-fsde-period_end" name="period_end" class="modern-input"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Contract Amount</label><input type="number" id="edit-fsde-contract_amount" name="contract_amount" class="modern-input" min="0" step="0.01"></div>
+                    <div><label class="modern-label">Actual Obligation</label><input type="number" id="edit-fsde-actual_obligation" name="actual_obligation" class="modern-input" min="0" step="0.01"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Value of Accomplishment</label><input type="number" id="edit-fsde-value_of_acc" name="value_of_acc" class="modern-input" min="0" step="0.01"></div>
+                    <div><label class="modern-label">Actual Expenditures</label><input type="number" id="edit-fsde-actual_expenditures" name="actual_expenditures" class="modern-input" min="0" step="0.01"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">Accomplishment Month</label>
+                        <select id="edit-fsde-acc_month" name="acc_month" class="modern-input" onchange="syncFsdeMonthFields(this.value)">
+                            <option value="jan">January</option><option value="feb">February</option><option value="mar">March</option>
+                            <option value="apr">April</option><option value="may">May</option><option value="jun">June</option>
+                            <option value="jul">July</option><option value="aug">August</option><option value="sep">September</option>
+                            <option value="oct">October</option><option value="nov">November</option><option value="dec">December</option>
+                        </select>
+                    </div>
+                    <div><label class="modern-label">Accomplishment Year</label><input type="number" id="edit-fsde-acc_year" name="acc_year" class="modern-input" min="2000" max="2100" step="1"></div>
+                    <div></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">PHY (%)</label><input type="number" id="edit-fsde-acc_phy" name="acc_phy" class="modern-input" min="0" max="100" step="0.01"></div>
+                    <div><label class="modern-label">FIN (%)</label><input type="number" id="edit-fsde-acc_fin" name="acc_fin" class="modern-input" min="0" max="100" step="0.01"></div>
+                </div>
+                <div><label class="modern-label">Remarks</label><textarea id="edit-fsde-remarks" name="remarks" rows="3" class="modern-input" style="resize: none;" maxlength="2000"></textarea></div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" onclick="closeFsdeEditModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="fsSuccessModal">
+        <div class="modal-box">
+            <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+            <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">Saved successfully.</p>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeFsSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
@@ -816,6 +977,167 @@
 
         function openFsdeAddModal() { document.getElementById('addFsdeModal').classList.add('active'); }
         function closeFsdeAddModal() { document.getElementById('addFsdeModal').classList.remove('active'); }
+        let currentFsdeEditRecord = null;
+
+        function openHydroEditModal(id, year, district, projectCode, systemName, description, municipality, status, result) {
+            const form = document.getElementById('editHydroForm');
+            form.action = `/fs-team/hydro-geo/${id}`;
+            document.getElementById('edit-hydro-year').value = year;
+            document.getElementById('edit-hydro-district').value = district;
+            document.getElementById('edit-hydro-project_code').value = projectCode;
+            document.getElementById('edit-hydro-system_name').value = systemName;
+            document.getElementById('edit-hydro-description').value = description;
+            document.getElementById('edit-hydro-municipality').value = municipality;
+            document.getElementById('edit-hydro-status').value = status;
+            document.getElementById('edit-hydro-result').value = result;
+            document.getElementById('editHydroModal').classList.add('active');
+        }
+
+        function closeHydroEditModal() {
+            document.getElementById('editHydroModal').classList.remove('active');
+        }
+
+        function openFsdeEditModal(record) {
+            currentFsdeEditRecord = record;
+            const form = document.getElementById('editFsdeForm');
+            form.action = `/fs-team/fsde/${record.id}`;
+            document.getElementById('edit-fsde-year').value = record.year ?? '';
+            document.getElementById('edit-fsde-type_of_study').value = record.type_of_study ?? '';
+            document.getElementById('edit-fsde-project_name').value = record.project_name ?? '';
+            document.getElementById('edit-fsde-municipality').value = record.municipality ?? '';
+            document.getElementById('edit-fsde-consultant').value = record.consultant ?? '';
+            document.getElementById('edit-fsde-period_start').value = record.period_start ?? '';
+            document.getElementById('edit-fsde-period_end').value = record.period_end ?? '';
+            document.getElementById('edit-fsde-contract_amount').value = record.contract_amount ?? '';
+            document.getElementById('edit-fsde-actual_obligation').value = record.actual_obligation ?? '';
+            document.getElementById('edit-fsde-value_of_acc').value = record.value_of_acc ?? '';
+            document.getElementById('edit-fsde-actual_expenditures').value = record.actual_expenditures ?? '';
+            document.getElementById('edit-fsde-acc_year').value = record.acc_year ?? '';
+            document.getElementById('edit-fsde-remarks').value = record.remarks ?? '';
+
+            const monthOrder = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            const detectedMonth = monthOrder.find(month => record[`${month}_phy`] !== null || record[`${month}_fin`] !== null) || 'jan';
+            document.getElementById('edit-fsde-acc_month').value = detectedMonth;
+            syncFsdeMonthFields(detectedMonth);
+            document.getElementById('editFsdeModal').classList.add('active');
+        }
+
+        function syncFsdeMonthFields(month) {
+            if (!currentFsdeEditRecord) return;
+            document.getElementById('edit-fsde-acc_phy').value = currentFsdeEditRecord[`${month}_phy`] ?? '';
+            document.getElementById('edit-fsde-acc_fin').value = currentFsdeEditRecord[`${month}_fin`] ?? '';
+        }
+
+        function closeFsdeEditModal() {
+            document.getElementById('editFsdeModal').classList.remove('active');
+            currentFsdeEditRecord = null;
+        }
+
+        function closeFsSuccessModal() {
+            document.getElementById('fsSuccessModal').classList.remove('active');
+        }
+
+        async function handleHydroExport(event, url) {
+            event.preventDefault();
+
+            const suggestedName = 'HYDRO-GEO.xlsx';
+
+            try {
+                const response = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Download failed.');
+                }
+
+                const blob = await response.blob();
+
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description: 'Excel Workbook',
+                            accept: {
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                            }
+                        }]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = suggestedName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                window.location.href = url;
+            }
+        }
+
+        async function handleFsdeExport(event, url) {
+            event.preventDefault();
+
+            const suggestedName = `MONTHLY FSDE STATUS REPORT ${new Date().toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            }).replace(',', '')}.xlsx`;
+
+            try {
+                const response = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Download failed.');
+                }
+
+                const blob = await response.blob();
+
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description: 'Excel Workbook',
+                            accept: {
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                            }
+                        }]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = suggestedName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                window.location.href = url;
+            }
+        }
 
         function toggleAccMonth(val) {
             const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];

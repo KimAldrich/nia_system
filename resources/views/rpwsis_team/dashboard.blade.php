@@ -370,22 +370,103 @@
 
         /* Modal UI */
         .modal-overlay {
-            display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s;
         }
 
         .modal-box {
-            width: 95%;
-            max-width: 1000px;
-            background: #fff;
-            margin: 40px auto;
-            border-radius: 14px;
-            padding: 25px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             max-height: 90vh;
             overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modern-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            outline: none;
+            background: #ffffff;
+            color: #1e293b;
+            transition: 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .modern-input:focus {
+            border-color: #0c4d05;
+            box-shadow: 0 0 0 3px rgba(12, 77, 5, 0.1);
+        }
+
+        .modern-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modern-btn {
+            width: 100%;
+            padding: 10px;
+            background: #0c4d05;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .modern-btn:hover {
+            background: #083803;
+        }
+
+        .modern-btn-outline {
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+        }
+
+        .modern-btn-outline:hover {
+            background: #f1f5f9;
+            color: #1e293b;
         }
 
         /* CLEAN TABLE UI FIX */
@@ -1307,114 +1388,113 @@
                 })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        // Remove the row from the table visually
-                        btn.closest('tr').remove();
-                        closeDeleteModal();
-                    } else {
-                        alert("Failed to delete the record.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("An error occurred while deleting.");
-                });
-        }
+                        if (data.success) {
+                            // Remove the row from the table visually
+                            btn.closest('tr').remove();
+                            closeDeleteModal();
 
-        function exportCSV() {
-            let csv = "";
+                            // Keep delete silent after a successful refresh.
+                        })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        alert("An error occurred while deleting.");
+                    });
+                }
 
-            const headers = document.querySelectorAll("#simpleTable thead tr:last-child th");
-            let headerRow = [];
+            function exportCSV() {
+                let csv = "";
 
-            headers.forEach(th => {
-                headerRow.push(th.innerText.trim());
-            });
+                const headers = document.querySelectorAll("#simpleTable thead tr:last-child th");
+                let headerRow = [];
 
-            headerRow.push("PHY %", "FIN %", "Expenditures");
-
-            csv += headerRow.join(",") + "\n";
-
-            const rows = document.querySelectorAll("#simpleTable tbody tr");
-
-            rows.forEach(row => {
-                const cols = row.querySelectorAll("td");
-                let rowData = [];
-
-                cols.forEach((td, i) => {
-                    if (i !== cols.length - 1) {
-                        rowData.push(td.dataset.exportValue ?? td.innerText.trim());
-                    }
+                headers.forEach(th => {
+                    headerRow.push(th.innerText.trim());
                 });
 
-                csv += rowData.join(",") + "\n";
-            });
+                headerRow.push("PHY %", "FIN %", "Expenditures");
 
-            const blob = new Blob([csv], {
-                type: "text/csv"
-            });
-            const url = URL.createObjectURL(blob);
+                csv += headerRow.join(",") + "\n";
 
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "status_22_columns.csv";
-            a.click();
+                const rows = document.querySelectorAll("#simpleTable tbody tr");
 
-            URL.revokeObjectURL(url);
-        }
+                rows.forEach(row => {
+                    const cols = row.querySelectorAll("td");
+                    let rowData = [];
 
-        // function toggleImplementation() {
-        //     document.getElementById('simpleTable').classList.toggle('hide-impl');
-        // }
+                    cols.forEach((td, i) => {
+                        if (i !== cols.length - 1) {
+                            rowData.push(td.dataset.exportValue ?? td.innerText.trim());
+                        }
+                    });
 
-        function openModal() {
-            document.getElementById('statusModal').style.display = 'block';
-        }
+                    csv += rowData.join(",") + "\n";
+                });
 
-        function closeModal() {
-            document.getElementById('statusModal').style.display = 'none';
-        }
+                const blob = new Blob([csv], {
+                    type: "text/csv"
+                });
+                const url = URL.createObjectURL(blob);
 
-        // click outside to close
-        window.onclick = function(e) {
-            const modal = document.getElementById('statusModal');
-            if (e.target === modal) {
-                modal.style.display = "none";
-            }
-        }
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "status_22_columns.csv";
+                a.click();
 
-
-        function saveRecord() {
-
-            const fields = [
-                'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
-                'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12',
-                'phy', 'fin', 'exp'
-            ];
-
-            if (!validateRequiredFields(fields)) {
-                return;
+                URL.revokeObjectURL(url);
             }
 
-            let data = {};
+            // function toggleImplementation() {
+            //     document.getElementById('simpleTable').classList.toggle('hide-impl');
+            // }
 
-            fields.forEach(id => {
-                data[id] = document.getElementById(id).value.trim();
-            });
+            function openModal() {
+                document.getElementById('statusModal').style.display = 'block';
+            }
 
-            // ✅ FIX: Match the prefix group in your web.php
-            fetch('/rpwsis_team/accomplishments/store', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(res => res.json())
-                .then(res => {
+            function closeModal() {
+                document.getElementById('statusModal').style.display = 'none';
+            }
 
-                    let row = `<tr>
+            // click outside to close
+            window.onclick = function(e) {
+                const modal = document.getElementById('statusModal');
+                if (e.target === modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+
+            function saveRecord() {
+
+                const fields = [
+                    'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
+                    'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12',
+                    'phy', 'fin', 'exp'
+                ];
+
+                if (!validateRequiredFields(fields)) {
+                    return;
+                }
+
+                let data = {};
+
+                fields.forEach(id => {
+                    data[id] = document.getElementById(id).value.trim();
+                });
+
+                // ✅ FIX: Match the prefix group in your web.php
+                fetch('/rpwsis_team/accomplishments/store', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+
+                        let row = `<tr>
             ${[
                 res.region, res.batch, res.allocation, res.nis, res.activity, res.remarks, res.amount,
                 res.c1, res.c2, res.c3, res.c4, res.c5, res.c6, res.c7, res.c8, res.c9, res.c10, res.c11, res.c12,
@@ -1429,18 +1509,18 @@
             @endif
         </tr>`;
 
-                    document.getElementById('tableBody').innerHTML += row;
-                    fields.forEach(id => {
-                        const field = document.getElementById(id);
-                        if (field) {
-                            field.value = '';
-                            field.style.borderColor = '';
-                            field.style.boxShadow = '';
-                        }
+                        document.getElementById('tableBody').innerHTML += row;
+                        fields.forEach(id => {
+                            const field = document.getElementById(id);
+                            if (field) {
+                                field.value = '';
+                                field.style.borderColor = '';
+                                field.style.boxShadow = '';
+                            }
+                        });
+                        closeModal();
                     });
-                    closeModal();
-                });
-        }
+            }
     </script>
 
     {{-- // -------------------------------------------------------------------------------- --}}

@@ -391,7 +391,7 @@
 
                         @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
                             <form action="{{ route('row.resolutions.delete', $resolution->id) }}" method="POST"
-                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?">
+                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?" data-async-success="silent">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -493,6 +493,5 @@
         });
     </script>
 @endsection
-
 
 

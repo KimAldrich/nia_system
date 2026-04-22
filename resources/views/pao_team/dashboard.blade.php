@@ -180,6 +180,52 @@
             transform: translateY(-1px);
         }
 
+        .btn-edit-icon {
+            background: #e0e7ff;
+            color: #4f46e5;
+            border: none;
+            min-width: 40px;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .btn-edit-icon:hover {
+            background: #c7d2fe;
+            color: #3730a3;
+            transform: translateY(-1px);
+        }
+
+        .action-cell {
+            text-align: center;
+            white-space: nowrap !important;
+            word-wrap: normal !important;
+            overflow-wrap: normal !important;
+            word-break: normal !important;
+        }
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 5px;
+            min-width: max-content;
+        }
+
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -684,7 +730,7 @@
         $canManagePow = auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']);
     @endphp
 
-    <div class="ui-card">
+    <div class="ui-card" id="powSection">
         <div class="section-title">
             Program of Works Status Monitoring
             
@@ -740,14 +786,16 @@
                                 <td style="width: 150px;">{{ $data->pow_for_submission }}</td>
                                 <td style="width: 120px;" class="col-desc">{{ $data->remarks }}</td>
                                 @if ($canManagePow)
-                                    <td style="width: 140px; text-align: center; white-space: nowrap;">
-                                        <button onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')" 
-                                                style="background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-right: 5px; min-width: 105px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;">
+                                    <td class="action-cell" style="width: 140px;">
+                                        <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Data" onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                             Edit
                                         </button>
                                         <button type="button" onclick="openDeleteModal({{ $data->id }})" class="btn-delete" title="Delete Data">
                                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
+                                        </div>
                                     </td>
                                 @endif
                             </tr>
@@ -821,7 +869,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Program of Works Data</h3>
                 
-                <form action="{{ route('pao.pow.store') }}" method="POST">
+                <form action="{{ route('pao.pow.store') }}" method="POST" data-async-target="#powSection" data-async-reset="true" data-async-close="#addDataModal" data-async-success-modal="#powSuccessModal">
                     @csrf
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
@@ -906,7 +954,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete Program of Works Data</h3>
                 <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
-                <form id="deleteForm" method="POST" action="">
+                <form id="deleteForm" method="POST" action="" data-async-target="#powSection" data-async-close="#deleteConfirmModal" data-async-success="silent">
                     @csrf
                     @method('DELETE')
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -921,7 +969,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Program of Works Data</h3>
                 
-                <form action="{{ route('pao.pow.update') }}" method="POST">
+                <form action="{{ route('pao.pow.update') }}" method="POST" data-async-target="#powSection" data-async-close="#editDataModal" data-async-success-modal="#powSuccessModal">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="id" id="edit-id">
@@ -1002,6 +1050,16 @@
                     <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
                 </div>
                 </form>
+            </div>
+        </div>
+
+        <div class="modal-overlay {{ session('pow_status_success') ? 'active' : '' }}" id="powSuccessModal">
+            <div class="modal-box">
+                <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+                <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pow_status_success', 'Saved successfully.') }}</p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closePowSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+                </div>
             </div>
         </div>
     @endif
@@ -1202,6 +1260,10 @@
 
         function closeEditModal() {
             document.getElementById('editDataModal').classList.remove('active');
+        }
+
+        function closePowSuccessModal() {
+            document.getElementById('powSuccessModal').classList.remove('active');
         }
     </script>
 @endsection

@@ -85,6 +85,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [FsTeamController::class, 'index'])->name('fs.dashboard');
             Route::get('/downloadables', [FsTeamController::class, 'downloadables'])->name('fs.downloadables');
             Route::get('/ia-resolutions', [FsTeamController::class, 'resolutions'])->name('fs.resolutions');
+            Route::get('/hydro-geo/export-excel', [FsTeamController::class, 'exportHydroExcel'])->name('fs.hydro.export');
+            Route::get('/fsde/export-excel', [FsTeamController::class, 'exportFsdeExcel'])->name('fs.fsde.export');
 
             // 🔒 EDITORS ONLY (Locked to FS Team and Admin)
             Route::middleware(['check.role:fs_team,admin'])->group(function () {
@@ -103,6 +105,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/projects/{project}/update-status', [FsTeamController::class, 'updateStatus'])->name('fs.projects.update');
                 Route::post('/hydro-geo', [FsTeamController::class, 'storeHydroGeo'])->name('fs.hydro.store');
                 Route::post('/fsde/store', [FsTeamController::class, 'storeFsde'])->name('fs.fsde.store');
+                Route::put('/hydro-geo/{id}', [FsTeamController::class, 'updateHydroGeo'])->name('fs.hydro.update');
+                Route::put('/fsde/{id}', [FsTeamController::class, 'updateFsde'])->name('fs.fsde.update');
                 Route::delete('/hydro-geo/{id}', [FsTeamController::class, 'destroyHydroGeo'])->name('fs.hydro.destroy');
                 Route::delete('/fsde/{id}', [FsTeamController::class, 'destroyFsde'])->name('fs.fsde.destroy');
             });
@@ -213,6 +217,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [PcrTeamController::class, 'index'])->name('pcr.dashboard');
             Route::get('/downloadables', [PcrTeamController::class, 'downloadables'])->name('pcr.downloadables');
             Route::get('/ia-resolutions', [PcrTeamController::class, 'resolutions'])->name('pcr.resolutions');
+            Route::get('/status/export-excel', [PcrTeamController::class, 'exportPcrStatusExcel'])->name('pcr.status.export');
 
             // 🔒 EDITORS ONLY (Locked to PCR Team and Admin)
             Route::middleware(['check.role:pcr_team,admin'])->group(function () {
@@ -227,6 +232,9 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 Route::post('/ia-resolutions/{id}/update', [PcrTeamController::class, 'updateResolution'])->name('pcr.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [PcrTeamController::class, 'updateResolutionStatus'])->name('pcr.resolutions.update_status');
+                Route::post('/status/store', [PcrTeamController::class, 'storePcrStatus'])->name('pcr.status.store');
+                Route::put('/status/update', [PcrTeamController::class, 'updatePcrStatus'])->name('pcr.status.update');
+                Route::delete('/status/delete/{id}', [PcrTeamController::class, 'deletePcrStatus'])->name('pcr.status.delete');
             });
         });
 
@@ -239,6 +247,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [PaoTeamController::class, 'index'])->name('pao.dashboard');
             Route::get('/downloadables', [PaoTeamController::class, 'downloadables'])->name('pao.downloadables');
             Route::get('/ia-resolutions', [PaoTeamController::class, 'resolutions'])->name('pao.resolutions');
+            Route::get('/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('pao.pow.export');
 
             // 🔒 EDITORS ONLY (Locked to Programming Team and Admin)
             Route::middleware(['check.role:pao_team,admin'])->group(function () {
@@ -257,7 +266,6 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/pow/store', [PaoTeamController::class, 'storePow'])->name('pao.pow.store');
                 Route::put('/pow/update', [PaoTeamController::class, 'updatePow'])->name('pao.pow.update');
                 Route::delete('/pow/delete/{id}', [PaoTeamController::class, 'deletePow'])->name('pao.pow.delete');
-                Route::get('/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('pao.pow.export');
             });
         });
 
