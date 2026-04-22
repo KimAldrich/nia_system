@@ -936,7 +936,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete PCR Status Data</h3>
                 <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
-                <form id="pcrDeleteForm" method="POST" data-async-target="#pcrStatusSection" data-async-close="#pcrDeleteModal" data-async-success-modal="#pcrSuccessModal">
+                <form id="pcrDeleteForm" method="POST" data-async-target="#pcrStatusSection" data-async-close="#pcrDeleteModal" data-async-success="silent">
                     @csrf
                     @method('DELETE')
                     <div style="display: flex; gap: 10px;">

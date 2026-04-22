@@ -381,7 +381,7 @@
 
                         @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
                             <form action="{{ route('rpwsis.downloadables.delete', $file->id) }}" method="POST"
-                                style="margin: 0; flex: 1;" data-async-target="#downloadablesList" data-async-confirm="Delete this file?">
+                                style="margin: 0; flex: 1;" data-async-target="#downloadablesList" data-async-confirm="Delete this file?" data-async-success="silent">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -472,6 +472,5 @@
         });
     </script>
 @endsection
-
 
 

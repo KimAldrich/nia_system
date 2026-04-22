@@ -438,7 +438,7 @@
                                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                         Edit
                                     </button>
-                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" data-async-target="#hydroSection" data-async-confirm="Are you sure you want to delete this Hydro-Geo project?">
+                                    <form action="{{ route('fs.hydro.destroy', $project->id) }}" method="POST" data-async-target="#hydroSection" data-async-confirm="Are you sure you want to delete this Hydro-Geo project?" data-async-success="silent">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">
@@ -602,7 +602,7 @@
                                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                         Edit
                                     </button>
-                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" data-async-target="#fsdeSection" data-async-confirm="Are you sure you want to delete this FSDE project?">
+                                    <form action="{{ route('fs.fsde.destroy', $project->id) }}" method="POST" data-async-target="#fsdeSection" data-async-confirm="Are you sure you want to delete this FSDE project?" data-async-success="silent">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-delete" title="Delete Project">

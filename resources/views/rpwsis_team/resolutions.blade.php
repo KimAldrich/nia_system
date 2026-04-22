@@ -391,7 +391,7 @@
 
                         <!-- DELETE BUTTON -->
                         @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
-                            <form action="{{ route('rpwsis.resolutions.delete', $resolution->id) }}" method="POST" style="margin: 0;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?">
+                            <form action="{{ route('rpwsis.resolutions.delete', $resolution->id) }}" method="POST" style="margin: 0;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?" data-async-success="silent">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -493,4 +493,3 @@
         });
     </script>
 @endsection
-

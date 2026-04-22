@@ -764,6 +764,7 @@
             const closeSelector = options.closeSelector ?? form.dataset.asyncClose;
             const confirmMessage = options.confirmMessage ?? form.dataset.asyncConfirm;
             const successModalSelector = options.successModalSelector ?? form.dataset.asyncSuccessModal;
+            const suppressSuccessFeedback = options.suppressSuccessFeedback ?? form.dataset.asyncSuccess === 'silent';
             const successTitle = options.successTitle ?? form.dataset.asyncSuccessTitle ?? 'Success';
 
             if (!validateFormBeforeSubmit(form)) {
@@ -824,11 +825,13 @@
                     }
                 }
 
-                const successMessage = payload.message || 'Changes saved successfully.';
-                const openedSuccessModal = openAsyncSuccessModal(successModalSelector, successMessage, successTitle);
+                if (!suppressSuccessFeedback) {
+                    const successMessage = payload.message || 'Changes saved successfully.';
+                    const openedSuccessModal = openAsyncSuccessModal(successModalSelector, successMessage, successTitle);
 
-                if (!openedSuccessModal) {
-                    showLiveAlert(successMessage, 'success');
+                    if (!openedSuccessModal) {
+                        showLiveAlert(successMessage, 'success');
+                    }
                 }
                 return false;
             } catch (error) {

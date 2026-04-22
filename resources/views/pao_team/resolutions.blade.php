@@ -407,7 +407,7 @@
 
                         @if (auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
                             <form action="{{ route('pao.resolutions.delete', $resolution->id) }}" method="POST"
-                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?">
+                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?" data-async-success="silent">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -509,6 +509,5 @@
         });
     </script>
 @endsection
-
 
 

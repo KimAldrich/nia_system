@@ -1320,9 +1320,7 @@
                     btn.closest('tr').remove();
                         closeDeleteModal();
 
-                    if (typeof showLiveAlert === 'function') {
-                        showLiveAlert(data.message || 'Record deleted successfully.', 'success');
-                    }
+                    // Keep delete silent after a successful refresh.
                 })
                 .catch(error => {
                     console.error("Error:", error);

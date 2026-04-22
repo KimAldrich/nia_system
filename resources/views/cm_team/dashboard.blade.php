@@ -347,7 +347,7 @@
                                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                     Edit
                                 </button>
-                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Are you sure you want to delete this project?')">
+                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" data-async-success="silent" onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Are you sure you want to delete this project?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn-delete" title="Delete Project">

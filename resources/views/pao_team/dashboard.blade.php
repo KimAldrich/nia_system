@@ -954,7 +954,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete Program of Works Data</h3>
                 <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
-                <form id="deleteForm" method="POST" action="" data-async-target="#powSection" data-async-close="#deleteConfirmModal" data-async-success-modal="#powSuccessModal">
+                <form id="deleteForm" method="POST" action="" data-async-target="#powSection" data-async-close="#deleteConfirmModal" data-async-success="silent">
                     @csrf
                     @method('DELETE')
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
