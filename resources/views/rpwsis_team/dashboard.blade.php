@@ -37,11 +37,17 @@
 
         .ui-card {
             background: #ffffff;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            margin-bottom: 30px;
-            border: 1px solid #e4e4e7;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            border: none;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            display: block;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .ui-card.dark {
@@ -264,22 +270,96 @@
 
         /* MODALS */
         .modal-overlay {
-            display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s;
         }
 
         .modal-box {
-            width: 95%;
-            max-width: 1000px;
-            background: #fff;
-            margin: 40px auto;
-            border-radius: 14px;
-            padding: 25px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             max-height: 90vh;
             overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modern-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            outline: none;
+            background: #ffffff;
+            color: #1e293b;
+            transition: 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .modern-input:focus {
+            border-color: #0c4d05;
+            box-shadow: 0 0 0 3px rgba(12, 77, 5, 0.1);
+        }
+
+        .modern-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modern-btn {
+            width: 100%;
+            padding: 10px;
+            background: #0c4d05;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .modern-btn:hover {
+            background: #083803;
+        }
+
+        .modern-btn-outline {
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+        }
+
+        .modern-btn-outline:hover {
+            background: #f1f5f9;
+            color: #1e293b;
         }
 
         .delete-modal-overlay {
@@ -375,33 +455,44 @@
         .custom-table {
             border-collapse: collapse;
             min-width: 2000px;
+            width: 100%;
+            table-layout: fixed;
             background: #fff;
         }
 
         .custom-table thead th {
-            font-size: 11px;
-            color: #3f3f46;
+            text-align: left;
+            padding: 12px 15px;
+            color: #a0aec0;
             font-weight: 600;
-            text-align: center;
-            padding: 12px 8px;
-            border: 1px solid #e4e4e7;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid #f1f5f9;
             background: #f8fafc;
+            white-space: normal;
             vertical-align: middle;
+            line-height: 1.4;
             transition: 0.2s;
         }
 
         .custom-table tbody td {
-            padding: 12px 10px;
+            padding: 15px;
             font-size: 12px;
+            font-weight: 500;
             text-align: center;
-            border: 1px solid #e4e4e7;
+            border: 1px solid #f1f5f9;
             vertical-align: middle;
-            color: #18181b;
+            color: #475569;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
             transition: 0.2s;
         }
 
         .custom-table tbody tr:hover td {
-            background: #f0f9ff;
+            background-color: #f8fafc;
         }
 
         .sleek-table {
@@ -476,6 +567,8 @@
         .status-compact-cell {
             white-space: normal;
             text-align: left;
+            color: #64748b;
+            line-height: 1.5;
         }
 
         #summaryTable .col-standard {
@@ -514,6 +607,7 @@
         .expandable-full {
             line-height: 1.5;
             word-break: break-word;
+            color: #64748b;
         }
 
         .expandable-full {
@@ -552,15 +646,18 @@
         /* SCROLL BARS */
         .table-responsive-wrapper {
             width: 100%;
-            overflow-x: scroll;
-            max-height: 600px;
+            max-width: 100%;
+            display: block;
+            overflow-x: auto;
             overflow-y: auto;
-            border-radius: 10px;
-            border: 1px solid #e4e4e7;
+            max-height: 600px;
             -webkit-overflow-scrolling: touch;
             margin-bottom: 20px;
             scrollbar-width: thin;
-            scrollbar-color: #cbd5e1 #f8fafc;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+            border-radius: 0;
+            border: none;
+            padding-bottom: 15px;
         }
 
         .table-responsive-wrapper::-webkit-scrollbar {
@@ -569,15 +666,13 @@
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-track {
-            background: #f8fafc;
-            border-radius: 0 0 10px 10px;
-            border-top: 1px solid #e4e4e7;
+            background: #f1f5f9;
+            border-radius: 8px;
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-thumb {
             background: #cbd5e1;
-            border-radius: 10px;
-            border: 2px solid #f8fafc;
+            border-radius: 8px;
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
@@ -808,13 +903,11 @@
     <div class="ui-card">
         <div class="section-title">
             ACCOMPLISHMENT AS OF FEBRUARY 15, 2025 OF R&P WRSIS
-            <div style="display:flex; gap:8px;">
+            <div style="display: flex; gap: 10px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb;">+ Add Record</button>
+                    <button onclick="openModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">+ Add Record</button>
                 @endif
-                <button onclick="exportExcel()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a;">Export Excel</button>
+                <button onclick="exportExcel()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>Export Excel</button>
             </div>
         </div>
 
@@ -1012,15 +1105,11 @@
             REHABILITATION AND PROTECTION OF WATER RESOURCES SUPPORTING IRRIGATION SYSTEM (R&P WRSIS)
             <div style="font-size: 14px; font-weight: normal; margin-top: 4px; opacity: 0.9;">Summary of Accomplishment
             </div>
-            <div style="display:flex; gap:8px; margin-top: 12px;">
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openSummaryModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb; width: auto;">+ Add
-                        Record</button>
+                    <button onclick="openSummaryModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">+ Add Record</button>
                 @endif
-                <button onclick="exportSummaryExcel()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a; width: auto;">Export
-                    Excel</button>
+                <button onclick="exportSummaryExcel()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>Export Excel</button>
             </div>
         </div>
 
