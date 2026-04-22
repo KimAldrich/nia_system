@@ -12,10 +12,63 @@ use App\Models\EventCategory;
 use App\Models\HydroGeoProject;
 use App\Models\FsdeProject;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
 class FsTeamController extends Controller
 {
     use HandlesAsyncRequests;
+
+    private function validateHydroGeo(Request $request): array
+    {
+        return $request->validate([
+            'year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
+            'district' => ['required', 'string', 'max:100'],
+            'project_code' => ['required', 'string', 'max:100'],
+            'system_name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:2000'],
+            'municipality' => ['required', 'string', 'max:100'],
+            'status' => ['required', Rule::in([
+                'For Schedule',
+                'For Interpretation',
+                'For Submission of Raw data',
+                'Relocation',
+                'Interpreted',
+                'Not Applicable',
+                'C/O Contractor',
+                'Open Source',
+                'With Geo-res',
+            ])],
+            'result' => ['nullable', 'string', 'max:100'],
+        ]);
+    }
+
+    private function validateFsde(Request $request): array
+    {
+        return $request->validate([
+            'year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
+            'type_of_study' => ['required', 'string', 'max:255'],
+            'project_name' => ['required', 'string', 'max:1000'],
+            'municipality' => ['required', 'string', 'max:100'],
+            'consultant' => ['required', 'string', 'max:255'],
+            'period_start' => ['nullable', 'date'],
+            'period_end' => ['nullable', 'date', 'after_or_equal:period_start'],
+            'contract_amount' => ['nullable', 'numeric', 'min:0'],
+            'actual_obligation' => ['nullable', 'numeric', 'min:0'],
+            'value_of_acc' => ['nullable', 'numeric', 'min:0'],
+            'actual_expenditures' => ['nullable', 'numeric', 'min:0'],
+            'acc_month' => ['required', Rule::in(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'])],
+            'acc_year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
+            'acc_phy' => ['nullable', 'numeric', 'between:0,100'],
+            'acc_fin' => ['nullable', 'numeric', 'between:0,100'],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ]);
+    }
 
     // 1. Dashboard
     public function index()
@@ -175,24 +228,7 @@ class FsTeamController extends Controller
 
     public function storeHydroGeo(Request $request)
     {
-        $validated = $request->validate([
-            'year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
-            'district' => ['required', 'string', 'max:100'],
-            'project_code' => ['required', 'string', 'max:100'],
-            'system_name' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'max:2000'],
-            'municipality' => ['required', 'string', 'max:100'],
-            'status' => ['required', Rule::in([
-                'For Schedule',
-                'For Interpretation',
-                'For Submission of Raw data',
-                'Relocation',
-                'Interpreted',
-                'Not Applicable',
-                'C/O Contractor',
-            ])],
-            'result' => ['nullable', 'string', 'max:100'],
-        ]);
+        $validated = $this->validateHydroGeo($request);
 
         HydroGeoProject::create($validated);
 
@@ -201,24 +237,7 @@ class FsTeamController extends Controller
 
     public function storeFsde(Request $request)
     {
-        $validated = $request->validate([
-            'year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
-            'type_of_study' => ['required', 'string', 'max:255'],
-            'project_name' => ['required', 'string', 'max:1000'],
-            'municipality' => ['required', 'string', 'max:100'],
-            'consultant' => ['required', 'string', 'max:255'],
-            'period_start' => ['nullable', 'date'],
-            'period_end' => ['nullable', 'date', 'after_or_equal:period_start'],
-            'contract_amount' => ['nullable', 'numeric', 'min:0'],
-            'actual_obligation' => ['nullable', 'numeric', 'min:0'],
-            'value_of_acc' => ['nullable', 'numeric', 'min:0'],
-            'actual_expenditures' => ['nullable', 'numeric', 'min:0'],
-            'acc_month' => ['required', Rule::in(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'])],
-            'acc_year' => ['required', 'digits:4', 'integer', 'min:2000', 'max:2100'],
-            'acc_phy' => ['nullable', 'numeric', 'between:0,100'],
-            'acc_fin' => ['nullable', 'numeric', 'between:0,100'],
-            'remarks' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $validated = $this->validateFsde($request);
 
         $data = collect($validated)
             ->except(['acc_month', 'acc_year', 'acc_phy', 'acc_fin'])
@@ -232,6 +251,33 @@ class FsTeamController extends Controller
         FsdeProject::create($data);
 
         return $this->successResponse($request, 'FSDE data successfully added!');
+    }
+
+    public function updateHydroGeo(Request $request, $id)
+    {
+        $project = HydroGeoProject::findOrFail($id);
+        $project->update($this->validateHydroGeo($request));
+
+        return $this->successResponse($request, 'Hydro-Geo data updated successfully.');
+    }
+
+    public function updateFsde(Request $request, $id)
+    {
+        $project = FsdeProject::findOrFail($id);
+        $validated = $this->validateFsde($request);
+
+        $data = collect($validated)
+            ->except(['acc_month', 'acc_year', 'acc_phy', 'acc_fin'])
+            ->toArray();
+
+        $month = $validated['acc_month'];
+        $data[$month . '_phy'] = $validated['acc_phy'] ?? null;
+        $data[$month . '_fin'] = $validated['acc_fin'] ?? null;
+        $data['acc_year'] = $validated['acc_year'];
+
+        $project->update($data);
+
+        return $this->successResponse($request, 'FSDE data updated successfully.');
     }
 
     public function destroyHydroGeo(Request $request, $id)
@@ -248,6 +294,459 @@ class FsTeamController extends Controller
         $project->delete();
 
         return $this->successResponse($request, 'FSDE data deleted successfully.');
+    }
+
+    public function exportHydroExcel(Request $request): StreamedResponse
+    {
+        $rows = HydroGeoProject::orderBy('year')
+            ->orderBy('district')
+            ->orderBy('municipality')
+            ->orderBy('system_name')
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Summary Report Sheet1');
+
+        foreach ([
+            'A' => 10,
+            'B' => 16,
+            'C' => 18,
+            'D' => 22,
+            'E' => 58,
+            'F' => 18,
+            'G' => 34,
+            'H' => 28,
+        ] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+
+        $sheet->getRowDimension(1)->setRowHeight(28);
+
+        $sheet->fromArray([
+            'YEAR',
+            'DISTRICT',
+            'PROJECT CODE',
+            'SYSTEM',
+            'DESCRIPTION REMARKS',
+            'MUNICIPALITY',
+            'STATUS',
+            'RESULT (FEASIBLE OR NOT FEASIBLE)',
+        ], null, 'A1');
+
+        $sheet->getStyle('A1:H1')->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'bold' => true,
+                'size' => 10,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '2F5597'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+
+        $currentRow = 2;
+        foreach ($rows as $row) {
+            $sheet->setCellValue("A{$currentRow}", $row->year);
+            $sheet->setCellValue("B{$currentRow}", $row->district);
+            $sheet->setCellValue("C{$currentRow}", $row->project_code);
+            $sheet->setCellValue("D{$currentRow}", $row->system_name);
+            $sheet->setCellValue("E{$currentRow}", $row->description);
+            $sheet->setCellValue("F{$currentRow}", $row->municipality);
+            $sheet->setCellValue("G{$currentRow}", $row->status);
+            $sheet->setCellValue("H{$currentRow}", $row->result);
+            $sheet->getRowDimension($currentRow)->setRowHeight(26);
+            $currentRow++;
+        }
+
+        $dataEndRow = max($currentRow - 1, 2);
+        $sheet->getStyle("A2:H{$dataEndRow}")->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'size' => 10,
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+
+        $summaryStart = $dataEndRow + 3;
+        $sheet->setCellValue("A{$summaryStart}", 'Summary:');
+        $sheet->getStyle("A{$summaryStart}")->getFont()->setBold(true)->setName('Arial')->setSize(11);
+
+        $projectsWithGeores =
+            $rows->where('status', 'For Interpretation')->count() +
+            $rows->filter(fn ($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count() +
+            $rows->where('status', 'Relocation')->count() +
+            $rows->where('result', 'Feasible')->count();
+
+        $summaryRows = [
+            ['Total Projects for SPIP', $rows->count()],
+            ['Projects with Geores', $projectsWithGeores],
+            ['Breakdown:', null],
+            ['For Interpretation', $rows->where('status', 'For Interpretation')->count()],
+            ['Raw Data (For Submission)', $rows->filter(fn ($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count()],
+            ['Relocation (Not Feasible)', $rows->where('status', 'Relocation')->count()],
+            ['Feasible', $rows->where('result', 'Feasible')->count()],
+            ['', null],
+            ['For Schedule', $rows->where('status', 'For Schedule')->count()],
+            ['Open Source', $rows->where('status', 'Open Source')->count()],
+            ['Provision of Pumps', $rows->filter(fn ($row) => str_contains(strtolower((string) $row->description), 'provision of water pumps'))->count()],
+        ];
+
+        $summaryRow = $summaryStart + 1;
+        foreach ($summaryRows as [$label, $value]) {
+            if ($label !== '' && $value !== null) {
+                $sheet->mergeCells("A{$summaryRow}:B{$summaryRow}");
+            }
+
+            $sheet->setCellValue("A{$summaryRow}", $label);
+            if ($value !== null) {
+                $sheet->setCellValue("C{$summaryRow}", $value);
+            }
+
+            if ($label === 'Breakdown:' || $label === '') {
+                $sheet->getStyle("A{$summaryRow}:C{$summaryRow}")->getFont()->setBold(true);
+            } else {
+                $sheet->getStyle("A{$summaryRow}:C{$summaryRow}")->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color' => ['rgb' => '000000'],
+                        ],
+                    ],
+                ]);
+            }
+
+            $sheet->getStyle("A{$summaryRow}:C{$summaryRow}")->getFont()->setName('Arial')->setSize(10);
+            $sheet->getStyle("A{$summaryRow}:C{$summaryRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("A{$summaryRow}:C{$summaryRow}")->getAlignment()->setWrapText(true);
+            $summaryRow++;
+        }
+
+        $sheet->getStyle("A" . ($summaryStart + 1) . ":C" . ($summaryRow - 1))->getFill()->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('E2F0D9');
+        $sheet->getStyle("A{$summaryStart}:C{$summaryStart}")->getFill()->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('FFFFFF');
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'HYDRO-GEO.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function exportFsdeExcel(Request $request): StreamedResponse
+    {
+        $rows = FsdeProject::orderBy('year')
+            ->orderBy('project_name')
+            ->get();
+
+        $currentDate = now();
+        $previousDate = now()->copy()->subMonth();
+        $currentMonthKey = strtolower($currentDate->format('M'));
+        $previousMonthKey = strtolower($previousDate->format('M'));
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle($currentDate->format('F Y'));
+
+        foreach ([
+            'A' => 8,
+            'B' => 34,
+            'C' => 18,
+            'D' => 20,
+            'E' => 16,
+            'F' => 16,
+            'G' => 28,
+            'H' => 16,
+            'I' => 16,
+            'J' => 16,
+            'K' => 16,
+            'L' => 16,
+            'M' => 16,
+            'N' => 12,
+            'O' => 12,
+            'P' => 12,
+            'Q' => 12,
+            'R' => 42,
+        ] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+
+        foreach (range(1, 5) as $row) {
+            $sheet->getRowDimension($row)->setRowHeight(30);
+        }
+        $sheet->getRowDimension(6)->setRowHeight(24);
+        $sheet->getRowDimension(7)->setRowHeight(22);
+        $sheet->getRowDimension(9)->setRowHeight(22);
+        $sheet->getRowDimension(11)->setRowHeight(30);
+        $sheet->getRowDimension(12)->setRowHeight(24);
+
+        $sheet->mergeCells('A6:R6');
+        $sheet->mergeCells('A7:R7');
+        $sheet->mergeCells('A9:R9');
+
+        foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'J', 'K', 'L', 'M', 'R'] as $column) {
+            $sheet->mergeCells("{$column}11:{$column}12");
+        }
+        $sheet->mergeCells('H11:I11');
+        $sheet->mergeCells('N11:O11');
+        $sheet->mergeCells('P11:Q11');
+        $sheet->mergeCells('A13:R13');
+        $sheet->mergeCells('A17:B17');
+
+        $sheet->setCellValue('A6', 'MONTHLY ACCOMPLISHMENT REPORT');
+        $sheet->setCellValue('A7', 'Feasibility Study and Detailed Engineering');
+        $sheet->setCellValue('A9', 'As of ' . $currentDate->format('F j, Y'));
+
+        $sheet->setCellValue('A11', 'YEAR');
+        $sheet->setCellValue('B11', 'Proposed Project Name');
+        $sheet->setCellValue('C11', 'Municipality');
+        $sheet->setCellValue('D11', 'Type of Study/ Activity');
+        $sheet->setCellValue('E11', "Total Funding Requirement (P'000)");
+        $sheet->setCellValue('F11', "Approved Budget (P'000)");
+        $sheet->setCellValue('G11', 'Mode of Implementation & Name of Consultant');
+        $sheet->setCellValue('H11', 'Peeriod of Engagement');
+        $sheet->setCellValue('H12', 'Start of Activity');
+        $sheet->setCellValue('I12', 'End of Activity');
+        $sheet->setCellValue('J11', "Contract Amount (P'000)");
+        $sheet->setCellValue('K11', "Actual Obligation (P'000)");
+        $sheet->setCellValue('L11', "Value of Accomplishment (P'000)");
+        $sheet->setCellValue('M11', "Actual Expenditures (P'000)");
+        $sheet->setCellValue('N11', 'Accomplishment as of ' . $previousDate->format('F j, Y'));
+        $sheet->setCellValue('N12', 'PHY (%)');
+        $sheet->setCellValue('O12', 'FIN(%)');
+        $sheet->setCellValue('P11', 'Accomplishment as of ' . $currentDate->format('F j, Y'));
+        $sheet->setCellValue('P12', 'PHY (%)');
+        $sheet->setCellValue('Q12', 'FIN(%)');
+        $sheet->setCellValue('R11', 'REMARKS');
+        $sheet->setCellValue('A13', 'PANGASINAN');
+
+        $sheet->getStyle('A6:R9')->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'bold' => true,
+                'size' => 12,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+        $sheet->getStyle('A7')->getFont()->setSize(11);
+        $sheet->getStyle('A9')->getFont()->setSize(10)->setItalic(true);
+
+        $sheet->getStyle('A11:R12')->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'bold' => true,
+                'size' => 9,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'D9EAD3'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+
+        $sheet->getStyle('A13:R13')->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'bold' => true,
+                'size' => 10,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '70AD47'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+
+        $currentRow = 14;
+        foreach ($rows as $row) {
+            $sheet->setCellValue("A{$currentRow}", $row->year);
+            $sheet->setCellValue("B{$currentRow}", $row->project_name);
+            $sheet->setCellValue("C{$currentRow}", $row->municipality);
+            $sheet->setCellValue("D{$currentRow}", $row->type_of_study);
+            $sheet->setCellValue("E{$currentRow}", $row->contract_amount === null ? '' : (float) $row->contract_amount);
+            $sheet->setCellValue("F{$currentRow}", $row->contract_amount === null ? '' : (float) $row->contract_amount);
+            $sheet->setCellValue("G{$currentRow}", $row->consultant);
+            $sheet->setCellValue("H{$currentRow}", $row->period_start ? \Carbon\Carbon::parse($row->period_start)->format('F d, Y') : '');
+            $sheet->setCellValue("I{$currentRow}", $row->period_end ? \Carbon\Carbon::parse($row->period_end)->format('F d, Y') : '');
+            $sheet->setCellValue("J{$currentRow}", $row->contract_amount === null ? '' : (float) $row->contract_amount);
+            $sheet->setCellValue("K{$currentRow}", $row->actual_obligation === null ? '' : (float) $row->actual_obligation);
+            $sheet->setCellValue("L{$currentRow}", $row->value_of_acc === null ? '' : (float) $row->value_of_acc);
+            $sheet->setCellValue("M{$currentRow}", $row->actual_expenditures === null ? '' : (float) $row->actual_expenditures);
+            $sheet->setCellValue("N{$currentRow}", $row->{$previousMonthKey . '_phy'} === null ? '' : (float) $row->{$previousMonthKey . '_phy'});
+            $sheet->setCellValue("O{$currentRow}", $row->{$previousMonthKey . '_fin'} === null ? '' : (float) $row->{$previousMonthKey . '_fin'});
+            $sheet->setCellValue("P{$currentRow}", $row->{$currentMonthKey . '_phy'} === null ? '' : (float) $row->{$currentMonthKey . '_phy'});
+            $sheet->setCellValue("Q{$currentRow}", $row->{$currentMonthKey . '_fin'} === null ? '' : (float) $row->{$currentMonthKey . '_fin'});
+            $sheet->setCellValue("R{$currentRow}", $row->remarks);
+            $sheet->getRowDimension($currentRow)->setRowHeight(34);
+            $currentRow++;
+        }
+
+        $sheet->setCellValue("A{$currentRow}", 'TOTAL FOR PANGASINAN');
+        $sheet->setCellValue("E{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("F{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("J{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("K{$currentRow}", (float) $rows->sum(fn ($row) => $row->actual_obligation ?? 0));
+        $sheet->setCellValue("L{$currentRow}", (float) $rows->sum(fn ($row) => $row->value_of_acc ?? 0));
+        $sheet->setCellValue("M{$currentRow}", (float) $rows->sum(fn ($row) => $row->actual_expenditures ?? 0));
+
+        $sheet->getStyle("A{$currentRow}:R{$currentRow}")->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'bold' => true,
+                'size' => 10,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E2F0D9'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+
+        $dataEndRow = $currentRow;
+        $sheet->getStyle("A14:R{$dataEndRow}")->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'size' => 9,
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+
+        foreach (['B', 'C', 'D', 'G', 'R'] as $column) {
+            $sheet->getStyle("{$column}14:{$column}{$dataEndRow}")
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        }
+        foreach (['A', 'E', 'F', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'] as $column) {
+            $sheet->getStyle("{$column}14:{$column}{$dataEndRow}")
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        foreach (['E', 'F', 'J', 'K', 'L', 'M'] as $column) {
+            $sheet->getStyle("{$column}14:{$column}{$dataEndRow}")
+                ->getNumberFormat()->setFormatCode('0.00');
+        }
+        foreach (['N', 'O', 'P', 'Q'] as $column) {
+            $sheet->getStyle("{$column}14:{$column}{$dataEndRow}")
+                ->getNumberFormat()->setFormatCode('0.00');
+        }
+
+        $signatureHeaderRow = $dataEndRow + 2;
+        $signatureNameRow = $signatureHeaderRow + 2;
+        $signatureTitleRow = $signatureHeaderRow + 3;
+
+        $sheet->setCellValue("E{$signatureHeaderRow}", 'Checked by:');
+        $sheet->setCellValue("I{$signatureHeaderRow}", 'Reviewed by:');
+        $sheet->setCellValue("M{$signatureHeaderRow}", 'Submitted by:');
+
+        $sheet->mergeCells("B{$signatureNameRow}:C{$signatureNameRow}");
+        $sheet->mergeCells("E{$signatureNameRow}:G{$signatureNameRow}");
+        $sheet->mergeCells("I{$signatureNameRow}:K{$signatureNameRow}");
+        $sheet->mergeCells("N{$signatureNameRow}:Q{$signatureNameRow}");
+        $sheet->mergeCells("B{$signatureTitleRow}:C{$signatureTitleRow}");
+        $sheet->mergeCells("E{$signatureTitleRow}:G{$signatureTitleRow}");
+        $sheet->mergeCells("I{$signatureTitleRow}:K{$signatureTitleRow}");
+        $sheet->mergeCells("N{$signatureTitleRow}:Q{$signatureTitleRow}");
+
+        $sheet->setCellValue("B{$signatureNameRow}", 'ENGR. JESSELLE U. LEAÑO');
+        $sheet->setCellValue("E{$signatureNameRow}", 'ENGR. RENZ WILSON L. ETRATA');
+        $sheet->setCellValue("I{$signatureNameRow}", 'ENGR. WEYNARD JOSEPH P. UNTALAN');
+        $sheet->setCellValue("N{$signatureNameRow}", 'ENGR. JOHN N. MOLANO, MSME');
+        $sheet->setCellValue("B{$signatureTitleRow}", 'Economist A');
+        $sheet->setCellValue("E{$signatureTitleRow}", 'Unit Head, Planning Unit');
+        $sheet->setCellValue("I{$signatureTitleRow}", 'Chief, Engineering Section');
+        $sheet->setCellValue("N{$signatureTitleRow}", 'Division Manager A, Pangasinan IMO');
+
+        $sheet->getStyle("E{$signatureHeaderRow}:M{$signatureHeaderRow}")->getFont()->setName('Arial')->setSize(10);
+        $sheet->getStyle("B{$signatureNameRow}:Q{$signatureTitleRow}")->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'size' => 10,
+                'bold' => true,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+        $sheet->getStyle("B{$signatureTitleRow}:Q{$signatureTitleRow}")->getFont()->setBold(false);
+
+        $this->addFsExcelLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_6.png'), 'G1', 109, 8, 8);
+        $this->addFsExcelLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_4.png'), 'I1', 109, 8, 10);
+        $this->addFsExcelLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_5.png'), 'K1', 109, 8, 8);
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'MONTHLY FSDE STATUS REPORT ' . strtoupper($currentDate->format('Fj Y')) . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
     // 9. Delete IA Resolution
     public function deleteResolution(Request $request, $id)
@@ -268,5 +767,20 @@ class FsTeamController extends Controller
         $resolution->delete();
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
+    }
+
+    private function addFsExcelLogo($sheet, string $path, string $coordinates, int $height, int $offsetX = 0, int $offsetY = 0): void
+    {
+        if (!file_exists($path)) {
+            return;
+        }
+
+        $drawing = new Drawing();
+        $drawing->setPath($path);
+        $drawing->setCoordinates($coordinates);
+        $drawing->setHeight($height);
+        $drawing->setOffsetX($offsetX);
+        $drawing->setOffsetY($offsetY);
+        $drawing->setWorksheet($sheet);
     }
 }

@@ -180,6 +180,52 @@
             transform: translateY(-1px);
         }
 
+        .btn-edit-icon {
+            background: #e0e7ff;
+            color: #4f46e5;
+            border: none;
+            min-width: 40px;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .btn-edit-icon:hover {
+            background: #c7d2fe;
+            color: #3730a3;
+            transform: translateY(-1px);
+        }
+
+        .action-cell {
+            text-align: center;
+            white-space: nowrap !important;
+            word-wrap: normal !important;
+            overflow-wrap: normal !important;
+            word-break: normal !important;
+        }
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 5px;
+            min-width: max-content;
+        }
+
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -740,14 +786,16 @@
                                 <td style="width: 150px;">{{ $data->pow_for_submission }}</td>
                                 <td style="width: 120px;" class="col-desc">{{ $data->remarks }}</td>
                                 @if ($canManagePow)
-                                    <td style="width: 140px; text-align: center; white-space: nowrap;">
-                                        <button onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')" 
-                                                style="background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-right: 5px; min-width: 105px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;">
+                                    <td class="action-cell" style="width: 140px;">
+                                        <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Data" onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                             Edit
                                         </button>
                                         <button type="button" onclick="openDeleteModal({{ $data->id }})" class="btn-delete" title="Delete Data">
                                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
+                                        </div>
                                     </td>
                                 @endif
                             </tr>

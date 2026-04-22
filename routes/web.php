@@ -85,6 +85,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [FsTeamController::class, 'index'])->name('fs.dashboard');
             Route::get('/downloadables', [FsTeamController::class, 'downloadables'])->name('fs.downloadables');
             Route::get('/ia-resolutions', [FsTeamController::class, 'resolutions'])->name('fs.resolutions');
+            Route::get('/hydro-geo/export-excel', [FsTeamController::class, 'exportHydroExcel'])->name('fs.hydro.export');
+            Route::get('/fsde/export-excel', [FsTeamController::class, 'exportFsdeExcel'])->name('fs.fsde.export');
 
             // 🔒 EDITORS ONLY (Locked to FS Team and Admin)
             Route::middleware(['check.role:fs_team,admin'])->group(function () {
@@ -103,6 +105,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/projects/{project}/update-status', [FsTeamController::class, 'updateStatus'])->name('fs.projects.update');
                 Route::post('/hydro-geo', [FsTeamController::class, 'storeHydroGeo'])->name('fs.hydro.store');
                 Route::post('/fsde/store', [FsTeamController::class, 'storeFsde'])->name('fs.fsde.store');
+                Route::put('/hydro-geo/{id}', [FsTeamController::class, 'updateHydroGeo'])->name('fs.hydro.update');
+                Route::put('/fsde/{id}', [FsTeamController::class, 'updateFsde'])->name('fs.fsde.update');
                 Route::delete('/hydro-geo/{id}', [FsTeamController::class, 'destroyHydroGeo'])->name('fs.hydro.destroy');
                 Route::delete('/fsde/{id}', [FsTeamController::class, 'destroyFsde'])->name('fs.fsde.destroy');
             });

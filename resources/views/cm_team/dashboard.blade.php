@@ -46,6 +46,11 @@
 
         .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 105px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px);}
+        .btn-edit-icon { background: #e0e7ff; color: #4f46e5; border: none; min-width: 40px; height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12); flex-shrink: 0; white-space: nowrap; }
+        .btn-edit-icon:hover { background: #c7d2fe; color: #3730a3; transform: translateY(-1px); }
+        .action-cell { text-align: center; white-space: nowrap !important; word-wrap: normal !important; overflow-wrap: normal !important; word-break: normal !important; }
+        .action-buttons { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 5px; min-width: max-content; }
+        .action-buttons form { display: inline-flex; margin: 0; }
 
         .status-select { padding: 6px 10px; border-radius: 8px; border: 1px solid #e4e4e7; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; background: #ffffff; color: #18181b; cursor: pointer; outline: none; transition: 0.2s; }
         .status-select:hover { border-color: #18181b; }
@@ -332,18 +337,24 @@
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->remarks }}</div></td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->project_description }}</div></td>
                         @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
-                            <td style="text-align: center; white-space: nowrap;">
-                                <button onclick="openProcEditModal({{ $project->id }}, '{{ addslashes($project->name_of_project) }}', '{{ $project->category }}', '{{ $project->municipality }}', '{{ $project->allocation }}', '{{ $project->abc }}', '{{ $project->bid_out }}', '{{ $project->for_bidding }}', '{{ $project->date_of_bidding }}', '{{ $project->awarded }}', '{{ $project->date_of_award }}', '{{ $project->contract_no }}', '{{ $project->contract_amount }}', '{{ addslashes($project->name_of_contractor) }}', '{{ addslashes($project->remarks) }}', '{{ addslashes($project->project_description) }}')" 
-                                        style="background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-right: 5px; min-width: 105px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;">
+                            <td class="action-cell">
+                                <div class="action-buttons">
+                                <button
+                                    type="button"
+                                    class="btn-edit-icon"
+                                    title="Edit Project"
+                                    onclick="openProcEditModal({{ $project->id }}, '{{ addslashes($project->name_of_project) }}', '{{ $project->category }}', '{{ $project->municipality }}', '{{ $project->allocation }}', '{{ $project->abc }}', '{{ $project->bid_out }}', '{{ $project->for_bidding }}', '{{ $project->date_of_bidding }}', '{{ $project->awarded }}', '{{ $project->date_of_award }}', '{{ $project->contract_no }}', '{{ $project->contract_amount }}', '{{ addslashes($project->name_of_contractor) }}', '{{ addslashes($project->remarks) }}', '{{ addslashes($project->project_description) }}')">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                     Edit
                                 </button>
-                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Are you sure you want to delete this project?')" style="display: inline;">
+                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Are you sure you want to delete this project?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn-delete" title="Delete Project">
                                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
+                                </div>
                             </td>
                         @endif
                     </tr>
