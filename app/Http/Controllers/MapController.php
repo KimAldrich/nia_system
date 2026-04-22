@@ -60,7 +60,16 @@ class MapController extends Controller
                 'files.*' => 'file|max:51200'
             ]);
 
-            $category = $request->category;
+            $categoryLabel = $request->category;
+            
+            // Map category names to folder names
+            $categoryMap = [
+                'Irrigated Area' => 'irrigated',
+                'Pangasinan Land Boundary' => 'land_boundary',
+                'Potential Irrigable Area' => 'potential'
+            ];
+            
+            $folderName = $categoryMap[$categoryLabel];
             $paths = $request->input('paths', []); // optional (for folder upload)
 
             $uploadedFiles = [];
@@ -81,7 +90,7 @@ class MapController extends Controller
                 $safeName = preg_replace('/[^A-Za-z0-9\-]/', '_', $baseName);
                 $finalName = $safeName . '_' . uniqid() . '.' . $ext;
 
-                $storagePath = "maps/{$category}/{$folderPath}";
+                $storagePath = "maps/{$folderName}/{$folderPath}";
 
                 // ✅ ensure directory exists
                 Storage::disk('public')->makeDirectory($storagePath);
@@ -115,12 +124,16 @@ class MapController extends Controller
 
   public function fileManager()
 {
-    $categories = ['Irrigated Area', 'Pangasinan Land Boundary', 'Potential Irrigable Area'];
+    $categoryMap = [
+        'irrigated' => 'Irrigated Area',
+        'land_boundary' => 'Pangasinan Land Boundary',
+        'potential' => 'Potential Irrigable Area'
+    ];
     $filesData = [];
 
-    foreach ($categories as $category) {
+    foreach ($categoryMap as $folderName => $categoryLabel) {
 
-        $folder = "maps/" . $category;
+        $folder = "maps/" . $folderName;
 
         if (!Storage::disk('public')->exists($folder)) {
             continue;
@@ -132,10 +145,10 @@ class MapController extends Controller
         foreach ($files as $file) {
             $filesData[] = [
                 'name' => basename($file),
-                'category' => $category,
+                'category' => $categoryLabel,
                 'url' => Storage::url($file),
                 'path' => $file,
-                'folder' => dirname($file)
+                'folder' => str_replace("maps/{$folderName}/", '', dirname($file))
             ];
         }
     }
