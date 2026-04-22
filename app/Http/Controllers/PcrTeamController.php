@@ -10,6 +10,12 @@ use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
 use App\Models\PcrStatusReport;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class PcrTeamController extends Controller
 {
@@ -195,5 +201,151 @@ class PcrTeamController extends Controller
         PcrStatusReport::findOrFail($id)->delete();
 
         return $this->successResponse($request, 'PCR status data deleted successfully.');
+    }
+
+    public function exportPcrStatusExcel(Request $request): StreamedResponse
+    {
+        $rows = PcrStatusReport::orderByDesc('fund_source')->get();
+        $dateLabel = now()->format('F j, Y');
+        $filename = 'PCR STATUS AS OF ' . now()->format('Fj Y') . '.xlsx';
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('PCR Status');
+
+        foreach ([
+            'A' => 14,
+            'B' => 16,
+            'C' => 18,
+            'D' => 18,
+            'E' => 24,
+            'F' => 18,
+            'G' => 18,
+            'H' => 18,
+            'I' => 22,
+        ] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+
+        $sheet->mergeCells('A1:I1');
+        $sheet->mergeCells('A2:I2');
+        $sheet->mergeCells('A4:A5');
+        $sheet->mergeCells('B4:B5');
+        $sheet->mergeCells('C4:C5');
+        $sheet->mergeCells('D4:D5');
+        $sheet->mergeCells('E4:E5');
+        $sheet->mergeCells('F4:F5');
+        $sheet->mergeCells('G4:I4');
+
+        $sheet->setCellValue('A1', 'PROJECT COMPLETION REPORT STATUS MONITORING');
+        $sheet->setCellValue('A2', 'AS OF ' . strtoupper($dateLabel));
+        $sheet->setCellValue('A4', 'FUND SOURCE');
+        $sheet->setCellValue('B4', 'NO. OF CONTRACTS');
+        $sheet->setCellValue('C4', 'ALLOCATION');
+        $sheet->setCellValue('D4', 'NO. OF PCR PREPARED');
+        $sheet->setCellValue('E4', 'NO. OF PCR SUBMITTED TO REGIONAL OFFICE');
+        $sheet->setCellValue('F4', 'ACCOMPLISHMENT (PREPARED/NO. OF CONTRACTS)');
+        $sheet->setCellValue('G4', 'REMARKS');
+        $sheet->setCellValue('G5', 'FOR SIGNING OF IA, CHIEF, DM, RM');
+        $sheet->setCellValue('H5', 'FOR SUBMISSION TO RO1');
+        $sheet->setCellValue('I5', 'NOT YET PREPARED / PENDING DETAILS');
+
+        $sheet->getStyle('A1:I2')->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'bold' => true,
+                'size' => 12,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        $sheet->getStyle('A4:I5')->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'bold' => true,
+                'size' => 10,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'D9EAD3'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+
+        $rowIndex = 6;
+        foreach ($rows as $row) {
+            $sheet->setCellValue("A{$rowIndex}", $row->fund_source);
+            $sheet->setCellValue("B{$rowIndex}", $row->no_of_contracts);
+            $sheet->setCellValue("C{$rowIndex}", (float) $row->allocation);
+            $sheet->setCellValue("D{$rowIndex}", $row->no_of_pcr_prepared);
+            $sheet->setCellValue("E{$rowIndex}", $row->no_of_pcr_submitted_to_regional_office);
+            $sheet->setCellValue("F{$rowIndex}", (float) $row->accomplishment_percentage / 100);
+            $sheet->setCellValue("G{$rowIndex}", $row->for_signing_of_ia_chief_dm_rm);
+            $sheet->setCellValue("H{$rowIndex}", $row->for_submission_to_ro1);
+            $sheet->setCellValue("I{$rowIndex}", $row->not_yet_prepared_pending_details);
+            $rowIndex++;
+        }
+
+        if ($rows->isNotEmpty()) {
+            $sheet->setCellValue("A{$rowIndex}", 'TOTAL');
+            $sheet->setCellValue("B{$rowIndex}", $rows->sum('no_of_contracts'));
+            $sheet->setCellValue("C{$rowIndex}", (float) $rows->sum('allocation'));
+            $sheet->setCellValue("D{$rowIndex}", $rows->sum('no_of_pcr_prepared'));
+            $sheet->setCellValue("E{$rowIndex}", $rows->sum('no_of_pcr_submitted_to_regional_office'));
+            $sheet->setCellValue("G{$rowIndex}", $rows->sum('for_signing_of_ia_chief_dm_rm'));
+            $sheet->setCellValue("H{$rowIndex}", $rows->sum('for_submission_to_ro1'));
+            $sheet->setCellValue("I{$rowIndex}", $rows->sum('not_yet_prepared_pending_details'));
+            $sheet->getStyle("A{$rowIndex}:I{$rowIndex}")->applyFromArray([
+                'font' => ['bold' => true, 'name' => 'Arial', 'size' => 10],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'EAF4E2'],
+                ],
+            ]);
+        }
+
+        $lastRow = max($rowIndex, 6);
+        $sheet->getStyle("A6:I{$lastRow}")->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'size' => 10,
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
+        $sheet->getStyle("A6:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle("C6:C{$lastRow}")->getNumberFormat()->setFormatCode('"₱"#,##0.00');
+        $sheet->getStyle("F6:F{$lastRow}")->getNumberFormat()->setFormatCode('0.00%');
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }

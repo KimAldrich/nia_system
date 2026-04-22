@@ -217,6 +217,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [PcrTeamController::class, 'index'])->name('pcr.dashboard');
             Route::get('/downloadables', [PcrTeamController::class, 'downloadables'])->name('pcr.downloadables');
             Route::get('/ia-resolutions', [PcrTeamController::class, 'resolutions'])->name('pcr.resolutions');
+            Route::get('/status/export-excel', [PcrTeamController::class, 'exportPcrStatusExcel'])->name('pcr.status.export');
 
             // 🔒 EDITORS ONLY (Locked to PCR Team and Admin)
             Route::middleware(['check.role:pcr_team,admin'])->group(function () {
