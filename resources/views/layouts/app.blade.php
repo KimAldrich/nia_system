@@ -301,12 +301,6 @@
         @keyframes appGlobalSpin {
             to { transform: rotate(360deg); }
         }
-        input.is-invalid, select.is-invalid, textarea.is-invalid,
-        input:invalid:not(:placeholder-shown), select:invalid, textarea:invalid:not(:placeholder-shown) {
-            border-color: #dc2626 !important;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
-        }
-
         @media (max-width: 1150px) {
             .dashboard-main-grid { grid-template-columns: 1fr; }
             .content .dashboard-grid { grid-template-columns: minmax(0, 1fr); }

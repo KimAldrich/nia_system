@@ -162,6 +162,23 @@ class AdminController extends Controller
         return back()->with('success', $message);
     }
 
+    public function updateUserPassword(Request $request, User $user)
+    {
+        $this->checkAdmin();
+
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|max:255',
+        ]);
+
+        $user->password = $validated['password'];
+        $user->save();
+
+        return $this->successResponse($request, "{$user->name}'s password was updated successfully.", [
+            'plain_password' => $validated['password'],
+            'user_id' => $user->id,
+        ]);
+    }
+
     public function destroyUser(Request $request, User $user)
     {
         $this->checkAdmin();

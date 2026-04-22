@@ -61,6 +61,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/users', [AdminController::class, 'manageUsers'])->name('admin.users');
             Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
             Route::patch('/users/{user}/status', [AdminController::class, 'updateUserStatus'])->name('admin.users.status');
+            Route::patch('/users/{user}/password', [AdminController::class, 'updateUserPassword'])->name('admin.users.password');
             Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
             // Add more admin routes here
 

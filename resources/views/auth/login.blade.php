@@ -94,12 +94,6 @@
             box-shadow: 0 0 0 3px rgba(11, 94, 44, 0.1);
         }
 
-        .form-group input.is-invalid,
-        .form-group input:invalid:not(:placeholder-shown) {
-            border-color: #dc2626;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
-        }
-
         button {
             width: 100%;
             padding: 14px;
