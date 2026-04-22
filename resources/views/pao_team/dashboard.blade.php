@@ -730,7 +730,7 @@
         $canManagePow = auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']);
     @endphp
 
-    <div class="ui-card">
+    <div class="ui-card" id="powSection">
         <div class="section-title">
             Program of Works Status Monitoring
             
@@ -869,7 +869,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Program of Works Data</h3>
                 
-                <form action="{{ route('pao.pow.store') }}" method="POST">
+                <form action="{{ route('pao.pow.store') }}" method="POST" data-async-target="#powSection" data-async-reset="true" data-async-close="#addDataModal" data-async-success-modal="#powSuccessModal">
                     @csrf
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
@@ -954,7 +954,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete Program of Works Data</h3>
                 <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
-                <form id="deleteForm" method="POST" action="">
+                <form id="deleteForm" method="POST" action="" data-async-target="#powSection" data-async-close="#deleteConfirmModal" data-async-success-modal="#powSuccessModal">
                     @csrf
                     @method('DELETE')
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -969,7 +969,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Program of Works Data</h3>
                 
-                <form action="{{ route('pao.pow.update') }}" method="POST">
+                <form action="{{ route('pao.pow.update') }}" method="POST" data-async-target="#powSection" data-async-close="#editDataModal" data-async-success-modal="#powSuccessModal">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="id" id="edit-id">
@@ -1055,8 +1055,8 @@
 
         <div class="modal-overlay {{ session('pow_status_success') ? 'active' : '' }}" id="powSuccessModal">
             <div class="modal-box">
-                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
-                <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pow_status_success', 'Saved successfully.') }}</p>
+                <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+                <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pow_status_success', 'Saved successfully.') }}</p>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" onclick="closePowSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
                 </div>

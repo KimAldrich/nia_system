@@ -838,7 +838,7 @@
                 @if ($pcrStatusReports->onFirstPage())
                     <span class="page-item disabled">&lt;</span>
                 @else
-                    <a href="{{ $pcrStatusReports->previousPageUrl() }}" class="page-item">&lt;</a>
+                    <a href="{{ $pcrStatusReports->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#pcrStatusSection">&lt;</a>
                 @endif
                 @foreach ($pcrStatusReports->links()->elements as $element)
                     @if (is_string($element))
@@ -849,13 +849,13 @@
                             @if ($page == $pcrStatusReports->currentPage())
                                 <span class="page-item active">{{ $page }}</span>
                             @else
-                                <a href="{{ $url }}" class="page-item">{{ $page }}</a>
+                                <a href="{{ $url }}" class="page-item" data-async-pagination="true" data-async-target="#pcrStatusSection">{{ $page }}</a>
                             @endif
                         @endforeach
                     @endif
                 @endforeach
                 @if ($pcrStatusReports->hasMorePages())
-                    <a href="{{ $pcrStatusReports->nextPageUrl() }}" class="page-item">&gt;</a>
+                    <a href="{{ $pcrStatusReports->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#pcrStatusSection">&gt;</a>
                 @else
                     <span class="page-item disabled">&gt;</span>
                 @endif
@@ -867,7 +867,7 @@
         <div class="modal-overlay" id="pcrAddModal">
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add PCR Status Data</h3>
-                <form action="{{ route('pcr.status.store') }}" method="POST">
+                <form action="{{ route('pcr.status.store') }}" method="POST" data-async-target="#pcrStatusSection" data-async-reset="true" data-async-close="#pcrAddModal" data-async-success-modal="#pcrSuccessModal">
                     @csrf
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div><label class="modern-label">Fund Source</label><input type="text" name="fund_source" required class="modern-input" placeholder="e.g. 2024"></div>
@@ -900,7 +900,7 @@
         <div class="modal-overlay" id="pcrEditModal">
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit PCR Status Data</h3>
-                <form action="{{ route('pcr.status.update') }}" method="POST">
+                <form action="{{ route('pcr.status.update') }}" method="POST" data-async-target="#pcrStatusSection" data-async-close="#pcrEditModal" data-async-success-modal="#pcrSuccessModal">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="id" id="pcr-edit-id">
@@ -936,7 +936,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete PCR Status Data</h3>
                 <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
-                <form id="pcrDeleteForm" method="POST">
+                <form id="pcrDeleteForm" method="POST" data-async-target="#pcrStatusSection" data-async-close="#pcrDeleteModal" data-async-success-modal="#pcrSuccessModal">
                     @csrf
                     @method('DELETE')
                     <div style="display: flex; gap: 10px;">
@@ -949,8 +949,8 @@
 
         <div class="modal-overlay {{ session('pcr_status_success') ? 'active' : '' }}" id="pcrSuccessModal">
             <div class="modal-box">
-                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
-                <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pcr_status_success', 'Saved successfully.') }}</p>
+                <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+                <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pcr_status_success', 'Saved successfully.') }}</p>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" onclick="closePcrSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
                 </div>
