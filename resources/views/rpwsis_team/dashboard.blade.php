@@ -8,6 +8,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         * {
@@ -36,17 +37,11 @@
 
         .ui-card {
             background: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            margin-bottom: 24px;
-            border: none;
-            width: 100%;
-            min-width: 0;
-            max-width: 100%;
-            display: block;
-            box-sizing: border-box;
-            overflow: hidden;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            margin-bottom: 30px;
+            border: 1px solid #e4e4e7;
         }
 
         .ui-card.dark {
@@ -64,7 +59,6 @@
             align-items: center;
         }
 
-        /* Dark Summary Card */
         .status-hero {
             display: flex;
             justify-content: space-between;
@@ -87,36 +81,6 @@
             width: 80px;
             height: auto;
             opacity: 0.8;
-        }
-
-        /* Sleek Table with Actions */
-        .sleek-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .sleek-table th {
-            text-align: left;
-            padding-bottom: 15px;
-            color: #a1a1aa;
-            font-weight: 500;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #f4f4f5;
-        }
-
-        .sleek-table td {
-            padding: 15px 0;
-            border-bottom: 1px solid #f4f4f5;
-            font-size: 13px;
-            font-weight: 500;
-            vertical-align: middle;
-        }
-
-        .sleek-table tr:last-child td {
-            border-bottom: none;
-            padding-bottom: 0;
         }
 
         .status-badge {
@@ -144,7 +108,6 @@
             color: #71717a;
         }
 
-        /* Custom Status Dropdown */
         .status-select {
             padding: 6px 10px;
             border-radius: 8px;
@@ -157,13 +120,14 @@
             cursor: pointer;
             outline: none;
             transition: 0.2s;
+            width: 100%;
         }
 
         .status-select:hover {
             border-color: #18181b;
         }
 
-        /* Dynamic Visual Calendar */
+        /* CALENDAR STYLES */
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -206,30 +170,6 @@
             display: block;
         }
 
-        .cal-nav {
-            display: flex;
-            gap: 10px;
-        }
-
-        .cal-nav button {
-            background: none;
-            border: 1px solid #0c4d05;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #a1a1aa;
-            transition: 0.2s;
-        }
-
-        .cal-nav button:hover {
-            border-color: #18181b;
-            color: #18181b;
-        }
-
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -267,12 +207,10 @@
             border: 2px solid #18181b;
         }
 
-        /* The black circle */
         .day-num.today {
             background: #4fc94d;
         }
 
-        /* Mini Event List Below Calendar */
         .mini-event {
             display: flex;
             align-items: center;
@@ -324,412 +262,24 @@
             border-radius: 50%;
         }
 
-
-
-        /* STATUS MODULE ONLY */
-        .status-module table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        /* Header */
-        .status-module thead th {
-            background: #f9fafb;
-            font-size: 11px;
-            font-weight: 600;
-            color: #71717a;
-            padding: 10px;
-            text-align: center;
-            border: none;
-        }
-
-        /* Body */
-        .status-module tbody td {
-            background: #fff;
-            padding: 12px;
-            font-size: 12px;
-            border-bottom: 1px solid #f1f5f9;
-            text-align: center;
-        }
-
-        /* Row hover */
-        .status-module tbody tr:hover td {
-            background: #f9fafb;
-        }
-
-        /* First column left align */
-        .status-module tbody td:first-child {
-            text-align: left;
-            font-weight: 600;
-        }
-
-        /* Action button */
-        .status-action-btn {
-            background: #fee2e2;
-            color: #991b1b;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        /* Modal UI */
+        /* MODALS */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(2px);
-            z-index: 1000;
             display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            animation: fadeIn 0.2s;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 999;
         }
 
         .modal-box {
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 600px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 95%;
+            max-width: 1000px;
+            background: #fff;
+            margin: 40px auto;
+            border-radius: 14px;
+            padding: 25px;
             max-height: 90vh;
             overflow-y: auto;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modern-input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 12px;
-            outline: none;
-            background: #ffffff;
-            color: #1e293b;
-            transition: 0.2s;
-            margin-bottom: 15px;
-        }
-
-        .modern-input:focus {
-            border-color: #0c4d05;
-            box-shadow: 0 0 0 3px rgba(12, 77, 5, 0.1);
-        }
-
-        .modern-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .modern-btn {
-            width: 100%;
-            padding: 10px;
-            background: #0c4d05;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .modern-btn:hover {
-            background: #083803;
-        }
-
-        .modern-btn-outline {
-            background: white;
-            border: 1px solid #cbd5e1;
-            color: #475569;
-        }
-
-        .modern-btn-outline:hover {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-
-        /* CLEAN TABLE UI FIX */
-        .custom-table {
-            border-collapse: separate;
-            border-spacing: 0;
-            min-width: 1200px;
-            /* prevents squishing */
-        }
-
-        .custom-table thead th {
-            font-size: 11px;
-            color: #71717a;
-            font-weight: 600;
-            text-align: center;
-            padding: 10px 6px;
-            border-bottom: 1px solid #e4e4e7;
-        }
-
-        .custom-table tbody td {
-            padding: 12px 8px;
-            font-size: 13px;
-            text-align: center;
-            border-bottom: 1px solid #f4f4f5;
-        }
-
-        .custom-table tbody tr:hover {
-            background: #f9fafb;
-            transition: 0.2s;
-        }
-
-        /* FIX INPUT LOOK */
-        .status-select {
-            width: 100%;
-        }
-
-        /* COLLAPSIBLE COLUMNS */
-        .hide-impl th.impl,
-        .hide-impl td.impl {
-            display: none;
-        }
-
-        /* smooth look */
-        .custom-table td,
-        .custom-table th {
-            transition: 0.2s;
-        }
-
-        /* 1. CLEAN TABLE UI FIX */
-        .custom-table {
-            border-collapse: collapse;
-            min-width: 2000px;
-            width: 100%;
-            table-layout: fixed;
-            background: #fff;
-        }
-
-        .custom-table thead th {
-            text-align: left;
-            padding: 12px 15px;
-            color: #a0aec0;
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border: 1px solid #f1f5f9;
-            background: #f8fafc;
-            white-space: normal;
-            vertical-align: middle;
-            line-height: 1.4;
-        }
-
-        .custom-table tbody td {
-            padding: 15px;
-            border: 1px solid #f1f5f9;
-            font-size: 12px;
-            font-weight: 500;
-            color: #475569;
-            vertical-align: middle;
-            white-space: normal;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            transition: 0.2s;
-        }
-
-        .custom-table tbody tr:hover td {
-            background-color: #f8fafc;
-        }
-
-        .custom-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        /* //new april 2021 */
-
-        /* ✅ FIRST TABLE SPECIFIC COLUMN WIDTHS */
-        .col-activity {
-            min-width: 280px;
-            text-align: left !important;
-            line-height: 1.5;
-            white-space: normal;
-        }
-
-        .col-remarks {
-            min-width: 180px;
-            white-space: normal;
-        }
-
-        .col-amount {
-            min-width: 120px;
-            font-weight: 600;
-        }
-
-        /* ✅ NEW FEATURE: SUMMARY TABLE SPECIFIC COLUMN WIDTHS */
-        #summaryTable {
-            min-width: 2600px;
-            /* Wider to accommodate 18 distinct columns */
-        }
-
-        #simpleTable {
-            min-width: 2200px;
-            table-layout: fixed;
-        }
-
-        #simpleTable thead th {
-            min-width: 120px;
-            max-width: 140px;
-            white-space: normal;
-            line-height: 1.4;
-            word-break: break-word;
-        }
-
-        #simpleTable tbody td {
-            max-width: 140px;
-            vertical-align: top;
-        }
-
-        #simpleTable .status-compact-cell {
-            white-space: normal;
-            text-align: left;
-            color: #64748b;
-            line-height: 1.5;
-        }
-
-        #summaryTable .col-standard {
-            min-width: 120px;
-        }
-
-        #summaryTable .col-medium {
-            min-width: 160px;
-            white-space: normal;
-            line-height: 1.4;
-        }
-
-        #summaryTable .col-wide {
-            min-width: 260px;
-            text-align: left !important;
-            white-space: normal;
-            line-height: 1.6;
-        }
-
-        #summaryTable .col-expandable {
-            min-width: 190px;
-            max-width: 220px;
-            white-space: normal;
-            text-align: left !important;
-        }
-
-        .expandable-cell {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
-        }
-
-        .expandable-preview,
-        .expandable-full {
-            line-height: 1.5;
-            word-break: break-word;
-            color: #64748b;
-        }
-
-        .expandable-full {
-            display: none;
-        }
-
-        .expandable-cell.is-expanded .expandable-preview {
-            display: none;
-        }
-
-        .expandable-cell.is-expanded .expandable-full {
-            display: block;
-        }
-
-        .expand-toggle {
-            border: none;
-            background: transparent;
-            color: #0c4d05;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 0;
-            cursor: pointer;
-            text-decoration: underline;
-            text-underline-offset: 2px;
-        }
-
-        .expand-toggle:hover {
-            color: #083a04;
-        }
-
-        #summaryTable .col-action {
-            min-width: 80px;
-            text-align: right;
-        }
-
-        /* COLLAPSIBLE COLUMNS */
-        .hide-impl th.impl,
-        .hide-impl td.impl {
-            display: none;
-        }
-
-        /* 2. RESPONSIVE TABLE WRAPPER */
-        .table-responsive-wrapper {
-            width: 100%;
-            max-width: 100%;
-            display: block;
-            overflow-x: auto;
-            overflow-y: auto;
-            max-height: 600px;
-            -webkit-overflow-scrolling: touch;
-            margin-bottom: 20px;
-            scrollbar-width: thin;
-            scrollbar-color: #cbd5e1 #f1f5f9;
-            border-radius: 0;
-            border: none;
-            padding-bottom: 15px;
-        }
-
-        /* CUSTOM HORIZONTAL & VERTICAL SCROLLBARS */
-        .table-responsive-wrapper::-webkit-scrollbar {
-            height: 12px;
-            width: 12px;
-        }
-
-        .table-responsive-wrapper::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 8px;
-        }
-
-        .table-responsive-wrapper::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 8px;
-        }
-
-        .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
         }
 
         .delete-modal-overlay {
@@ -780,8 +330,7 @@
         }
 
         .delete-modal-btn {
-            width: 100%;
-            padding: 10px;
+            padding: 10px 20px;
             border-radius: 8px;
             font-weight: 600;
             font-family: 'Poppins', sans-serif;
@@ -821,6 +370,219 @@
                 transform: translateY(0);
             }
         }
+
+        /* TABLES */
+        .custom-table {
+            border-collapse: collapse;
+            min-width: 2000px;
+            background: #fff;
+        }
+
+        .custom-table thead th {
+            font-size: 11px;
+            color: #3f3f46;
+            font-weight: 600;
+            text-align: center;
+            padding: 12px 8px;
+            border: 1px solid #e4e4e7;
+            background: #f8fafc;
+            vertical-align: middle;
+            transition: 0.2s;
+        }
+
+        .custom-table tbody td {
+            padding: 12px 10px;
+            font-size: 12px;
+            text-align: center;
+            border: 1px solid #e4e4e7;
+            vertical-align: middle;
+            color: #18181b;
+            transition: 0.2s;
+        }
+
+        .custom-table tbody tr:hover td {
+            background: #f0f9ff;
+        }
+
+        .sleek-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 100%;
+        }
+
+        .sleek-table th {
+            text-align: left;
+            padding-bottom: 15px;
+            color: #a1a1aa;
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #f4f4f5;
+        }
+
+        .sleek-table td {
+            padding: 15px 0;
+            border-bottom: 1px solid #f4f4f5;
+            font-size: 13px;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+
+        /* TABLE SPECIFIC COLUMNS */
+        .col-activity {
+            min-width: 280px;
+            text-align: left !important;
+            line-height: 1.5;
+            white-space: normal;
+        }
+
+        .col-remarks {
+            min-width: 180px;
+            white-space: normal;
+        }
+
+        .col-amount {
+            min-width: 120px;
+            font-weight: 600;
+        }
+
+        .col-action {
+            min-width: 80px;
+            text-align: right;
+        }
+
+        #summaryTable {
+            min-width: 2600px;
+        }
+
+        #simpleTable {
+            min-width: 2200px;
+            table-layout: fixed;
+        }
+
+        #simpleTable thead th {
+            min-width: 120px;
+            max-width: 140px;
+            white-space: normal;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        #simpleTable tbody td {
+            max-width: 140px;
+            vertical-align: top;
+        }
+
+        .status-compact-cell {
+            white-space: normal;
+            text-align: left;
+        }
+
+        #summaryTable .col-standard {
+            min-width: 120px;
+        }
+
+        #summaryTable .col-medium {
+            min-width: 160px;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        #summaryTable .col-wide {
+            min-width: 260px;
+            text-align: left !important;
+            white-space: normal;
+            line-height: 1.6;
+        }
+
+        #summaryTable .col-expandable {
+            min-width: 190px;
+            max-width: 220px;
+            white-space: normal;
+            text-align: left !important;
+        }
+
+        /* EXPANDABLE TEXT */
+        .expandable-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .expandable-preview,
+        .expandable-full {
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .expandable-full {
+            display: none;
+        }
+
+        .expandable-cell.is-expanded .expandable-preview {
+            display: none;
+        }
+
+        .expandable-cell.is-expanded .expandable-full {
+            display: block;
+        }
+
+        .expand-toggle {
+            border: none;
+            background: transparent;
+            color: #0c4d05;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 0;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .expand-toggle:hover {
+            color: #083a04;
+        }
+
+        .hide-impl th.impl,
+        .hide-impl td.impl {
+            display: none;
+        }
+
+        /* SCROLL BARS */
+        .table-responsive-wrapper {
+            width: 100%;
+            overflow-x: scroll;
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid #e4e4e7;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f8fafc;
+        }
+
+        .table-responsive-wrapper::-webkit-scrollbar {
+            height: 12px;
+            width: 12px;
+        }
+
+        .table-responsive-wrapper::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 0 0 10px 10px;
+            border-top: 1px solid #e4e4e7;
+        }
+
+        .table-responsive-wrapper::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+            border: 2px solid #f8fafc;
+        }
+
+        .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 
     <h1 class="header-title">Social And Environmental Team Dashboard</h1>
@@ -828,7 +590,6 @@
     <div class="dashboard-grid">
 
         <div class="main-column">
-
             <div class="ui-card dark">
                 <div class="status-hero">
                     <div>
@@ -844,12 +605,11 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table">
+                <table class="sleek-table" id="activeProjectsContainer">
                     <thead>
                         <tr>
                             <th>Document Name</th>
                             <th>Status</th>
-
                             @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
                                 <th style="text-align: right;">Action</th>
                             @endif
@@ -872,22 +632,19 @@
                                         <span class="status-badge badge-outline">Not-Validated</span>
                                     @endif
                                 </td>
-
                                 @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
                                     <td style="text-align: right;">
                                         <form action="{{ route('rpwsis.resolutions.update_status', $res->id) }}"
-                                            method="POST">
+                                            method="POST" data-async-target="#activeProjectsContainer">
                                             @csrf
                                             <select name="status" class="status-select" onchange="this.form.submit()">
                                                 <option value="not-validated"
-                                                    {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                                    Not-Validated</option>
-                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
-                                                    On-Going
+                                                    {{ $res->status == 'not-validated' ? 'selected' : '' }}>Not-Validated
                                                 </option>
+                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
+                                                    On-Going</option>
                                                 <option value="validated"
-                                                    {{ $res->status == 'validated' ? 'selected' : '' }}>
-                                                    Validated</option>
+                                                    {{ $res->status == 'validated' ? 'selected' : '' }}>Validated</option>
                                             </select>
                                         </form>
                                     </td>
@@ -932,9 +689,7 @@
                 <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f4f4f5;">
                     <p
                         style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
-                        Event Legend
-                    </p>
-
+                        Event Legend</p>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                         @forelse($categories as $cat)
                             <div class="legend-item">
@@ -962,9 +717,7 @@
                 @endphp
 
                 <div class="calendar-carousel">
-                    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
-                        &lt;
-                    </button>
+                    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">&lt;</button>
 
                     <div class="calendar-viewport">
                         @php
@@ -991,7 +744,6 @@
                                 <div class="calendar-header">
                                     <h4>{{ $monthDate->format('F Y') }}</h4>
                                 </div>
-
                                 <div class="calendar-grid">
                                     <div class="day-name">Sun</div>
                                     <div class="day-name">Mon</div>
@@ -1015,7 +767,6 @@
                                                     ? $dayEvents->first()->category->color
                                                     : '#18181b';
                                         @endphp
-
                                         <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
                                             style="{{ $hasEvent ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
                                             {{ $day }}
@@ -1026,16 +777,13 @@
                         @endfor
                     </div>
 
-                    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
-                        &gt;
-                    </button>
+                    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">&gt;</button>
                 </div>
 
                 <div style="margin-top: 10px;">
                     <p
                         style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
                         Upcoming Schedule</p>
-
                     @if (isset($events) && $events->count() > 0)
                         @foreach ($events as $event)
                             <div class="mini-event">
@@ -1048,8 +796,7 @@
                         @endforeach
                     @else
                         <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming
-                            events.
-                        </p>
+                            events.</p>
                     @endif
                 </div>
 
@@ -1057,80 +804,60 @@
         </div>
     </div>
 
-    {{-- //STATUS --}}
+    {{-- //STATUS ACCOMPLISHMENT --}}
     <div class="ui-card">
-
-        <!-- ACTION BUTTONS -->
         <div class="section-title">
             ACCOMPLISHMENT AS OF FEBRUARY 15, 2025 OF R&P WRSIS
-            <div style="display: flex; gap: 10px;">
+            <div style="display:flex; gap:8px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openModal()"
-                        style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
-                        + Add Record
-                    </button>
+                    <button onclick="openModal()" class="status-select"
+                        style="background-color: #2563eb; color: white; border-color: #2563eb;">+ Add Record</button>
                 @endif
-
-                <button onclick="exportCSV()"
-                    style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                        </path>
-                    </svg>
-                    Export CSV
-                </button>
+                <button onclick="exportExcel()" class="status-select"
+                    style="background-color: #16a34a; color: white; border-color: #16a34a;">Export Excel</button>
             </div>
         </div>
 
-        <!-- TABLE -->
         <div class="table-responsive-wrapper">
-            <table class="sleek-table custom-table" id="simpleTable">
+            <table class="custom-table" id="simpleTable">
                 <thead>
-                    <!-- TOP HEADER -->
                     <tr>
-                        <th rowspan="3">Region</th>
-                        <th rowspan="3">Batch</th>
-                        <th rowspan="3">Allocation</th>
-                        <th rowspan="3">NIS</th>
-                        <th rowspan="3">Activity Type</th>
-                        <th rowspan="3">Remarks</th>
-                        <th rowspan="3">Amount</th>
+                        <th rowspan="3" class="col-standard">Region</th>
+                        <th rowspan="3" class="col-standard">Batch</th>
+                        <th rowspan="3" class="col-standard">Allocation</th>
+                        <th rowspan="3" class="col-standard">NIS</th>
+                        <th rowspan="3" class="col-activity">Activity Type</th>
+                        <th rowspan="3" class="col-remarks">Remarks</th>
+                        <th rowspan="3" class="col-amount">Amount</th>
 
                         <th colspan="12">B. Implementation Stage</th>
 
-                        <th rowspan="3">PHY %</th>
-                        <th rowspan="3">FIN %</th>
-                        <th rowspan="3">Expenditures</th>
+                        <th rowspan="3" class="col-standard">PHY %</th>
+                        <th rowspan="3" class="col-standard">FIN %</th>
+                        <th rowspan="3" class="col-standard">Expenditures</th>
 
                         @if ($canManageRpwsis)
-                            <th rowspan="3" style="text-align:right;">Action</th>
+                            <th rowspan="3" class="col-action" style="text-align:right;">Action</th>
                         @endif
                     </tr>
-
-                    <!-- SECOND HEADER -->
                     <tr>
                         <th colspan="8">1. Preparation and Establishment</th>
                         <th colspan="3">2. Conduct of IEC</th>
                         <th colspan="1">3. Monitoring and Evaluation</th>
                     </tr>
-
-                    <!-- THIRD HEADER -->
                     <tr>
-                        <th class="impl">POW Formulation</th>
-                        <th class="impl">Nursery area/Bunk House/STW</th>
-                        <th class="impl">Seedling Production</th>
-                        <th class="impl">Procurement </th>
-                        <th class="impl">Site Preparation</th>
-                        <th class="impl">Vegetative enhancement</th>
-                        <th class="impl">Establishment of Wattling</th>
-                        <th class="impl">Right of Way/Rent/ Wages of Caretaker/</th>
-                        <th class="impl">Conduct of consultative meetings</th>
-                        <th class="impl">Distribution of reading materials</th>
-                        <th class="impl">Installation of signboards/
-                            signages </th>
-                        <th class="impl">Supervision and Monitoring of implementations</th>
+                        <th class="impl col-standard">POW Formulation</th>
+                        <th class="impl col-standard">Nursery area/Bunk House/STW</th>
+                        <th class="impl col-standard">Seedling Production</th>
+                        <th class="impl col-standard">Procurement </th>
+                        <th class="impl col-standard">Site Preparation</th>
+                        <th class="impl col-standard">Vegetative enhancement</th>
+                        <th class="impl col-standard">Establishment of Wattling</th>
+                        <th class="impl col-remarks">Right of Way/Rent/ Wages of Caretaker/</th>
+                        <th class="impl col-remarks">Conduct of consultative meetings</th>
+                        <th class="impl col-remarks">Distribution of reading materials</th>
+                        <th class="impl col-remarks">Installation of signboards/signages</th>
+                        <th class="impl col-remarks">Supervision and Monitoring of implementations</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -1163,7 +890,19 @@
                         @endphp
                         <tr>
                             @foreach ($statusValues as $index => $value)
-                                <td class="{{ $index >= 7 && $index <= 18 ? 'impl ' : '' }}status-compact-cell"
+                                @php
+                                    $colClass = 'col-standard';
+                                    if ($index === 4) {
+                                        $colClass = 'col-activity';
+                                    }
+                                    if ($index === 5 || ($index >= 14 && $index <= 18)) {
+                                        $colClass = 'col-remarks';
+                                    }
+                                    if ($index === 6) {
+                                        $colClass = 'col-amount';
+                                    }
+                                @endphp
+                                <td class="{{ $index >= 7 && $index <= 18 ? 'impl ' : '' }}{{ $colClass }} status-compact-cell"
                                     data-export-value="{{ $value }}">
                                     {!! !empty($value)
                                         ? '<div class="expandable-cell' .
@@ -1183,7 +922,7 @@
                                 </td>
                             @endforeach
                             @if ($canManageRpwsis)
-                                <td>
+                                <td class="col-action" style="text-align:right;">
                                     <button onclick="openDeleteModal('accomplishment', {{ $r->id }}, this)"
                                         class="status-select">Delete</button>
                                 </td>
@@ -1193,453 +932,136 @@
                 </tbody>
             </table>
         </div>
+
         @if ($canManageRpwsis)
-            <!-- MODAL -->
-            <div id="statusModal"
-                style="
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.4);
-    z-index:999;
-">
-
+            <div id="statusModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
                 <div
-                    style="
-        width:90%;
-        max-width:900px;
-        background:#fff;
-        margin:40px auto;
-        border-radius:12px;
-        padding:20px;
-        box-shadow:0 10px 30px rgba(0,0,0,0.2);
-        font-family:'Poppins', sans-serif;
-        max-height:90vh;
-        overflow:auto;
-    ">
-
-                    <!-- HEADER -->
+                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                         <h3 style="margin:0; color:#0c4d05;">Add Accomplishment</h3>
                         <button onclick="closeModal()"
                             style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
-                            &times;
-                        </button>
+                            onmouseover="this.style.color='#ef4444'"
+                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
                     </div>
 
-                    <!-- FORM -->
                     <div style="display:flex; flex-direction:column; gap:15px;">
-
-                        <!-- PROJECT INFO -->
                         <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
                             <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project
-                                Information
-                            </p>
-
+                                Information</p>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="region" placeholder="Region" class="status-select">
-                                <input id="batch" placeholder="Batch" class="status-select">
-                                <input id="allocation" placeholder="Allocation" class="status-select">
-                                <input id="nis" placeholder="NIS" class="status-select">
-                                <input id="activity" placeholder="Activity Type" class="status-select">
-                                <input id="remarks" placeholder="Remarks" class="status-select">
-                                <input id="amount" placeholder="Amount" class="status-select">
+                                <input id="region" placeholder="Region" class="status-select" maxlength="100"
+                                    required>
+                                <input id="batch" placeholder="Batch" class="status-select" maxlength="100">
+                                <input id="allocation" placeholder="Allocation" class="status-select" maxlength="255">
+                                <input id="nis" placeholder="NIS" class="status-select" maxlength="255">
+                                <input id="activity" placeholder="Activity Type" class="status-select" maxlength="255"
+                                    required>
+                                <input id="remarks" placeholder="Remarks" class="status-select" maxlength="1000">
+                                <input id="amount" placeholder="Amount" class="status-select" type="number"
+                                    min="0" step="0.01">
                             </div>
                         </div>
 
-                        <!-- IMPLEMENTATION -->
                         <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
                             <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Implementation
-                                Stage
-                            </p>
-
+                                Stage</p>
                             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="c1" placeholder="POW" class="status-select">
-                                <input id="c2" placeholder="Nursery" class="status-select">
-                                <input id="c3" placeholder="Seedling" class="status-select">
-                                <input id="c4" placeholder="Procurement" class="status-select">
-                                <input id="c5" placeholder="Site Prep" class="status-select">
-                                <input id="c6" placeholder="Vegetative" class="status-select">
-                                <input id="c7" placeholder="Wattling" class="status-select">
-                                <input id="c8" placeholder="Right of Way" class="status-select">
-                                <input id="c9" placeholder="Consultative" class="status-select">
-                                <input id="c10" placeholder="Distribution" class="status-select">
-                                <input id="c11" placeholder="Signages" class="status-select">
-                                <input id="c12" placeholder="Monitoring" class="status-select">
+                                <input id="c1" placeholder="POW" class="status-select" maxlength="255">
+                                <input id="c2" placeholder="Nursery" class="status-select" maxlength="255">
+                                <input id="c3" placeholder="Seedling" class="status-select" maxlength="255">
+                                <input id="c4" placeholder="Procurement" class="status-select" maxlength="255">
+                                <input id="c5" placeholder="Site Prep" class="status-select" maxlength="255">
+                                <input id="c6" placeholder="Vegetative" class="status-select" maxlength="255">
+                                <input id="c7" placeholder="Wattling" class="status-select" maxlength="255">
+                                <input id="c8" placeholder="Right of Way" class="status-select" maxlength="255">
+                                <input id="c9" placeholder="Consultative" class="status-select" maxlength="255">
+                                <input id="c10" placeholder="Distribution" class="status-select" maxlength="255">
+                                <input id="c11" placeholder="Signages" class="status-select" maxlength="255">
+                                <input id="c12" placeholder="Monitoring" class="status-select" maxlength="255">
                             </div>
                         </div>
 
-                        <!-- METRICS -->
                         <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
                             <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics
                             </p>
-
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="phy" placeholder="PHY %" class="status-select">
-                                <input id="fin" placeholder="FIN %" class="status-select">
-                                <input id="exp" placeholder="Expenditures" class="status-select">
+                                <input id="phy" placeholder="PHY %" class="status-select" type="number"
+                                    min="0" max="100" step="0.01">
+                                <input id="fin" placeholder="FIN %" class="status-select" type="number"
+                                    min="0" max="100" step="0.01">
+                                <input id="exp" placeholder="Expenditures" class="status-select" type="number"
+                                    min="0" step="0.01">
                             </div>
                         </div>
 
-                        <!-- ACTIONS -->
                         <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeModal()" class="status-select">Cancel</button>
+                            <button onclick="closeModal()" class="status-select" style="width: auto;">Cancel</button>
                             <button onclick="saveRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white;">
-                                Save Record
-                            </button>
+                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
                         </div>
-
                     </div>
                 </div>
-                <<<<<<< HEAD=======</div>
             </div>
-            >>>>>>> 49d572aa3db0a739d4caee44e3e14af80d1840f6
         @endif
     </div>
 
-    <script>
-        function validateRequiredFields(fieldIds) {
-            const emptyFields = [];
-
-            fieldIds.forEach(id => {
-                const field = document.getElementById(id);
-                if (!field) {
-                    return;
-                }
-
-                const value = String(field.value ?? '').trim();
-                if (!value) {
-                    emptyFields.push(field);
-                    field.style.borderColor = '#ef4444';
-                    field.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.12)';
-                } else {
-                    field.style.borderColor = '';
-                    field.style.boxShadow = '';
-                }
-            });
-
-            if (emptyFields.length > 0) {
-                emptyFields[0].focus();
-                alert('Please complete all required fields before saving.');
-                return false;
-            }
-
-            return true;
-        }
-
-        function renderStatusExpandableCell(value, extraClass = '') {
-            const text = String(value ?? '').trim();
-            const className = extraClass ? ` class="${extraClass}"` : '';
-
-            if (!text) {
-                return `<td${className}>-</td>`;
-            }
-
-            const normalizedText = text.replace(/\s+/g, ' ').trim();
-            const previewLimit = 28;
-            const preview = normalizedText.length > previewLimit ?
-                `${normalizedText.slice(0, previewLimit).trimEnd()}...` :
-                normalizedText;
-            const escapedPreview = escapeSummaryHtml(preview);
-            const escapedFull = escapeSummaryHtml(text).replace(/\n/g, '<br>');
-            const expandedClass = normalizedText.length <= previewLimit ? ' is-expanded' : '';
-            const toggleButton = normalizedText.length > previewLimit ?
-                '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>' :
-                '';
-            const exportValue = escapeSummaryHtml(text);
-
-            return `<td${className} data-export-value="${exportValue}">
-                <div class="expandable-cell${expandedClass}">
-                    <div class="expandable-preview">${escapedPreview}</div>
-                    <div class="expandable-full">${escapedFull}</div>
-                    ${toggleButton}
-                </div>
-            </td>`;
-        }
-
-        function addRow() {
-
-            const inputs = [
-                'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
-                'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12',
-                'phy', 'fin', 'exp' // ✅ include manual inputs
-            ];
-
-            let vals = inputs.map(id => {
-                const el = document.getElementById(id);
-                return el ? el.value : '';
-            });
-
-            if (!vals[0]) return alert("Region is required");
-
-            const row = `
-        <tr>
-            ${vals.map((v, i) => {
-                const className = `${(i >= 7 && i <= 18) ? 'impl ' : ''}status-compact-cell`.trim();
-                return renderStatusExpandableCell(v, className);
-            }).join('')}
-            @if ($canManageRpwsis)
-                <td style="text-align:right;">
-                    <button onclick="deleteRow(this)" class="status-select">Delete</button>
-                </td>
-            @endif
-        </tr>
-        `;
-
-            document.getElementById('tableBody').innerHTML += row;
-
-            // ✅ OPTIONAL: clear inputs after adding
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = '';
-            });
-        }
-
-        // ✅ NEW DELETE FUNCTION
-        function deleteAccomplishment(id, btn, skipPrompt = false) {
-            if (!skipPrompt) {
-                openDeleteModal('accomplishment', id, btn);
-                return;
-            }
-
-            fetch(`/rpwsis_team/accomplishments/${id}/delete`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(res => res.json())
-                .then(data => {
-                        if (data.success) {
-                            // Remove the row from the table visually
-                            btn.closest('tr').remove();
-                            closeDeleteModal();
-
-                            // Keep delete silent after a successful refresh.
-                        })
-                    .catch(error => {
-                        console.error("Error:", error);
-                        alert("An error occurred while deleting.");
-                    });
-                }
-
-            function exportCSV() {
-                let csv = "";
-
-                const headers = document.querySelectorAll("#simpleTable thead tr:last-child th");
-                let headerRow = [];
-
-                headers.forEach(th => {
-                    headerRow.push(th.innerText.trim());
-                });
-
-                headerRow.push("PHY %", "FIN %", "Expenditures");
-
-                csv += headerRow.join(",") + "\n";
-
-                const rows = document.querySelectorAll("#simpleTable tbody tr");
-
-                rows.forEach(row => {
-                    const cols = row.querySelectorAll("td");
-                    let rowData = [];
-
-                    cols.forEach((td, i) => {
-                        if (i !== cols.length - 1) {
-                            rowData.push(td.dataset.exportValue ?? td.innerText.trim());
-                        }
-                    });
-
-                    <<
-                    << << < HEAD
-                    csv += rowData.join(",") + "\n";
-                });
-
-                const blob = new Blob([csv], {
-                    type: "text/csv"
-                });
-                const url = URL.createObjectURL(blob);
-
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "status_22_columns.csv";
-                a.click(); ===
-                === =
-                function openModal() {
-                    document.getElementById('statusModal').classList.add('active');
-                }
-
-                function closeModal() {
-                    document.getElementById('statusModal').classList.remove('active');
-                }
-
-                // click outside to close
-                window.onclick = function(e) {
-                        const modal = document.getElementById('statusModal');
-                        if (e.target === modal) {
-                            modal.classList.remove('active');
-                        }
-                    } >>>
-                    >>> > 49 d572aa3db0a739d4caee44e3e14af80d1840f6
-
-                URL.revokeObjectURL(url);
-            }
-
-            // function toggleImplementation() {
-            //     document.getElementById('simpleTable').classList.toggle('hide-impl');
-            // }
-
-            function openModal() {
-                document.getElementById('statusModal').style.display = 'block';
-            }
-
-            function closeModal() {
-                document.getElementById('statusModal').style.display = 'none';
-            }
-
-            // click outside to close
-            window.onclick = function(e) {
-                const modal = document.getElementById('statusModal');
-                if (e.target === modal) {
-                    modal.style.display = "none";
-                }
-            }
-
-
-            function saveRecord() {
-
-                const fields = [
-                    'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
-                    'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12',
-                    'phy', 'fin', 'exp'
-                ];
-
-                if (!validateRequiredFields(fields)) {
-                    return;
-                }
-
-                let data = {};
-
-                fields.forEach(id => {
-                    data[id] = document.getElementById(id).value.trim();
-                });
-
-                // ✅ FIX: Match the prefix group in your web.php
-                fetch('/rpwsis_team/accomplishments/store', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-
-                        let row = `<tr>
-            ${[
-                res.region, res.batch, res.allocation, res.nis, res.activity, res.remarks, res.amount,
-                res.c1, res.c2, res.c3, res.c4, res.c5, res.c6, res.c7, res.c8, res.c9, res.c10, res.c11, res.c12,
-                res.phy, res.fin, res.exp
-            ].map((value, index) => {
-                const className = `${(index >= 7 && index <= 18) ? 'impl ' : ''}status-compact-cell`.trim();
-                return renderStatusExpandableCell(value, className);
-            }).join('')}
-
-            @if ($canManageRpwsis)
-                <td><button onclick="deleteAccomplishment(${res.id}, this)" class="status-select">Delete</button></td>
-            @endif
-        </tr>`;
-
-                        document.getElementById('tableBody').innerHTML += row;
-                        fields.forEach(id => {
-                            const field = document.getElementById(id);
-                            if (field) {
-                                field.value = '';
-                                field.style.borderColor = '';
-                                field.style.boxShadow = '';
-                            }
-                        });
-                        closeModal();
-                    });
-            }
-    </script>
-
-    {{-- // -------------------------------------------------------------------------------- --}}
-    {{-- // NEW FEATURE: REHABILITATION AND PROTECTION SUMMARY TABLE                           --}}
-    {{-- // -------------------------------------------------------------------------------- --}}
-
+    {{-- // NEW FEATURE: REHABILITATION AND PROTECTION SUMMARY TABLE --}}
     <div class="ui-card" style="margin-top: 2rem;">
-
         <div class="section-title">
             REHABILITATION AND PROTECTION OF WATER RESOURCES SUPPORTING IRRIGATION SYSTEM (R&P WRSIS)
-            <div style="font-size: 14px; font-weight: normal; margin-top: 4px; opacity: 0.9;">
-                Summary of Accomplishment
+            <div style="font-size: 14px; font-weight: normal; margin-top: 4px; opacity: 0.9;">Summary of Accomplishment
             </div>
-
-            <div style="display: flex; gap: 10px; margin-top: 12px;">
+            <div style="display:flex; gap:8px; margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openSummaryModal()"
-                        style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
-                        + Add Record
-                    </button>
+                    <button onclick="openSummaryModal()" class="status-select"
+                        style="background-color: #2563eb; color: white; border-color: #2563eb; width: auto;">+ Add
+                        Record</button>
                 @endif
-
-                <button onclick="exportSummaryCSV()"
-                    style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                        </path>
-                    </svg>
-                    Export CSV
-                </button>
+                <button onclick="exportSummaryExcel()" class="status-select"
+                    style="background-color: #16a34a; color: white; border-color: #16a34a; width: auto;">Export
+                    Excel</button>
             </div>
         </div>
 
         <div class="table-responsive-wrapper">
-            <table class="sleek-table custom-table" id="summaryTable">
+            <table class="custom-table" id="summaryTable">
                 <thead>
                     <tr>
-                        <th>Region</th>
-                        <th>Province</th>
-                        <th>Municipality</th>
-                        <th>Barangay</th>
-                        <th>Type of Plantation</th>
-                        <th>Year Established</th>
-                        <th>Target Area</th>
-                        <th>Area Planted</th>
-                        <th>Species and Number of Seedlings Planted</th>
+                        <th class="col-standard">Region</th>
+                        <th class="col-standard">Province</th>
+                        <th class="col-standard">Municipality</th>
+                        <th class="col-standard">Barangay</th>
+                        <th class="col-medium">Type of Plantation</th>
+                        <th class="col-standard">Year Established</th>
+                        <th class="col-standard">Target Area</th>
+                        <th class="col-standard">Area Planted</th>
+                        <th class="col-wide">Species and Number of Seedlings Planted</th>
                         <th class="col-expandable">Spacing</th>
-                        <th>1st Year Maintenance and Protection</th>
-                        <th>Replanting Target Area</th>
-                        <th>Replanting Actual Area</th>
-                        <th>Mortality Rate</th>
+                        <th class="col-medium">1st Year Maintenance and Protection</th>
+                        <th class="col-standard">Replanting Target Area</th>
+                        <th class="col-standard">Replanting Actual Area</th>
+                        <th class="col-standard">Mortality Rate</th>
                         <th class="col-expandable">Species Replanted</th>
-                        <th>Name of NIS</th>
-                        <th>Remarks</th>
+                        <th class="col-medium">Name of NIS</th>
+                        <th class="col-medium">Remarks</th>
                         @if ($canManageRpwsis)
-                            <th style="text-align:right;">Action</th>
+                            <th class="col-action" style="text-align:right;">Action</th>
                         @endif
                     </tr>
                 </thead>
                 <tbody id="summaryTableBody">
-                    {{-- Make sure to pass $summaryRecords from your Controller --}}
                     @foreach ($summaryRecords ?? [] as $row)
                         <tr>
-                            <td>{{ $row->region }}</td>
-                            <td>{{ $row->province }}</td>
-                            <td>{{ $row->municipality }}</td>
-                            <td>{{ $row->barangay }}</td>
-                            <td>{{ $row->plantation_type }}</td>
-                            <td>{{ $row->year_established }}</td>
-                            <td>{{ $row->target_area_1 }}</td>
-                            <td>{{ $row->area_planted }}</td>
-                            <td>{!! nl2br(e($row->species_planted)) !!}</td>
+                            <td class="col-standard">{{ $row->region }}</td>
+                            <td class="col-standard">{{ $row->province }}</td>
+                            <td class="col-standard">{{ $row->municipality }}</td>
+                            <td class="col-standard">{{ $row->barangay }}</td>
+                            <td class="col-medium">{{ $row->plantation_type }}</td>
+                            <td class="col-standard">{{ $row->year_established }}</td>
+                            <td class="col-standard">{{ $row->target_area_1 }}</td>
+                            <td class="col-standard">{{ $row->area_planted }}</td>
+                            <td class="col-wide">{!! nl2br(e($row->species_planted)) !!}</td>
                             <td class="col-expandable" data-export-value="{{ $row->spacing }}">
                                 {!! !empty($row->spacing)
                                     ? '<div class="expandable-cell' .
@@ -1657,10 +1079,10 @@
                                         '</div>'
                                     : '-' !!}
                             </td>
-                            <td>{{ $row->maintenance }}</td>
-                            <td>{{ $row->target_area_2 }}</td>
-                            <td>{{ $row->actual_area }}</td>
-                            <td>{{ $row->mortality_rate }}</td>
+                            <td class="col-medium">{{ $row->maintenance }}</td>
+                            <td class="col-standard">{{ $row->target_area_2 }}</td>
+                            <td class="col-standard">{{ $row->actual_area }}</td>
+                            <td class="col-standard">{{ $row->mortality_rate }}</td>
                             <td class="col-expandable" data-export-value="{{ $row->species_replanted }}">
                                 {!! !empty($row->species_replanted)
                                     ? '<div class="expandable-cell' .
@@ -1678,10 +1100,10 @@
                                         '</div>'
                                     : '-' !!}
                             </td>
-                            <td>{{ $row->nis_name }}</td>
-                            <td>{{ $row->remarks }}</td>
+                            <td class="col-medium">{{ $row->nis_name }}</td>
+                            <td class="col-medium">{{ $row->remarks }}</td>
                             @if ($canManageRpwsis)
-                                <td style="text-align:right;">
+                                <td class="col-action" style="text-align:right;">
                                     <button onclick="openDeleteModal('summary', {{ $row->id }}, this)"
                                         class="status-select">Delete</button>
                                 </td>
@@ -1693,119 +1115,69 @@
         </div>
 
         @if ($canManageRpwsis)
-            <<<<<<< HEAD <div id="summaryModal"
+            <div id="summaryModal"
                 style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
                 <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); font-family:'Poppins', sans-serif; max-height:90vh; overflow:auto;">
+                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                         <h3 style="margin:0; color:#0c4d05;">Add Summary Record</h3>
                         <button onclick="closeSummaryModal()"
                             style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
-                            &times;
-                        </button>
+                            onmouseover="this.style.color='#ef4444'"
+                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:15px;">
                         <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
                             <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details
                             </p>
-                            =======
-                            <div id="summaryModal" class="modal-overlay">
-                                <div class="modal-box" style="max-width: 900px;">
-                                    <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add
-                                        Summary Record</h3>
-
-                                    <div style="display:flex; flex-direction:column; gap:15px;">
-                                        <div
-                                            style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
-                                            <label class="modern-label"
-                                                style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Location
-                                                Details</label>
-                                            >>>>>>> 49d572aa3db0a739d4caee44e3e14af80d1840f6
-                                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                                <input id="sum_region" placeholder="Region" class="modern-input">
-                                                <input id="sum_province" placeholder="Province" class="modern-input">
-                                                <input id="sum_municipality" placeholder="Municipality"
-                                                    class="modern-input">
-                                                <input id="sum_barangay" placeholder="Barangay" class="modern-input">
-                                            </div>
-                                        </div>
-
-                                        <<<<<<< HEAD <div
-                                            style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">
-                                                Plantation Info
-                                            </p>
-                                            =======
-                                            <div
-                                                style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
-                                                <label class="modern-label"
-                                                    style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Plantation
-                                                    Info</label>
-                                                >>>>>>> 49d572aa3db0a739d4caee44e3e14af80d1840f6
-                                                <div
-                                                    style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                                    <input id="sum_type" placeholder="Type of Plantation"
-                                                        class="modern-input">
-                                                    <input id="sum_year" placeholder="Year Established"
-                                                        class="modern-input">
-                                                    <input id="sum_target_1" placeholder="Target Area"
-                                                        class="modern-input">
-                                                    <input id="sum_area_planted" placeholder="Area Planted"
-                                                        class="modern-input">
-                                                    <input id="sum_spacing" placeholder="Spacing" class="modern-input">
-                                                    <input id="sum_maintenance" placeholder="1st Year M&P"
-                                                        class="modern-input">
-                                                    <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="modern-input"
-                                                        style="grid-column: span 3; height: 60px; resize: none;"></textarea>
-                                                </div>
-                                            </div>
-
-                                            <<<<<<< HEAD <div
-                                                style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                                                <p
-                                                    style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">
-                                                    Replanting
-                                                    Status &
-                                                    Extras</p>
-                                                =======
-                                                <div
-                                                    style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
-                                                    <label class="modern-label"
-                                                        style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Replanting
-                                                        Status & Extras</label>
-                                                    >>>>>>> 49d572aa3db0a739d4caee44e3e14af80d1840f6
-                                                    <div
-                                                        style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                                        <input id="sum_target_2" placeholder="Replanting Target Area"
-                                                            class="modern-input">
-                                                        <input id="sum_actual" placeholder="Replanting Actual Area"
-                                                            class="modern-input">
-                                                        <input id="sum_mortality" placeholder="Mortality Rate"
-                                                            class="modern-input">
-                                                        <input id="sum_nis" placeholder="Name of NIS"
-                                                            class="modern-input">
-                                                        <input id="sum_remarks" placeholder="Remarks"
-                                                            class="modern-input">
-                                                        <div style="grid-column: span 1;"></div>
-                                                        <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="modern-input"
-                                                            style="grid-column: span 3; height: 60px; resize: none;"></textarea>
-                                                    </div>
-                                                </div>
-
-                                                <div style="display:flex; gap:10px; margin-top: 10px;">
-                                                    <button onclick="closeSummaryModal()"
-                                                        class="modern-btn modern-btn-outline"
-                                                        style="flex: 1;">Cancel</button>
-                                                    <button onclick="saveSummaryRecord(this)" class="modern-btn"
-                                                        style="flex: 1;">
-                                                        Save Record
-                                                    </button>
-                                                </div>
-                                    </div>
-                                </div>
+                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+                                <input id="sum_region" placeholder="Region" class="status-select">
+                                <input id="sum_province" placeholder="Province" class="status-select">
+                                <input id="sum_municipality" placeholder="Municipality" class="status-select">
+                                <input id="sum_barangay" placeholder="Barangay" class="status-select">
                             </div>
+                        </div>
+
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Plantation Info
+                            </p>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                                <input id="sum_type" placeholder="Type of Plantation" class="status-select">
+                                <input id="sum_year" placeholder="Year Established" class="status-select">
+                                <input id="sum_target_1" placeholder="Target Area" class="status-select">
+                                <input id="sum_area_planted" placeholder="Area Planted" class="status-select">
+                                <input id="sum_spacing" placeholder="Spacing" class="status-select">
+                                <input id="sum_maintenance" placeholder="1st Year M&P" class="status-select">
+                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="status-select"
+                                    style="grid-column: span 3; height: 60px;"></textarea>
+                            </div>
+                        </div>
+
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Replanting
+                                Status & Extras</p>
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                                <input id="sum_target_2" placeholder="Replanting Target Area" class="status-select">
+                                <input id="sum_actual" placeholder="Replanting Actual Area" class="status-select">
+                                <input id="sum_mortality" placeholder="Mortality Rate" class="status-select">
+                                <input id="sum_nis" placeholder="Name of NIS" class="status-select">
+                                <input id="sum_remarks" placeholder="Remarks" class="status-select">
+                                <div style="grid-column: span 1;"></div>
+                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="status-select"
+                                    style="grid-column: span 3; height: 60px;"></textarea>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end; gap:10px;">
+                            <button onclick="closeSummaryModal()" class="status-select"
+                                style="width: auto;">Cancel</button>
+                            <button onclick="saveSummaryRecord(this)" class="status-select"
+                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         @endif
 
         @if ($canManageRpwsis)
@@ -1839,21 +1211,16 @@
 
         function renderExpandableSummaryCell(value, previewLength) {
             const text = String(value ?? '').trim();
-
-            if (!text) {
-                return '-';
-            }
+            if (!text) return '-';
 
             const normalizedText = text.replace(/\s+/g, ' ').trim();
             const preview = normalizedText.length > previewLength ?
-                `${normalizedText.slice(0, previewLength).trimEnd()}...` :
-                normalizedText;
+                `${normalizedText.slice(0, previewLength).trimEnd()}...` : normalizedText;
             const escapedPreview = escapeSummaryHtml(preview);
             const escapedFull = escapeSummaryHtml(text).replace(/\n/g, '<br>');
             const expandedClass = normalizedText.length <= previewLength ? ' is-expanded' : '';
             const toggleButton = normalizedText.length > previewLength ?
-                '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>' :
-                '';
+                '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>' : '';
 
             return `
                 <div class="expandable-cell${expandedClass}">
@@ -1864,175 +1231,89 @@
             `;
         }
 
+        function renderStatusExpandableCell(value, extraClass = '') {
+            const text = String(value ?? '').trim();
+            const className = extraClass ? ` class="${extraClass}"` : '';
+            if (!text) return `<td${className}>-</td>`;
+
+            const normalizedText = text.replace(/\s+/g, ' ').trim();
+            const previewLimit = 28;
+            const preview = normalizedText.length > previewLimit ? `${normalizedText.slice(0, previewLimit).trimEnd()}...` :
+                normalizedText;
+            const escapedPreview = escapeSummaryHtml(preview);
+            const escapedFull = escapeSummaryHtml(text).replace(/\n/g, '<br>');
+            const expandedClass = normalizedText.length <= previewLimit ? ' is-expanded' : '';
+            const toggleButton = normalizedText.length > previewLimit ?
+                '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>' : '';
+            const exportValue = escapeSummaryHtml(text);
+
+            return `<td${className} data-export-value="${exportValue}">
+                <div class="expandable-cell${expandedClass}">
+                    <div class="expandable-preview">${escapedPreview}</div>
+                    <div class="expandable-full">${escapedFull}</div>
+                    ${toggleButton}
+                </div>
+            </td>`;
+        }
+
         function toggleSummaryCell(button) {
             const container = button.closest('.expandable-cell');
             const isExpanded = container.classList.toggle('is-expanded');
             button.textContent = isExpanded ? 'Show less' : 'Show more';
         }
 
-        function openSummaryModal() {
-            document.getElementById('summaryModal').classList.add('active');
-        }
-
-        function closeSummaryModal() {
-            document.getElementById('summaryModal').classList.remove('active');
-        }
-
-        function saveSummaryRecord() {
-            const fields = [
-                'sum_region', 'sum_province', 'sum_municipality', 'sum_barangay',
-                'sum_type', 'sum_year', 'sum_target_1', 'sum_area_planted',
-                'sum_species', 'sum_spacing', 'sum_maintenance', 'sum_target_2',
-                'sum_actual', 'sum_mortality', 'sum_replanted', 'sum_nis', 'sum_remarks'
-            ];
-
-            if (!validateRequiredFields(fields)) {
-                return;
+        function validateRequiredFields(fieldIds) {
+            const emptyFields = [];
+            fieldIds.forEach(id => {
+                const field = document.getElementById(id);
+                if (!field) return;
+                const value = String(field.value ?? '').trim();
+                if (!value) {
+                    emptyFields.push(field);
+                    field.style.borderColor = '#ef4444';
+                    field.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.12)';
+                } else {
+                    field.style.borderColor = '';
+                    field.style.boxShadow = '';
+                }
+            });
+            if (emptyFields.length > 0) {
+                emptyFields[0].focus();
+                alert('Please complete all required fields before saving.');
+                return false;
             }
-
-            let data = {};
-            fields.forEach(id => {
-                data[id] = document.getElementById(id).value.trim();
-            });
-
-            // Ensure this matches a route in your web.php (e.g., Route::post('/rpwsis_team/summary/store', ...))
-            fetch('/rpwsis_team/summary/store', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(res => res.json())
-                .then(res => {
-                    // Using replace to convert newlines to <br> for HTML display
-                    const formatText = (text) => text ? text.replace(/\n/g, '<br>') : '-';
-
-                    let row = `<tr>
-                <td>${res.region || '-'}</td>
-                <td>${res.province || '-'}</td>
-                <td>${res.municipality || '-'}</td>
-                <td>${res.barangay || '-'}</td>
-                <td>${res.plantation_type || '-'}</td>
-                <td>${res.year_established || '-'}</td>
-                <td>${res.target_area_1 || '-'}</td>
-                <td>${res.area_planted || '-'}</td>
-                <td>${formatText(res.species_planted)}</td>
-                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.spacing || '')}">${renderExpandableSummaryCell(res.spacing, 45)}</td>
-                <td>${res.maintenance || '-'}</td>
-                <td>${res.target_area_2 || '-'}</td>
-                <td>${res.actual_area || '-'}</td>
-                <td>${res.mortality_rate || '-'}</td>
-                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.species_replanted || '')}">${renderExpandableSummaryCell(res.species_replanted, 60)}</td>
-                <td>${res.nis_name || '-'}</td>
-                <td>${res.remarks || '-'}</td>
-                @if ($canManageRpwsis)
-                    <td style="text-align:right;">
-                        <button onclick="deleteSummaryRecord(${res.id}, this)" class="status-select">Delete</button>
-                    </td>
-                @endif
-            </tr>`;
-
-                    document.getElementById('summaryTableBody').innerHTML += row;
-                    closeSummaryModal();
-
-                    // Clear inputs
-                    fields.forEach(id => {
-                        const field = document.getElementById(id);
-                        field.value = '';
-                        field.style.borderColor = '';
-                        field.style.boxShadow = '';
-                    });
-                })
-                .catch(error => {
-                    console.error("Error saving summary record:", error);
-                    alert(
-                        "Ensure you have created the backend Route and Controller method for /rpwsis_team/summary/store"
-                    );
-                });
+            return true;
         }
 
-        function deleteSummaryRecord(id, btn, skipPrompt = false) {
-            if (!skipPrompt) {
-                openDeleteModal('summary', id, btn);
-                return;
-            }
-
-            // Ensure this matches a route in your web.php
-            fetch(`/rpwsis_team/summary/${id}/delete`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        btn.closest('tr').remove();
-                        closeDeleteModal();
-                    } else {
-                        alert("Failed to delete the record.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("An error occurred while deleting. Have you set up the delete Route?");
-                });
-        }
-
-        function exportSummaryCSV() {
-            let csv = "";
-
-            // Update CSV to match single-row header
-            csv +=
-                "Region,Province,Municipality,Barangay,Type of Plantation,Year Established,Target Area,Area Planted,Species and Number Planted,Spacing,1st Year Maintenance,Replanting Target Area,Replanting Actual Area,Mortality Rate,Species Replanted,Name of NIS,Remarks\n";
-
-            // Extract Data
-            const rows = document.querySelectorAll("#summaryTable tbody tr");
-            rows.forEach(row => {
-                const cols = row.querySelectorAll("td");
-                let rowData = [];
-
-                cols.forEach((td, i) => {
-                    // Ignore the Action button column (last column)
-                    if (i !== cols.length - 1) {
-                        // Wrap text in quotes to prevent CSV breaking on newlines or commas
-                        let text = (td.dataset.exportValue ?? td.innerText.trim()).replace(/"/g, '""');
-                        rowData.push(`"${text}"`);
-                    }
-                });
-
-                csv += rowData.join(",") + "\n";
-            });
-
-            const blob = new Blob([csv], {
-                type: "text/csv"
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "summary_of_accomplishment.csv";
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    </script>
-
-    {{-- //end of status --}}
-    <script>
         function setButtonLoading(button, isLoading, loadingText = 'Saving...') {
             if (!button) return;
-
             if (!button.dataset.originalText) {
                 button.dataset.originalText = button.textContent.trim();
             }
-
             button.disabled = isLoading;
             button.style.opacity = isLoading ? '0.7' : '1';
             button.style.cursor = isLoading ? 'not-allowed' : 'pointer';
             button.textContent = isLoading ? loadingText : button.dataset.originalText;
+        }
+
+        function openModal() {
+            const modal = document.getElementById('statusModal');
+            if (modal) modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('statusModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openSummaryModal() {
+            const modal = document.getElementById('summaryModal');
+            if (modal) modal.style.display = 'block';
+        }
+
+        function closeSummaryModal() {
+            const modal = document.getElementById('summaryModal');
+            if (modal) modal.style.display = 'none';
         }
 
         let pendingDelete = {
@@ -2041,58 +1322,27 @@
             button: null
         };
 
-        function openModal() {
-            const modal = document.getElementById('statusModal');
-            if (modal) modal.classList.add('active');
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('statusModal');
-            if (modal) modal.classList.remove('active');
-        }
-
-        function openSummaryModal() {
-            const modal = document.getElementById('summaryModal');
-            if (modal) modal.classList.add('active');
-        }
-
-        function closeSummaryModal() {
-            const modal = document.getElementById('summaryModal');
-            if (modal) modal.classList.remove('active');
-        }
-
         function openDeleteModal(type, id, button) {
             const modal = document.getElementById('deleteConfirmModal');
             const title = document.getElementById('deleteModalTitle');
             const message = document.getElementById('deleteModalMessage');
-
             if (!modal) return;
-
             pendingDelete = {
                 type,
                 id,
                 button
             };
-
             const isSummary = type === 'summary';
-            if (title) {
-                title.textContent = isSummary ? 'Delete Summary Record' : 'Delete Accomplishment Record';
-            }
-            if (message) {
-                message.textContent = isSummary ?
-                    'Are you sure you want to delete this summary record? This action cannot be undone.' :
-                    'Are you sure you want to delete this record? This action cannot be undone.';
-            }
-
+            if (title) title.textContent = isSummary ? 'Delete Summary Record' : 'Delete Accomplishment Record';
+            if (message) message.textContent = isSummary ?
+                'Are you sure you want to delete this summary record? This action cannot be undone.' :
+                'Are you sure you want to delete this record? This action cannot be undone.';
             modal.classList.add('active');
         }
 
         function closeDeleteModal() {
             const modal = document.getElementById('deleteConfirmModal');
-            if (modal) {
-                modal.classList.remove('active');
-            }
-
+            if (modal) modal.classList.remove('active');
             pendingDelete = {
                 type: null,
                 id: null,
@@ -2105,12 +1355,10 @@
                 closeDeleteModal();
                 return;
             }
-
             if (pendingDelete.type === 'summary') {
                 deleteSummaryRecord(pendingDelete.id, pendingDelete.button, true);
                 return;
             }
-
             deleteAccomplishment(pendingDelete.id, pendingDelete.button, true);
         }
 
@@ -2118,27 +1366,17 @@
             const statusModal = document.getElementById('statusModal');
             const summaryModal = document.getElementById('summaryModal');
             const deleteModal = document.getElementById('deleteConfirmModal');
-
-            if (statusModal && e.target === statusModal) {
-                closeModal();
-            }
-
-            if (summaryModal && e.target === summaryModal) {
-                closeSummaryModal();
-            }
-
-            if (deleteModal && e.target === deleteModal) {
-                closeDeleteModal();
-            }
+            if (statusModal && e.target === statusModal) closeModal();
+            if (summaryModal && e.target === summaryModal) closeSummaryModal();
+            if (deleteModal && e.target === deleteModal) closeDeleteModal();
         });
 
         document.addEventListener('DOMContentLoaded', function() {
             const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-            if (confirmDeleteBtn) {
-                confirmDeleteBtn.addEventListener('click', performDelete);
-            }
+            if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', performDelete);
         });
 
+        // ======================= SAVE ACCOMPLISHMENT (FIRST TABLE) =======================
         function saveRecord(button = null) {
             const fields = [
                 'region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount',
@@ -2146,8 +1384,14 @@
                 'phy', 'fin', 'exp'
             ];
 
-            if (!validateRequiredFields(fields)) {
-                return;
+            const requiredFields = ['region', 'activity'];
+            for (const id of requiredFields) {
+                const input = document.getElementById(id);
+                if (!input.checkValidity()) {
+                    input.reportValidity();
+                    input.focus();
+                    return;
+                }
             }
 
             const data = {};
@@ -2168,28 +1412,36 @@
                 })
                 .then(async res => {
                     const payload = await res.json().catch(() => null);
-                    if (!res.ok || !payload) {
-                        throw new Error(payload?.message || 'Unable to save the record right now.');
-                    }
+                    if (!res.ok || !payload) throw new Error(payload?.message ||
+                        'Unable to save the record right now.');
                     return payload;
                 })
-                .then(res => {
-                    const record = res.record ?? res;
-                    const row = `<tr>
-            ${[
-                record.region, record.batch, record.allocation, record.nis, record.activity, record.remarks, record.amount,
-                record.c1, record.c2, record.c3, record.c4, record.c5, record.c6, record.c7, record.c8, record.c9, record.c10, record.c11, record.c12,
-                record.phy, record.fin, record.exp
-            ].map((value, index) => {
-                const className = `${(index >= 7 && index <= 18) ? 'impl ' : ''}status-compact-cell`.trim();
-                return renderStatusExpandableCell(value, className);
-            }).join('')}
-            @if ($canManageRpwsis)
-                <td><button onclick="openDeleteModal('accomplishment', ${record.id}, this)" class="status-select">Delete</button></td>
-            @endif
-        </tr>`;
+                .then(payload => {
+                    const res = payload.record || payload;
 
-                    document.getElementById('tableBody').insertAdjacentHTML('beforeend', row);
+                    const rowValues = [
+                        res.region, res.batch, res.allocation, res.nis, res.activity, res.remarks, res.amount,
+                        res.c1, res.c2, res.c3, res.c4, res.c5, res.c6, res.c7, res.c8, res.c9, res.c10, res.c11,
+                        res.c12,
+                        res.phy, res.fin, res.exp
+                    ];
+
+                    const renderedCells = rowValues.map((value, index) => {
+                        let colClass = 'col-standard';
+                        if (index === 4) colClass = 'col-activity';
+                        if (index === 5 || (index >= 14 && index <= 18)) colClass = 'col-remarks';
+                        if (index === 6) colClass = 'col-amount';
+                        const className =
+                            `${(index >= 7 && index <= 18) ? 'impl ' : ''}${colClass} status-compact-cell`
+                            .trim();
+                        return renderStatusExpandableCell(value, className);
+                    }).join('');
+
+                    const actionCell =
+                        `@if ($canManageRpwsis)<td class="col-action" style="text-align:right;"><button onclick="openDeleteModal('accomplishment', ${res.id}, this)" class="status-select">Delete</button></td>@endif`;
+
+                    const newRow = `<tr>${renderedCells}${actionCell}</tr>`;
+                    document.getElementById('tableBody').insertAdjacentHTML('beforeend', newRow);
 
                     fields.forEach(id => {
                         const field = document.getElementById(id);
@@ -2211,17 +1463,16 @@
                 });
         }
 
+        // ======================= SAVE SUMMARY RECORD (SECOND TABLE) =======================
         function saveSummaryRecord(button = null) {
             const fields = [
-                'sum_region', 'sum_province', 'sum_municipality', 'sum_barangay',
-                'sum_type', 'sum_year', 'sum_target_1', 'sum_area_planted',
-                'sum_species', 'sum_spacing', 'sum_maintenance', 'sum_target_2',
-                'sum_actual', 'sum_mortality', 'sum_replanted', 'sum_nis', 'sum_remarks'
+                'sum_region', 'sum_province', 'sum_municipality', 'sum_barangay', 'sum_type', 'sum_year',
+                'sum_target_1', 'sum_area_planted',
+                'sum_species', 'sum_spacing', 'sum_maintenance', 'sum_target_2', 'sum_actual', 'sum_mortality',
+                'sum_replanted', 'sum_nis', 'sum_remarks'
             ];
 
-            if (!validateRequiredFields(fields)) {
-                return;
-            }
+            if (!validateRequiredFields(fields)) return;
 
             const data = {};
             fields.forEach(id => {
@@ -2241,37 +1492,38 @@
                 })
                 .then(async res => {
                     const payload = await res.json().catch(() => null);
-                    if (!res.ok || !payload) {
-                        throw new Error(payload?.message || 'Unable to save the summary record right now.');
-                    }
+                    if (!res.ok || !payload) throw new Error(payload?.message ||
+                        'Unable to save the summary record right now.');
                     return payload;
                 })
-                .then(res => {
-                    const formatText = (text) => text ? text.replace(/\n/g, '<br>') : '-';
-                    const row = `<tr>
-                <td>${res.region || '-'}</td>
-                <td>${res.province || '-'}</td>
-                <td>${res.municipality || '-'}</td>
-                <td>${res.barangay || '-'}</td>
-                <td>${res.plantation_type || '-'}</td>
-                <td>${res.year_established || '-'}</td>
-                <td>${res.target_area_1 || '-'}</td>
-                <td>${res.area_planted || '-'}</td>
-                <td>${formatText(res.species_planted)}</td>
-                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.spacing || '')}">${renderExpandableSummaryCell(res.spacing, 45)}</td>
-                <td>${res.maintenance || '-'}</td>
-                <td>${res.target_area_2 || '-'}</td>
-                <td>${res.actual_area || '-'}</td>
-                <td>${res.mortality_rate || '-'}</td>
-                <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.species_replanted || '')}">${renderExpandableSummaryCell(res.species_replanted, 60)}</td>
-                <td>${res.nis_name || '-'}</td>
-                <td>${res.remarks || '-'}</td>
-                @if ($canManageRpwsis)
-                    <td style="text-align:right;">
-                        <button onclick="openDeleteModal('summary', ${res.id}, this)" class="status-select">Delete</button>
-                    </td>
-                @endif
-            </tr>`;
+                .then(payload => {
+                    const res = payload.record || payload;
+                    const formatText = (text) => text ? String(text).replace(/\n/g, '<br>') : '-';
+
+                    let row = `<tr>
+                    <td class="col-standard">${res.region || '-'}</td>
+                    <td class="col-standard">${res.province || '-'}</td>
+                    <td class="col-standard">${res.municipality || '-'}</td>
+                    <td class="col-standard">${res.barangay || '-'}</td>
+                    <td class="col-medium">${res.plantation_type || '-'}</td>
+                    <td class="col-standard">${res.year_established || '-'}</td>
+                    <td class="col-standard">${res.target_area_1 || '-'}</td>
+                    <td class="col-standard">${res.area_planted || '-'}</td>
+                    <td class="col-wide">${formatText(res.species_planted)}</td>
+                    <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.spacing || '')}">${renderExpandableSummaryCell(res.spacing, 45)}</td>
+                    <td class="col-medium">${res.maintenance || '-'}</td>
+                    <td class="col-standard">${res.target_area_2 || '-'}</td>
+                    <td class="col-standard">${res.actual_area || '-'}</td>
+                    <td class="col-standard">${res.mortality_rate || '-'}</td>
+                    <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.species_replanted || '')}">${renderExpandableSummaryCell(res.species_replanted, 60)}</td>
+                    <td class="col-medium">${res.nis_name || '-'}</td>
+                    <td class="col-medium">${res.remarks || '-'}</td>
+                    @if ($canManageRpwsis)
+                        <td class="col-action" style="text-align:right;">
+                            <button onclick="openDeleteModal('summary', ${res.id}, this)" class="status-select">Delete</button>
+                        </td>
+                    @endif
+                </tr>`;
 
                     document.getElementById('summaryTableBody').insertAdjacentHTML('beforeend', row);
 
@@ -2294,7 +1546,141 @@
                     setButtonLoading(button, false);
                 });
         }
+
+        // ======================= DELETING =======================
+        function deleteAccomplishment(id, btn, skipPrompt = false) {
+            if (!skipPrompt) {
+                openDeleteModal('accomplishment', id, btn);
+                return;
+            }
+            btn.disabled = true;
+            fetch(`/rpwsis_team/accomplishments/${id}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(async res => {
+                    const payload = await res.json();
+                    if (!res.ok || !payload.success) throw new Error(payload.message ||
+                        'Failed to delete the record.');
+                    return payload;
+                })
+                .then(data => {
+                    btn.closest('tr').remove();
+                    closeDeleteModal();
+                })
+                .catch(error => {
+                    alert(error.message || 'An error occurred while deleting.');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                });
+        }
+
+        function deleteSummaryRecord(id, btn, skipPrompt = false) {
+            if (!skipPrompt) {
+                openDeleteModal('summary', id, btn);
+                return;
+            }
+            fetch(`/rpwsis_team/summary/${id}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.closest('tr').remove();
+                        closeDeleteModal();
+                    } else {
+                        alert("Failed to delete the record.");
+                    }
+                })
+                .catch(error => {
+                    alert("An error occurred while deleting.");
+                });
+        }
+
+        // ======================= EXCEL EXPORTS =======================
+        function exportExcel() {
+            let wb = XLSX.utils.book_new();
+            let wsData = [];
+
+            // Define Headers exactly as they look visually
+            const headers = document.querySelectorAll("#simpleTable thead tr:last-child th");
+            let headerRow = [];
+            headers.forEach(th => {
+                headerRow.push(th.innerText.trim());
+            });
+            headerRow.push("PHY %", "FIN %", "Expenditures");
+            wsData.push(headerRow);
+
+            // Get Data Rows
+            const rows = document.querySelectorAll("#simpleTable tbody tr");
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                let rowData = [];
+                cols.forEach((td, i) => {
+                    // Skip the Action column (last column) if user is authorized
+                    if (i !== cols.length - 1) {
+                        let text = td.dataset.exportValue ?? td.innerText.trim();
+                        // Remove "Show more" text if it got captured
+                        text = text.replace(/Show more|Show less/gi, '').trim();
+                        rowData.push(text);
+                    }
+                });
+                wsData.push(rowData);
+            });
+
+            // Convert to Sheet and Download
+            let ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "Accomplishment");
+            XLSX.writeFile(wb, "status_accomplishment.xlsx");
+        }
+
+        function exportSummaryExcel() {
+            let wb = XLSX.utils.book_new();
+            let wsData = [];
+
+            // Define Headers
+            let headerRow = [
+                "Region", "Province", "Municipality", "Barangay", "Type of Plantation",
+                "Year Established", "Target Area", "Area Planted", "Species and Number Planted",
+                "Spacing", "1st Year Maintenance", "Replanting Target Area", "Replanting Actual Area",
+                "Mortality Rate", "Species Replanted", "Name of NIS", "Remarks"
+            ];
+            wsData.push(headerRow);
+
+            // Get Data Rows
+            const rows = document.querySelectorAll("#summaryTable tbody tr");
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                let rowData = [];
+                cols.forEach((td, i) => {
+                    // Skip the Action column
+                    if (i < headerRow.length) {
+                        let text = td.dataset.exportValue ?? td.innerText.trim();
+                        text = text.replace(/Show more|Show less/gi, '').trim();
+                        rowData.push(text);
+                    }
+                });
+                wsData.push(rowData);
+            });
+
+            // Convert to Sheet and Download
+            let ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "Summary");
+            XLSX.writeFile(wb, "summary_of_accomplishment.xlsx");
+        }
     </script>
+
+    {{-- CHART LOGIC --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
@@ -2375,7 +1761,6 @@
         });
 
         let activeMonth = new Date().getMonth() + 1;
-
         document.addEventListener('DOMContentLoaded', function() {
             updateCalendarView();
         });
@@ -2391,10 +1776,8 @@
             document.querySelectorAll('.month-block').forEach(block => {
                 block.classList.remove('active');
             });
-
             const current = document.getElementById('month-' + activeMonth);
             if (current) current.classList.add('active');
-
             document.getElementById('prevMonthBtn').disabled = (activeMonth === 1);
             document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
         }
