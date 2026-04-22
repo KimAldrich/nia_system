@@ -746,7 +746,7 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table" id="activeProjectsContainer">
+                <table class="sleek-table">
                     <thead>
                         <tr>
                             <th>Document Name</th>
@@ -778,9 +778,9 @@
                                 @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
                                     <td style="text-align: right;">
                                         <form action="{{ route('rpwsis.resolutions.update_status', $res->id) }}"
-                                            method="POST" data-async-target="#activeProjectsContainer">
+                                            method="POST">
                                             @csrf
-                                            <select name="status" class="status-select" data-auto-submit>
+                                            <select name="status" class="status-select" onchange="this.form.submit()">
                                                 <option value="not-validated"
                                                     {{ $res->status == 'not-validated' ? 'selected' : '' }}>
                                                     Not-Validated</option>
@@ -1066,7 +1066,7 @@
                                             (mb_strlen((string) $value) <= 28 ? ' is-expanded' : '') .
                                             '">' .
                                             '<div class="expandable-preview">' .
-                                            e(\Illuminate\Support\Str::limit(preg_replace("/\s+/", ' ', (string) $value), 28)) .
+                                            e(\Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', (string) $value), 28)) .
                                             '</div>' .
                                             '<div class="expandable-full">' .
                                             nl2br(e($value)) .
@@ -1114,77 +1114,81 @@
         overflow:auto;
     ">
 
-                <!-- HEADER -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:#0c4d05;">Add Accomplishment</h3>
-                    <button onclick="closeModal()"
-                        style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                        onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
-                        &times;
-                    </button>
-                </div>
-
-                <!-- FORM -->
-                <div style="display:flex; flex-direction:column; gap:15px;">
-
-                    <!-- PROJECT INFO -->
-                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Information
-                        </p>
-
-                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                            <input id="region" placeholder="Region" class="status-select" maxlength="100" required>
-                            <input id="batch" placeholder="Batch" class="status-select" maxlength="100">
-                            <input id="allocation" placeholder="Allocation" class="status-select" maxlength="255">
-                            <input id="nis" placeholder="NIS" class="status-select" maxlength="255">
-                            <input id="activity" placeholder="Activity Type" class="status-select" maxlength="255" required>
-                            <input id="remarks" placeholder="Remarks" class="status-select" maxlength="1000">
-                            <input id="amount" placeholder="Amount" class="status-select" type="number" min="0" step="0.01">
-                        </div>
-                    </div>
-
-                    <!-- IMPLEMENTATION -->
-                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Implementation Stage
-                        </p>
-
-                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                            <input id="c1" placeholder="POW" class="status-select" maxlength="255">
-                            <input id="c2" placeholder="Nursery" class="status-select" maxlength="255">
-                            <input id="c3" placeholder="Seedling" class="status-select" maxlength="255">
-                            <input id="c4" placeholder="Procurement" class="status-select" maxlength="255">
-                            <input id="c5" placeholder="Site Prep" class="status-select" maxlength="255">
-                            <input id="c6" placeholder="Vegetative" class="status-select" maxlength="255">
-                            <input id="c7" placeholder="Wattling" class="status-select" maxlength="255">
-                            <input id="c8" placeholder="Right of Way" class="status-select" maxlength="255">
-                            <input id="c9" placeholder="Consultative" class="status-select" maxlength="255">
-                            <input id="c10" placeholder="Distribution" class="status-select" maxlength="255">
-                            <input id="c11" placeholder="Signages" class="status-select" maxlength="255">
-                            <input id="c12" placeholder="Monitoring" class="status-select" maxlength="255">
-                        </div>
-                    </div>
-
-                    <!-- METRICS -->
-                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics</p>
-
-                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                            <input id="phy" placeholder="PHY %" class="status-select" type="number" min="0" max="100" step="0.01">
-                            <input id="fin" placeholder="FIN %" class="status-select" type="number" min="0" max="100" step="0.01">
-                            <input id="exp" placeholder="Expenditures" class="status-select" type="number" min="0" step="0.01">
-                        </div>
-                    </div>
-
-                    <!-- ACTIONS -->
-                    <div style="display:flex; justify-content:flex-end; gap:10px;">
-                        <button onclick="closeModal()" class="status-select">Cancel</button>
-                        <button onclick="saveRecord(this)" class="status-select" style="background:#0c4d05; color:white;">
-                            Save Record
+                    <!-- HEADER -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="margin:0; color:#0c4d05;">Add Accomplishment</h3>
+                        <button onclick="closeModal()"
+                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
+                            onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
+                            &times;
                         </button>
                     </div>
 
+                    <!-- FORM -->
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+
+                        <!-- PROJECT INFO -->
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project
+                                Information
+                            </p>
+
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                                <input id="region" placeholder="Region" class="status-select">
+                                <input id="batch" placeholder="Batch" class="status-select">
+                                <input id="allocation" placeholder="Allocation" class="status-select">
+                                <input id="nis" placeholder="NIS" class="status-select">
+                                <input id="activity" placeholder="Activity Type" class="status-select">
+                                <input id="remarks" placeholder="Remarks" class="status-select">
+                                <input id="amount" placeholder="Amount" class="status-select">
+                            </div>
+                        </div>
+
+                        <!-- IMPLEMENTATION -->
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Implementation
+                                Stage
+                            </p>
+
+                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+                                <input id="c1" placeholder="POW" class="status-select">
+                                <input id="c2" placeholder="Nursery" class="status-select">
+                                <input id="c3" placeholder="Seedling" class="status-select">
+                                <input id="c4" placeholder="Procurement" class="status-select">
+                                <input id="c5" placeholder="Site Prep" class="status-select">
+                                <input id="c6" placeholder="Vegetative" class="status-select">
+                                <input id="c7" placeholder="Wattling" class="status-select">
+                                <input id="c8" placeholder="Right of Way" class="status-select">
+                                <input id="c9" placeholder="Consultative" class="status-select">
+                                <input id="c10" placeholder="Distribution" class="status-select">
+                                <input id="c11" placeholder="Signages" class="status-select">
+                                <input id="c12" placeholder="Monitoring" class="status-select">
+                            </div>
+                        </div>
+
+                        <!-- METRICS -->
+                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics
+                            </p>
+
+                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                                <input id="phy" placeholder="PHY %" class="status-select">
+                                <input id="fin" placeholder="FIN %" class="status-select">
+                                <input id="exp" placeholder="Expenditures" class="status-select">
+                            </div>
+                        </div>
+
+                        <!-- ACTIONS -->
+                        <div style="display:flex; justify-content:flex-end; gap:10px;">
+                            <button onclick="closeModal()" class="status-select">Cancel</button>
+                            <button onclick="saveRecord(this)" class="status-select"
+                                style="background:#0c4d05; color:white;">
+                                Save Record
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
-            </div>
         @endif
     </div>
 
@@ -1293,12 +1297,6 @@
                 return;
             }
 
-            btn.disabled = true;
-            btn.classList.add('is-loading');
-            if (typeof showAppLoader === 'function') {
-                showAppLoader('Deleting record...');
-            }
-
             fetch(`/rpwsis_team/accomplishments/${id}/delete`, {
                     method: 'DELETE',
                     headers: {
@@ -1307,37 +1305,19 @@
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     }
                 })
-                .then(async res => {
-                    const payload = await res.json();
-
-                    if (!res.ok || !payload.success) {
-                        throw new Error(payload.message || 'Failed to delete the record.');
-                    }
-
-                    return payload;
-                })
+                .then(res => res.json())
                 .then(data => {
-                    btn.closest('tr').remove();
+                    if (data.success) {
+                        // Remove the row from the table visually
+                        btn.closest('tr').remove();
                         closeDeleteModal();
-
-                    if (typeof showLiveAlert === 'function') {
-                        showLiveAlert(data.message || 'Record deleted successfully.', 'success');
+                    } else {
+                        alert("Failed to delete the record.");
                     }
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    if (typeof showLiveAlert === 'function') {
-                        showLiveAlert(error.message || 'An error occurred while deleting.', 'error');
-                    } else {
-                        alert(error.message || 'An error occurred while deleting.');
-                    }
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    btn.classList.remove('is-loading');
-                    if (typeof hideAppLoader === 'function') {
-                        hideAppLoader();
-                    }
+                    alert("An error occurred while deleting.");
                 });
         }
 
@@ -1417,31 +1397,12 @@
             }
 
             let data = {};
-            const saveButton = document.querySelector('#statusModal button[onclick="saveRecord()"]');
-
-            const requiredFields = ['region', 'activity'];
-            for (const id of requiredFields) {
-                const input = document.getElementById(id);
-                if (!input.checkValidity()) {
-                    input.reportValidity();
-                    input.focus();
-                    return;
-                }
-            }
 
             fields.forEach(id => {
                 data[id] = document.getElementById(id).value.trim();
             });
 
-            if (saveButton) {
-                saveButton.disabled = true;
-                saveButton.classList.add('is-loading');
-            }
-
-            if (typeof showAppLoader === 'function') {
-                showAppLoader('Saving record...');
-            }
-
+            // ✅ FIX: Match the prefix group in your web.php
             fetch('/rpwsis_team/accomplishments/store', {
                     method: 'POST',
                     headers: {
@@ -1450,20 +1411,8 @@
                     },
                     body: JSON.stringify(data)
                 })
-                .then(async res => {
-                    const payload = await res.json();
-
-                    if (!res.ok) {
-                        const message = payload.errors
-                            ? Object.values(payload.errors).flat().join(' ')
-                            : (payload.message || 'Unable to save record.');
-                        throw new Error(message);
-                    }
-
-                    return payload;
-                })
-                .then(payload => {
-                    const res = payload.record;
+                .then(res => res.json())
+                .then(res => {
 
                     let row = `<tr>
             ${[
@@ -1566,7 +1515,7 @@
                                         (mb_strlen((string) $row->spacing) <= 45 ? ' is-expanded' : '') .
                                         '">' .
                                         '<div class="expandable-preview">' .
-                                        e(\Illuminate\Support\Str::limit(preg_replace("/\s+/", ' ', (string) $row->spacing), 45)) .
+                                        e(\Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', (string) $row->spacing), 45)) .
                                         '</div>' .
                                         '<div class="expandable-full">' .
                                         nl2br(e($row->spacing)) .
@@ -1587,7 +1536,7 @@
                                         (mb_strlen((string) $row->species_replanted) <= 60 ? ' is-expanded' : '') .
                                         '">' .
                                         '<div class="expandable-preview">' .
-                                        e(\Illuminate\Support\Str::limit(preg_replace("/\s+/", ' ', (string) $row->species_replanted), 60)) .
+                                        e(\Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', (string) $row->species_replanted), 60)) .
                                         '</div>' .
                                         '<div class="expandable-full">' .
                                         nl2br(e($row->species_replanted)) .
@@ -1613,7 +1562,8 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="summaryModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
+            <div id="summaryModal"
+                style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
                 <div
                     style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); font-family:'Poppins', sans-serif; max-height:90vh; overflow:auto;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -1627,7 +1577,8 @@
 
                     <div style="display:flex; flex-direction:column; gap:15px;">
                         <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details</p>
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details
+                            </p>
                             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
                                 <input id="sum_region" placeholder="Region" class="status-select">
                                 <input id="sum_province" placeholder="Province" class="status-select">
@@ -1637,7 +1588,8 @@
                         </div>
 
                         <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Plantation Info</p>
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Plantation Info
+                            </p>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
                                 <input id="sum_type" placeholder="Type of Plantation" class="status-select">
                                 <input id="sum_year" placeholder="Year Established" class="status-select">
@@ -1651,7 +1603,8 @@
                         </div>
 
                         <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Replanting Status &
+                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Replanting
+                                Status &
                                 Extras</p>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
                                 <input id="sum_target_2" placeholder="Replanting Target Area" class="status-select">
@@ -1681,9 +1634,11 @@
             <div class="delete-modal-overlay" id="deleteConfirmModal">
                 <div class="delete-modal-box">
                     <h3 class="delete-modal-title" id="deleteModalTitle">Delete Record</h3>
-                    <p class="delete-modal-text" id="deleteModalMessage">Are you sure you want to delete this record? This action cannot be undone.</p>
+                    <p class="delete-modal-text" id="deleteModalMessage">Are you sure you want to delete this record? This
+                        action cannot be undone.</p>
                     <div class="delete-modal-actions">
-                        <button type="button" onclick="closeDeleteModal()" class="delete-modal-btn cancel">Cancel</button>
+                        <button type="button" onclick="closeDeleteModal()"
+                            class="delete-modal-btn cancel">Cancel</button>
                         <button type="button" id="confirmDeleteBtn" class="delete-modal-btn confirm">Delete</button>
                     </div>
                 </div>
@@ -1994,7 +1949,7 @@
                 closeSummaryModal();
             }
 
-             if (deleteModal && e.target === deleteModal) {
+            if (deleteModal && e.target === deleteModal) {
                 closeDeleteModal();
             }
         });
