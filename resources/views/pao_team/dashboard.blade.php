@@ -680,20 +680,23 @@
                 <table class="sleek-table">
                     <thead>
                         <tr>
-                            <th style="width: 100px;">District</th>
-                            <th style="width: 110px;">No. of Projects</th>
-                            <th style="width: 130px;">Total Allocation</th>
-                            <th style="width: 140px;">No. of Plans Received</th>
-                            <th style="width: 160px;">No. of Project Estimate</th>
-                            <th style="width: 140px; text-align: center;">POW Prepared</th>
-                            <th style="width: 140px; text-align: center;">POW Approved</th>
-                            <th style="width: 140px; text-align: center;">POW Submitted</th>
-                            <th style="width: 160px;">On Going POW Prep</th>
-                            <th style="width: 150px;">POW for Submission</th>
-                            <th style="width: 120px;">Remarks</th>
+                            <th rowspan="2" style="width: 100px;">District</th>
+                            <th rowspan="2" style="width: 110px;">No. of Projects</th>
+                            <th rowspan="2" style="width: 130px;">Total Allocation</th>
+                            <th rowspan="2" style="width: 140px;">No. of Plans Received</th>
+                            <th rowspan="2" style="width: 160px;">No. of Project Estimate Received</th>
+                            <th colspan="3" style="width: 420px; text-align: center;">Status of Program of Works</th>
+                            <th rowspan="2" style="width: 160px;">On Going POW Preparation</th>
+                            <th rowspan="2" style="width: 150px;">POW for Submission</th>
+                            <th rowspan="2" style="width: 120px;">Remarks</th>
                             @if ($canManagePow)
-                                <th style="width: 140px;">Actions</th>
+                                <th rowspan="2" style="width: 140px;">Actions</th>
                             @endif
+                        </tr>
+                        <tr>
+                            <th style="width: 140px; text-align: center;">No. of POW Prepared</th>
+                            <th style="width: 140px; text-align: center;">No. of POW Approved</th>
+                            <th style="width: 140px; text-align: center;">No. of POW Submitted</th>
                         </tr>
                     </thead>
                     <tbody>
