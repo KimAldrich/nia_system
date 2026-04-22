@@ -154,6 +154,78 @@
             border-color: #18181b;
         }
 
+        .btn-delete {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 105px;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+            color: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit-icon {
+            background: #e0e7ff;
+            color: #4f46e5;
+            border: none;
+            min-width: 40px;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .btn-edit-icon:hover {
+            background: #c7d2fe;
+            color: #3730a3;
+            transform: translateY(-1px);
+        }
+
+        .action-cell {
+            text-align: center;
+            white-space: nowrap !important;
+            word-wrap: normal !important;
+            overflow-wrap: normal !important;
+            word-break: normal !important;
+        }
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 5px;
+            min-width: max-content;
+        }
+
         .calendar-header {
             display: flex;
             justify-content: space-between;
@@ -335,31 +407,86 @@
         .table-responsive { 
             width: 100%; 
             overflow-x: auto; 
-            overflow-y: auto;
+            overflow-y: visible;
             -webkit-overflow-scrolling: touch;
-            padding-bottom: 15px; 
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             scrollbar-width: thin;
-            max-height: 580px;
         }
         
         .table-responsive::-webkit-scrollbar { height: 8px; width: 8px; }
-        .table-responsive::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .table-responsive::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
         .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
         .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .sleek-table { border-collapse: collapse; width: max-content; min-width: 100%; }
-        .sleek-table th { text-align: left; padding: 12px 15px; color: #a0aec0; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; white-space: nowrap; }
-        .sleek-table td { padding: 15px 15px; border-bottom: 1px solid #f1f5f9; font-size: 12px; font-weight: 500; color: #475569; vertical-align: middle; white-space: normal; word-break: break-word; }
+        .sleek-table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            min-width: 1400px;
+            table-layout: fixed;
+        }
+        .sleek-table th { 
+            text-align: left; 
+            padding: 12px 15px; 
+            color: #a0aec0; 
+            font-weight: 600; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            border-bottom: 1px solid #e2e8f0; 
+            background: #f8fafc; 
+            white-space: normal;
+            word-break: break-word;
+            vertical-align: middle;
+        }
+        .sleek-table td { 
+            padding: 15px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 12px; 
+            font-weight: 500; 
+            color: #475569; 
+            vertical-align: middle;
+            min-width: 120px;
+        }
         .sleek-table tr:hover td { background-color: #f8fafc; transition: 0.2s; }
         .sleek-table tr:last-child td { border-bottom: none; }
         
         .col-system { font-weight: 700; color: #1e293b; white-space: nowrap; }
-        .col-desc { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .col-desc { 
+            max-width: 150px; 
+            white-space: normal; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            word-wrap: break-word;
+        }
 
         /* Soft UI Pagination Styling */
-        .custom-pagination { display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; gap: 8px; font-family: 'Poppins', sans-serif;}
+        .custom-pagination { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin-top: 20px; 
+            gap: 8px; 
+            font-family: 'Poppins', sans-serif;
+            flex-wrap: wrap;
+            padding: 0 15px;
+        }
         .custom-pagination svg { width: 16px; height: 16px; }
-        .custom-pagination .page-item { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; border-radius: 8px; background: #ffffff; color: #64748b; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: 0.2s; }
+        .custom-pagination .page-item { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-width: 32px; 
+            height: 32px; 
+            border-radius: 8px; 
+            background: #ffffff; 
+            color: #64748b; 
+            font-size: 12px; 
+            font-weight: 600; 
+            text-decoration: none; 
+            border: 1px solid #e2e8f0; 
+            transition: 0.2s; 
+        }
         .custom-pagination .page-item:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
         .custom-pagination .page-item.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; }
         .custom-pagination .page-item.disabled { background: #f8fafc; color: #cbd5e1; cursor: not-allowed; border-color: #f1f5f9; }
@@ -603,7 +730,7 @@
         $canManagePow = auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']);
     @endphp
 
-    <div class="ui-card">
+    <div class="ui-card" id="powSection">
         <div class="section-title">
             Program of Works Status Monitoring
             
@@ -613,87 +740,92 @@
                         + Add Data
                     </button>
                 @endif
-                <a href="{{ route('pao.pow.export') }}" onclick="handlePowExport(event, this.href)" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <a href="{{ route('pao.pow.export') }}" onclick="handlePowExport(event, this.href)" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export Excel
                 </a>
             </div>
         </div>
         
-        <div class="table-responsive" id="powTableContainer">
-            <table class="sleek-table">
-                <thead>
-                    <tr>
-                        <th rowspan="2">District</th>
-                        <th rowspan="2">No. of Projects</th>
-                        <th rowspan="2">Total Allocation</th>
-                        <th rowspan="2">No. of Plans Received</th>
-                        <th rowspan="2">No. of Project Estimate Received</th>
-                        <th colspan="3" style="text-align: center; font-weight: 600; color: #a0aec0;">Status of Program of Works</th>
-                        <th rowspan="2">On Going POW Preparation</th>
-                        <th rowspan="2">POW for Submission</th>
-                        <th rowspan="2">Remarks</th>
-                        @if ($canManagePow)
-                            <th rowspan="2">Actions</th>
-                        @endif
-                    </tr>
-                    <tr>
-                        <th>NO. of POW Prepared</th>
-                        <th>No. of POW Approved</th>
-                        <th>No. of POW Submitted</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($powData ?? [] as $data)
+        <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; -webkit-overflow-scrolling: touch;">
+            <div class="table-responsive" id="powTableContainer">
+                <table class="sleek-table">
+                    <thead>
                         <tr>
-                            <td>{{ $data->district }}</td>
-                            <td>{{ $data->no_of_projects }}</td>
-                            <td>₱{{ number_format($data->total_allocation, 2) }}</td>
-                            <td>{{ $data->no_of_plans_received }}</td>
-                            <td>{{ $data->no_of_project_estimate_received }}</td>
-                            <td>{{ $data->pow_received }}</td>
-                            <td>{{ $data->pow_approved }}</td>
-                            <td>{{ $data->pow_submitted }}</td>
-                            <td>{{ $data->ongoing_pow_preparation }}</td>
-                            <td>{{ $data->pow_for_submission }}</td>
-                            <td class="col-desc">{{ $data->remarks }}</td>
+                            <th rowspan="2" style="width: 100px;">District</th>
+                            <th rowspan="2" style="width: 110px;">No. of Projects</th>
+                            <th rowspan="2" style="width: 130px;">Total Allocation</th>
+                            <th rowspan="2" style="width: 140px;">No. of Plans Received</th>
+                            <th rowspan="2" style="width: 160px;">No. of Project Estimate Received</th>
+                            <th colspan="3" style="width: 420px; text-align: center;">Status of Program of Works</th>
+                            <th rowspan="2" style="width: 160px;">On Going POW Preparation</th>
+                            <th rowspan="2" style="width: 150px;">POW for Submission</th>
+                            <th rowspan="2" style="width: 120px;">Remarks</th>
                             @if ($canManagePow)
-                                <td style="text-align: center;">
-                                    <button onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')" 
-                                            style="background: #4f46e5; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 5px;">
-                                        Edit
-                                    </button>
-                                    <button type="button" onclick="openDeleteModal({{ $data->id }})" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
-                                        Delete
-                                    </button>
-                                </td>
+                                <th rowspan="2" style="width: 140px;">Actions</th>
                             @endif
                         </tr>
-                    @empty
                         <tr>
-                            <td colspan="{{ $canManagePow ? 12 : 11 }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No data found in the database.</td>
+                            <th style="width: 140px; text-align: center;">No. of POW Prepared</th>
+                            <th style="width: 140px; text-align: center;">No. of POW Approved</th>
+                            <th style="width: 140px; text-align: center;">No. of POW Submitted</th>
                         </tr>
-                    @endforelse
+                    </thead>
+                    <tbody>
+                        @forelse($powData ?? [] as $data)
+                            <tr>
+                                <td style="width: 100px;">{{ $data->district }}</td>
+                                <td style="width: 110px;">{{ $data->no_of_projects }}</td>
+                                <td style="width: 130px;">₱{{ number_format($data->total_allocation, 2) }}</td>
+                                <td style="width: 140px;">{{ $data->no_of_plans_received }}</td>
+                                <td style="width: 160px;">{{ $data->no_of_project_estimate_received }}</td>
+                                <td style="width: 140px; text-align: center;">{{ $data->pow_received }}</td>
+                                <td style="width: 140px; text-align: center;">{{ $data->pow_approved }}</td>
+                                <td style="width: 140px; text-align: center;">{{ $data->pow_submitted }}</td>
+                                <td style="width: 160px;">{{ $data->ongoing_pow_preparation }}</td>
+                                <td style="width: 150px;">{{ $data->pow_for_submission }}</td>
+                                <td style="width: 120px;" class="col-desc">{{ $data->remarks }}</td>
+                                @if ($canManagePow)
+                                    <td class="action-cell" style="width: 140px;">
+                                        <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Data" onclick="openEditModal({{ $data->id }}, '{{ $data->district }}', {{ $data->no_of_projects }}, {{ $data->total_allocation }}, {{ $data->no_of_plans_received }}, {{ $data->no_of_project_estimate_received }}, {{ $data->pow_received }}, {{ $data->pow_approved }}, {{ $data->pow_submitted }}, {{ $data->ongoing_pow_preparation }}, {{ $data->pow_for_submission }}, '{{ addslashes($data->remarks) }}')">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                            Edit
+                                        </button>
+                                        <button type="button" onclick="openDeleteModal({{ $data->id }})" class="btn-delete" title="Delete Data">
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                        </div>
+                                    </td>
+                                @endif
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="{{ $canManagePow ? 12 : 11 }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No data found in the database.</td>
+                            </tr>
+                        @endforelse
 
-                    @if(isset($powData) && $powData->count())
-                        <tr style="font-weight: 700; background: #f8fafc; border-top: 2px solid #0c4d05;">
-                            <td style="font-weight: 800; color: #0c4d05;">Total</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_projects') }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">₱{{ number_format($powData->sum('total_allocation'), 2) }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_plans_received') }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('no_of_project_estimate_received') }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_received') }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_approved') }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_submitted') }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('ongoing_pow_preparation') }}</td>
-                            <td style="font-weight: 800; color: #0c4d05;">{{ $powData->sum('pow_for_submission') }}</td>
-                            @if ($canManagePow)
-                                <td></td>
-                            @endif
-                        </tr>
-                    @endif
-                </tbody>
-            </table>
+                        @if(isset($powData) && $powData->count())
+                            <tr style="font-weight: 700; background: #f8fafc; border-top: 2px solid #0c4d05;">
+                                <td style="font-weight: 800; color: #0c4d05; width: 100px;">Total</td>
+                                <td style="font-weight: 800; color: #0c4d05; width: 110px;">{{ $powData->sum('no_of_projects') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; width: 130px;">₱{{ number_format($powData->sum('total_allocation'), 2) }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; width: 140px;">{{ $powData->sum('no_of_plans_received') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; width: 160px;">{{ $powData->sum('no_of_project_estimate_received') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; text-align: center; width: 140px;">{{ $powData->sum('pow_received') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; text-align: center; width: 140px;">{{ $powData->sum('pow_approved') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; text-align: center; width: 140px;">{{ $powData->sum('pow_submitted') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; width: 160px;">{{ $powData->sum('ongoing_pow_preparation') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05; width: 150px;">{{ $powData->sum('pow_for_submission') }}</td>
+                                <td style="width: 120px;"></td>
+                                @if ($canManagePow)
+                                    <td style="width: 140px;"></td>
+                                @endif
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         @if(isset($powData) && $powData->hasPages())
@@ -737,7 +869,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Program of Works Data</h3>
                 
-                <form action="{{ route('pao.pow.store') }}" method="POST">
+                <form action="{{ route('pao.pow.store') }}" method="POST" data-async-target="#powSection" data-async-reset="true" data-async-close="#addDataModal" data-async-success-modal="#powSuccessModal">
                     @csrf
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
@@ -822,7 +954,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Delete Program of Works Data</h3>
                 <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">Are you sure you want to delete this record? This action cannot be undone.</p>
-                <form id="deleteForm" method="POST" action="">
+                <form id="deleteForm" method="POST" action="" data-async-target="#powSection" data-async-close="#deleteConfirmModal" data-async-success="silent">
                     @csrf
                     @method('DELETE')
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -837,7 +969,7 @@
             <div class="modal-box">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Program of Works Data</h3>
                 
-                <form action="{{ route('pao.pow.update') }}" method="POST">
+                <form action="{{ route('pao.pow.update') }}" method="POST" data-async-target="#powSection" data-async-close="#editDataModal" data-async-success-modal="#powSuccessModal">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="id" id="edit-id">
@@ -920,13 +1052,29 @@
                 </form>
             </div>
         </div>
+
+        <div class="modal-overlay {{ session('pow_status_success') ? 'active' : '' }}" id="powSuccessModal">
+            <div class="modal-box">
+                <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+                <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pow_status_success', 'Saved successfully.') }}</p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closePowSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+                </div>
+            </div>
+        </div>
     @endif
 
     <script>
         async function handlePowExport(event, url) {
             event.preventDefault();
 
-            const suggestedName = `program_of_works_status_monitoring_${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')}.xlsx`;
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            const suggestedName = `STATUS OF POW CY ${now.getFullYear()} - as of ${formattedDate}.xlsx`;
 
             try {
                 const response = await fetch(url, {
@@ -1112,6 +1260,10 @@
 
         function closeEditModal() {
             document.getElementById('editDataModal').classList.remove('active');
+        }
+
+        function closePowSuccessModal() {
+            document.getElementById('powSuccessModal').classList.remove('active');
         }
     </script>
 @endsection

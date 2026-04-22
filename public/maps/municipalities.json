@@ -9,15 +9,15 @@
   },
   {
     "name": "Aguilar",
-    "total_land_area_ha": 19507,
+    "total_land_area_ha": 16426,
     "classification": "Agricultural",
     "primary_crops": ["Rice", "Corn", "Mango"],
     "annual_crop_ha": 4629,
     "infrastructure": { "canals": 4, "dams": ["Bayaoas SRIP"] }
   },
   {
-    "name": "Alaminos City",
-    "total_land_area_ha": 16426,
+    "name": "City of Alaminos",
+    "total_land_area_ha": 17465,
     "classification": "Commercial/Agri-Tourism",
     "primary_crops": ["Rice", "Coconut", "Corn"],
     "annual_crop_ha": 3898,
@@ -108,6 +108,7 @@
     "total_land_area_ha": 19722,
     "classification": "Coastal/Tourism",
     "primary_crops": ["Coconut", "Rice"],
+        "annual_crop_ha": 2000,
     "infrastructure": { "canals": 2, "dams": ["Zaragoza-Sampaloc PIP"] }
   },
   {
@@ -367,7 +368,7 @@
     "infrastructure": { "canals": 8, "dams": ["Agno RIS"] }
   },
   {
-    "name": "Urdaneta City",
+    "name": "City of Urdaneta",
     "total_land_area_ha": 9821,
     "classification": "Commercial/Agricultural",
     "primary_crops": ["Rice", "Vegetables"],
@@ -378,7 +379,7 @@
     "name": "Villasis",
     "total_land_area_ha": 7583,
     "classification": "Agricultural",
-    "primary_crops": ["Rice", "Vegetables (Pinakbet)"],
+    "primary_crops": ["Rice", "Vegetables"],
     "annual_crop_ha": 1799,
     "infrastructure": { "canals": 9, "dams": ["Agno RIS"] }
   }

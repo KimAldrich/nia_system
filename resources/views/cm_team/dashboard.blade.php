@@ -4,7 +4,6 @@
 @section('content')
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -47,6 +46,11 @@
 
         .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 105px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px);}
+        .btn-edit-icon { background: #e0e7ff; color: #4f46e5; border: none; min-width: 40px; height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12); flex-shrink: 0; white-space: nowrap; }
+        .btn-edit-icon:hover { background: #c7d2fe; color: #3730a3; transform: translateY(-1px); }
+        .action-cell { text-align: center; white-space: nowrap !important; word-wrap: normal !important; overflow-wrap: normal !important; word-break: normal !important; }
+        .action-buttons { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 5px; min-width: max-content; }
+        .action-buttons form { display: inline-flex; margin: 0; }
 
         .status-select { padding: 6px 10px; border-radius: 8px; border: 1px solid #e4e4e7; font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; background: #ffffff; color: #18181b; cursor: pointer; outline: none; transition: 0.2s; }
         .status-select:hover { border-color: #18181b; }
@@ -291,9 +295,9 @@
                 </button>
             @endif
             
-<button onclick="exportToExcel()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+<a href="{{ route('cm.procurement.export', request()->query()) }}" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
-</button>
+</a>
         </div>
     </div>
     
@@ -333,14 +337,24 @@
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->remarks }}</div></td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->project_description }}</div></td>
                         @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
-                            <td style="text-align: center;">
-                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Are you sure you want to delete this project?')">
+                            <td class="action-cell">
+                                <div class="action-buttons">
+                                <button
+                                    type="button"
+                                    class="btn-edit-icon"
+                                    title="Edit Project"
+                                    onclick="openProcEditModal({{ $project->id }}, '{{ addslashes($project->name_of_project) }}', '{{ $project->category }}', '{{ $project->municipality }}', '{{ $project->allocation }}', '{{ $project->abc }}', '{{ $project->bid_out }}', '{{ $project->for_bidding }}', '{{ $project->date_of_bidding }}', '{{ $project->awarded }}', '{{ $project->date_of_award }}', '{{ $project->contract_no }}', '{{ $project->contract_amount }}', '{{ addslashes($project->name_of_contractor) }}', '{{ addslashes($project->remarks) }}', '{{ addslashes($project->project_description) }}')">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                    Edit
+                                </button>
+                                <form action="{{ route('cm.procurement.destroy', $project->id) }}" method="POST" data-async-success="silent" onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Are you sure you want to delete this project?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn-delete" title="Delete Project">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Del
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
+                                </div>
                             </td>
                         @endif
                     </tr>
@@ -374,7 +388,7 @@
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Procurement Data</h3>
             
-            <form action="{{ route('cm.procurement.store') }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#addProcModal')">
+            <form action="{{ route('cm.procurement.store') }}" method="POST" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#addProcModal')">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
@@ -448,6 +462,79 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="editProcModal">
+        <div class="modal-box" style="max-width: 600px;">
+            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Procurement Data</h3>
+            
+            <form action="{{ route('cm.procurement.update') }}" method="POST" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#editProcModal')">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="id" id="edit-proc-id">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="modern-label">Category</label>
+                        <input type="text" id="edit-proc-category" name="category" list="catList" class="modern-input" placeholder="Select or type new category..." required maxlength="255">
+                        <datalist id="catList">
+                            @foreach($procCategories ?? [] as $cat)
+                                <option value="{{ $cat }}"></option>
+                            @endforeach
+                        </datalist>
+                    </div>
+                    <div><label class="modern-label">Project No.</label><input type="text" id="edit-proc-proj_no" name="proj_no" class="modern-input" placeholder="e.g. 1" required maxlength="50" disabled></div>
+                </div>
+                
+                <div><label class="modern-label">Name of Project</label><input type="text" id="edit-proc-name" name="name_of_project" required class="modern-input" maxlength="1000"></div>
+                
+                <div>
+                    <label class="modern-label">Municipality / City</label>
+                    <input type="text" id="edit-proc-municipality" name="municipality" list="pangasinanMunis" class="modern-input" placeholder="Select or type municipality..." required maxlength="100">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Allocation</label><input type="number" id="edit-proc-allocation" name="allocation" class="modern-input" placeholder="0.00" min="0" step="0.01"></div>
+                    <div><label class="modern-label">ABC</label><input type="number" id="edit-proc-abc" name="abc" class="modern-input" placeholder="0.00" min="0" step="0.01"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Bid-Out</label><input type="number" id="edit-proc-bid_out" name="bid_out" class="modern-input" min="0" step="1"></div>
+                    <div><label class="modern-label">For Bidding</label><input type="number" id="edit-proc-for_bidding" name="for_bidding" class="modern-input" min="0" step="1"></div>
+                    <div><label class="modern-label">Date of Bidding</label><input type="date" id="edit-proc-date_bidding" name="date_of_bidding" class="modern-input"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Awarded</label><input type="number" id="edit-proc-awarded" name="awarded" class="modern-input" min="0" step="1"></div>
+                    <div><label class="modern-label">Date of Award</label><input type="date" id="edit-proc-date_award" name="date_of_award" class="modern-input"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Contract No.</label><input type="text" id="edit-proc-contract_no" name="contract_no" class="modern-input" maxlength="100"></div>
+                    <div><label class="modern-label">Contract Amount</label><input type="number" id="edit-proc-contract_amount" name="contract_amount" class="modern-input" min="0" step="0.01"></div>
+                </div>
+
+                <div><label class="modern-label">Contractor Name</label><input type="text" id="edit-proc-contractor" name="name_of_contractor" class="modern-input" maxlength="255"></div>
+                
+                <div><label class="modern-label">Remarks</label><input type="text" id="edit-proc-remarks" name="remarks" class="modern-input" maxlength="1000"></div>
+                <div><label class="modern-label">Project Description</label><textarea id="edit-proc-description" name="project_description" rows="2" class="modern-input" style="resize: none;" maxlength="2000"></textarea></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" onclick="closeProcEditModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="cmSuccessModal">
+        <div class="modal-box">
+            <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+            <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">Saved successfully.</p>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeCmSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
@@ -467,6 +554,27 @@
         function updateCalendarView() { document.querySelectorAll('.month-block').forEach(block => { block.classList.remove('active'); }); const current = document.getElementById('month-' + activeMonth); if (current) current.classList.add('active'); document.getElementById('prevMonthBtn').disabled = (activeMonth === 1); document.getElementById('nextMonthBtn').disabled = (activeMonth === 12); }
         function openProcAddModal() { document.getElementById('addProcModal').classList.add('active'); }
         function closeProcAddModal() { document.getElementById('addProcModal').classList.remove('active'); }
+        function openProcEditModal(id, name, category, municipality, allocation, abc, bid_out, for_bidding, date_bidding, awarded, date_award, contract_no, contract_amount, contractor, remarks, description) {
+            document.getElementById('edit-proc-id').value = id;
+            document.getElementById('edit-proc-name').value = name;
+            document.getElementById('edit-proc-category').value = category;
+            document.getElementById('edit-proc-municipality').value = municipality;
+            document.getElementById('edit-proc-allocation').value = allocation;
+            document.getElementById('edit-proc-abc').value = abc;
+            document.getElementById('edit-proc-bid_out').value = bid_out;
+            document.getElementById('edit-proc-for_bidding').value = for_bidding;
+            document.getElementById('edit-proc-date_bidding').value = date_bidding;
+            document.getElementById('edit-proc-awarded').value = awarded;
+            document.getElementById('edit-proc-date_award').value = date_award;
+            document.getElementById('edit-proc-contract_no').value = contract_no;
+            document.getElementById('edit-proc-contract_amount').value = contract_amount;
+            document.getElementById('edit-proc-contractor').value = contractor;
+            document.getElementById('edit-proc-remarks').value = remarks;
+            document.getElementById('edit-proc-description').value = description;
+            document.getElementById('editProcModal').classList.add('active');
+        }
+        function closeProcEditModal() { document.getElementById('editProcModal').classList.remove('active'); }
+        function closeCmSuccessModal() { document.getElementById('cmSuccessModal').classList.remove('active'); }
 
         // 🌟 NEW: SMART EXCEL EXPORTER THAT FORMATS PERFECTLY 🌟
 // 🌟 SMART EXCEL EXPORTER THAT FORMATS PERFECTLY & GRABS ALL DATA 🌟
@@ -478,65 +586,176 @@ function exportToExcel() {
         return;
     }
 
-    // 1. Map data to perfectly clean column headers
-    const formattedData = rawExportData.map(row => ({
-        "No.": row.proj_no || '',
-        "Category": row.category || '',
-        "Project Name": row.name_of_project || '',
-        "Municipality": row.municipality || '',
-        "Allocation": row.allocation || '',
-        "ABC": row.abc || '',
-        "Bid-Out": row.bid_out || '',
-        "For Bidding": row.for_bidding || '',
-        "Date of Bidding": row.date_of_bidding || '',
-        "Awarded": row.awarded || '',
-        "Date of Award": row.date_of_award || '',
-        "Contract No.": row.contract_no || '',
-        "Contract Amount": row.contract_amount || '',
-        "Contractor Name": row.name_of_contractor || '',
-        "Remarks": row.remarks || '',
-        "Description": row.project_description || ''
-    }));
+    const formatDateForTitle = (date) => date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 
-    // 2. Generate Worksheet directly from the raw database JSON, NOT the HTML!
-    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    const formatSheetDate = (value) => {
+        if (!value) {
+            return '';
+        }
 
-    // 3. Set exact column widths so it looks beautiful
-    worksheet['!cols'] = [
-        { wch: 6 },   // No.
-        { wch: 35 },  // Category
-        { wch: 45 },  // Project Name
-        { wch: 20 },  // Municipality
-        { wch: 18 },  // Allocation
-        { wch: 18 },  // ABC
-        { wch: 10 },  // Bid-Out
-        { wch: 12 },  // For Bidding
-        { wch: 16 },  // Date of Bidding
-        { wch: 10 },  // Awarded
-        { wch: 16 },  // Date of Award
-        { wch: 20 },  // Contract No
-        { wch: 20 },  // Contract Amount
-        { wch: 25 },  // Contractor Name
-        { wch: 30 },  // Remarks
-        { wch: 50 }   // Description
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+
+        return parsed.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const today = new Date();
+    const selectedCategory = urlParams.get('proc_category');
+    const currentYear = today.getFullYear();
+    const titleDate = formatDateForTitle(today);
+
+    const groupedRows = rawExportData.reduce((groups, row) => {
+        const key = row.category || 'Uncategorized';
+        if (!groups[key]) {
+            groups[key] = [];
+        }
+
+        groups[key].push(row);
+        return groups;
+    }, {});
+
+    const orderedCategories = Object.keys(groupedRows).sort((a, b) => a.localeCompare(b));
+    const sheetData = [
+        ['STATUS OF PROCUREMENT AND CONTRACT - PANGASINAN IRRIGATION MANAGEMENT OFFICE'],
+        [`CY ${currentYear} PROJECTS`],
+        [`as of ${titleDate}`],
+        [
+            'No. of Proj.',
+            'Name of Project',
+            'Municipality',
+            'Allocation and ABC',
+            '',
+            'BID-OUT',
+            'For Bidding',
+            'Date of Bidding',
+            'AWARDED',
+            'Date of Award',
+            'Contract No.',
+            'Contract Amount',
+            'Name of Contractor',
+            'Remarks',
+            'Project Description'
+        ],
+        [
+            '',
+            '',
+            '',
+            `FY ${currentYear} (Allocation)`,
+            'Approved Budget of the Contract',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ],
+        new Array(15).fill(''),
+        ['PANGASINAN IMO']
     ];
 
-    // 4. Create Workbook
+    orderedCategories.forEach((category) => {
+        sheetData.push([category]);
+
+        groupedRows[category].forEach((row) => {
+            sheetData.push([
+                row.proj_no || '',
+                row.name_of_project || '',
+                row.municipality || '',
+                row.allocation || '',
+                row.abc || '',
+                row.bid_out || '',
+                row.for_bidding || '',
+                formatSheetDate(row.date_of_bidding),
+                row.awarded || '',
+                formatSheetDate(row.date_of_award),
+                row.contract_no || '',
+                row.contract_amount || '',
+                row.name_of_contractor || '',
+                row.remarks || '',
+                row.project_description || ''
+            ]);
+        });
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+    worksheet['!cols'] = [
+        { wch: 12 },
+        { wch: 42 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 24 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 10 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 28 },
+        { wch: 22 },
+        { wch: 55 }
+    ];
+
+    worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } },
+        { s: { r: 3, c: 3 }, e: { r: 3, c: 4 } },
+        { s: { r: 3, c: 0 }, e: { r: 5, c: 0 } },
+        { s: { r: 3, c: 1 }, e: { r: 5, c: 1 } },
+        { s: { r: 3, c: 2 }, e: { r: 5, c: 2 } },
+        { s: { r: 4, c: 3 }, e: { r: 5, c: 3 } },
+        { s: { r: 4, c: 4 }, e: { r: 5, c: 4 } },
+        { s: { r: 3, c: 5 }, e: { r: 5, c: 5 } },
+        { s: { r: 3, c: 6 }, e: { r: 5, c: 6 } },
+        { s: { r: 3, c: 7 }, e: { r: 5, c: 7 } },
+        { s: { r: 3, c: 8 }, e: { r: 5, c: 8 } },
+        { s: { r: 3, c: 9 }, e: { r: 5, c: 9 } },
+        { s: { r: 3, c: 10 }, e: { r: 5, c: 10 } },
+        { s: { r: 3, c: 11 }, e: { r: 5, c: 11 } },
+        { s: { r: 3, c: 12 }, e: { r: 5, c: 12 } },
+        { s: { r: 3, c: 13 }, e: { r: 5, c: 13 } },
+        { s: { r: 3, c: 14 }, e: { r: 5, c: 14 } },
+        { s: { r: 6, c: 0 }, e: { r: 6, c: 14 } }
+    ];
+
+    let currentRowIndex = 7;
+    orderedCategories.forEach((category) => {
+        const categoryStartIndex = currentRowIndex;
+        worksheet['!merges'].push({
+            s: { r: categoryStartIndex, c: 0 },
+            e: { r: categoryStartIndex, c: 14 }
+        });
+
+        currentRowIndex += groupedRows[category].length + 1;
+    });
+
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Procurement Status");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
-    // 5. Create dynamic filename based on Dropdown Selection
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentCategory = urlParams.get('proc_category');
-    let filename = "Procurement_Status_Report";
+    let filename = `Procurement Status as of ${titleDate}`;
 
-    if (currentCategory && currentCategory !== 'All Projects') {
-        // Strip bad characters out of the filename
-        filename += "_" + currentCategory.replace(/[^a-z0-9]/gi, '_');
+    if (selectedCategory && selectedCategory !== 'All Projects') {
+        filename += "_" + selectedCategory.replace(/[^a-z0-9]/gi, '_');
     }
     filename += ".xlsx";
 
-    // 6. Download the perfectly formatted file with ALL rows!
     XLSX.writeFile(workbook, filename);
 }
     </script>

@@ -187,7 +187,11 @@ class PaoTeamController extends Controller
     public function storePow(Request $request)
     {
         PaoPowData::create($this->validatePowData($request));
-        return $this->successResponse($request, 'New Program of Works data added successfully!');
+        if ($this->respondsWithJson($request)) {
+            return $this->successResponse($request, 'Added successfully.');
+        }
+
+        return back()->with('pow_status_success', 'Added successfully.');
     }
 
     public function updatePow(Request $request)
@@ -195,7 +199,11 @@ class PaoTeamController extends Controller
         $validated = $this->validatePowData($request, true);
         $powData = PaoPowData::findOrFail($validated['id']);
         $powData->update(collect($validated)->except('id')->toArray());
-        return $this->successResponse($request, 'Program of Works data updated successfully!');
+        if ($this->respondsWithJson($request)) {
+            return $this->successResponse($request, 'Updated successfully.');
+        }
+
+        return back()->with('pow_status_success', 'Updated successfully.');
     }
 
     public function deletePow(Request $request, $id)
@@ -208,11 +216,11 @@ class PaoTeamController extends Controller
     public function exportPowExcel(Request $request): StreamedResponse
     {
         $isAuthorizedGuest = $request->session()->get('guest_terms_accepted') === true;
-        $isAuthorizedUser = auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']);
+        $isAuthorizedUser = auth()->check();
 
         abort_unless($isAuthorizedGuest || $isAuthorizedUser, 403);
 
-        $filename = 'program_of_works_status_monitoring_' . now()->format('Ymd_His') . '.xlsx';
+        $filename = 'STATUS OF POW CY ' . now()->format('Y') . ' AS OF ' . now()->format('F j, Y') . '.xlsx';
         $headers = [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',

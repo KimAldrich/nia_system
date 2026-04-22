@@ -398,7 +398,7 @@
                         </a>
 
                         @if (auth()->user()->role == 'pcr_team' || auth()->user()->role == 'admin')
-                            <form action="{{ route('pcr.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;" data-async-target="#downloadablesList" data-async-confirm="Delete this file?">
+                            <form action="{{ route('pcr.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;" data-async-target="#downloadablesList" data-async-confirm="Delete this file?" data-async-success="silent">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -500,6 +500,5 @@
         });
     </script>
 @endsection
-
 
 

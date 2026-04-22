@@ -410,6 +410,18 @@ input:checked + .slider:before {
     text-align: left;
 }
 
+#legendContainer,
+#legendContainer .legend-item,
+#infoTitle,
+.detail-content,
+.info-content{
+    color: white;
+    text-shadow:
+        0 0 2px #020202,
+        0 0 4px #000000,
+        1px 1px 2px #000000;
+}
+
 .legend-item {
     display: flex;
     align-items: center;
@@ -780,7 +792,6 @@ select[name="category"]:focus {
 
     <div id="infoContent" class="info-content">
 <canvas id="landChart" class="chart-small"></canvas>
-<canvas id="irrigatedChart"></canvas>
         <!-- LEGEND -->
         <div id="legendContainer"></div>
 
@@ -1130,6 +1141,11 @@ async function loadBaseMap() {
 const stat = getIrrigatedStatByName(name);
 const rangeData = stat?.ranges || {};
 const irrigatedTotal = Object.values(rangeData).reduce((a, b) => a + Number(b), 0);
+
+const irrigatedArea = Number(stat?.ranges?.["Irrigated Area"] || 0);
+const remainingArea = Number(stat?.ranges?.["Remaining Area"] || 0);
+const programArea   = Number(stat?.ranges?.["Program Area"] || 0);
+
 const landData = {
     labels: [
         "Total Land Area (ha)",
@@ -1137,23 +1153,29 @@ const landData = {
         "Canals",
         "Dams",
         "Annual Crop Area (ha)",
-        "Irrigated Area"
+        "Irrigated Area",
+        "Remaining Area",
+        "Program Area"
     ],
-values: [
-    Number(mData.total_land_area_ha) || 0,
-    mData.primary_crops?.length || 0,
-    mData.infrastructure?.canals || 0,
-    mData.infrastructure?.dams?.length || 0,
-    Number(mData.annual_crop_ha) || 0,
-    Number(irrigatedTotal) || 0
-],
+    values: [
+        Number(mData.total_land_area_ha) || 0,
+        mData.primary_crops?.length || 0,
+        mData.infrastructure?.canals || 0,
+        mData.infrastructure?.dams?.length || 0,
+        Number(mData.annual_crop_ha) || 0,
+        irrigatedArea,
+        remainingArea,
+        programArea
+    ],
     colors: [
-        "#2e7d32",
-        "#ffa726",
-        "#42a5f5",
-        "#8d6e63",
-        "#4caf50",
-        "#1b5e20"
+        "#1565c0", // Total Land
+        "#ffa726", // Crops
+        "#42a5f5", // Canals
+        "#8d6e63", // Dams
+        "#66bb6a", // Annual Crop
+        "#2e7d32", // Irrigated
+        "#ef6c00", // Remaining
+        "#8e24aa"  // Program
     ]
 };
                     renderChart(landData);
@@ -1741,7 +1763,8 @@ function renderChart(landData) {
 
     activeSliceIndex = null;
 
-    const total = landData.values.reduce((a, b) => a + b, 0);
+    // ✅ Base total land area only
+    const totalLand = Number(landData.values[0]) || 0;
 
     landChart = new Chart(ctx, {
         type: 'doughnut',
@@ -1751,12 +1774,10 @@ function renderChart(landData) {
                 data: landData.values,
                 backgroundColor: landData.colors,
 
-                // ✅ DYNAMIC OFFSET (PERSISTENT)
                 offset: (ctx) => {
                     return ctx.dataIndex === activeSliceIndex ? 20 : 0;
                 },
 
-                // ✅ DYNAMIC BORDER
                 borderWidth: (ctx) => {
                     return ctx.dataIndex === activeSliceIndex ? 3 : 1;
                 },
@@ -1776,8 +1797,12 @@ function renderChart(landData) {
                     callbacks: {
                         label: function(context) {
                             const value = context.raw;
-                            const percent = ((value / total) * 100).toFixed(2);
-                            return `${context.label}: ${value} (${percent}%)`;
+
+                            const percent = totalLand > 0
+                                ? ((value / totalLand) * 100).toFixed(2)
+                                : 0;
+
+                            return `${context.label}: ${value.toLocaleString()} (${percent}%)`;
                         }
                     }
                 }
@@ -1785,17 +1810,18 @@ function renderChart(landData) {
         }
     });
 }
+
 function renderLegend(landData) {
     const container = document.getElementById('legendContainer');
     container.innerHTML = '';
 
-    const safeValues = landData.values.map(v => Number(v) || 0);
-    const total = safeValues.reduce((a, b) => a + b, 0);
+    const totalLand = Number(landData.values[0]) || 0;
 
     landData.labels.forEach((label, index) => {
-        const value = safeValues[index];
-        const percent = total > 0
-            ? ((value / total) * 100).toFixed(2)
+        const value = Number(landData.values[index]) || 0;
+
+        const percent = totalLand > 0
+            ? ((value / totalLand) * 100).toFixed(2)
             : 0;
 
         const item = document.createElement('div');
@@ -1845,18 +1871,7 @@ async function loadChart() {
     const labels = Object.keys(values);
     const percentages = Object.values(values);
 
-    const ctx = document.getElementById('irrigatedChart').getContext('2d');
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: firstMunicipality + ' Irrigated %',
-                data: percentages
-            }]
-        }
-    });
 }
 
 loadChart();
