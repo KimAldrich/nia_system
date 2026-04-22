@@ -138,6 +138,27 @@
     font-size: 13px;
 }
 
+#resetMapBtn {
+    background: none;
+    color: #ebeef2;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: inherit;
+    transition: all 0.3s ease;
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+}
+
+#resetMapBtn:hover {
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black, 0 0 8px rgba(255,255,255,0.5);
+    transform: scale(1.08);
+}
+
+#resetMapBtn:active {
+    transform: scale(0.95);
+}
+
 #layer-controls {
     position: absolute;
     top: 70px;
@@ -824,6 +845,8 @@ select[name="category"]:focus {
     </label>
 
     <span>🛰 Satellite</span>
+    
+    <button id="resetMapBtn" title="Reset to default position">🔄 Reset</button>
 </div>
 
     <div id="layer-controls">
@@ -971,7 +994,9 @@ function buildAppUrl(path) {
 }
 
 // Dagupan City Center
-let map = L.map('map').setView([16.0433, 120.3333], 10);
+const DEFAULT_CENTER = [16.0433, 120.3333];
+const DEFAULT_ZOOM = 10;
+let map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1018,6 +1043,14 @@ const overlayStyles = {
         fillOpacity: 0.7
     }
 };
+
+// Reset map to default position
+document.getElementById('resetMapBtn').addEventListener('click', function() {
+    map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, {
+        duration: 1.5,
+        easeLinearity: 0.25
+    });
+});
 
 let geoLayer;
 let selectedBaseLayer;
