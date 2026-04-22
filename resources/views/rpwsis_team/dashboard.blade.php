@@ -36,11 +36,17 @@
 
         .ui-card {
             background: #ffffff;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            margin-bottom: 30px;
-            border: 1px solid #e4e4e7;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            border: none;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            display: block;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .ui-card.dark {
@@ -511,39 +517,47 @@
         /* 1. CLEAN TABLE UI FIX */
         .custom-table {
             border-collapse: collapse;
-            /* Changed to collapse for clean grid borders */
             min-width: 2000px;
-            /* Ensures the table is wide enough to prevent squishing */
+            width: 100%;
+            table-layout: fixed;
             background: #fff;
         }
 
         .custom-table thead th {
-            font-size: 11px;
-            color: #3f3f46;
+            text-align: left;
+            padding: 12px 15px;
+            color: #a0aec0;
             font-weight: 600;
-            text-align: center;
-            padding: 12px 8px;
-            border: 1px solid #e4e4e7;
-            /* Added full borders */
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid #f1f5f9;
             background: #f8fafc;
-            /* Slight grey background for headers */
+            white-space: normal;
             vertical-align: middle;
+            line-height: 1.4;
         }
 
         .custom-table tbody td {
-            padding: 12px 10px;
+            padding: 15px;
+            border: 1px solid #f1f5f9;
             font-size: 12px;
-            text-align: center;
-            border: 1px solid #e4e4e7;
-            /* Added full borders */
+            font-weight: 500;
+            color: #475569;
             vertical-align: middle;
-            color: #18181b;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
             transition: 0.2s;
         }
 
         .custom-table tbody tr:hover td {
-            background: #f0f9ff;
-            /* Subtle blue highlight on hover */
+            background-color: #f8fafc;
+        }
+
+        .custom-table tbody tr:last-child td {
+            border-bottom: none;
         }
 
         /* //new april 2021 */
@@ -593,6 +607,8 @@
         #simpleTable .status-compact-cell {
             white-space: normal;
             text-align: left;
+            color: #64748b;
+            line-height: 1.5;
         }
 
         #summaryTable .col-standard {
@@ -630,6 +646,7 @@
         .expandable-full {
             line-height: 1.5;
             word-break: break-word;
+            color: #64748b;
         }
 
         .expandable-full {
@@ -675,15 +692,17 @@
         .table-responsive-wrapper {
             width: 100%;
             max-width: 100%;
-            overflow-x: scroll;
-            max-height: 600px;
+            display: block;
+            overflow-x: auto;
             overflow-y: auto;
-            border-radius: 10px;
-            border: 1px solid #e4e4e7;
+            max-height: 600px;
             -webkit-overflow-scrolling: touch;
             margin-bottom: 20px;
             scrollbar-width: thin;
-            scrollbar-color: #cbd5e1 #f8fafc;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+            border-radius: 0;
+            border: none;
+            padding-bottom: 15px;
         }
 
         /* CUSTOM HORIZONTAL & VERTICAL SCROLLBARS */
@@ -693,15 +712,13 @@
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-track {
-            background: #f8fafc;
-            border-radius: 0 0 10px 10px;
-            border-top: 1px solid #e4e4e7;
+            background: #f1f5f9;
+            border-radius: 8px;
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-thumb {
             background: #cbd5e1;
-            border-radius: 10px;
-            border: 2px solid #f8fafc;
+            border-radius: 8px;
         }
 
         .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
@@ -1039,16 +1056,15 @@
         <!-- ACTION BUTTONS -->
         <div class="section-title">
             ACCOMPLISHMENT AS OF FEBRUARY 15, 2025 OF R&P WRSIS
-            <div style="display:flex; gap:8px;">
+            <div style="display: flex; gap: 10px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb;">
+                    <button onclick="openModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                         + Add Record
                     </button>
                 @endif
 
-                <button onclick="exportCSV()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a;">
+                <button onclick="exportCSV()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export CSV
                 </button>
             </div>
@@ -1165,99 +1181,67 @@
         </div>
         @if ($canManageRpwsis)
             <!-- MODAL -->
-            <div id="statusModal"
-                style="
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.4);
-    z-index:999;
-">
-
-                <div
-                    style="
-        width:90%;
-        max-width:900px;
-        background:#fff;
-        margin:40px auto;
-        border-radius:12px;
-        padding:20px;
-        box-shadow:0 10px 30px rgba(0,0,0,0.2);
-        font-family:'Poppins', sans-serif;
-        max-height:90vh;
-        overflow:auto;
-    ">
-
-                <!-- HEADER -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:#0c4d05;">Add Accomplishment</h3>
-                    <button onclick="closeModal()"
-                        style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                        onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
-                        &times;
-                    </button>
-                </div>
-
-                <!-- FORM -->
+            <div id="statusModal" class="modal-overlay">
+                <div class="modal-box" style="max-width: 900px;">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Accomplishment</h3>
                 <div style="display:flex; flex-direction:column; gap:15px;">
 
                     <!-- PROJECT INFO -->
-                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Information
-                        </p>
+                    <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                        <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Project Information</label>
 
                         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                            <input id="region" placeholder="Region" class="status-select" maxlength="100" required>
-                            <input id="batch" placeholder="Batch" class="status-select" maxlength="100">
-                            <input id="allocation" placeholder="Allocation" class="status-select" maxlength="255">
-                            <input id="nis" placeholder="NIS" class="status-select" maxlength="255">
-                            <input id="activity" placeholder="Activity Type" class="status-select" maxlength="255" required>
-                            <input id="remarks" placeholder="Remarks" class="status-select" maxlength="1000">
-                            <input id="amount" placeholder="Amount" class="status-select" type="number" min="0" step="0.01">
+                            <input id="region" placeholder="Region" class="modern-input" maxlength="100" required>
+                            <input id="batch" placeholder="Batch" class="modern-input" maxlength="100">
+                            <input id="allocation" placeholder="Allocation" class="modern-input" maxlength="255">
+                            <input id="nis" placeholder="NIS" class="modern-input" maxlength="255">
+                            <input id="activity" placeholder="Activity Type" class="modern-input" maxlength="255" required>
+                            <input id="remarks" placeholder="Remarks" class="modern-input" maxlength="1000">
+                            <input id="amount" placeholder="Amount" class="modern-input" type="number" min="0" step="0.01">
                         </div>
                     </div>
 
                     <!-- IMPLEMENTATION -->
-                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Implementation Stage
-                        </p>
+                    <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                        <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Implementation Stage</label>
 
                         <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                            <input id="c1" placeholder="POW" class="status-select" maxlength="255">
-                            <input id="c2" placeholder="Nursery" class="status-select" maxlength="255">
-                            <input id="c3" placeholder="Seedling" class="status-select" maxlength="255">
-                            <input id="c4" placeholder="Procurement" class="status-select" maxlength="255">
-                            <input id="c5" placeholder="Site Prep" class="status-select" maxlength="255">
-                            <input id="c6" placeholder="Vegetative" class="status-select" maxlength="255">
-                            <input id="c7" placeholder="Wattling" class="status-select" maxlength="255">
-                            <input id="c8" placeholder="Right of Way" class="status-select" maxlength="255">
-                            <input id="c9" placeholder="Consultative" class="status-select" maxlength="255">
-                            <input id="c10" placeholder="Distribution" class="status-select" maxlength="255">
-                            <input id="c11" placeholder="Signages" class="status-select" maxlength="255">
-                            <input id="c12" placeholder="Monitoring" class="status-select" maxlength="255">
+                            <input id="c1" placeholder="POW" class="modern-input" maxlength="255">
+                            <input id="c2" placeholder="Nursery" class="modern-input" maxlength="255">
+                            <input id="c3" placeholder="Seedling" class="modern-input" maxlength="255">
+                            <input id="c4" placeholder="Procurement" class="modern-input" maxlength="255">
+                            <input id="c5" placeholder="Site Prep" class="modern-input" maxlength="255">
+                            <input id="c6" placeholder="Vegetative" class="modern-input" maxlength="255">
+                            <input id="c7" placeholder="Wattling" class="modern-input" maxlength="255">
+                            <input id="c8" placeholder="Right of Way" class="modern-input" maxlength="255">
+                            <input id="c9" placeholder="Consultative" class="modern-input" maxlength="255">
+                            <input id="c10" placeholder="Distribution" class="modern-input" maxlength="255">
+                            <input id="c11" placeholder="Signages" class="modern-input" maxlength="255">
+                            <input id="c12" placeholder="Monitoring" class="modern-input" maxlength="255">
                         </div>
                     </div>
 
                     <!-- METRICS -->
-                    <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                        <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics</p>
+                    <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                        <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Project Metrics</label>
 
                         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                            <input id="phy" placeholder="PHY %" class="status-select" type="number" min="0" max="100" step="0.01">
-                            <input id="fin" placeholder="FIN %" class="status-select" type="number" min="0" max="100" step="0.01">
-                            <input id="exp" placeholder="Expenditures" class="status-select" type="number" min="0" step="0.01">
+                            <input id="phy" placeholder="PHY %" class="modern-input" type="number" min="0" max="100" step="0.01">
+                            <input id="fin" placeholder="FIN %" class="modern-input" type="number" min="0" max="100" step="0.01">
+                            <input id="exp" placeholder="Expenditures" class="modern-input" type="number" min="0" step="0.01">
                         </div>
                     </div>
 
                     <!-- ACTIONS -->
-                    <div style="display:flex; justify-content:flex-end; gap:10px;">
-                        <button onclick="closeModal()" class="status-select">Cancel</button>
-                        <button onclick="saveRecord(this)" class="status-select" style="background:#0c4d05; color:white;">
+                    <div style="display:flex; gap:10px; margin-top: 10px;">
+                        <button onclick="closeModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                        <button onclick="saveRecord(this)" class="modern-btn" style="flex: 1;">
                             Save Record
                         </button>
                     </div>
 
                 </div>
+            </div>
             </div>
         @endif
     </div>
@@ -1460,18 +1444,18 @@
         // }
 
         function openModal() {
-            document.getElementById('statusModal').style.display = 'block';
+            document.getElementById('statusModal').classList.add('active');
         }
 
         function closeModal() {
-            document.getElementById('statusModal').style.display = 'none';
+            document.getElementById('statusModal').classList.remove('active');
         }
 
         // click outside to close
         window.onclick = function(e) {
             const modal = document.getElementById('statusModal');
             if (e.target === modal) {
-                modal.style.display = "none";
+                modal.classList.remove('active');
             }
         }
 
@@ -1578,16 +1562,15 @@
                 Summary of Accomplishment
             </div>
 
-            <div style="display:flex; gap:8px; margin-top: 12px;">
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openSummaryModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb;">
+                    <button onclick="openSummaryModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                         + Add Record
                     </button>
                 @endif
 
-                <button onclick="exportSummaryCSV()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a;">
+                <button onclick="exportSummaryCSV()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export CSV
                 </button>
             </div>
@@ -1685,62 +1668,52 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="summaryModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
-                <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); font-family:'Poppins', sans-serif; max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Summary Record</h3>
-                        <button onclick="closeSummaryModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#a1a1aa'">
-                            &times;
-                        </button>
-                    </div>
+            <div id="summaryModal" class="modal-overlay">
+                <div class="modal-box" style="max-width: 900px;">
+                    <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Summary Record</h3>
 
                     <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details</p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Location Details</label>
                             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="sum_region" placeholder="Region" class="status-select">
-                                <input id="sum_province" placeholder="Province" class="status-select">
-                                <input id="sum_municipality" placeholder="Municipality" class="status-select">
-                                <input id="sum_barangay" placeholder="Barangay" class="status-select">
+                                <input id="sum_region" placeholder="Region" class="modern-input">
+                                <input id="sum_province" placeholder="Province" class="modern-input">
+                                <input id="sum_municipality" placeholder="Municipality" class="modern-input">
+                                <input id="sum_barangay" placeholder="Barangay" class="modern-input">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Plantation Info</p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Plantation Info</label>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="sum_type" placeholder="Type of Plantation" class="status-select">
-                                <input id="sum_year" placeholder="Year Established" class="status-select">
-                                <input id="sum_target_1" placeholder="Target Area" class="status-select">
-                                <input id="sum_area_planted" placeholder="Area Planted" class="status-select">
-                                <input id="sum_spacing" placeholder="Spacing" class="status-select">
-                                <input id="sum_maintenance" placeholder="1st Year M&P" class="status-select">
-                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="status-select"
-                                    style="grid-column: span 3; height: 60px;"></textarea>
+                                <input id="sum_type" placeholder="Type of Plantation" class="modern-input">
+                                <input id="sum_year" placeholder="Year Established" class="modern-input">
+                                <input id="sum_target_1" placeholder="Target Area" class="modern-input">
+                                <input id="sum_area_planted" placeholder="Area Planted" class="modern-input">
+                                <input id="sum_spacing" placeholder="Spacing" class="modern-input">
+                                <input id="sum_maintenance" placeholder="1st Year M&P" class="modern-input">
+                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="modern-input"
+                                    style="grid-column: span 3; height: 60px; resize: none;"></textarea>
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Replanting Status &
-                                Extras</p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Replanting Status & Extras</label>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="sum_target_2" placeholder="Replanting Target Area" class="status-select">
-                                <input id="sum_actual" placeholder="Replanting Actual Area" class="status-select">
-                                <input id="sum_mortality" placeholder="Mortality Rate" class="status-select">
-                                <input id="sum_nis" placeholder="Name of NIS" class="status-select">
-                                <input id="sum_remarks" placeholder="Remarks" class="status-select">
+                                <input id="sum_target_2" placeholder="Replanting Target Area" class="modern-input">
+                                <input id="sum_actual" placeholder="Replanting Actual Area" class="modern-input">
+                                <input id="sum_mortality" placeholder="Mortality Rate" class="modern-input">
+                                <input id="sum_nis" placeholder="Name of NIS" class="modern-input">
+                                <input id="sum_remarks" placeholder="Remarks" class="modern-input">
                                 <div style="grid-column: span 1;"></div>
-                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="status-select"
-                                    style="grid-column: span 3; height: 60px;"></textarea>
+                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="modern-input"
+                                    style="grid-column: span 3; height: 60px; resize: none;"></textarea>
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeSummaryModal()" class="status-select">Cancel</button>
-                            <button onclick="saveSummaryRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white;">
+                        <div style="display:flex; gap:10px; margin-top: 10px;">
+                            <button onclick="closeSummaryModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                            <button onclick="saveSummaryRecord(this)" class="modern-btn" style="flex: 1;">
                                 Save Record
                             </button>
                         </div>
@@ -1810,11 +1783,11 @@
         }
 
         function openSummaryModal() {
-            document.getElementById('summaryModal').style.display = 'block';
+            document.getElementById('summaryModal').classList.add('active');
         }
 
         function closeSummaryModal() {
-            document.getElementById('summaryModal').style.display = 'none';
+            document.getElementById('summaryModal').classList.remove('active');
         }
 
         function saveSummaryRecord() {
@@ -1982,22 +1955,22 @@
 
         function openModal() {
             const modal = document.getElementById('statusModal');
-            if (modal) modal.style.display = 'block';
+            if (modal) modal.classList.add('active');
         }
 
         function closeModal() {
             const modal = document.getElementById('statusModal');
-            if (modal) modal.style.display = 'none';
+            if (modal) modal.classList.remove('active');
         }
 
         function openSummaryModal() {
             const modal = document.getElementById('summaryModal');
-            if (modal) modal.style.display = 'block';
+            if (modal) modal.classList.add('active');
         }
 
         function closeSummaryModal() {
             const modal = document.getElementById('summaryModal');
-            if (modal) modal.style.display = 'none';
+            if (modal) modal.classList.remove('active');
         }
 
         function openDeleteModal(type, id, button) {
@@ -2113,17 +2086,18 @@
                     return payload;
                 })
                 .then(res => {
+                    const record = res.record ?? res;
                     const row = `<tr>
             ${[
-                res.region, res.batch, res.allocation, res.nis, res.activity, res.remarks, res.amount,
-                res.c1, res.c2, res.c3, res.c4, res.c5, res.c6, res.c7, res.c8, res.c9, res.c10, res.c11, res.c12,
-                res.phy, res.fin, res.exp
+                record.region, record.batch, record.allocation, record.nis, record.activity, record.remarks, record.amount,
+                record.c1, record.c2, record.c3, record.c4, record.c5, record.c6, record.c7, record.c8, record.c9, record.c10, record.c11, record.c12,
+                record.phy, record.fin, record.exp
             ].map((value, index) => {
                 const className = `${(index >= 7 && index <= 18) ? 'impl ' : ''}status-compact-cell`.trim();
                 return renderStatusExpandableCell(value, className);
             }).join('')}
             @if ($canManageRpwsis)
-                <td><button onclick="openDeleteModal('accomplishment', ${res.id}, this)" class="status-select">Delete</button></td>
+                <td><button onclick="openDeleteModal('accomplishment', ${record.id}, this)" class="status-select">Delete</button></td>
             @endif
         </tr>`;
 
