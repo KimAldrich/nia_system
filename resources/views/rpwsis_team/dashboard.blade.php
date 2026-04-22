@@ -1027,71 +1027,61 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="statusModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
+            <div id="statusModal" class="modal-overlay">
                 <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Accomplishment</h3>
-                        <button onclick="closeModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'"
-                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
-                    </div>
+                    style="max-width:900px;" class="modal-box">
+                    <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Accomplishment</h3>
 
                     <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project
-                                Information</p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Project Information</label>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="region" placeholder="Region" class="status-select" maxlength="100"
+                                <input id="region" placeholder="Region" class="modern-input" maxlength="100"
                                     required>
-                                <input id="batch" placeholder="Batch" class="status-select" maxlength="100">
-                                <input id="allocation" placeholder="Allocation" class="status-select" maxlength="255">
-                                <input id="nis" placeholder="NIS" class="status-select" maxlength="255">
-                                <input id="activity" placeholder="Activity Type" class="status-select" maxlength="255"
+                                <input id="batch" placeholder="Batch" class="modern-input" maxlength="100">
+                                <input id="allocation" placeholder="Allocation" class="modern-input" maxlength="255">
+                                <input id="nis" placeholder="NIS" class="modern-input" maxlength="255">
+                                <input id="activity" placeholder="Activity Type" class="modern-input" maxlength="255"
                                     required>
-                                <input id="remarks" placeholder="Remarks" class="status-select" maxlength="1000">
-                                <input id="amount" placeholder="Amount" class="status-select" type="number"
+                                <input id="remarks" placeholder="Remarks" class="modern-input" maxlength="1000">
+                                <input id="amount" placeholder="Amount" class="modern-input" type="number"
                                     min="0" step="0.01">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Implementation
-                                Stage</p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Implementation Stage</label>
                             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="c1" placeholder="POW" class="status-select" maxlength="255">
-                                <input id="c2" placeholder="Nursery" class="status-select" maxlength="255">
-                                <input id="c3" placeholder="Seedling" class="status-select" maxlength="255">
-                                <input id="c4" placeholder="Procurement" class="status-select" maxlength="255">
-                                <input id="c5" placeholder="Site Prep" class="status-select" maxlength="255">
-                                <input id="c6" placeholder="Vegetative" class="status-select" maxlength="255">
-                                <input id="c7" placeholder="Wattling" class="status-select" maxlength="255">
-                                <input id="c8" placeholder="Right of Way" class="status-select" maxlength="255">
-                                <input id="c9" placeholder="Consultative" class="status-select" maxlength="255">
-                                <input id="c10" placeholder="Distribution" class="status-select" maxlength="255">
-                                <input id="c11" placeholder="Signages" class="status-select" maxlength="255">
-                                <input id="c12" placeholder="Monitoring" class="status-select" maxlength="255">
+                                <input id="c1" placeholder="POW" class="modern-input" maxlength="255">
+                                <input id="c2" placeholder="Nursery" class="modern-input" maxlength="255">
+                                <input id="c3" placeholder="Seedling" class="modern-input" maxlength="255">
+                                <input id="c4" placeholder="Procurement" class="modern-input" maxlength="255">
+                                <input id="c5" placeholder="Site Prep" class="modern-input" maxlength="255">
+                                <input id="c6" placeholder="Vegetative" class="modern-input" maxlength="255">
+                                <input id="c7" placeholder="Wattling" class="modern-input" maxlength="255">
+                                <input id="c8" placeholder="Right of Way" class="modern-input" maxlength="255">
+                                <input id="c9" placeholder="Consultative" class="modern-input" maxlength="255">
+                                <input id="c10" placeholder="Distribution" class="modern-input" maxlength="255">
+                                <input id="c11" placeholder="Signages" class="modern-input" maxlength="255">
+                                <input id="c12" placeholder="Monitoring" class="modern-input" maxlength="255">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics
-                            </p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Project Metrics</label>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="phy" placeholder="PHY %" class="status-select" type="number"
+                                <input id="phy" placeholder="PHY %" class="modern-input" type="number"
                                     min="0" max="100" step="0.01">
-                                <input id="fin" placeholder="FIN %" class="status-select" type="number"
+                                <input id="fin" placeholder="FIN %" class="modern-input" type="number"
                                     min="0" max="100" step="0.01">
-                                <input id="exp" placeholder="Expenditures" class="status-select" type="number"
+                                <input id="exp" placeholder="Expenditures" class="modern-input" type="number"
                                     min="0" step="0.01">
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeModal()" class="status-select" style="width: auto;">Cancel</button>
-                            <button onclick="saveRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        <div style="display:flex; gap:10px; margin-top: 10px;">
+                            <button onclick="closeModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                            <button onclick="saveRecord(this)" class="modern-btn" style="flex: 1;">Save Record</button>
                         </div>
                     </div>
                 </div>
@@ -1204,65 +1194,53 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="summaryModal"
-                style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
+            <div id="summaryModal" class="modal-overlay">
                 <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Summary Record</h3>
-                        <button onclick="closeSummaryModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'"
-                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
-                    </div>
+                    style="max-width:900px;" class="modal-box">
+                    <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Summary Record</h3>
 
                     <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details
-                            </p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Location Details</label>
                             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="sum_region" placeholder="Region" class="status-select">
-                                <input id="sum_province" placeholder="Province" class="status-select">
-                                <input id="sum_municipality" placeholder="Municipality" class="status-select">
-                                <input id="sum_barangay" placeholder="Barangay" class="status-select">
+                                <input id="sum_region" placeholder="Region" class="modern-input">
+                                <input id="sum_province" placeholder="Province" class="modern-input">
+                                <input id="sum_municipality" placeholder="Municipality" class="modern-input">
+                                <input id="sum_barangay" placeholder="Barangay" class="modern-input">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Plantation Info
-                            </p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Plantation Info</label>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="sum_type" placeholder="Type of Plantation" class="status-select">
-                                <input id="sum_year" placeholder="Year Established" class="status-select">
-                                <input id="sum_target_1" placeholder="Target Area" class="status-select">
-                                <input id="sum_area_planted" placeholder="Area Planted" class="status-select">
-                                <input id="sum_spacing" placeholder="Spacing" class="status-select">
-                                <input id="sum_maintenance" placeholder="1st Year M&P" class="status-select">
-                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="status-select"
-                                    style="grid-column: span 3; height: 60px;"></textarea>
+                                <input id="sum_type" placeholder="Type of Plantation" class="modern-input">
+                                <input id="sum_year" placeholder="Year Established" class="modern-input">
+                                <input id="sum_target_1" placeholder="Target Area" class="modern-input">
+                                <input id="sum_area_planted" placeholder="Area Planted" class="modern-input">
+                                <input id="sum_spacing" placeholder="Spacing" class="modern-input">
+                                <input id="sum_maintenance" placeholder="1st Year M&P" class="modern-input">
+                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="modern-input"
+                                    style="grid-column: span 3; height: 60px; resize: none;"></textarea>
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Replanting
-                                Status & Extras</p>
+                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="modern-label" style="color: #1e293b; font-size: 12px; margin-bottom: 10px;">Replanting Status & Extras</label>
                             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="sum_target_2" placeholder="Replanting Target Area" class="status-select">
-                                <input id="sum_actual" placeholder="Replanting Actual Area" class="status-select">
-                                <input id="sum_mortality" placeholder="Mortality Rate" class="status-select">
-                                <input id="sum_nis" placeholder="Name of NIS" class="status-select">
-                                <input id="sum_remarks" placeholder="Remarks" class="status-select">
+                                <input id="sum_target_2" placeholder="Replanting Target Area" class="modern-input">
+                                <input id="sum_actual" placeholder="Replanting Actual Area" class="modern-input">
+                                <input id="sum_mortality" placeholder="Mortality Rate" class="modern-input">
+                                <input id="sum_nis" placeholder="Name of NIS" class="modern-input">
+                                <input id="sum_remarks" placeholder="Remarks" class="modern-input">
                                 <div style="grid-column: span 1;"></div>
-                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="status-select"
-                                    style="grid-column: span 3; height: 60px;"></textarea>
+                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="modern-input"
+                                    style="grid-column: span 3; height: 60px; resize: none;"></textarea>
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeSummaryModal()" class="status-select"
-                                style="width: auto;">Cancel</button>
-                            <button onclick="saveSummaryRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        <div style="display:flex; gap:10px; margin-top: 10px;">
+                            <button onclick="closeSummaryModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
+                            <button onclick="saveSummaryRecord(this)" class="modern-btn" style="flex: 1;">Save Record</button>
                         </div>
                     </div>
                 </div>
@@ -1387,22 +1365,22 @@
 
         function openModal() {
             const modal = document.getElementById('statusModal');
-            if (modal) modal.style.display = 'block';
+            if (modal) modal.classList.add('active');
         }
 
         function closeModal() {
             const modal = document.getElementById('statusModal');
-            if (modal) modal.style.display = 'none';
+            if (modal) modal.classList.remove('active');
         }
 
         function openSummaryModal() {
             const modal = document.getElementById('summaryModal');
-            if (modal) modal.style.display = 'block';
+            if (modal) modal.classList.add('active');
         }
 
         function closeSummaryModal() {
             const modal = document.getElementById('summaryModal');
-            if (modal) modal.style.display = 'none';
+            if (modal) modal.classList.remove('active');
         }
 
         let pendingDelete = {
