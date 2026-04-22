@@ -481,6 +481,30 @@
             min-width: 105px;
             line-height: 1;
         }
+
+        .btn-edit-icon {
+            background: #e0e7ff;
+            color: #4f46e5;
+            border: none;
+            min-width: 40px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-edit-icon:hover {
+            background: #c7d2fe;
+            color: #3730a3;
+            transform: translateY(-1px);
+        }
     </style>
 
     <h1 class="header-title">Project Completion Report Team Dashboard</h1>
@@ -730,7 +754,7 @@
                         + Add Data
                     </button>
                 @endif
-                <a href="{{ route('pcr.status.export') }}" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <a href="{{ route('pcr.status.export') }}" onclick="handlePcrExport(event, this.href)" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export Excel
                 </a>
@@ -772,8 +796,9 @@
                             <td>{{ $report->not_yet_prepared_pending_details }}</td>
                             @if ($canManagePcr)
                                 <td style="text-align: center; white-space: nowrap;">
-                                    <button type="button" onclick="openPcrEditModal({{ $report->id }}, '{{ $report->fund_source }}', {{ $report->no_of_contracts }}, {{ $report->allocation }}, {{ $report->no_of_pcr_prepared }}, {{ $report->no_of_pcr_submitted_to_regional_office }}, {{ $report->accomplishment_percentage }}, {{ $report->for_signing_of_ia_chief_dm_rm }}, {{ $report->for_submission_to_ro1 }}, {{ $report->not_yet_prepared_pending_details }})"
-                                        style="background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-right: 5px; min-width: 105px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;">
+                                    <button type="button" class="btn-edit-icon" onclick="openPcrEditModal({{ $report->id }}, '{{ $report->fund_source }}', {{ $report->no_of_contracts }}, {{ $report->allocation }}, {{ $report->no_of_pcr_prepared }}, {{ $report->no_of_pcr_submitted_to_regional_office }}, {{ $report->accomplishment_percentage }}, {{ $report->for_signing_of_ia_chief_dm_rm }}, {{ $report->for_submission_to_ro1 }}, {{ $report->not_yet_prepared_pending_details }})"
+                                        title="Edit Data" style="margin-right: 5px;">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                         Edit
                                     </button>
                                     <button type="button" onclick="openPcrDeleteModal({{ $report->id }})" class="btn-delete" title="Delete Data">
@@ -921,6 +946,16 @@
                 </form>
             </div>
         </div>
+
+        <div class="modal-overlay {{ session('pcr_status_success') ? 'active' : '' }}" id="pcrSuccessModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+                <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pcr_status_success', 'Saved successfully.') }}</p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closePcrSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+                </div>
+            </div>
+        </div>
     @endif
 
     <script>
@@ -1060,6 +1095,63 @@
 
         function closePcrDeleteModal() {
             document.getElementById('pcrDeleteModal').classList.remove('active');
+        }
+
+        function closePcrSuccessModal() {
+            document.getElementById('pcrSuccessModal').classList.remove('active');
+        }
+
+        async function handlePcrExport(event, url) {
+            event.preventDefault();
+
+            const suggestedName = `PCR STATUS As Of ${new Date().toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            }).replace(',', '')}.xlsx`;
+
+            try {
+                const response = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Download failed.');
+                }
+
+                const blob = await response.blob();
+
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description: 'Excel Workbook',
+                            accept: {
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                            }
+                        }]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = suggestedName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                window.location.href = url;
+            }
         }
     </script>
 @endsection

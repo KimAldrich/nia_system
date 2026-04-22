@@ -1052,6 +1052,16 @@
                 </form>
             </div>
         </div>
+
+        <div class="modal-overlay {{ session('pow_status_success') ? 'active' : '' }}" id="powSuccessModal">
+            <div class="modal-box">
+                <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+                <p style="font-size: 14px; color: #475569; margin-bottom: 25px;">{{ session('pow_status_success', 'Saved successfully.') }}</p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closePowSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+                </div>
+            </div>
+        </div>
     @endif
 
     <script>
@@ -1250,6 +1260,10 @@
 
         function closeEditModal() {
             document.getElementById('editDataModal').classList.remove('active');
+        }
+
+        function closePowSuccessModal() {
+            document.getElementById('powSuccessModal').classList.remove('active');
         }
     </script>
 @endsection

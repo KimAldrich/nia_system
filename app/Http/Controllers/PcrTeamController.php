@@ -184,7 +184,14 @@ class PcrTeamController extends Controller
     {
         PcrStatusReport::create($this->validatePcrStatus($request));
 
-        return $this->successResponse($request, 'PCR status data added successfully.');
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Added successfully.',
+            ]);
+        }
+
+        return back()->with('pcr_status_success', 'Added successfully.');
     }
 
     public function updatePcrStatus(Request $request)
@@ -193,7 +200,14 @@ class PcrTeamController extends Controller
         $report = PcrStatusReport::findOrFail($validated['id']);
         $report->update(collect($validated)->except('id')->toArray());
 
-        return $this->successResponse($request, 'PCR status data updated successfully.');
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Updated successfully.',
+            ]);
+        }
+
+        return back()->with('pcr_status_success', 'Updated successfully.');
     }
 
     public function deletePcrStatus(Request $request, $id)

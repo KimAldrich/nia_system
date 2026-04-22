@@ -564,6 +564,31 @@
             }, 4000);
         }
 
+        function openAsyncSuccessModal(selector, message, title = 'Success') {
+            if (!selector) {
+                return false;
+            }
+
+            const modal = document.querySelector(selector);
+            if (!modal) {
+                return false;
+            }
+
+            const titleNode = modal.querySelector('[data-success-title]');
+            const messageNode = modal.querySelector('[data-success-message]');
+
+            if (titleNode) {
+                titleNode.textContent = title || 'Success';
+            }
+
+            if (messageNode) {
+                messageNode.textContent = message || 'Saved successfully.';
+            }
+
+            modal.classList.add('active');
+            return true;
+        }
+
         const appLoaderState = {
             activeCount: 0,
             hideTimer: null
@@ -738,6 +763,8 @@
             const resetForm = options.resetForm ?? form.dataset.asyncReset === 'true';
             const closeSelector = options.closeSelector ?? form.dataset.asyncClose;
             const confirmMessage = options.confirmMessage ?? form.dataset.asyncConfirm;
+            const successModalSelector = options.successModalSelector ?? form.dataset.asyncSuccessModal;
+            const successTitle = options.successTitle ?? form.dataset.asyncSuccessTitle ?? 'Success';
 
             if (!validateFormBeforeSubmit(form)) {
                 return false;
@@ -797,7 +824,12 @@
                     }
                 }
 
-                showLiveAlert(payload.message || 'Changes saved successfully.', 'success');
+                const successMessage = payload.message || 'Changes saved successfully.';
+                const openedSuccessModal = openAsyncSuccessModal(successModalSelector, successMessage, successTitle);
+
+                if (!openedSuccessModal) {
+                    showLiveAlert(successMessage, 'success');
+                }
                 return false;
             } catch (error) {
                 showLiveAlert(error.message || 'Unable to save changes.', 'error');

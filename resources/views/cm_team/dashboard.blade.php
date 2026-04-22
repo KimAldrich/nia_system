@@ -388,7 +388,7 @@
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Procurement Data</h3>
             
-            <form action="{{ route('cm.procurement.store') }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#addProcModal')">
+            <form action="{{ route('cm.procurement.store') }}" method="POST" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#addProcModal')">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
@@ -466,7 +466,7 @@
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Procurement Data</h3>
             
-            <form action="{{ route('cm.procurement.update') }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#editProcModal')">
+            <form action="{{ route('cm.procurement.update') }}" method="POST" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#editProcModal')">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="id" id="edit-proc-id">
@@ -525,6 +525,16 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="cmSuccessModal">
+        <div class="modal-box">
+            <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+            <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">Saved successfully.</p>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeCmSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
@@ -564,6 +574,7 @@
             document.getElementById('editProcModal').classList.add('active');
         }
         function closeProcEditModal() { document.getElementById('editProcModal').classList.remove('active'); }
+        function closeCmSuccessModal() { document.getElementById('cmSuccessModal').classList.remove('active'); }
 
         // 🌟 NEW: SMART EXCEL EXPORTER THAT FORMATS PERFECTLY 🌟
 // 🌟 SMART EXCEL EXPORTER THAT FORMATS PERFECTLY & GRABS ALL DATA 🌟

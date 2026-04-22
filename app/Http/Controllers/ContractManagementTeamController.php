@@ -204,7 +204,7 @@ class ContractManagementTeamController extends Controller
 
         ProcurementProject::create($validated);
 
-        return $this->successResponse($request, 'New Procurement project successfully added!');
+        return $this->successResponse($request, 'Added successfully.');
     }
 
     public function updateProcurement(Request $request)
@@ -231,7 +231,7 @@ class ContractManagementTeamController extends Controller
         $project = ProcurementProject::findOrFail($validated['id']);
         $project->update($validated);
 
-        return $this->successResponse($request, 'Procurement project updated successfully!');
+        return $this->successResponse($request, 'Updated successfully.');
     }
     public function destroyProcurement(Request $request, $id)
     {

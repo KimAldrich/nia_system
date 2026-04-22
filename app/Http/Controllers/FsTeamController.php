@@ -232,7 +232,7 @@ class FsTeamController extends Controller
 
         HydroGeoProject::create($validated);
 
-        return $this->successResponse($request, 'New Hydro-Geo data added successfully!');
+        return $this->successResponse($request, 'Added successfully.');
     }
 
     public function storeFsde(Request $request)
@@ -250,7 +250,7 @@ class FsTeamController extends Controller
 
         FsdeProject::create($data);
 
-        return $this->successResponse($request, 'FSDE data successfully added!');
+        return $this->successResponse($request, 'Added successfully.');
     }
 
     public function updateHydroGeo(Request $request, $id)
@@ -258,7 +258,7 @@ class FsTeamController extends Controller
         $project = HydroGeoProject::findOrFail($id);
         $project->update($this->validateHydroGeo($request));
 
-        return $this->successResponse($request, 'Hydro-Geo data updated successfully.');
+        return $this->successResponse($request, 'Updated successfully.');
     }
 
     public function updateFsde(Request $request, $id)
@@ -277,7 +277,7 @@ class FsTeamController extends Controller
 
         $project->update($data);
 
-        return $this->successResponse($request, 'FSDE data updated successfully.');
+        return $this->successResponse($request, 'Updated successfully.');
     }
 
     public function destroyHydroGeo(Request $request, $id)

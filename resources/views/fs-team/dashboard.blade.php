@@ -648,7 +648,7 @@
     <div class="modal-overlay" id="addDataModal">
         <div class="modal-box">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New Hydro-Geo Data</h3>
-            <form action="{{ route('fs.hydro.store') }}" method="POST" data-async-target="#hydroSection" data-async-reset="true" data-async-close="#addDataModal">
+            <form action="{{ route('fs.hydro.store') }}" method="POST" data-async-target="#hydroSection" data-async-reset="true" data-async-close="#addDataModal" data-async-success-modal="#fsSuccessModal">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Year</label><input type="number" name="year" required placeholder="e.g. 2026" class="modern-input" min="2000" max="2100" step="1"></div>
@@ -707,7 +707,7 @@
     <div class="modal-overlay" id="addFsdeModal">
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add New FSDE Data</h3>
-            <form action="{{ route('fs.fsde.store') }}" method="POST" data-async-target="#fsdeSection" data-async-reset="true" data-async-close="#addFsdeModal">
+            <form action="{{ route('fs.fsde.store') }}" method="POST" data-async-target="#fsdeSection" data-async-reset="true" data-async-close="#addFsdeModal" data-async-success-modal="#fsSuccessModal">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Year</label><input type="number" name="year" required class="modern-input" min="2000" max="2100" step="1"></div>
@@ -796,7 +796,7 @@
     <div class="modal-overlay" id="editHydroModal">
         <div class="modal-box">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Hydro-Geo Data</h3>
-            <form id="editHydroForm" method="POST" data-async-target="#hydroSection" data-async-close="#editHydroModal">
+            <form id="editHydroForm" method="POST" data-async-target="#hydroSection" data-async-close="#editHydroModal" data-async-success-modal="#fsSuccessModal">
                 @csrf
                 @method('PUT')
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -840,7 +840,7 @@
     <div class="modal-overlay" id="editFsdeModal">
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit FSDE Data</h3>
-            <form id="editFsdeForm" method="POST" data-async-target="#fsdeSection" data-async-close="#editFsdeModal">
+            <form id="editFsdeForm" method="POST" data-async-target="#fsdeSection" data-async-close="#editFsdeModal" data-async-success-modal="#fsSuccessModal">
                 @csrf
                 @method('PUT')
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -890,6 +890,16 @@
                     <button type="submit" class="modern-btn" style="flex: 1;">Update Data</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="fsSuccessModal">
+        <div class="modal-box">
+            <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+            <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">Saved successfully.</p>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeFsSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
+            </div>
         </div>
     </div>
 
@@ -1021,6 +1031,10 @@
         function closeFsdeEditModal() {
             document.getElementById('editFsdeModal').classList.remove('active');
             currentFsdeEditRecord = null;
+        }
+
+        function closeFsSuccessModal() {
+            document.getElementById('fsSuccessModal').classList.remove('active');
         }
 
         async function handleHydroExport(event, url) {

@@ -187,7 +187,11 @@ class PaoTeamController extends Controller
     public function storePow(Request $request)
     {
         PaoPowData::create($this->validatePowData($request));
-        return $this->successResponse($request, 'New Program of Works data added successfully!');
+        if ($this->respondsWithJson($request)) {
+            return $this->successResponse($request, 'Added successfully.');
+        }
+
+        return back()->with('pow_status_success', 'Added successfully.');
     }
 
     public function updatePow(Request $request)
@@ -195,7 +199,11 @@ class PaoTeamController extends Controller
         $validated = $this->validatePowData($request, true);
         $powData = PaoPowData::findOrFail($validated['id']);
         $powData->update(collect($validated)->except('id')->toArray());
-        return $this->successResponse($request, 'Program of Works data updated successfully!');
+        if ($this->respondsWithJson($request)) {
+            return $this->successResponse($request, 'Updated successfully.');
+        }
+
+        return back()->with('pow_status_success', 'Updated successfully.');
     }
 
     public function deletePow(Request $request, $id)
