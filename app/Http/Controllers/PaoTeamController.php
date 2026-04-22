@@ -216,7 +216,7 @@ class PaoTeamController extends Controller
     public function exportPowExcel(Request $request): StreamedResponse
     {
         $isAuthorizedGuest = $request->session()->get('guest_terms_accepted') === true;
-        $isAuthorizedUser = auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']);
+        $isAuthorizedUser = auth()->check();
 
         abort_unless($isAuthorizedGuest || $isAuthorizedUser, 403);
 

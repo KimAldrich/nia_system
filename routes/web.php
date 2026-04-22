@@ -247,6 +247,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [PaoTeamController::class, 'index'])->name('pao.dashboard');
             Route::get('/downloadables', [PaoTeamController::class, 'downloadables'])->name('pao.downloadables');
             Route::get('/ia-resolutions', [PaoTeamController::class, 'resolutions'])->name('pao.resolutions');
+            Route::get('/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('pao.pow.export');
 
             // 🔒 EDITORS ONLY (Locked to Programming Team and Admin)
             Route::middleware(['check.role:pao_team,admin'])->group(function () {
@@ -265,7 +266,6 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/pow/store', [PaoTeamController::class, 'storePow'])->name('pao.pow.store');
                 Route::put('/pow/update', [PaoTeamController::class, 'updatePow'])->name('pao.pow.update');
                 Route::delete('/pow/delete/{id}', [PaoTeamController::class, 'deletePow'])->name('pao.pow.delete');
-                Route::get('/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('pao.pow.export');
             });
         });
 
