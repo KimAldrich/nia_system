@@ -298,7 +298,6 @@ class ContractManagementTeamController extends Controller
             $sheet->mergeCells("{$column}4:{$column}6");
         }
         $sheet->mergeCells('A7:O7');
-        $sheet->mergeCells('A8:O8');
 
         $sheet->setCellValue('A1', 'STATUS OF PROCUREMENT AND CONTRACT - PANGASINAN IRRIGATION MANAGEMENT OFFICE');
         $sheet->setCellValue('A2', 'CY ' . now()->format('Y') . ' PROJECTS');
@@ -320,7 +319,6 @@ class ContractManagementTeamController extends Controller
         $sheet->setCellValue('N4', 'Remarks');
         $sheet->setCellValue('O4', 'Project Description');
         $sheet->setCellValue('A7', 'PANGASINAN IMO');
-        $sheet->setCellValue('A8', 'General Appropriations Act CY ' . now()->format('Y'));
 
         $sheet->getStyle('A1:O3')->applyFromArray([
             'font' => [
@@ -364,7 +362,7 @@ class ContractManagementTeamController extends Controller
             ],
         ]);
 
-        $sheet->getStyle('A7:O8')->applyFromArray([
+        $sheet->getStyle('A7:O7')->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'bold' => true,
@@ -394,9 +392,8 @@ class ContractManagementTeamController extends Controller
         $sheet->getRowDimension(5)->setRowHeight(22);
         $sheet->getRowDimension(6)->setRowHeight(22);
         $sheet->getRowDimension(7)->setRowHeight(22);
-        $sheet->getRowDimension(8)->setRowHeight(22);
 
-        $currentRow = 9;
+        $currentRow = 8;
         $groupedRows = $rows->groupBy(fn ($row) => $row->category ?: 'Uncategorized');
 
         foreach ($groupedRows as $category => $projects) {
@@ -447,8 +444,8 @@ class ContractManagementTeamController extends Controller
             }
         }
 
-        $lastRow = max($currentRow - 1, 9);
-        $sheet->getStyle("A9:O{$lastRow}")->applyFromArray([
+        $lastRow = max($currentRow - 1, 8);
+        $sheet->getStyle("A8:O{$lastRow}")->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'size' => 10,
@@ -467,12 +464,12 @@ class ContractManagementTeamController extends Controller
         ]);
 
         foreach (['B', 'M', 'N', 'O'] as $column) {
-            $sheet->getStyle("{$column}9:{$column}{$lastRow}")
+            $sheet->getStyle("{$column}8:{$column}{$lastRow}")
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
         }
 
         foreach (['D', 'E', 'L'] as $column) {
-            $sheet->getStyle("{$column}9:{$column}{$lastRow}")
+            $sheet->getStyle("{$column}8:{$column}{$lastRow}")
                 ->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
         }
 
