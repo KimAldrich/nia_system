@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -18,7 +18,7 @@ class AuthController extends Controller
                 return redirect()->route('verification.notice');
             }
 
-            return redirect()->route('terms.show');
+            return $this->redirectAuthenticatedUser();
         }
 
         if (session('guest_terms_accepted')) {
@@ -65,7 +65,7 @@ class AuthController extends Controller
                 return redirect()->route('verification.notice');
             }
 
-            return redirect()->route('terms.show');
+            return $this->redirectAuthenticatedUser();
         }
 
         return back()->withInput($request->only('email'))->withErrors([
@@ -89,7 +89,7 @@ class AuthController extends Controller
     public function showVerificationNotice()
     {
         if (! Auth::user()->requiresEmailVerification() || Auth::user()->hasVerifiedEmail()) {
-            return redirect()->route('terms.show');
+            return $this->redirectAuthenticatedUser();
         }
 
         return view('auth.verify-email');
@@ -98,7 +98,7 @@ class AuthController extends Controller
     public function resendVerificationEmail(Request $request)
     {
         if (! $request->user()->requiresEmailVerification() || $request->user()->hasVerifiedEmail()) {
-            return redirect()->route('terms.show');
+            return $this->redirectAuthenticatedUser();
         }
 
         $request->user()->sendEmailVerificationNotification();
@@ -106,10 +106,41 @@ class AuthController extends Controller
         return back()->with('status', 'A new verification link has been sent to your email address.');
     }
 
-    public function verifyEmail(EmailVerificationRequest $request)
+    public function verifyEmail(Request $request, $id, $hash)
     {
-        $request->fulfill();
+        $user = User::findOrFail($id);
 
-        return redirect()->route('terms.show')->with('success', 'Your email address has been verified successfully.');
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            abort(403, 'Invalid verification link.');
+        }
+
+        if (! $user->is_active) {
+            return redirect()
+                ->route('login')
+                ->with('deactivated_message', self::DEACTIVATED_MESSAGE)
+                ->withErrors(['email' => self::DEACTIVATED_MESSAGE]);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new Verified($user));
+        }
+
+        return $this->redirectAuthenticatedUser()
+            ->with('success', 'Your email address has been verified successfully.');
+    }
+
+    private function redirectAuthenticatedUser()
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        return redirect()->route('terms.show');
     }
 }

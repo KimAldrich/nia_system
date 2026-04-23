@@ -80,6 +80,34 @@
             opacity: 0.8;
         }
 
+        .table-responsive {
+            width: 100%;
+            max-width: 100%;
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 15px;
+            scrollbar-width: thin;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         .sleek-table {
             width: 100%;
             border-collapse: collapse;
@@ -337,65 +365,67 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table" id="activeProjectsContainer">
-                    <thead>
-                        <tr>
-                            <th>Document Name</th>
-                            <th>Status</th>
-
-                            @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
-                                <th style="text-align: right;">Action</th>
-                            @endif
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($resolutions as $res)
+                <div class="table-responsive" id="activeProjectsContainer">
+                    <table class="sleek-table">
+                        <thead>
                             <tr>
-                                <td>
-                                    <strong>{{ $res->title }}</strong><br>
-                                    <span
-                                        style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
-                                </td>
-                                <td>
-                                    @if ($res->status == 'validated')
-                                        <span class="status-badge badge-dark">Validated</span>
-                                    @elseif($res->status == 'on-going')
-                                        <span class="status-badge badge-light">On-Going</span>
-                                    @else
-                                        <span class="status-badge badge-outline">Not-Validated</span>
-                                    @endif
-                                </td>
+                                <th>Document Name</th>
+                                <th>Status</th>
 
                                 @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
-                                    <td style="text-align: right;">
-                                        <form action="{{ route('row.resolutions.update_status', $res->id) }}"
-                                            method="POST" data-async-target="#activeProjectsContainer">
-                                            @csrf
-                                            <select name="status" class="status-select" data-auto-submit>
-                                                <option value="not-validated"
-                                                    {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                                    Not-Validated</option>
-                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
-                                                    On-Going
-                                                </option>
-                                                <option value="validated"
-                                                    {{ $res->status == 'validated' ? 'selected' : '' }}>
-                                                    Validated</option>
-                                            </select>
-                                        </form>
-                                    </td>
+                                    <th style="text-align: right;">Action</th>
                                 @endif
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']) ? '3' : '2' }}"
-                                    style="text-align:center; color:#a1a1aa; padding: 30px 0;">
-                                    No projects uploaded yet.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($resolutions as $res)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $res->title }}</strong><br>
+                                        <span
+                                            style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
+                                    </td>
+                                    <td>
+                                        @if ($res->status == 'validated')
+                                            <span class="status-badge badge-dark">Validated</span>
+                                        @elseif($res->status == 'on-going')
+                                            <span class="status-badge badge-light">On-Going</span>
+                                        @else
+                                            <span class="status-badge badge-outline">Not-Validated</span>
+                                        @endif
+                                    </td>
+
+                                    @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
+                                        <td style="text-align: right;">
+                                            <form action="{{ route('row.resolutions.update_status', $res->id) }}"
+                                                method="POST" data-async-target="#activeProjectsContainer">
+                                                @csrf
+                                                <select name="status" class="status-select" data-auto-submit>
+                                                    <option value="not-validated"
+                                                        {{ $res->status == 'not-validated' ? 'selected' : '' }}>
+                                                        Not-Validated</option>
+                                                    <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
+                                                        On-Going
+                                                    </option>
+                                                    <option value="validated"
+                                                        {{ $res->status == 'validated' ? 'selected' : '' }}>
+                                                        Validated</option>
+                                                </select>
+                                            </form>
+                                        </td>
+                                    @endif
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']) ? '3' : '2' }}"
+                                        style="text-align:center; color:#a1a1aa; padding: 30px 0;">
+                                        No projects uploaded yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="ui-card">

@@ -19,6 +19,7 @@ class TermsController extends Controller
     public function agree(Request $request)
     {
         $user = auth()->user();
+
         // Save the agreement in the current browser session
         session(['agreed_to_terms' => true]);
 

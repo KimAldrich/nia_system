@@ -151,9 +151,9 @@
                                     </td>
                                     @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
                                         <td style="text-align: right;">
-                                            <form action="{{ route('cm.resolutions.update_status', $res->id) }}" method="POST" onsubmit="return handleAjaxSubmit(event, '#activeProjectsContainer')">
+                                            <form action="{{ route('cm.resolutions.update_status', $res->id) }}" method="POST" data-async-target="#activeProjectsContainer">
                                                 @csrf
-                                                <select name="status" class="status-select" onchange="this.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))">
+                                                <select name="status" class="status-select" data-auto-submit>
                                                     <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>Not-Validated</option>
                                                     <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>On-Going</option>
                                                     <option value="validated" {{ $res->status == 'validated' ? 'selected' : '' }}>Validated</option>

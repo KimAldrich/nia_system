@@ -21,6 +21,7 @@ Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')->name('verification.verify');
 
 Route::post('/guest/authenticate', [GuestController::class, 'authenticate'])->name('guest.authenticate');
 Route::get('/guest/terms', [GuestController::class, 'terms'])->name('guest.terms');
@@ -37,7 +38,6 @@ Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'team
 // Routes that require login
 Route::middleware(['auth', 'check.active'])->group(function () {
     Route::get('/email/verify', [AuthController::class, 'showVerificationNotice'])->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')->name('verification.verify');
     Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])->middleware('throttle:6,1')->name('verification.send');
 
     Route::middleware('verified.except_admin')->group(function () {
