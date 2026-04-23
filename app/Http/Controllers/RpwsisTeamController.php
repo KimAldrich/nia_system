@@ -30,7 +30,18 @@ class RpwsisTeamController extends Controller
     {
         $resolutions = IaResolution::where('team', 'rpwsis_team')->latest()->get();
         $events = Event::with('category')
-            ->whereDate('event_date', '>=', now())
+            ->where(function ($query) {
+                $today = now()->toDateString();
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', '>', $today)
+                    ->orWhere(function ($q) use ($today, $currentTime) {
+                        $q->where('event_date', $today)
+                            ->whereRaw(
+                                "TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(event_time), ' - ', -1), '%h:%i %p')) > ?",
+                                [$currentTime]
+                            );
+                    });
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
@@ -78,7 +89,7 @@ class RpwsisTeamController extends Controller
         $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
-                Downloadable::create([
+        Downloadable::create([
             'title' => $cleanTitle,
             'file_path' => $path,
             'original_name' => $file->getClientOriginalName(),
@@ -127,7 +138,7 @@ class RpwsisTeamController extends Controller
         $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
-        
+
         IaResolution::create([
             'title' => $cleanTitle,
             'file_path' => $path,
@@ -197,9 +208,9 @@ class RpwsisTeamController extends Controller
             'phy' => ['nullable', 'numeric', 'between:0,100'],
             'fin' => ['nullable', 'numeric', 'between:0,100'],
             'exp' => ['nullable', 'numeric', 'min:0'],
-        ] + collect(range(1, 12))->mapWithKeys(fn ($index) => [
-            'c' . $index => ['nullable', 'string', 'max:255'],
-        ])->toArray());
+        ] + collect(range(1, 12))->mapWithKeys(fn($index) => [
+                'c' . $index => ['nullable', 'string', 'max:255'],
+            ])->toArray());
 
         $record = RpwsisAccomplishment::create($validated);
 
@@ -232,9 +243,9 @@ class RpwsisTeamController extends Controller
             'phy' => ['nullable', 'numeric', 'between:0,100'],
             'fin' => ['nullable', 'numeric', 'between:0,100'],
             'exp' => ['nullable', 'numeric', 'min:0'],
-        ] + collect(range(1, 12))->mapWithKeys(fn ($index) => [
-            'c' . $index => ['nullable', 'string', 'max:255'],
-        ])->toArray());
+        ] + collect(range(1, 12))->mapWithKeys(fn($index) => [
+                'c' . $index => ['nullable', 'string', 'max:255'],
+            ])->toArray());
 
         $record = RpwsisAccomplishment::findOrFail($id);
         $record->update($validated);
@@ -255,23 +266,23 @@ class RpwsisTeamController extends Controller
     {
         // Map the inputs from your JS variables to the database columns
         $record = RpwsisAccomplishmentSummary::create([
-            'region'            => $request->sum_region,
-            'province'          => $request->sum_province,
-            'municipality'      => $request->sum_municipality,
-            'barangay'          => $request->sum_barangay,
-            'plantation_type'   => $request->sum_type,
-            'year_established'  => $request->sum_year,
-            'target_area_1'     => $request->sum_target_1,
-            'area_planted'      => $request->sum_area_planted,
-            'species_planted'   => $request->sum_species,
-            'spacing'           => $request->sum_spacing,
-            'maintenance'       => $request->sum_maintenance,
-            'target_area_2'     => $request->sum_target_2,
-            'actual_area'       => $request->sum_actual,
-            'mortality_rate'    => $request->sum_mortality,
+            'region' => $request->sum_region,
+            'province' => $request->sum_province,
+            'municipality' => $request->sum_municipality,
+            'barangay' => $request->sum_barangay,
+            'plantation_type' => $request->sum_type,
+            'year_established' => $request->sum_year,
+            'target_area_1' => $request->sum_target_1,
+            'area_planted' => $request->sum_area_planted,
+            'species_planted' => $request->sum_species,
+            'spacing' => $request->sum_spacing,
+            'maintenance' => $request->sum_maintenance,
+            'target_area_2' => $request->sum_target_2,
+            'actual_area' => $request->sum_actual,
+            'mortality_rate' => $request->sum_mortality,
             'species_replanted' => $request->sum_replanted,
-            'nis_name'          => $request->sum_nis,
-            'remarks'           => $request->sum_remarks,
+            'nis_name' => $request->sum_nis,
+            'remarks' => $request->sum_remarks,
         ]);
 
         return response()->json([
@@ -285,23 +296,23 @@ class RpwsisTeamController extends Controller
     {
         $record = RpwsisAccomplishmentSummary::findOrFail($id);
         $record->update([
-            'region'            => $request->sum_region,
-            'province'          => $request->sum_province,
-            'municipality'      => $request->sum_municipality,
-            'barangay'          => $request->sum_barangay,
-            'plantation_type'   => $request->sum_type,
-            'year_established'  => $request->sum_year,
-            'target_area_1'     => $request->sum_target_1,
-            'area_planted'      => $request->sum_area_planted,
-            'species_planted'   => $request->sum_species,
-            'spacing'           => $request->sum_spacing,
-            'maintenance'       => $request->sum_maintenance,
-            'target_area_2'     => $request->sum_target_2,
-            'actual_area'       => $request->sum_actual,
-            'mortality_rate'    => $request->sum_mortality,
+            'region' => $request->sum_region,
+            'province' => $request->sum_province,
+            'municipality' => $request->sum_municipality,
+            'barangay' => $request->sum_barangay,
+            'plantation_type' => $request->sum_type,
+            'year_established' => $request->sum_year,
+            'target_area_1' => $request->sum_target_1,
+            'area_planted' => $request->sum_area_planted,
+            'species_planted' => $request->sum_species,
+            'spacing' => $request->sum_spacing,
+            'maintenance' => $request->sum_maintenance,
+            'target_area_2' => $request->sum_target_2,
+            'actual_area' => $request->sum_actual,
+            'mortality_rate' => $request->sum_mortality,
             'species_replanted' => $request->sum_replanted,
-            'nis_name'          => $request->sum_nis,
-            'remarks'           => $request->sum_remarks,
+            'nis_name' => $request->sum_nis,
+            'remarks' => $request->sum_remarks,
         ]);
 
         return response()->json([

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@test.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'email_verified_at' => now(),
             'agreed_to_terms' => true, // Admin already agreed
         ]);
 
@@ -31,6 +32,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'guest@test.com',
             'password' => Hash::make('password'),
             'role' => 'guest',
+            'email_verified_at' => now(),
             'agreed_to_terms' => true,
         ]);
 
@@ -41,6 +43,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'fs_team',
             'team_id' => $fsTeam->id,
+            'email_verified_at' => now(),
             'agreed_to_terms' => false,
         ]);
 

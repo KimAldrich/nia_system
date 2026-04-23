@@ -19,6 +19,7 @@
 #map-container {
     position: relative;
     width: 100%;
+    flex: 1 1 auto;
     max-width: 100%;
     height: 100vh;
     overflow: hidden;
@@ -1067,15 +1068,23 @@ const layerControls = document.getElementById('layer-controls');
 
 function syncMapLayout() {
     if (contentContainer && mapContainer) {
-        const availableWidth = contentContainer.clientWidth;
-        const availableHeight = contentContainer.clientHeight || window.innerHeight;
+        const contentRect = contentContainer.getBoundingClientRect();
+        const availableWidth = Math.max(0, Math.floor(contentRect.width));
+        const availableHeight = Math.max(0, Math.floor(contentRect.height || window.innerHeight));
 
         if (availableWidth > 0) {
             mapContainer.style.width = `${availableWidth}px`;
+            mapContainer.style.maxWidth = `${availableWidth}px`;
         }
 
         if (availableHeight > 0) {
             mapContainer.style.height = `${availableHeight}px`;
+        }
+
+        const mapElement = document.getElementById('map');
+        if (mapElement) {
+            mapElement.style.width = '100%';
+            mapElement.style.height = '100%';
         }
     }
 
@@ -1927,16 +1936,20 @@ const closeBtn = document.getElementById('close-sidebar');
 const mainSidebar = document.getElementById('sidebar');
 
 // OPEN sidebar
-openBtn.addEventListener('click', () => {
-    adminSidebar.classList.remove('sidebar-closed');
-    syncMapLayout();
-});
+if (openBtn && adminSidebar) {
+    openBtn.addEventListener('click', () => {
+        adminSidebar.classList.remove('sidebar-closed');
+        syncMapLayout();
+    });
+}
 
 // CLOSE sidebar
-closeBtn.addEventListener('click', () => {
-    adminSidebar.classList.add('sidebar-closed');
-    syncMapLayout();
-});
+if (closeBtn && adminSidebar) {
+    closeBtn.addEventListener('click', () => {
+        adminSidebar.classList.add('sidebar-closed');
+        syncMapLayout();
+    });
+}
 
 if (adminSidebar) {
     adminSidebar.addEventListener('transitionend', syncMapLayout);

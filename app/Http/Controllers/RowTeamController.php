@@ -18,7 +18,18 @@ class RowTeamController extends Controller
     {
         $resolutions = IaResolution::where('team', 'row_team')->latest()->get();
         $events = Event::with('category')
-            ->whereDate('event_date', '>=', now())
+            ->where(function ($query) {
+                $today = now()->toDateString();
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', '>', $today)
+                    ->orWhere(function ($q) use ($today, $currentTime) {
+                        $q->where('event_date', $today)
+                            ->whereRaw(
+                                "TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(event_time), ' - ', -1), '%h:%i %p')) > ?",
+                                [$currentTime]
+                            );
+                    });
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
