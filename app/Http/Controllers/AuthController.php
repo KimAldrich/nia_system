@@ -129,8 +129,9 @@ class AuthController extends Controller
             event(new Verified($user));
         }
 
-        return $this->redirectAuthenticatedUser()
-            ->with('success', 'Your email address has been verified successfully.');
+        return response()->view('auth.verification-success', [
+            'redirectUrl' => route('terms.show'),
+        ]);
     }
 
     private function redirectAuthenticatedUser()
