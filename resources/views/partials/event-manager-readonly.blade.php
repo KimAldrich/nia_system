@@ -56,8 +56,8 @@
 
     .event-manager-card .calendar-carousel {
         display: grid;
-        grid-template-columns: 48px minmax(0, 1fr) 48px;
-        gap: 14px;
+        grid-template-columns: 40px minmax(0, 1fr) 40px;
+        gap: 10px;
         align-items: center;
         margin-bottom: 20px;
     }
@@ -107,37 +107,40 @@
 
     .event-manager-card .calendar-header h4 {
         margin: 0;
-        font-size: 18px;
+        font-size: clamp(14px, 1.2vw, 18px);
         font-weight: 700;
         color: #1e293b;
+        text-align: center;
     }
 
     .event-manager-card .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 14px 10px;
+        gap: 10px 6px;
         text-align: center;
     }
 
     .event-manager-card .day-name {
-        font-size: 12px;
+        font-size: clamp(10px, 0.8vw, 12px);
         font-weight: 700;
         color: #a3b1c6;
         text-transform: uppercase;
+        min-width: 0;
     }
 
     .event-manager-card .day-num {
-        width: 36px;
-        height: 36px;
+        width: clamp(28px, 2.2vw, 36px);
+        height: clamp(28px, 2.2vw, 36px);
         margin: 0 auto;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 999px;
         color: #334155;
-        font-size: 14px;
+        font-size: clamp(11px, 0.95vw, 14px);
         font-weight: 600;
         border: 2px solid transparent;
+        min-width: 0;
     }
 
     .event-manager-card .day-num.empty {
@@ -157,7 +160,7 @@
 
     .event-manager-card .mini-event {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 14px;
         padding: 16px 0 0;
         border-top: 1px solid #eef2f7;
@@ -183,16 +186,22 @@
 
     .event-manager-card .mini-event-title {
         margin: 0 0 2px;
-        font-size: 15px;
+        font-size: clamp(13px, 1vw, 15px);
         font-weight: 700;
         color: #1e293b;
         text-transform: uppercase;
+        word-break: break-word;
     }
 
     .event-manager-card .mini-event-time {
         margin: 0;
         font-size: 12px;
         color: #94a3b8;
+        word-break: break-word;
+    }
+
+    .event-manager-card .mini-event > div:last-child {
+        min-width: 0;
     }
 
     .event-manager-card .event-tag {
@@ -205,6 +214,16 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.03em;
+    }
+
+    @media (max-width: 1400px) {
+        .event-manager-card {
+            padding: 22px;
+        }
+
+        .event-manager-card .calendar-grid {
+            gap: 8px 4px;
+        }
     }
 
     @media (max-width: 768px) {
