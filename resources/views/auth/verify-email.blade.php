@@ -82,6 +82,13 @@
             font-size: 13px;
         }
 
+        .hint {
+            margin-top: 14px;
+            font-size: 12px;
+            color: var(--text-gray);
+            text-align: center;
+        }
+
         button,
         .link-button {
             width: 100%;
@@ -140,7 +147,15 @@
             @csrf
             <button type="submit" class="link-button">Back to Login</button>
         </form>
+
+        <p class="hint">This page will automatically continue once your email is verified.</p>
     </div>
+
+    <script>
+        window.setInterval(() => {
+            window.location.reload();
+        }, 3000);
+    </script>
 </body>
 
 </html>

@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
 
@@ -122,22 +121,23 @@ class AdminController extends Controller
             'role' => 'required|in:admin,fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team',
         ]);
 
+        $isAdmin = $validated['role'] === 'admin';
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => $validated['role'],
             'is_active' => true,
-            'email_verified_at' => $validated['role'] === 'admin' ? Carbon::now() : null,
+            'email_verified_at' => $isAdmin ? Carbon::now() : null,
+            'agreed_to_terms' => $isAdmin,
         ]);
 
-        if ($user->requiresEmailVerification()) {
-            $user->sendEmailVerificationNotification();
-
-            return $this->successResponse($request, 'User account created successfully. A verification email has been sent.');
+        if ($isAdmin) {
+            return $this->successResponse($request, 'Admin account created successfully.');
         }
 
-        return $this->successResponse($request, 'Admin account created successfully.');
+        return $this->successResponse($request, 'User account created successfully.');
     }
 
     public function updateUserStatus(Request $request, User $user)
