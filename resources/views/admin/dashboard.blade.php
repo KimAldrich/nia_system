@@ -114,8 +114,6 @@
 
 
     @php
-        $validatedResolutions = isset($resolutions) ? $resolutions->where('status', 'validated')->count() : 0;
-        $pendingResolutions = isset($resolutions) ? $resolutions->whereIn('status', ['on-going', 'not-validated'])->count() : 0;
         $totalDownloads = isset($downloadables) ? $downloadables->count() : 0;
     @endphp
 
@@ -170,37 +168,11 @@
         <div class="main-column">
             <div class="ui-card">
                 <div class="section-title">Agency Resolutions Overview</div>
-                <table class="sleek-table">
-                    <thead>
-                        <tr>
-                            <th>Document Name</th>
-                            <th style="text-align: right;">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($resolutions ?? [] as $res)
-                        <tr>
-                            <td>
-                                <strong style="color: #1e293b;">{{ $res->title }}</strong><br>
-                                <span style="font-size: 11px; color: #a0aec0;">{{ $res->created_at->format('M d, Y') }}</span>
-                            </td>
-                            <td style="text-align: right;">
-                                @if($res->status == 'validated')
-                                    <span class="status-badge badge-dark">Validated</span>
-                                @elseif($res->status == 'on-going')
-                                    <span class="status-badge badge-light">On-Going</span>
-                                @else
-                                    <span class="status-badge badge-outline">Not-Validated</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="2" style="text-align:center; color:#a0aec0; padding: 30px 0;">No projects uploaded yet.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                @include('partials.active-projects-table', [
+                    'resolutions' => $resolutions ?? collect(),
+                    'containerId' => 'activeProjectsContainer',
+                    'editable' => false,
+                ])
             </div>
 
             <div class="ui-card">

@@ -44,7 +44,10 @@ class PcrTeamController extends Controller
 
     public function index()
     {
-        $resolutions = IaResolution::where('team', 'pcr_team')->latest()->get();
+        $resolutions = IaResolution::where('team', 'pcr_team')
+            ->latest()
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
         $events = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
@@ -63,7 +66,7 @@ class PcrTeamController extends Controller
             ->get();
 
         $categories = EventCategory::all();
-        $pcrStatusReports = PcrStatusReport::orderByDesc('fund_source')->paginate(8);
+        $pcrStatusReports = PcrStatusReport::orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
         return view('pcr_team.dashboard', compact('resolutions', 'events', 'categories', 'pcrStatusReports'));
     }
 
@@ -81,21 +84,40 @@ class PcrTeamController extends Controller
 
     public function uploadForm(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
-        $file = $request->file('document');
-        $path = $file->store('forms', 'public');
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-        Downloadable::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'pcr_team'
-        ]);
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
 
-        return $this->successResponse($request, 'File uploaded successfully.');
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
+
+            $path = $file->store('forms', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            Downloadable::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'pcr_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'File uploaded successfully.'
+            : "{$files->count()} files uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
     public function updateForm(Request $request, $id)
@@ -129,21 +151,40 @@ class PcrTeamController extends Controller
 
     public function uploadResolution(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
-        $file = $request->file('document');
-        $path = $file->store('resolutions', 'public');
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-        IaResolution::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'pcr_team'
-        ]);
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
 
-        return $this->successResponse($request, 'Resolution uploaded successfully.');
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
+
+            $path = $file->store('resolutions', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            IaResolution::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'pcr_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'Resolution uploaded successfully.'
+            : "{$files->count()} resolutions uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
     public function updateResolution(Request $request, $id)

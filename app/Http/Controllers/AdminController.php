@@ -29,7 +29,9 @@ class AdminController extends Controller
     {
         $users = User::all();
         $this->checkAdmin();
-        $resolutions = \App\Models\IaResolution::latest()->get();
+        $validatedResolutions = IaResolution::where('status', 'validated')->count();
+        $pendingResolutions = IaResolution::whereIn('status', ['on-going', 'not-validated'])->count();
+        $resolutions = IaResolution::latest()->paginate(8, ['*'], 'active_projects_page')->withQueryString();
 
         // Added 'with('category')' so the colored badges load efficiently
         $events = Event::with('category')
@@ -47,7 +49,14 @@ class AdminController extends Controller
         $categories = EventCategory::all();
         $downloadables = Downloadable::all();
 
-        return view('admin.dashboard', compact('resolutions', 'events', 'categories', 'downloadables'));
+        return view('admin.dashboard', compact(
+            'resolutions',
+            'events',
+            'categories',
+            'downloadables',
+            'validatedResolutions',
+            'pendingResolutions'
+        ));
     }
 
     //UploadDownloadables

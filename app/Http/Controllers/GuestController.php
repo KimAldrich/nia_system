@@ -63,7 +63,9 @@ class GuestController extends Controller
 
         // Fetch ALL files from ALL teams for the guest
         $downloadables = Downloadable::latest()->get();
-        $resolutions = IaResolution::latest()->get();
+        $resolutions = IaResolution::latest()
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
 
         // Fetch Calendar Events
         $events = \App\Models\Event::with('category')
@@ -115,7 +117,9 @@ class GuestController extends Controller
         $pageTitle = ($teamTitles[$db_team] ?? strtoupper(str_replace('_', ' ', $db_team))) . ' Dashboard';
 
         // 🌟 1. Fetch the exact same data the Teams see!
-        $resolutions = IaResolution::orderBy('created_at', 'desc')->get();
+        $resolutions = IaResolution::orderBy('created_at', 'desc')
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
         $events = Event::with('category')->get();
         $categories = EventCategory::all();
 

@@ -365,67 +365,12 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <div class="table-responsive" id="activeProjectsContainer">
-                    <table class="sleek-table">
-                        <thead>
-                            <tr>
-                                <th>Document Name</th>
-                                <th>Status</th>
-
-                                @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
-                                    <th style="text-align: right;">Action</th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($resolutions as $res)
-                                <tr>
-                                    <td>
-                                        <strong>{{ $res->title }}</strong><br>
-                                        <span
-                                            style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
-                                    </td>
-                                    <td>
-                                        @if ($res->status == 'validated')
-                                            <span class="status-badge badge-dark">Validated</span>
-                                        @elseif($res->status == 'on-going')
-                                            <span class="status-badge badge-light">On-Going</span>
-                                        @else
-                                            <span class="status-badge badge-outline">Not-Validated</span>
-                                        @endif
-                                    </td>
-
-                                    @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
-                                        <td style="text-align: right;">
-                                            <form action="{{ route('row.resolutions.update_status', $res->id) }}"
-                                                method="POST" data-async-target="#activeProjectsContainer">
-                                                @csrf
-                                                <select name="status" class="status-select" data-auto-submit>
-                                                    <option value="not-validated"
-                                                        {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                                        Not-Validated</option>
-                                                    <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
-                                                        On-Going
-                                                    </option>
-                                                    <option value="validated"
-                                                        {{ $res->status == 'validated' ? 'selected' : '' }}>
-                                                        Validated</option>
-                                                </select>
-                                            </form>
-                                        </td>
-                                    @endif
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']) ? '3' : '2' }}"
-                                        style="text-align:center; color:#a1a1aa; padding: 30px 0;">
-                                        No projects uploaded yet.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                @include('partials.active-projects-table', [
+                    'resolutions' => $resolutions ?? collect(),
+                    'containerId' => 'activeProjectsContainer',
+                    'editable' => auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']),
+                    'updateRouteName' => 'row.resolutions.update_status',
+                ])
             </div>
 
             <div class="ui-card">

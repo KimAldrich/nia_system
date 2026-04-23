@@ -729,6 +729,25 @@
             return refreshAsyncTargetsFromUrl(window.location.href, targets, false);
         }
 
+        function focusAsyncPaginationTarget(selector) {
+            if (!selector) return;
+
+            const section = document.querySelector(selector);
+            if (!section) return;
+
+            const focusTarget =
+                section.querySelector('.table-responsive') ||
+                section.querySelector('table') ||
+                section;
+
+            if (!focusTarget.hasAttribute('tabindex')) {
+                focusTarget.setAttribute('tabindex', '-1');
+            }
+
+            focusTarget.focus({ preventScroll: true });
+            focusTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true) {
             if (!targets || !targets.length) return;
 
@@ -771,6 +790,8 @@
                 if (updateHistory) {
                     window.history.pushState({}, '', url);
                 }
+
+                focusAsyncPaginationTarget(targets[0]);
             }, 'Loading content...');
         }
 
@@ -801,9 +822,10 @@
                 }
             }
 
+            let submitter = options.submitter ?? document.activeElement;
+
             try {
                 const formData = new FormData(form);
-                const submitter = options.submitter ?? document.activeElement;
                 if (submitter && typeof submitter.disabled !== 'undefined') {
                     submitter.disabled = true;
                 }
