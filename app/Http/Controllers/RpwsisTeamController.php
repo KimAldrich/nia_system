@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\RpwsisAccomplishment;
 use App\Models\EventCategory;
 use App\Models\RpwsisAccomplishmentSummary;
+use App\Models\RpwsisNurseryEstablishment;
+use App\Models\RpwsisSignage;
+use App\Models\RpwsisInfrastructure; // ✅ NEW IMPORT
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -38,8 +41,17 @@ class RpwsisTeamController extends Controller
         // ✅ ADDED THIS: Fetch records for the new Summary Table
         $summaryRecords = RpwsisAccomplishmentSummary::latest()->get();
 
+        //nuresery
+        $nurseryRecords = RpwsisNurseryEstablishment::latest()->get();
+
+        // ✅ FETCH SIGNAGE RECORDS
+        $signageRecords = RpwsisSignage::latest()->get();
+
+        // ✅ FETCH INFRASTRUCTURE RECORDS
+        $infrastructureRecords = RpwsisInfrastructure::latest()->get();
+
         $categories = EventCategory::all();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records', 'summaryRecords'));
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
     }
 
     // 2. View Downloadables Page
@@ -308,6 +320,110 @@ class RpwsisTeamController extends Controller
         return response()->json(['success' => true]);
     }
 
+    //14
+    // ----------------------------------------------------------------------
+    // ✅ NEW: NURSERY ESTABLISHMENT TABLE
+    // ----------------------------------------------------------------------
+
+    public function storeNursery(Request $request)
+    {
+        $record = RpwsisNurseryEstablishment::create([
+            'region'             => $request->nur_region,
+            'province'           => $request->nur_province,
+            'municipality'       => $request->nur_municipality,
+            'barangay'           => $request->nur_barangay,
+            'x_coordinates'      => $request->nur_x_coord,
+            'y_coordinates'      => $request->nur_y_coord,
+            'seedlings_produced' => $request->nur_seedlings,
+            'nursery_type'       => $request->nur_type,
+            'nis_name'           => $request->nur_nis,
+            'remarks'            => $request->nur_remarks,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Nursery record saved successfully.',
+            'record' => $record,
+        ]);
+    }
+
+    public function deleteNursery($id)
+    {
+        $record = RpwsisNurseryEstablishment::findOrFail($id);
+        $record->delete();
+        
+        return response()->json(['success' => true]);
+    }
+
+    // ----------------------------------------------------------------------
+    // ✅ NEW: INFORMATIVE SIGNAGES TABLE
+    // ----------------------------------------------------------------------
+
+    public function storeSignages(Request $request)
+    {
+        // Maps the inputs from the blade view (sig_ prefix) to the database columns
+        $record = RpwsisSignage::create([
+            'region'        => $request->sig_region,
+            'province'      => $request->sig_province,
+            'municipality'  => $request->sig_municipality,
+            'barangay'      => $request->sig_barangay,
+            'x_coordinates' => $request->sig_x_coord,
+            'y_coordinates' => $request->sig_y_coord,
+            'signage_type'  => $request->sig_type,
+            'nis_name'      => $request->sig_nis,
+            'remarks'       => $request->sig_remarks,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Signage record saved successfully.',
+            'record' => $record,
+        ]);
+    }
+
+    public function deleteSignages($id)
+    {
+        $record = RpwsisSignage::findOrFail($id);
+        $record->delete();
+        
+        return response()->json(['success' => true]);
+    }
+
+
+    // ----------------------------------------------------------------------
+    // ✅ NEW: OTHER INFRASTRUCTURES TABLE
+    // ----------------------------------------------------------------------
+
+    public function storeInfrastructure(Request $request)
+    {
+        $record = RpwsisInfrastructure::create([
+            'region'              => $request->inf_region,
+            'province'            => $request->inf_province,
+            'municipality'        => $request->inf_municipality,
+            'barangay'            => $request->inf_barangay,
+            'x_coordinates'       => $request->inf_x_coord,
+            'y_coordinates'       => $request->inf_y_coord,
+            'infrastructure_type' => $request->inf_type,
+            'nis_name'            => $request->inf_nis,
+            'remarks'             => $request->inf_remarks,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Infrastructure record saved successfully.',
+            'record' => $record,
+        ]);
+    }
+
+    public function deleteInfrastructure($id)
+    {
+        $record = RpwsisInfrastructure::findOrFail($id);
+        $record->delete();
+        return response()->json(['success' => true]);
+    }
+
+    // ----------------------------------------------------------------------
+
     public function exportAccomplishmentExcel(Request $request): StreamedResponse
     {
         $rows = RpwsisAccomplishment::orderBy('region')
@@ -570,6 +686,7 @@ class RpwsisTeamController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
+
 
     public function exportSummaryExcel(Request $request): StreamedResponse
     {

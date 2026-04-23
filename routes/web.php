@@ -15,6 +15,7 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\RpwsisAccomplishmentController;
 
+
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -149,6 +150,19 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/summary/store', [RpwsisTeamController::class, 'storeSummary'])->name('rpwsis.summary.store');
                 Route::put('/summary/{id}/update', [RpwsisTeamController::class, 'updateSummary'])->name('rpwsis.summary.update');
                 Route::delete('/summary/{id}/delete', [RpwsisTeamController::class, 'deleteSummary'])->name('rpwsis.summary.delete');
+
+                // Nursery table routes
+                    Route::post('/nursery/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeNursery'])->name('rpwsis.nursery.store');
+                    Route::delete('/nursery/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteNursery'])->name('rpwsis.nursery.delete');
+                
+                    // Signages table routes
+                Route::post('/signages/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeSignages'])->name('rpwsis.signages.store');
+                Route::delete('/signages/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteSignages'])->name('rpwsis.signages.delete');
+
+                // Infrastructure table routes
+                Route::post('/infrastructure/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeInfrastructure'])->name('rpwsis.infrastructure.store');
+                Route::delete('/infrastructure/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteInfrastructure'])->name('rpwsis.infrastructure.delete');
+
             });
 
 
