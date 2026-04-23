@@ -33,17 +33,20 @@ class FsTeamController extends Controller
             'system_name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
             'municipality' => ['required', 'string', 'max:100'],
-            'status' => ['required', Rule::in([
-                'For Schedule',
-                'For Interpretation',
-                'For Submission of Raw data',
-                'Relocation',
-                'Interpreted',
-                'Not Applicable',
-                'C/O Contractor',
-                'Open Source',
-                'With Geo-res',
-            ])],
+            'status' => [
+                'required',
+                Rule::in([
+                    'For Schedule',
+                    'For Interpretation',
+                    'For Submission of Raw data',
+                    'Relocation',
+                    'Interpreted',
+                    'Not Applicable',
+                    'C/O Contractor',
+                    'Open Source',
+                    'With Geo-res',
+                ])
+            ],
             'result' => ['nullable', 'string', 'max:100'],
         ]);
     }
@@ -78,7 +81,13 @@ class FsTeamController extends Controller
 
         // Fetch upcoming events set by the admin
         $events = Event::with('category')
-            ->whereDate('event_date', '>=', now())
+            ->where('event_date', '>', now()->format('Y-m-d'))
+            ->orWhere(function ($query) {
+                $today = now()->format('Y-m-d');
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', $today)
+                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
@@ -397,7 +406,7 @@ class FsTeamController extends Controller
 
         $projectsWithGeores =
             $rows->where('status', 'For Interpretation')->count() +
-            $rows->filter(fn ($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count() +
+            $rows->filter(fn($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count() +
             $rows->where('status', 'Relocation')->count() +
             $rows->where('result', 'Feasible')->count();
 
@@ -406,13 +415,13 @@ class FsTeamController extends Controller
             ['Projects with Geores', $projectsWithGeores],
             ['Breakdown:', null],
             ['For Interpretation', $rows->where('status', 'For Interpretation')->count()],
-            ['Raw Data (For Submission)', $rows->filter(fn ($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count()],
+            ['Raw Data (For Submission)', $rows->filter(fn($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count()],
             ['Relocation (Not Feasible)', $rows->where('status', 'Relocation')->count()],
             ['Feasible', $rows->where('result', 'Feasible')->count()],
             ['', null],
             ['For Schedule', $rows->where('status', 'For Schedule')->count()],
             ['Open Source', $rows->where('status', 'Open Source')->count()],
-            ['Provision of Pumps', $rows->filter(fn ($row) => str_contains(strtolower((string) $row->description), 'provision of water pumps'))->count()],
+            ['Provision of Pumps', $rows->filter(fn($row) => str_contains(strtolower((string) $row->description), 'provision of water pumps'))->count()],
         ];
 
         $summaryRow = $summaryStart + 1;
@@ -633,12 +642,12 @@ class FsTeamController extends Controller
         }
 
         $sheet->setCellValue("A{$currentRow}", 'TOTAL FOR PANGASINAN');
-        $sheet->setCellValue("E{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("F{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("J{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("K{$currentRow}", (float) $rows->sum(fn ($row) => $row->actual_obligation ?? 0));
-        $sheet->setCellValue("L{$currentRow}", (float) $rows->sum(fn ($row) => $row->value_of_acc ?? 0));
-        $sheet->setCellValue("M{$currentRow}", (float) $rows->sum(fn ($row) => $row->actual_expenditures ?? 0));
+        $sheet->setCellValue("E{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("F{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("J{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("K{$currentRow}", (float) $rows->sum(fn($row) => $row->actual_obligation ?? 0));
+        $sheet->setCellValue("L{$currentRow}", (float) $rows->sum(fn($row) => $row->value_of_acc ?? 0));
+        $sheet->setCellValue("M{$currentRow}", (float) $rows->sum(fn($row) => $row->actual_expenditures ?? 0));
 
         $sheet->getStyle("A{$currentRow}:R{$currentRow}")->applyFromArray([
             'font' => [

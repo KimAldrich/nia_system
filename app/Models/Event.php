@@ -31,16 +31,28 @@ class Event extends Model
             return $eventDate->endOfDay();
         }
 
-        $timeRange = preg_split('/\s*-\s*/', (string) $this->event_time);
+        $rawEventTime = trim((string) $this->event_time);
+        $normalizedRange = str_replace(['–', '—'], '-', $rawEventTime);
+        $timeRange = preg_split('/\s*-\s*/', $normalizedRange);
         $endTime = trim((string) end($timeRange));
+        $normalizedEndTime = preg_replace('/\s+/', ' ', str_replace([';', '.'], ':', $endTime));
 
-        foreach (['g:i A', 'g:i a', 'h:i A', 'h:i a', 'H:i'] as $format) {
+        foreach (['g:i A', 'g:i a', 'h:i A', 'h:i a', 'g:iA', 'g:ia', 'h:iA', 'h:ia', 'H:i', 'G:i'] as $format) {
             try {
-                $parsedTime = Carbon::createFromFormat($format, $endTime);
+                $parsedTime = Carbon::createFromFormat($format, $normalizedEndTime);
 
                 return $eventDate->copy()->setTime($parsedTime->hour, $parsedTime->minute, 0);
             } catch (\Throwable $e) {
                 // Try the next supported time format.
+            }
+        }
+
+        if (preg_match('/^(?<hour>\d{1,2}):(?<minute>\d{2})$/', $normalizedEndTime, $matches)) {
+            $hour = (int) $matches['hour'];
+            $minute = (int) $matches['minute'];
+
+            if ($hour >= 0 && $hour <= 23 && $minute >= 0 && $minute <= 59) {
+                return $eventDate->copy()->setTime($hour, $minute, 0);
             }
         }
 

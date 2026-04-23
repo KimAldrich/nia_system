@@ -50,7 +50,13 @@ class PaoTeamController extends Controller
     {
         $resolutions = IaResolution::where('team', 'pao_team')->latest()->get();
         $events = Event::with('category')
-            ->whereDate('event_date', '>=', now())
+            ->where('event_date', '>', now()->format('Y-m-d'))
+            ->orWhere(function ($query) {
+                $today = now()->format('Y-m-d');
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', $today)
+                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();

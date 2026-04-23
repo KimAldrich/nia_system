@@ -64,7 +64,14 @@ class GuestController extends Controller
 
         // Fetch Calendar Events
         $events = \App\Models\Event::with('category')
-            ->whereDate('event_date', '>=', now())
+            ->where(function ($query) {
+                $today = now()->toDateString();
+                $query->where('event_date', '>', $today)
+                    ->orWhere(function ($q) use ($today) {
+                        $q->where('event_date', $today)
+                            ->whereRaw("STR_TO_DATE(SUBSTRING_INDEX(TRIM(event_time), ' - ', -1), '%h:%i %p') > " . now()->format('H:i:s'));
+                    });
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
