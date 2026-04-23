@@ -32,7 +32,12 @@ class AdminController extends Controller
         $resolutions = \App\Models\IaResolution::latest()->get();
 
         // Added 'with('category')' so the colored badges load efficiently
-        $events = Event::with('category')->orderBy('event_date', 'asc')->get();
+        $events = Event::with('category')
+            ->whereDate('event_date', '>=', now()->toDateString())
+            ->orderBy('event_date', 'asc')
+            ->get()
+            ->filter(fn ($event) => $event->isUpcoming())
+            ->values();
 
         // Fetch custom tags for the legend
         $categories = EventCategory::all();
@@ -207,7 +212,7 @@ class AdminController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'event_date' => 'required|date',
+            'event_date' => 'required|date|after_or_equal:today',
             'event_time' => 'required|string|max:255',
             'event_category_id' => 'required' // Validate the dropdown!
         ]);
@@ -226,8 +231,27 @@ class AdminController extends Controller
     public function storeCategory(Request $request)
     {
         $this->checkAdmin();
-        $request->validate(['name' => 'required|string|max:50', 'color' => 'required|string|max:10']);
-        EventCategory::create(['name' => $request->request->get('name'), 'color' => $request->request->get('color')]);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:50',
+            'color' => 'required|string|max:10',
+        ]);
+
+        $normalizedName = mb_strtolower(trim($validated['name']));
+
+        $tagAlreadyExists = EventCategory::query()
+            ->get()
+            ->contains(fn ($category) => mb_strtolower(trim($category->name)) === $normalizedName);
+
+        if ($tagAlreadyExists) {
+            return $this->errorResponse($request, 'Tag name already exists. Please use a different tag name.');
+        }
+
+        EventCategory::create([
+            'name' => trim($validated['name']),
+            'color' => $validated['color'],
+        ]);
+
         return $this->successResponse($request, 'New tag added to legend!');
     }
 
