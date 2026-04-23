@@ -122,6 +122,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             Route::get('/dashboard', [RpwsisTeamController::class, 'index'])->name('rpwsis.dashboard');
             Route::get('/downloadables', [RpwsisTeamController::class, 'downloadables'])->name('rpwsis.downloadables');
             Route::get('/ia-resolutions', [RpwsisTeamController::class, 'resolutions'])->name('rpwsis.resolutions');
+            Route::get('/accomplishments/export-excel', [RpwsisTeamController::class, 'exportAccomplishmentExcel'])->name('rpwsis.accomplishments.export');
+            Route::get('/summary/export-excel', [RpwsisTeamController::class, 'exportSummaryExcel'])->name('rpwsis.summary.export');
 
             // 🔒 EDITORS ONLY (Locked to RP-WSIS Team and Admin)
             Route::middleware(['check.role:rpwsis_team,admin'])->group(function () {
@@ -139,11 +141,13 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 //status table
                 Route::post('/accomplishments/store', [RpwsisTeamController::class, 'storeAccomplishment'])->name('rpwsis.accomplishments.store');
+                Route::put('/accomplishments/{id}/update', [RpwsisTeamController::class, 'updateAccomplishment'])->name('rpwsis.accomplishments.update');
                 //delete
                 Route::delete('/accomplishments/{id}/delete', [RpwsisTeamController::class, 'deleteAccomplishment'])->name('rpwsis.accomplishments.delete');
                 //summary table
                 //summary table
                 Route::post('/summary/store', [RpwsisTeamController::class, 'storeSummary'])->name('rpwsis.summary.store');
+                Route::put('/summary/{id}/update', [RpwsisTeamController::class, 'updateSummary'])->name('rpwsis.summary.update');
                 Route::delete('/summary/{id}/delete', [RpwsisTeamController::class, 'deleteSummary'])->name('rpwsis.summary.delete');
             });
 

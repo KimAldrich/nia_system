@@ -12,12 +12,16 @@
     padding: 0 !important;
     margin: 0 !important;
     height: 100vh !important;
+    width: 100% !important;
     max-width: none !important;
+    overflow: hidden !important;
 }
 #map-container {
     position: relative;
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     height: 100vh;
+    overflow: hidden;
     transition: margin-right 0.3s ease;
 }
 .map-loader {
@@ -132,6 +136,27 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
+}
+
+#resetMapBtn {
+    background: none;
+    color: #ebeef2;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: inherit;
+    transition: all 0.3s ease;
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+}
+
+#resetMapBtn:hover {
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black, 0 0 8px rgba(255,255,255,0.5);
+    transform: scale(1.08);
+}
+
+#resetMapBtn:active {
+    transform: scale(0.95);
 }
 
 #layer-controls {
@@ -820,6 +845,8 @@ select[name="category"]:focus {
     </label>
 
     <span>🛰 Satellite</span>
+    
+    <button id="resetMapBtn" title="Reset to default position">🔄 Reset</button>
 </div>
 
     <div id="layer-controls">
@@ -967,7 +994,9 @@ function buildAppUrl(path) {
 }
 
 // Dagupan City Center
-let map = L.map('map').setView([16.0433, 120.3333], 10);
+const DEFAULT_CENTER = [16.0433, 120.3333];
+const DEFAULT_ZOOM = 10;
+let map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1015,13 +1044,59 @@ const overlayStyles = {
     }
 };
 
+// Reset map to default position
+document.getElementById('resetMapBtn').addEventListener('click', function() {
+    map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, {
+        duration: 1.5,
+        easeLinearity: 0.25
+    });
+});
+
 let geoLayer;
 let selectedBaseLayer;
 let miniGeoLayer;
 const overlayLayers = {};
+const mapContainer = document.getElementById('map-container');
+const contentContainer = document.querySelector('.content');
+const mainWrapper = document.querySelector('.main-wrapper');
+let mapLayoutTimer = null;
+let mapResizeObserver = null;
 
 const toggleContainer = document.getElementById('map-toggle');
 const layerControls = document.getElementById('layer-controls');
+
+function syncMapLayout() {
+    if (contentContainer && mapContainer) {
+        const availableWidth = contentContainer.clientWidth;
+        const availableHeight = contentContainer.clientHeight || window.innerHeight;
+
+        if (availableWidth > 0) {
+            mapContainer.style.width = `${availableWidth}px`;
+        }
+
+        if (availableHeight > 0) {
+            mapContainer.style.height = `${availableHeight}px`;
+        }
+    }
+
+    requestAnimationFrame(() => {
+        map.invalidateSize();
+    });
+
+    clearTimeout(mapLayoutTimer);
+    mapLayoutTimer = setTimeout(() => {
+        map.invalidateSize();
+    }, 350);
+}
+
+function queueMapLayoutSync() {
+    requestAnimationFrame(() => {
+        syncMapLayout();
+    });
+
+    setTimeout(syncMapLayout, 120);
+    setTimeout(syncMapLayout, 320);
+}
 
 toggle.addEventListener('change', () => {
     if (toggle.checked) {
@@ -1849,16 +1924,55 @@ function updateInfoPanel(municipalityName) {
 const adminSidebar = document.getElementById('admin-sidebar');
 const openBtn = document.getElementById('admin-toggle-btn');
 const closeBtn = document.getElementById('close-sidebar');
+const mainSidebar = document.getElementById('sidebar');
 
 // OPEN sidebar
 openBtn.addEventListener('click', () => {
     adminSidebar.classList.remove('sidebar-closed');
+    syncMapLayout();
 });
 
 // CLOSE sidebar
 closeBtn.addEventListener('click', () => {
     adminSidebar.classList.add('sidebar-closed');
+    syncMapLayout();
 });
+
+if (adminSidebar) {
+    adminSidebar.addEventListener('transitionend', syncMapLayout);
+}
+
+if (mainSidebar) {
+    mainSidebar.addEventListener('transitionend', (event) => {
+        if (event.propertyName === 'margin-left' || event.propertyName === 'transform') {
+            syncMapLayout();
+        }
+    });
+}
+
+if (mainSidebar && 'MutationObserver' in window) {
+    new MutationObserver(queueMapLayoutSync).observe(mainSidebar, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+}
+
+if ('ResizeObserver' in window) {
+    mapResizeObserver = new ResizeObserver(() => {
+        syncMapLayout();
+    });
+
+    if (contentContainer) {
+        mapResizeObserver.observe(contentContainer);
+    }
+
+    if (mainWrapper) {
+        mapResizeObserver.observe(mainWrapper);
+    }
+}
+
+window.addEventListener('resize', syncMapLayout);
+document.addEventListener('DOMContentLoaded', syncMapLayout);
 
 async function loadChart() {
     const res = await fetch('/irrigated-chart-data');
