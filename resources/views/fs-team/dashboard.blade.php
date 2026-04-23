@@ -207,10 +207,10 @@
                     <table class="sleek-table">
                         <thead>
                             <tr>
-                                <th style="width: 50%;">Document Name</th>
-                                <th style="width: 30%;">Status</th>
+                                <th>Document Name</th>
+                                <th>Status</th>
                                 @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
-                                    <th style="text-align: right; width: 20%;">Action</th>
+                                    <th style="text-align: right;">Action</th>
                                 @endif
                             </tr>
                         </thead>
