@@ -427,7 +427,7 @@
         }
         .sleek-table th { 
             text-align: left; 
-            padding: 12px 15px; 
+            padding: 9px 14px; 
             color: #a0aec0; 
             font-weight: 600; 
             font-size: 11px; 
@@ -440,7 +440,7 @@
             vertical-align: middle;
         }
         .sleek-table td { 
-            padding: 15px; 
+            padding: 10px 14px; 
             border-bottom: 1px solid #f1f5f9; 
             font-size: 12px; 
             font-weight: 500; 
@@ -633,7 +633,7 @@
                             <th colspan="3" style="width: 420px; text-align: center;">Status of Program of Works</th>
                             <th rowspan="2" style="width: 160px;">On Going POW Preparation</th>
                             <th rowspan="2" style="width: 150px;">POW for Submission</th>
-                            <th rowspan="2" style="width: 120px;">Remarks</th>
+                            <th rowspan="2" style="width: 320px;">Remarks</th>
                             @if ($canManagePow)
                                 <th rowspan="2" style="width: 140px;">Actions</th>
                             @endif
@@ -657,7 +657,7 @@
                                 <td style="width: 140px; text-align: center;">{{ $data->pow_submitted }}</td>
                                 <td style="width: 160px;">{{ $data->ongoing_pow_preparation }}</td>
                                 <td style="width: 150px;">{{ $data->pow_for_submission }}</td>
-                                <td style="width: 120px;" class="col-desc">{{ $data->remarks }}</td>
+                                <td style="width: 320px;" class="col-desc">{{ $data->remarks }}</td>
                                 @if ($canManagePow)
                                     <td class="action-cell" style="width: 140px;">
                                         <div class="action-buttons">
@@ -690,7 +690,7 @@
                                 <td style="font-weight: 800; color: #0c4d05; text-align: center; width: 140px;">{{ $powData->sum('pow_submitted') }}</td>
                                 <td style="font-weight: 800; color: #0c4d05; width: 160px;">{{ $powData->sum('ongoing_pow_preparation') }}</td>
                                 <td style="font-weight: 800; color: #0c4d05; width: 150px;">{{ $powData->sum('pow_for_submission') }}</td>
-                                <td style="width: 120px;"></td>
+                                <td style="width: 320px;"></td>
                                 @if ($canManagePow)
                                     <td style="width: 140px;"></td>
                                 @endif
