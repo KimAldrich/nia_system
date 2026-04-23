@@ -90,7 +90,15 @@ class GuestController extends Controller
             return redirect()->route('guest.terms');
 
         $db_team = str_replace('-', '_', $team_slug);
-        $pageTitle = strtoupper(str_replace('_', ' ', $db_team)) . " Dashboard";
+        $teamTitles = [
+            'fs_team' => 'FS Team',
+            'rpwsis_team' => 'Social And Environmental Team',
+            'cm_team' => 'Contract Management Team',
+            'row_team' => 'Right Of Way Team',
+            'pcr_team' => 'Program Completion Report Team',
+            'pao_team' => 'Programming Team',
+        ];
+        $pageTitle = ($teamTitles[$db_team] ?? strtoupper(str_replace('_', ' ', $db_team))) . ' Dashboard';
 
         // 🌟 1. Fetch the exact same data the Teams see!
         $resolutions = IaResolution::orderBy('created_at', 'desc')->get();
