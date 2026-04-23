@@ -419,6 +419,85 @@
         .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
         .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+        .active-projects-panel {
+            border: 1px solid #e4e4e7;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .active-projects-table {
+            width: 100%;
+            min-width: 620px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .active-projects-table thead th {
+            padding: 11px 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #52525b;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e4e4e7;
+            text-align: left;
+        }
+
+        .active-projects-table tbody td {
+            padding: 12px;
+            font-size: 11px;
+            color: #334155;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+        }
+
+        .active-projects-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .active-projects-table tbody tr:hover td {
+            background: #fafafa;
+        }
+
+        .active-project-title {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 3px;
+            line-height: 1.35;
+        }
+
+        .active-project-date {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        .active-project-action {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .active-projects-table th:first-child,
+        .active-projects-table td:first-child {
+            width: 50%;
+        }
+
+        .active-projects-table th:nth-child(2),
+        .active-projects-table td:nth-child(2) {
+            width: 22%;
+        }
+
+        .active-projects-table .status-select {
+            width: auto;
+            min-width: 118px;
+            max-width: 118px;
+            padding: 5px 8px;
+            font-size: 10px;
+        }
+
         .sleek-table { 
             border-collapse: collapse; 
             width: 100%; 
@@ -513,8 +592,8 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <div class="table-responsive" id="activeProjectsContainer">
-                    <table class="sleek-table">
+                <div class="table-responsive active-projects-panel" id="activeProjectsContainer">
+                    <table class="active-projects-table">
                         <thead>
                             <tr>
                                 <th>Document Name</th>
@@ -529,9 +608,8 @@
                             @forelse($resolutions as $res)
                                 <tr>
                                     <td>
-                                        <strong>{{ $res->title }}</strong><br>
-                                        <span
-                                            style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
+                                        <span class="active-project-title">{{ $res->title }}</span>
+                                        <span class="active-project-date">{{ $res->created_at->format('M d, Y') }}</span>
                                     </td>
                                     <td>
                                         @if ($res->status == 'validated')
@@ -544,7 +622,7 @@
                                     </td>
 
                                     @if (auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
-                                        <td style="text-align: right;">
+                                        <td class="active-project-action">
                                             <form action="{{ route('pao.resolutions.update_status', $res->id) }}"
                                                 method="POST" data-async-target="#activeProjectsContainer">
                                                 @csrf

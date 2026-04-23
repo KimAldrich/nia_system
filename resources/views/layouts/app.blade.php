@@ -801,22 +801,23 @@
                 }
             }
 
-            const submitter = options.submitter ?? document.activeElement;
-            if (submitter && typeof submitter.disabled !== 'undefined') {
-                submitter.disabled = true;
-            }
-
-            form.classList.add('is-loading');
-            showAppLoader(form.dataset.asyncLoadingText || 'Processing request...');
-
             try {
+                const formData = new FormData(form);
+                const submitter = options.submitter ?? document.activeElement;
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = true;
+                }
+
+                form.classList.add('is-loading');
+                showAppLoader(form.dataset.asyncLoadingText || 'Processing request...');
+
                 const response = await fetch(form.action, {
                     method: form.method || 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     },
-                    body: new FormData(form)
+                    body: formData
                 });
 
                 const contentType = response.headers.get('content-type') || '';
