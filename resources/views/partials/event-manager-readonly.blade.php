@@ -126,6 +126,7 @@
         font-size: 15px;
         font-weight: 700;
         color: #1e293b;
+        text-align: center;
     }
 
     .event-manager-card .calendar-grid {
