@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Email</title>
+    <title>Email Verified</title>
     <style>
         :root {
             --primary: #0b5e2c;
-            --primary-hover: #084721;
             --text-dark: #1e293b;
             --text-gray: #64748b;
             --bg-soft: #f8fafc;
@@ -46,10 +45,11 @@
             padding: 34px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
+            text-align: center;
         }
 
         h1 {
-            margin: 0 0 10px;
+            margin: 0 0 12px;
             color: var(--primary);
             font-size: 28px;
         }
@@ -59,17 +59,6 @@
             color: var(--text-gray);
             line-height: 1.6;
             font-size: 14px;
-        }
-
-        .email-box {
-            background: var(--bg-soft);
-            border: 1px solid var(--border);
-            color: var(--text-dark);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 18px;
-            font-weight: 600;
-            word-break: break-word;
         }
 
         .status {
@@ -82,42 +71,20 @@
             font-size: 13px;
         }
 
-        .hint {
-            margin-top: 14px;
-            font-size: 12px;
-            color: var(--text-gray);
-            text-align: center;
-        }
-
-        button,
-        .link-button {
-            width: 100%;
-            padding: 14px;
-            border-radius: 10px;
-            border: none;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        button {
-            background: var(--primary);
-            color: #fff;
-        }
-
-        button:hover {
-            background: var(--primary-hover);
-        }
-
         .link-button {
             display: inline-block;
+            width: 100%;
             box-sizing: border-box;
             text-align: center;
             text-decoration: none;
-            margin-top: 12px;
+            margin-top: 4px;
+            padding: 14px;
+            border-radius: 10px;
             background: #fff;
             color: var(--text-dark);
             border: 1px solid var(--border);
+            font-size: 15px;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -126,35 +93,16 @@
     <div class="overlay"></div>
 
     <div class="card">
-        <h1>Verify Your Email</h1>
-        <p>
-            Before continuing, please check your inbox and click the verification link that we sent to your email
-            address.
-        </p>
-
-        <div class="email-box">{{ auth()->user()->email }}</div>
-
-        @if (session('status'))
-            <div class="status">{{ session('status') }}</div>
-        @endif
-
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
-            <button type="submit">Resend Verification Email</button>
-        </form>
-
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="link-button">Back to Login</button>
-        </form>
-
-        <p class="hint">This page will automatically continue once your email is verified.</p>
+        <h1>Email Verified</h1>
+        <div class="status">Your email address has been verified successfully.</div>
+        <p>You will be redirected to the terms page shortly.</p>
+        <a href="{{ $redirectUrl }}" class="link-button">Continue Now</a>
     </div>
 
     <script>
-        window.setInterval(() => {
-            window.location.reload();
-        }, 3000);
+        window.setTimeout(() => {
+            window.location.href = @json($redirectUrl);
+        }, 1500);
     </script>
 </body>
 
