@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
 
 class AdminController extends Controller
@@ -112,15 +113,22 @@ class AdminController extends Controller
             'role' => 'required|in:admin,fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'is_active' => true,
+            'email_verified_at' => $validated['role'] === 'admin' ? Carbon::now() : null,
         ]);
 
-        return $this->successResponse($request, 'User account created successfully.');
+        if ($user->requiresEmailVerification()) {
+            $user->sendEmailVerificationNotification();
+
+            return $this->successResponse($request, 'User account created successfully. A verification email has been sent.');
+        }
+
+        return $this->successResponse($request, 'Admin account created successfully.');
     }
 
     public function updateUserStatus(Request $request, User $user)

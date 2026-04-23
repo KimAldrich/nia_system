@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -13,6 +14,10 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
+            if (Auth::user()->requiresEmailVerification() && ! Auth::user()->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+
             return redirect()->route('terms.show');
         }
 
@@ -53,7 +58,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            // Send them to the terms page; middleware will handle routing
+
+            if (Auth::user()->requiresEmailVerification() && ! Auth::user()->hasVerifiedEmail()) {
+                Auth::user()->sendEmailVerificationNotification();
+
+                return redirect()->route('verification.notice');
+            }
+
             return redirect()->route('terms.show');
         }
 
@@ -73,5 +84,32 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect('/login');
+    }
+
+    public function showVerificationNotice()
+    {
+        if (! Auth::user()->requiresEmailVerification() || Auth::user()->hasVerifiedEmail()) {
+            return redirect()->route('terms.show');
+        }
+
+        return view('auth.verify-email');
+    }
+
+    public function resendVerificationEmail(Request $request)
+    {
+        if (! $request->user()->requiresEmailVerification() || $request->user()->hasVerifiedEmail()) {
+            return redirect()->route('terms.show');
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return back()->with('status', 'A new verification link has been sent to your email address.');
+    }
+
+    public function verifyEmail(EmailVerificationRequest $request)
+    {
+        $request->fulfill();
+
+        return redirect()->route('terms.show')->with('success', 'Your email address has been verified successfully.');
     }
 }
