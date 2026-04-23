@@ -12,6 +12,9 @@ use App\Models\HydroGeoProject;
 use App\Models\FsdeProject;
 use App\Models\ProcurementProject;
 use App\Models\PaoPowData;
+use App\Models\PcrStatusReport;
+use App\Models\RpwsisAccomplishment;
+use App\Models\RpwsisAccomplishmentSummary;
 
 class GuestController extends Controller
 {
@@ -60,10 +63,24 @@ class GuestController extends Controller
 
         // Fetch ALL files from ALL teams for the guest
         $downloadables = Downloadable::latest()->get();
-        $resolutions = IaResolution::latest()->get();
+        $resolutions = IaResolution::latest()
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
 
         // Fetch Calendar Events
-        $events = \App\Models\Event::whereDate('event_date', '>=', now())
+        $events = \App\Models\Event::with('category')
+            ->where(function ($query) {
+                $today = now()->toDateString();
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', '>', $today)
+                    ->orWhere(function ($q) use ($today, $currentTime) {
+                        $q->where('event_date', $today)
+                            ->whereRaw(
+                                "TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(event_time), ' - ', -1), '%h:%i %p')) > ?",
+                                [$currentTime]
+                            );
+                    });
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
@@ -89,16 +106,27 @@ class GuestController extends Controller
             return redirect()->route('guest.terms');
 
         $db_team = str_replace('-', '_', $team_slug);
-        $pageTitle = strtoupper(str_replace('_', ' ', $db_team)) . " Dashboard";
+        $teamTitles = [
+            'fs_team' => 'FS Team',
+            'rpwsis_team' => 'Social And Environmental Team',
+            'cm_team' => 'Contract Management Team',
+            'row_team' => 'Right Of Way Team',
+            'pcr_team' => 'Program Completion Report Team',
+            'pao_team' => 'Programming Team',
+        ];
+        $pageTitle = ($teamTitles[$db_team] ?? strtoupper(str_replace('_', ' ', $db_team))) . ' Dashboard';
 
         // 🌟 1. Fetch the exact same data the Teams see!
-        $resolutions = IaResolution::orderBy('created_at', 'desc')->get();
-        $events = Event::all();
+        $resolutions = IaResolution::orderBy('created_at', 'desc')
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
+        $events = Event::with('category')->get();
         $categories = EventCategory::all();
 
         // 🌟 2. Set default empty variables
         $totalProjects = $conducted = $remaining = $feasible = 0;
-        $hydroProjects = $fsdeProjects = $procurementProjects = null;
+        $hydroProjects = $fsdeProjects = $procurementProjects = $pcrStatusReports = null;
+        $records = $summaryRecords = null;
         $procCategories = collect();
         $powData = null;
 
@@ -128,6 +156,15 @@ class GuestController extends Controller
             $powData = PaoPowData::paginate(8);
         }
 
+        if ($db_team === 'pcr_team') {
+            $pcrStatusReports = PcrStatusReport::orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page');
+        }
+
+        if ($db_team === 'rpwsis_team') {
+            $records = RpwsisAccomplishment::latest()->paginate(8, ['*'], 'rpwsis_status_page');
+            $summaryRecords = RpwsisAccomplishmentSummary::latest()->paginate(8, ['*'], 'rpwsis_summary_page');
+        }
+
         return view('guest.dashboard', compact(
             'resolutions',
             'events',
@@ -141,6 +178,9 @@ class GuestController extends Controller
             'hydroProjects',
             'fsdeProjects',
             'powData',
+            'pcrStatusReports',
+            'records',
+            'summaryRecords',
             'procCategories',
             'procurementProjects'
         ));

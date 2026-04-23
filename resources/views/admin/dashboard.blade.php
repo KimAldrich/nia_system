@@ -83,7 +83,8 @@
         .day-num.has-event { font-weight: 700; }
         .day-num.today { background: #4f46e5 !important; color: white !important; border: none !important; font-weight: 700; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
         .day-num.clickable { cursor: pointer; transition: 0.2s; }
-        .day-num.clickable:hover { background: #e0e7ff !important; color: #4f46e5 !important; border-color: #e0e7ff !important; font-weight: 700;}
+    .day-num.clickable:hover { background: #e0e7ff !important; color: #4f46e5 !important; border-color: #e0e7ff !important; font-weight: 700;}
+    .day-num.past { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
         /* Mini Events */
         .mini-event { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid #f1f5f9; }
@@ -113,8 +114,6 @@
 
 
     @php
-        $validatedResolutions = isset($resolutions) ? $resolutions->where('status', 'validated')->count() : 0;
-        $pendingResolutions = isset($resolutions) ? $resolutions->whereIn('status', ['on-going', 'not-validated'])->count() : 0;
         $totalDownloads = isset($downloadables) ? $downloadables->count() : 0;
     @endphp
 
@@ -169,37 +168,11 @@
         <div class="main-column">
             <div class="ui-card">
                 <div class="section-title">Agency Resolutions Overview</div>
-                <table class="sleek-table">
-                    <thead>
-                        <tr>
-                            <th>Document Name</th>
-                            <th style="text-align: right;">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($resolutions ?? [] as $res)
-                        <tr>
-                            <td>
-                                <strong style="color: #1e293b;">{{ $res->title }}</strong><br>
-                                <span style="font-size: 11px; color: #a0aec0;">{{ $res->created_at->format('M d, Y') }}</span>
-                            </td>
-                            <td style="text-align: right;">
-                                @if($res->status == 'validated')
-                                    <span class="status-badge badge-dark">Validated</span>
-                                @elseif($res->status == 'on-going')
-                                    <span class="status-badge badge-light">On-Going</span>
-                                @else
-                                    <span class="status-badge badge-outline">Not-Validated</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="2" style="text-align:center; color:#a0aec0; padding: 30px 0;">No projects uploaded yet.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                @include('partials.active-projects-table', [
+                    'resolutions' => $resolutions ?? collect(),
+                    'containerId' => 'activeProjectsContainer',
+                    'editable' => false,
+                ])
             </div>
 
             <div class="ui-card">
@@ -250,7 +223,7 @@
                 </form>
             </div>
 
-            <div class="ui-card" id="eventManagerCard">
+            <div class="ui-card" id="analyticsCard">
                 <div class="section-title">Analytics</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
@@ -266,7 +239,7 @@
         </div>
 
         <div class="side-column">
-            <div class="ui-card">
+            <div class="ui-card" id="eventManagerCard">
                 <div class="section-title" style="margin-bottom: 15px;">Event Manager</div>
 
                 <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
@@ -300,8 +273,8 @@
                                 $daysInMonth = $monthDate->daysInMonth;
                                 $firstDayOfWeek = $monthDate->dayOfWeek;
                                 
-                                $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYear, $m) {
-                                    return $e->event_date->year == $currentYear && $e->event_date->month == $m;
+$eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYear, $m) {
+                                    return $e->event_date->year == $currentYear && $e->event_date->month == $m && $e->event_date->gte(now());
                                 })->groupBy(function($e) {
                                     return $e->event_date->format('j');
                                 }) : collect();
@@ -324,9 +297,9 @@
                                             $dateString = $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT);
                                             $ringColor = ($hasEvent && $dayEvents->first()->category) ? $dayEvents->first()->category->color : '#18181b';
                                         @endphp
-                                        <div class="day-num clickable {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}" 
-                                             style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}"
-                                             onclick="openEventModal('{{ $dateString }}')" title="Click to schedule event">
+<div class="day-num clickable {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }} {{ ($dateString < $today->format('Y-m-d')) ? 'past' : '' }}" 
+                                             style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}{{ ($dateString < $today->format('Y-m-d')) ? '; opacity: 0.4; cursor: not-allowed;' : '' }}"
+                                             onclick="openEventModal('{{ $dateString }}')" title="{{ ($dateString < $today->format('Y-m-d')) ? 'Past dates cannot be scheduled' : 'Click to schedule event' }}">
                                             {{ $day }}
                                         </div>
                                     @endfor
@@ -343,13 +316,13 @@
                 <div style="margin-top: 10px;">
                     <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">Upcoming Schedule</p>
                     @if(isset($events) && $events->count() > 0)
-                        @foreach($events->where('event_date', '>=', \Carbon\Carbon::today())->take(5) as $event)
+                        @foreach($events->take(5) as $event)
                             <div class="mini-event">
                                 <div style="display: flex; gap: 15px; align-items: center;">
                                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
                                     <div>
                                         <h4 class="mini-event-title">{{ $event->title }}</h4>
-                                        <p class="mini-event-time">{{ $event->event_time }}</p>
+                                        <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
                                         @if($event->category)
                                             <span class="event-tag" style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;">
                                                 {{ $event->category->name }}
@@ -376,7 +349,7 @@
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;">Schedule Event</h3>
             <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">Adding event for: <strong id="displayDate" style="color: #4f46e5;"></strong></p>
             
-            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard" data-async-reset="true" data-async-close="#eventModal">
+            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard, #eventModal" data-async-reset="true" data-async-close="#eventModal">
                 @csrf
                 <div style="margin-bottom: 15px;">
                     <label class="modern-label">Event Date</label>
@@ -458,35 +431,91 @@
     <script>
         let activeMonth = {{ \Carbon\Carbon::now()->month }};
 
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializeAdminDashboard() {
+            initializeAdminCharts();
+            initializeAdminEventForm();
             updateCalendarView();
-            
+        }
+
+        function initializeAdminCharts() {
+            const barCanvas = document.getElementById('barChart');
+            const doughnutCanvas = document.getElementById('doughnutChart');
+
+            if (!barCanvas || !doughnutCanvas) {
+                return;
+            }
+
+            if (barCanvas.dataset.chartInitialized === 'true' && doughnutCanvas.dataset.chartInitialized === 'true') {
+                return;
+            }
+
+            updateCalendarView();
+
             Chart.defaults.font.family = "'Poppins', sans-serif";
             Chart.defaults.color = '#a0aec0';
-            
-            const ctxBar = document.getElementById('barChart').getContext('2d');
+
+            const existingBarChart = Chart.getChart(barCanvas);
+            if (existingBarChart) {
+                existingBarChart.destroy();
+            }
+
+            const existingDoughnutChart = Chart.getChart(doughnutCanvas);
+            if (existingDoughnutChart) {
+                existingDoughnutChart.destroy();
+            }
+
+            const ctxBar = barCanvas.getContext('2d');
             new Chart(ctxBar, { 
                 type: 'bar', 
                 data: { labels: ['W1', 'W2', 'W3', 'W4'], datasets: [{ data: [12, 19, 15, 22], backgroundColor: '#4f46e5', borderRadius: 6 }] }, 
                 options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f1f5f9' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } } 
             });
-            
-            const ctxPie = document.getElementById('doughnutChart').getContext('2d');
+
+            const ctxPie = doughnutCanvas.getContext('2d');
             new Chart(ctxPie, { 
                 type: 'doughnut', 
                 data: { labels: ['Done', 'Pending'], datasets: [{ data: [70, 30], backgroundColor: ['#10b981', '#f1f5f9'], borderWidth: 0 }] }, 
                 options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: '#475569', usePointStyle: true, boxWidth: 10 } } } } 
             });
 
-            flatpickr("#eventDateInput", { dateFormat: "Y-m-d" });
-            flatpickr("#startTime", { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "09:00" });
-            flatpickr("#endTime", { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "10:30" });
+            barCanvas.dataset.chartInitialized = 'true';
+            doughnutCanvas.dataset.chartInitialized = 'true';
+        }
 
-            document.getElementById('eventForm').addEventListener('submit', function(e) {
-                let start = document.getElementById('startTime').value;
-                let end = document.getElementById('endTime').value;
-                document.getElementById('finalTimeInput').value = start + ' - ' + end;
-            });
+        function initializeAdminEventForm() {
+            const eventDateInput = document.getElementById('eventDateInput');
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+            const eventForm = document.getElementById('eventForm');
+
+            if (eventDateInput && !eventDateInput._flatpickr) {
+                flatpickr(eventDateInput, { dateFormat: "Y-m-d", minDate: "today" });
+            }
+
+            if (startTimeInput && !startTimeInput._flatpickr) {
+                flatpickr(startTimeInput, { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "09:00" });
+            }
+
+            if (endTimeInput && !endTimeInput._flatpickr) {
+                flatpickr(endTimeInput, { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "10:30" });
+            }
+
+            if (eventForm && eventForm.dataset.bound !== 'true') {
+                eventForm.addEventListener('submit', function() {
+                    let start = document.getElementById('startTime').value;
+                    let end = document.getElementById('endTime').value;
+                    document.getElementById('finalTimeInput').value = start + ' - ' + end;
+                });
+                eventForm.dataset.bound = 'true';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAdminDashboard();
+        });
+
+        document.addEventListener('app:async-refreshed', function() {
+            initializeAdminDashboard();
         });
 
         function changeMonth(direction) {
@@ -506,7 +535,12 @@
             document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
         }
 
-        function openEventModal(dateStr) {
+function openEventModal(dateStr) {
+            const today = new Date().toISOString().split('T')[0];
+            if (dateStr < today) {
+                alert('Cannot schedule events in the past. Please select today or a future date.');
+                return;
+            }
             document.getElementById('eventDateInput').value = dateStr;
             document.getElementById('displayDate').innerText = dateStr;
             document.getElementById('eventModal').classList.add('active');

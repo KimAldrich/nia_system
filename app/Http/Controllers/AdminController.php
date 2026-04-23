@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
 
 class AdminController extends Controller
@@ -28,16 +28,34 @@ class AdminController extends Controller
     {
         $users = User::all();
         $this->checkAdmin();
-        $resolutions = \App\Models\IaResolution::latest()->get();
+        $validatedResolutions = IaResolution::where('status', 'validated')->count();
+        $pendingResolutions = IaResolution::whereIn('status', ['on-going', 'not-validated'])->count();
+        $resolutions = IaResolution::latest()->paginate(8, ['*'], 'active_projects_page')->withQueryString();
 
         // Added 'with('category')' so the colored badges load efficiently
-        $events = Event::with('category')->orderBy('event_date', 'asc')->get();
+        $events = Event::with('category')
+            ->where('event_date', '>', now()->format('Y-m-d'))
+            ->orWhere(function ($query) {
+                $today = now()->format('Y-m-d');
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', $today)
+                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            })
+            ->orderBy('event_date', 'asc')
+            ->get();
 
         // Fetch custom tags for the legend
         $categories = EventCategory::all();
         $downloadables = Downloadable::all();
 
-        return view('admin.dashboard', compact('resolutions', 'events', 'categories', 'downloadables'));
+        return view('admin.dashboard', compact(
+            'resolutions',
+            'events',
+            'categories',
+            'downloadables',
+            'validatedResolutions',
+            'pendingResolutions'
+        ));
     }
 
     //UploadDownloadables
@@ -112,13 +130,21 @@ class AdminController extends Controller
             'role' => 'required|in:admin,fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team',
         ]);
 
-        User::create([
+        $isAdmin = $validated['role'] === 'admin';
+
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => $validated['role'],
             'is_active' => true,
+            'email_verified_at' => $isAdmin ? Carbon::now() : null,
+            'agreed_to_terms' => $isAdmin,
         ]);
+
+        if ($isAdmin) {
+            return $this->successResponse($request, 'Admin account created successfully.');
+        }
 
         return $this->successResponse($request, 'User account created successfully.');
     }
@@ -199,7 +225,7 @@ class AdminController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'event_date' => 'required|date',
+            'event_date' => 'required|date|after_or_equal:today',
             'event_time' => 'required|string|max:255',
             'event_category_id' => 'required' // Validate the dropdown!
         ]);
@@ -218,8 +244,27 @@ class AdminController extends Controller
     public function storeCategory(Request $request)
     {
         $this->checkAdmin();
-        $request->validate(['name' => 'required|string|max:50', 'color' => 'required|string|max:10']);
-        EventCategory::create(['name' => $request->request->get('name'), 'color' => $request->request->get('color')]);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:50',
+            'color' => 'required|string|max:10',
+        ]);
+
+        $normalizedName = mb_strtolower(trim($validated['name']));
+
+        $tagAlreadyExists = EventCategory::query()
+            ->get()
+            ->contains(fn($category) => mb_strtolower(trim($category->name)) === $normalizedName);
+
+        if ($tagAlreadyExists) {
+            return $this->errorResponse($request, 'Tag name already exists. Please use a different tag name.');
+        }
+
+        EventCategory::create([
+            'name' => trim($validated['name']),
+            'color' => $validated['color'],
+        ]);
+
         return $this->successResponse($request, 'New tag added to legend!');
     }
 

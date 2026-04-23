@@ -24,8 +24,23 @@ class ContractManagementTeamController extends Controller
 
     public function index(Request $request)
     {
-        $resolutions = IaResolution::where('team', 'cm_team')->latest()->get();
-        $events = Event::whereDate('event_date', '>=', now())
+        $resolutions = IaResolution::where('team', 'cm_team')
+            ->latest()
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
+        $events = Event::with('category')
+            ->where(function ($query) {
+                $today = now()->toDateString();
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', '>', $today)
+                    ->orWhere(function ($q) use ($today, $currentTime) {
+                        $q->where('event_date', $today)
+                            ->whereRaw(
+                                "TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(event_time), ' - ', -1), '%h:%i %p')) > ?",
+                                [$currentTime]
+                            );
+                    });
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
@@ -70,21 +85,40 @@ class ContractManagementTeamController extends Controller
 
     public function uploadForm(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
-        $file = $request->file('document');
-        $path = $file->store('forms', 'public');
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-        Downloadable::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'cm_team'
-        ]);
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
 
-        return $this->successResponse($request, 'File uploaded successfully.');
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
+
+            $path = $file->store('forms', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            Downloadable::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'cm_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'File uploaded successfully.'
+            : "{$files->count()} files uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
     public function updateForm(Request $request, $id)
@@ -118,21 +152,40 @@ class ContractManagementTeamController extends Controller
 
     public function uploadResolution(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
-        $file = $request->file('document');
-        $path = $file->store('resolutions', 'public');
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-        IaResolution::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'cm_team'
-        ]);
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
 
-        return $this->successResponse($request, 'Resolution uploaded successfully.');
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
+
+            $path = $file->store('resolutions', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            IaResolution::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'cm_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'Resolution uploaded successfully.'
+            : "{$files->count()} resolutions uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
     public function updateResolution(Request $request, $id)
@@ -394,7 +447,7 @@ class ContractManagementTeamController extends Controller
         $sheet->getRowDimension(7)->setRowHeight(22);
 
         $currentRow = 8;
-        $groupedRows = $rows->groupBy(fn ($row) => $row->category ?: 'Uncategorized');
+        $groupedRows = $rows->groupBy(fn($row) => $row->category ?: 'Uncategorized');
 
         foreach ($groupedRows as $category => $projects) {
             $sheet->mergeCells("A{$currentRow}:O{$currentRow}");

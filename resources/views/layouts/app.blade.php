@@ -729,11 +729,34 @@
             return refreshAsyncTargetsFromUrl(window.location.href, targets, false);
         }
 
+        function focusAsyncPaginationTarget(selector) {
+            if (!selector) return;
+
+            const section = document.querySelector(selector);
+            if (!section) return;
+
+            const focusTarget =
+                section.querySelector('.table-responsive') ||
+                section.querySelector('table') ||
+                section;
+
+            if (!focusTarget.hasAttribute('tabindex')) {
+                focusTarget.setAttribute('tabindex', '-1');
+            }
+
+            focusTarget.focus({ preventScroll: true });
+            focusTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true) {
             if (!targets || !targets.length) return;
 
             return withAppLoader(async () => {
-                const response = await fetch(url, {
+                const refreshUrl = new URL(url, window.location.origin);
+                refreshUrl.searchParams.set('_async_refresh', Date.now().toString());
+
+                const response = await fetch(refreshUrl.toString(), {
+                    cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'text/html'
@@ -757,9 +780,18 @@
                     }
                 });
 
+                document.dispatchEvent(new CustomEvent('app:async-refreshed', {
+                    detail: {
+                        targets,
+                        url
+                    }
+                }));
+
                 if (updateHistory) {
                     window.history.pushState({}, '', url);
                 }
+
+                focusAsyncPaginationTarget(targets[0]);
             }, 'Loading content...');
         }
 
@@ -790,22 +822,24 @@
                 }
             }
 
-            const submitter = options.submitter ?? document.activeElement;
-            if (submitter && typeof submitter.disabled !== 'undefined') {
-                submitter.disabled = true;
-            }
-
-            form.classList.add('is-loading');
-            showAppLoader(form.dataset.asyncLoadingText || 'Processing request...');
+            let submitter = options.submitter ?? document.activeElement;
 
             try {
+                const formData = new FormData(form);
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = true;
+                }
+
+                form.classList.add('is-loading');
+                showAppLoader(form.dataset.asyncLoadingText || 'Processing request...');
+
                 const response = await fetch(form.action, {
                     method: form.method || 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     },
-                    body: new FormData(form)
+                    body: formData
                 });
 
                 const contentType = response.headers.get('content-type') || '';

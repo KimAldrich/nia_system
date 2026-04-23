@@ -419,6 +419,85 @@
         .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
         .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+        .active-projects-panel {
+            border: 1px solid #e4e4e7;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .active-projects-table {
+            width: 100%;
+            min-width: 620px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .active-projects-table thead th {
+            padding: 11px 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #52525b;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e4e4e7;
+            text-align: left;
+        }
+
+        .active-projects-table tbody td {
+            padding: 12px;
+            font-size: 11px;
+            color: #334155;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+        }
+
+        .active-projects-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .active-projects-table tbody tr:hover td {
+            background: #fafafa;
+        }
+
+        .active-project-title {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 3px;
+            line-height: 1.35;
+        }
+
+        .active-project-date {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        .active-project-action {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .active-projects-table th:first-child,
+        .active-projects-table td:first-child {
+            width: 50%;
+        }
+
+        .active-projects-table th:nth-child(2),
+        .active-projects-table td:nth-child(2) {
+            width: 22%;
+        }
+
+        .active-projects-table .status-select {
+            width: auto;
+            min-width: 118px;
+            max-width: 118px;
+            padding: 5px 8px;
+            font-size: 10px;
+        }
+
         .sleek-table { 
             border-collapse: collapse; 
             width: 100%; 
@@ -427,7 +506,7 @@
         }
         .sleek-table th { 
             text-align: left; 
-            padding: 12px 15px; 
+            padding: 9px 14px; 
             color: #a0aec0; 
             font-weight: 600; 
             font-size: 11px; 
@@ -440,7 +519,7 @@
             vertical-align: middle;
         }
         .sleek-table td { 
-            padding: 15px; 
+            padding: 10px 14px; 
             border-bottom: 1px solid #f1f5f9; 
             font-size: 12px; 
             font-weight: 500; 
@@ -513,65 +592,12 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table" id="activeProjectsContainer">
-                    <thead>
-                        <tr>
-                            <th>Document Name</th>
-                            <th>Status</th>
-
-                            @if (auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
-                                <th style="text-align: right;">Action</th>
-                            @endif
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($resolutions as $res)
-                            <tr>
-                                <td>
-                                    <strong>{{ $res->title }}</strong><br>
-                                    <span
-                                        style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
-                                </td>
-                                <td>
-                                    @if ($res->status == 'validated')
-                                        <span class="status-badge badge-dark">Validated</span>
-                                    @elseif($res->status == 'on-going')
-                                        <span class="status-badge badge-light">On-Going</span>
-                                    @else
-                                        <span class="status-badge badge-outline">Not-Validated</span>
-                                    @endif
-                                </td>
-
-                                @if (auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
-                                    <td style="text-align: right;">
-                                        <form action="{{ route('pao.resolutions.update_status', $res->id) }}"
-                                            method="POST" data-async-target="#activeProjectsContainer">
-                                            @csrf
-                                            <select name="status" class="status-select" data-auto-submit>
-                                                <option value="not-validated"
-                                                    {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                                    Not-Validated</option>
-                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
-                                                    On-Going
-                                                </option>
-                                                <option value="validated"
-                                                    {{ $res->status == 'validated' ? 'selected' : '' }}>
-                                                    Validated</option>
-                                            </select>
-                                        </form>
-                                    </td>
-                                @endif
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']) ? '3' : '2' }}"
-                                    style="text-align:center; color:#a1a1aa; padding: 30px 0;">
-                                    No projects uploaded yet.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                @include('partials.active-projects-table', [
+                    'resolutions' => $resolutions ?? collect(),
+                    'containerId' => 'activeProjectsContainer',
+                    'editable' => auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']),
+                    'updateRouteName' => 'pao.resolutions.update_status',
+                ])
             </div>
 
             <div class="ui-card">
@@ -595,134 +621,7 @@
         </div>
 
         <div class="side-column">
-            <div class="ui-card">
-                <div class="section-title" style="margin-bottom: 15px;">New Events</div>
-
-                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f4f4f5;">
-                    <p
-                        style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
-                        Event Legend
-                    </p>
-
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                        @forelse($categories as $cat)
-                            <div class="legend-item">
-                                <div class="legend-dot" style="background: {{ $cat->color }};"></div>
-                                {{ $cat->name }}
-                            </div>
-                        @empty
-                            <p style="font-size: 11px; color: #a1a1aa;">No tags available.</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                @php
-                    $today = \Carbon\Carbon::now();
-                    $daysInMonth = $today->daysInMonth;
-                    $firstDayOfWeek = $today->copy()->startOfMonth()->dayOfWeek;
-
-                    $eventDays = isset($events)
-                        ? $events
-                            ->map(function ($e) {
-                                return $e->event_date->format('j');
-                            })
-                            ->toArray()
-                        : [];
-                @endphp
-
-                <div class="calendar-carousel">
-                    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
-                        &lt;
-                    </button>
-
-                    <div class="calendar-viewport">
-                        @php
-                            $currentYear = \Carbon\Carbon::now()->year;
-                            $today = \Carbon\Carbon::now();
-                        @endphp
-
-                        @for ($m = 1; $m <= 12; $m++)
-                            @php
-                                $monthDate = \Carbon\Carbon::createFromDate($currentYear, $m, 1);
-                                $daysInMonth = $monthDate->daysInMonth;
-                                $firstDayOfWeek = $monthDate->dayOfWeek;
-
-                                $eventsForMonth = $events
-                                    ->filter(function ($e) use ($currentYear, $m) {
-                                        return $e->event_date->year == $currentYear && $e->event_date->month == $m;
-                                    })
-                                    ->groupBy(function ($e) {
-                                        return $e->event_date->format('j');
-                                    });
-                            @endphp
-
-                            <div class="month-block" id="month-{{ $m }}">
-                                <div class="calendar-header">
-                                    <h4>{{ $monthDate->format('F Y') }}</h4>
-                                </div>
-
-                                <div class="calendar-grid">
-                                    <div class="day-name">Sun</div>
-                                    <div class="day-name">Mon</div>
-                                    <div class="day-name">Tue</div>
-                                    <div class="day-name">Wed</div>
-                                    <div class="day-name">Thu</div>
-                                    <div class="day-name">Fri</div>
-                                    <div class="day-name">Sat</div>
-
-                                    @for ($i = 0; $i < $firstDayOfWeek; $i++)
-                                        <div class="day-num empty"></div>
-                                    @endfor
-
-                                    @for ($day = 1; $day <= $daysInMonth; $day++)
-                                        @php
-                                            $dayEvents = $eventsForMonth->get($day);
-                                            $hasEvent = $dayEvents ? true : false;
-                                            $isToday = $day == $today->day && $m == $today->month;
-                                            $ringColor =
-                                                $hasEvent && $dayEvents->first()->category
-                                                    ? $dayEvents->first()->category->color
-                                                    : '#18181b';
-                                        @endphp
-
-                                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
-                                            style="{{ $hasEvent ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
-                                            {{ $day }}
-                                        </div>
-                                    @endfor
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-
-                    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
-                        &gt;
-                    </button>
-                </div>
-
-                <div style="margin-top: 10px;">
-                    <p
-                        style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
-                        Upcoming Schedule</p>
-
-                    @if (isset($events) && $events->count() > 0)
-                        @foreach ($events as $event)
-                            <div class="mini-event">
-                                <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
-                                <div>
-                                    <h4 class="mini-event-title">{{ $event->title }}</h4>
-                                    <p class="mini-event-time">{{ $event->event_time }}</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming
-                            events.
-                        </p>
-                    @endif
-                </div>
-
-            </div>
+            @include('partials.event-manager-readonly', ['events' => $events ?? collect(), 'categories' => $categories ?? collect()])
         </div>
     </div>
 
@@ -760,7 +659,7 @@
                             <th colspan="3" style="width: 420px; text-align: center;">Status of Program of Works</th>
                             <th rowspan="2" style="width: 160px;">On Going POW Preparation</th>
                             <th rowspan="2" style="width: 150px;">POW for Submission</th>
-                            <th rowspan="2" style="width: 120px;">Remarks</th>
+                            <th rowspan="2" style="width: 320px;">Remarks</th>
                             @if ($canManagePow)
                                 <th rowspan="2" style="width: 140px;">Actions</th>
                             @endif
@@ -784,7 +683,7 @@
                                 <td style="width: 140px; text-align: center;">{{ $data->pow_submitted }}</td>
                                 <td style="width: 160px;">{{ $data->ongoing_pow_preparation }}</td>
                                 <td style="width: 150px;">{{ $data->pow_for_submission }}</td>
-                                <td style="width: 120px;" class="col-desc">{{ $data->remarks }}</td>
+                                <td style="width: 320px;" class="col-desc">{{ $data->remarks }}</td>
                                 @if ($canManagePow)
                                     <td class="action-cell" style="width: 140px;">
                                         <div class="action-buttons">
@@ -817,7 +716,7 @@
                                 <td style="font-weight: 800; color: #0c4d05; text-align: center; width: 140px;">{{ $powData->sum('pow_submitted') }}</td>
                                 <td style="font-weight: 800; color: #0c4d05; width: 160px;">{{ $powData->sum('ongoing_pow_preparation') }}</td>
                                 <td style="font-weight: 800; color: #0c4d05; width: 150px;">{{ $powData->sum('pow_for_submission') }}</td>
-                                <td style="width: 120px;"></td>
+                                <td style="width: 320px;"></td>
                                 @if ($canManagePow)
                                     <td style="width: 140px;"></td>
                                 @endif

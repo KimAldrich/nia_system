@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\RpwsisAccomplishment;
 use App\Models\EventCategory;
 use App\Models\RpwsisAccomplishmentSummary;
+use App\Models\RpwsisNurseryEstablishment;
+use App\Models\RpwsisSignage;
+use App\Models\RpwsisInfrastructure; // ✅ NEW IMPORT
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -25,8 +28,26 @@ class RpwsisTeamController extends Controller
     // 1. Dashboard
     public function index()
     {
-        $resolutions = IaResolution::where('team', 'rpwsis_team')->latest()->get();
-        $events = Event::whereDate('event_date', '>=', now())->orderBy('event_date', 'asc')->take(5)->get();
+        $resolutions = IaResolution::where('team', 'rpwsis_team')
+            ->latest()
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
+        $events = Event::with('category')
+            ->where(function ($query) {
+                $today = now()->toDateString();
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', '>', $today)
+                    ->orWhere(function ($q) use ($today, $currentTime) {
+                        $q->where('event_date', $today)
+                            ->whereRaw(
+                                "TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(event_time), ' - ', -1), '%h:%i %p')) > ?",
+                                [$currentTime]
+                            );
+                    });
+            })
+            ->orderBy('event_date', 'asc')
+            ->take(5)
+            ->get();
 
         // ✅ ADDED THIS: Fetch records to fix the "undefined $records" error
         $records = RpwsisAccomplishment::latest()->get();
@@ -34,8 +55,17 @@ class RpwsisTeamController extends Controller
         // ✅ ADDED THIS: Fetch records for the new Summary Table
         $summaryRecords = RpwsisAccomplishmentSummary::latest()->get();
 
+        //nuresery
+        $nurseryRecords = RpwsisNurseryEstablishment::latest()->get();
+
+        // ✅ FETCH SIGNAGE RECORDS
+        $signageRecords = RpwsisSignage::latest()->get();
+
+        // ✅ FETCH INFRASTRUCTURE RECORDS
+        $infrastructureRecords = RpwsisInfrastructure::latest()->get();
+
         $categories = EventCategory::all();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records', 'summaryRecords'));
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
     }
 
     // 2. View Downloadables Page
@@ -55,23 +85,42 @@ class RpwsisTeamController extends Controller
     // 4. Upload Downloadable
     public function uploadForm(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
-        $file = $request->file('document');
-        $path = $file->store('forms', 'public');
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-                Downloadable::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'rpwsis_team' // 🔥 IMPORTANT
-        ]);
-        return $this->successResponse($request, 'File uploaded successfully.');
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
+
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
+
+            $path = $file->store('forms', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            Downloadable::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'rpwsis_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'File uploaded successfully.'
+            : "{$files->count()} files uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
-    // 5. Update Downloadable
     public function updateForm(Request $request, $id)
     {
         $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
@@ -104,24 +153,42 @@ class RpwsisTeamController extends Controller
     // 7. Upload Resolution
     public function uploadResolution(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
-        $file = $request->file('document');
-        $path = $file->store('resolutions', 'public');
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-        
-        IaResolution::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'rpwsis_team' // 🔥 IMPORTANT
-        ]);
-        return $this->successResponse($request, 'Resolution uploaded successfully.');
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
+
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
+
+            $path = $file->store('resolutions', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            IaResolution::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'rpwsis_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'Resolution uploaded successfully.'
+            : "{$files->count()} resolutions uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
-    // 7. Update Resolution File
     public function updateResolution(Request $request, $id)
     {
         $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
@@ -181,9 +248,9 @@ class RpwsisTeamController extends Controller
             'phy' => ['nullable', 'numeric', 'between:0,100'],
             'fin' => ['nullable', 'numeric', 'between:0,100'],
             'exp' => ['nullable', 'numeric', 'min:0'],
-        ] + collect(range(1, 12))->mapWithKeys(fn ($index) => [
-            'c' . $index => ['nullable', 'string', 'max:255'],
-        ])->toArray());
+        ] + collect(range(1, 12))->mapWithKeys(fn($index) => [
+                'c' . $index => ['nullable', 'string', 'max:255'],
+            ])->toArray());
 
         $record = RpwsisAccomplishment::create($validated);
 
@@ -216,9 +283,9 @@ class RpwsisTeamController extends Controller
             'phy' => ['nullable', 'numeric', 'between:0,100'],
             'fin' => ['nullable', 'numeric', 'between:0,100'],
             'exp' => ['nullable', 'numeric', 'min:0'],
-        ] + collect(range(1, 12))->mapWithKeys(fn ($index) => [
-            'c' . $index => ['nullable', 'string', 'max:255'],
-        ])->toArray());
+        ] + collect(range(1, 12))->mapWithKeys(fn($index) => [
+                'c' . $index => ['nullable', 'string', 'max:255'],
+            ])->toArray());
 
         $record = RpwsisAccomplishment::findOrFail($id);
         $record->update($validated);
@@ -239,23 +306,23 @@ class RpwsisTeamController extends Controller
     {
         // Map the inputs from your JS variables to the database columns
         $record = RpwsisAccomplishmentSummary::create([
-            'region'            => $request->sum_region,
-            'province'          => $request->sum_province,
-            'municipality'      => $request->sum_municipality,
-            'barangay'          => $request->sum_barangay,
-            'plantation_type'   => $request->sum_type,
-            'year_established'  => $request->sum_year,
-            'target_area_1'     => $request->sum_target_1,
-            'area_planted'      => $request->sum_area_planted,
-            'species_planted'   => $request->sum_species,
-            'spacing'           => $request->sum_spacing,
-            'maintenance'       => $request->sum_maintenance,
-            'target_area_2'     => $request->sum_target_2,
-            'actual_area'       => $request->sum_actual,
-            'mortality_rate'    => $request->sum_mortality,
+            'region' => $request->sum_region,
+            'province' => $request->sum_province,
+            'municipality' => $request->sum_municipality,
+            'barangay' => $request->sum_barangay,
+            'plantation_type' => $request->sum_type,
+            'year_established' => $request->sum_year,
+            'target_area_1' => $request->sum_target_1,
+            'area_planted' => $request->sum_area_planted,
+            'species_planted' => $request->sum_species,
+            'spacing' => $request->sum_spacing,
+            'maintenance' => $request->sum_maintenance,
+            'target_area_2' => $request->sum_target_2,
+            'actual_area' => $request->sum_actual,
+            'mortality_rate' => $request->sum_mortality,
             'species_replanted' => $request->sum_replanted,
-            'nis_name'          => $request->sum_nis,
-            'remarks'           => $request->sum_remarks,
+            'nis_name' => $request->sum_nis,
+            'remarks' => $request->sum_remarks,
         ]);
 
         return response()->json([
@@ -269,23 +336,23 @@ class RpwsisTeamController extends Controller
     {
         $record = RpwsisAccomplishmentSummary::findOrFail($id);
         $record->update([
-            'region'            => $request->sum_region,
-            'province'          => $request->sum_province,
-            'municipality'      => $request->sum_municipality,
-            'barangay'          => $request->sum_barangay,
-            'plantation_type'   => $request->sum_type,
-            'year_established'  => $request->sum_year,
-            'target_area_1'     => $request->sum_target_1,
-            'area_planted'      => $request->sum_area_planted,
-            'species_planted'   => $request->sum_species,
-            'spacing'           => $request->sum_spacing,
-            'maintenance'       => $request->sum_maintenance,
-            'target_area_2'     => $request->sum_target_2,
-            'actual_area'       => $request->sum_actual,
-            'mortality_rate'    => $request->sum_mortality,
+            'region' => $request->sum_region,
+            'province' => $request->sum_province,
+            'municipality' => $request->sum_municipality,
+            'barangay' => $request->sum_barangay,
+            'plantation_type' => $request->sum_type,
+            'year_established' => $request->sum_year,
+            'target_area_1' => $request->sum_target_1,
+            'area_planted' => $request->sum_area_planted,
+            'species_planted' => $request->sum_species,
+            'spacing' => $request->sum_spacing,
+            'maintenance' => $request->sum_maintenance,
+            'target_area_2' => $request->sum_target_2,
+            'actual_area' => $request->sum_actual,
+            'mortality_rate' => $request->sum_mortality,
             'species_replanted' => $request->sum_replanted,
-            'nis_name'          => $request->sum_nis,
-            'remarks'           => $request->sum_remarks,
+            'nis_name' => $request->sum_nis,
+            'remarks' => $request->sum_remarks,
         ]);
 
         return response()->json([
@@ -303,6 +370,110 @@ class RpwsisTeamController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    //14
+    // ----------------------------------------------------------------------
+    // ✅ NEW: NURSERY ESTABLISHMENT TABLE
+    // ----------------------------------------------------------------------
+
+    public function storeNursery(Request $request)
+    {
+        $record = RpwsisNurseryEstablishment::create([
+            'region'             => $request->nur_region,
+            'province'           => $request->nur_province,
+            'municipality'       => $request->nur_municipality,
+            'barangay'           => $request->nur_barangay,
+            'x_coordinates'      => $request->nur_x_coord,
+            'y_coordinates'      => $request->nur_y_coord,
+            'seedlings_produced' => $request->nur_seedlings,
+            'nursery_type'       => $request->nur_type,
+            'nis_name'           => $request->nur_nis,
+            'remarks'            => $request->nur_remarks,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Nursery record saved successfully.',
+            'record' => $record,
+        ]);
+    }
+
+    public function deleteNursery($id)
+    {
+        $record = RpwsisNurseryEstablishment::findOrFail($id);
+        $record->delete();
+        
+        return response()->json(['success' => true]);
+    }
+
+    // ----------------------------------------------------------------------
+    // ✅ NEW: INFORMATIVE SIGNAGES TABLE
+    // ----------------------------------------------------------------------
+
+    public function storeSignages(Request $request)
+    {
+        // Maps the inputs from the blade view (sig_ prefix) to the database columns
+        $record = RpwsisSignage::create([
+            'region'        => $request->sig_region,
+            'province'      => $request->sig_province,
+            'municipality'  => $request->sig_municipality,
+            'barangay'      => $request->sig_barangay,
+            'x_coordinates' => $request->sig_x_coord,
+            'y_coordinates' => $request->sig_y_coord,
+            'signage_type'  => $request->sig_type,
+            'nis_name'      => $request->sig_nis,
+            'remarks'       => $request->sig_remarks,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Signage record saved successfully.',
+            'record' => $record,
+        ]);
+    }
+
+    public function deleteSignages($id)
+    {
+        $record = RpwsisSignage::findOrFail($id);
+        $record->delete();
+        
+        return response()->json(['success' => true]);
+    }
+
+
+    // ----------------------------------------------------------------------
+    // ✅ NEW: OTHER INFRASTRUCTURES TABLE
+    // ----------------------------------------------------------------------
+
+    public function storeInfrastructure(Request $request)
+    {
+        $record = RpwsisInfrastructure::create([
+            'region'              => $request->inf_region,
+            'province'            => $request->inf_province,
+            'municipality'        => $request->inf_municipality,
+            'barangay'            => $request->inf_barangay,
+            'x_coordinates'       => $request->inf_x_coord,
+            'y_coordinates'       => $request->inf_y_coord,
+            'infrastructure_type' => $request->inf_type,
+            'nis_name'            => $request->inf_nis,
+            'remarks'             => $request->inf_remarks,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Infrastructure record saved successfully.',
+            'record' => $record,
+        ]);
+    }
+
+    public function deleteInfrastructure($id)
+    {
+        $record = RpwsisInfrastructure::findOrFail($id);
+        $record->delete();
+        return response()->json(['success' => true]);
+    }
+
+    // ----------------------------------------------------------------------
 
     public function exportAccomplishmentExcel(Request $request): StreamedResponse
     {
@@ -566,6 +737,7 @@ class RpwsisTeamController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
+
 
     public function exportSummaryExcel(Request $request): StreamedResponse
     {

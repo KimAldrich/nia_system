@@ -15,11 +15,13 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\RpwsisAccomplishmentController;
 
+
 // Authentication Routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->middleware('signed')->name('verification.verify');
 
 Route::post('/guest/authenticate', [GuestController::class, 'authenticate'])->name('guest.authenticate');
 Route::get('/guest/terms', [GuestController::class, 'terms'])->name('guest.terms');
@@ -35,25 +37,28 @@ Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'te
 Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'teamResolutions'])->name('guest.team.resolutions');
 // Routes that require login
 Route::middleware(['auth', 'check.active'])->group(function () {
+    Route::get('/email/verify', [AuthController::class, 'showVerificationNotice'])->name('verification.notice');
+    Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])->middleware('throttle:6,1')->name('verification.send');
 
-    // Terms and Conditions (RA10173)
-    Route::get('/terms', [TermsController::class, 'show'])->name('terms.show');
-    Route::post('/terms/agree', [TermsController::class, 'agree'])->name('terms.agree');
+    Route::middleware('verified.except_admin')->group(function () {
+        // Terms and Conditions (RA10173)
+        Route::get('/terms', [TermsController::class, 'show'])->name('terms.show');
+        Route::post('/terms/agree', [TermsController::class, 'agree'])->name('terms.agree');
 
-    Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
-    Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
-    Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
+        Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
+        Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
+        Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
 
     //guest
     // Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
 
     //Map Routes
-    Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
-    Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
-    Route::delete('/map/delete', [MapController::class, 'deleteFile']);
+        Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
+        Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
+        Route::delete('/map/delete', [MapController::class, 'deleteFile']);
 
-    // Protected Routes (Must have agreed to terms)
-    Route::middleware(['check.terms'])->group(function () {
+        // Protected Routes (Must have agreed to terms)
+        Route::middleware(['check.terms'])->group(function () {
 
         // Admin Routes
         Route::middleware(['check.role:admin'])->prefix('admin')->group(function () {
@@ -149,6 +154,19 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/summary/store', [RpwsisTeamController::class, 'storeSummary'])->name('rpwsis.summary.store');
                 Route::put('/summary/{id}/update', [RpwsisTeamController::class, 'updateSummary'])->name('rpwsis.summary.update');
                 Route::delete('/summary/{id}/delete', [RpwsisTeamController::class, 'deleteSummary'])->name('rpwsis.summary.delete');
+
+                // Nursery table routes
+                    Route::post('/nursery/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeNursery'])->name('rpwsis.nursery.store');
+                    Route::delete('/nursery/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteNursery'])->name('rpwsis.nursery.delete');
+                
+                    // Signages table routes
+                Route::post('/signages/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeSignages'])->name('rpwsis.signages.store');
+                Route::delete('/signages/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteSignages'])->name('rpwsis.signages.delete');
+
+                // Infrastructure table routes
+                Route::post('/infrastructure/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeInfrastructure'])->name('rpwsis.infrastructure.store');
+                Route::delete('/infrastructure/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteInfrastructure'])->name('rpwsis.infrastructure.delete');
+
             });
 
 
@@ -274,6 +292,6 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             });
         });
 
+        });
     });
-})
-    ->middleware('check.active'); // Ensure user is active before allowing access to any routes within this group
+}); // Ensure user is active before allowing access to any routes within this group

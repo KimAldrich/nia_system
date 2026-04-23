@@ -33,17 +33,20 @@ class FsTeamController extends Controller
             'system_name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
             'municipality' => ['required', 'string', 'max:100'],
-            'status' => ['required', Rule::in([
-                'For Schedule',
-                'For Interpretation',
-                'For Submission of Raw data',
-                'Relocation',
-                'Interpreted',
-                'Not Applicable',
-                'C/O Contractor',
-                'Open Source',
-                'With Geo-res',
-            ])],
+            'status' => [
+                'required',
+                Rule::in([
+                    'For Schedule',
+                    'For Interpretation',
+                    'For Submission of Raw data',
+                    'Relocation',
+                    'Interpreted',
+                    'Not Applicable',
+                    'C/O Contractor',
+                    'Open Source',
+                    'With Geo-res',
+                ])
+            ],
             'result' => ['nullable', 'string', 'max:100'],
         ]);
     }
@@ -74,10 +77,20 @@ class FsTeamController extends Controller
     public function index()
     {
         // Fetch resolutions for the project table
-        $resolutions = IaResolution::where('team', 'fs_team')->latest()->get();
+        $resolutions = IaResolution::where('team', 'fs_team')
+            ->latest()
+            ->paginate(8, ['*'], 'active_projects_page')
+            ->withQueryString();
 
         // Fetch upcoming events set by the admin
-        $events = Event::whereDate('event_date', '>=', now())
+        $events = Event::with('category')
+            ->where('event_date', '>', now()->format('Y-m-d'))
+            ->orWhere(function ($query) {
+                $today = now()->format('Y-m-d');
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', $today)
+                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            })
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
@@ -127,23 +140,42 @@ class FsTeamController extends Controller
     // 4. Upload Downloadable
     public function uploadForm(Request $request)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
-        $file = $request->file('document');
-        $path = $file->store('forms', 'public');
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-        Downloadable::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'fs_team' // 🔥 THIS IS THE FIX
-        ]);
-        return $this->successResponse($request, 'File uploaded successfully.');
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
+
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
+
+            $path = $file->store('forms', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            Downloadable::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'fs_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'File uploaded successfully.'
+            : "{$files->count()} files uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
-    // 5. Update Downloadable
     public function updateForm(Request $request, $id)
     {
         $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
@@ -180,27 +212,42 @@ class FsTeamController extends Controller
     // 7. Upload Resolution
     public function uploadResolution(Request $request)
     {
-        $request->validate([
-            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120'
-        ]);
+        $singleFile = $request->file('document');
+        $multipleFiles = $request->file('documents', []);
+        $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
 
-        $file = $request->file('document');
-        $path = $file->store('resolutions', 'public');
+        if ($files->isEmpty() && $singleFile) {
+            $files = collect([$singleFile]);
+        }
 
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+        if ($files->isEmpty()) {
+            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+        }
 
-        IaResolution::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => 'fs_team'
-        ]);
+        foreach ($files as $file) {
+            validator(['document' => $file], [
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+            ])->validate();
 
-        return $this->successResponse($request, 'Resolution uploaded successfully.');
+            $path = $file->store('resolutions', 'public');
+            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+            IaResolution::create([
+                'title' => $cleanTitle,
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'team' => 'fs_team'
+            ]);
+        }
+
+        $message = $files->count() === 1
+            ? 'Resolution uploaded successfully.'
+            : "{$files->count()} resolutions uploaded successfully.";
+
+        return $this->successResponse($request, $message);
     }
 
-    // 7. Update Resolution File
     public function updateResolution(Request $request, $id)
     {
         $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
@@ -396,7 +443,7 @@ class FsTeamController extends Controller
 
         $projectsWithGeores =
             $rows->where('status', 'For Interpretation')->count() +
-            $rows->filter(fn ($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count() +
+            $rows->filter(fn($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count() +
             $rows->where('status', 'Relocation')->count() +
             $rows->where('result', 'Feasible')->count();
 
@@ -405,13 +452,13 @@ class FsTeamController extends Controller
             ['Projects with Geores', $projectsWithGeores],
             ['Breakdown:', null],
             ['For Interpretation', $rows->where('status', 'For Interpretation')->count()],
-            ['Raw Data (For Submission)', $rows->filter(fn ($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count()],
+            ['Raw Data (For Submission)', $rows->filter(fn($row) => str_contains((string) $row->status, 'For Submission of Raw data'))->count()],
             ['Relocation (Not Feasible)', $rows->where('status', 'Relocation')->count()],
             ['Feasible', $rows->where('result', 'Feasible')->count()],
             ['', null],
             ['For Schedule', $rows->where('status', 'For Schedule')->count()],
             ['Open Source', $rows->where('status', 'Open Source')->count()],
-            ['Provision of Pumps', $rows->filter(fn ($row) => str_contains(strtolower((string) $row->description), 'provision of water pumps'))->count()],
+            ['Provision of Pumps', $rows->filter(fn($row) => str_contains(strtolower((string) $row->description), 'provision of water pumps'))->count()],
         ];
 
         $summaryRow = $summaryStart + 1;
@@ -632,12 +679,12 @@ class FsTeamController extends Controller
         }
 
         $sheet->setCellValue("A{$currentRow}", 'TOTAL FOR PANGASINAN');
-        $sheet->setCellValue("E{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("F{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("J{$currentRow}", (float) $rows->sum(fn ($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("K{$currentRow}", (float) $rows->sum(fn ($row) => $row->actual_obligation ?? 0));
-        $sheet->setCellValue("L{$currentRow}", (float) $rows->sum(fn ($row) => $row->value_of_acc ?? 0));
-        $sheet->setCellValue("M{$currentRow}", (float) $rows->sum(fn ($row) => $row->actual_expenditures ?? 0));
+        $sheet->setCellValue("E{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("F{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("J{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
+        $sheet->setCellValue("K{$currentRow}", (float) $rows->sum(fn($row) => $row->actual_obligation ?? 0));
+        $sheet->setCellValue("L{$currentRow}", (float) $rows->sum(fn($row) => $row->value_of_acc ?? 0));
+        $sheet->setCellValue("M{$currentRow}", (float) $rows->sum(fn($row) => $row->actual_expenditures ?? 0));
 
         $sheet->getStyle("A{$currentRow}:R{$currentRow}")->applyFromArray([
             'font' => [
