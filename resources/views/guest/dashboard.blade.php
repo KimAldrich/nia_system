@@ -340,14 +340,7 @@
 
     @if(isset($db_team) && $db_team === 'pao_team' && isset($powData))
         <div class="ui-card" style="margin-top: 24px;">
-            <div class="section-title">
-                Program of Works Status Monitoring
-                <a href="{{ route('guest.pao.pow.export') }}" onclick="handlePowExport(event, this.href)"
-                    style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Export Excel
-                </a>
-            </div>
+            <div class="section-title">Program of Works Status Monitoring</div>
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1400px;">
                     <thead>
@@ -423,6 +416,227 @@
                     @endfor
 
                     <a href="{{ $powData->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$powData->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    @if(isset($db_team) && $db_team === 'pcr_team' && isset($pcrStatusReports))
+        <div class="ui-card" id="guestPcrSection" style="margin-top: 24px;">
+            <div class="section-title">PCR Status Monitoring</div>
+            <div class="table-responsive">
+                <table class="sleek-table" style="min-width: 1300px;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Fund Source</th>
+                            <th rowspan="2">No. of Contracts</th>
+                            <th rowspan="2">Allocation</th>
+                            <th rowspan="2">No. of PCR Prepared</th>
+                            <th rowspan="2">No. Submitted to Regional Office</th>
+                            <th rowspan="2">Accomplishment</th>
+                            <th colspan="3" style="text-align:center;">Remarks</th>
+                        </tr>
+                        <tr>
+                            <th>For Signing of IA, Chief, DM, RM</th>
+                            <th>For Submission to RO1</th>
+                            <th>Not Yet Prepared / Pending Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($pcrStatusReports as $report)
+                            <tr>
+                                <td>{{ $report->fund_source }}</td>
+                                <td>{{ $report->no_of_contracts }}</td>
+                                <td>&#8369;{{ number_format($report->allocation, 2) }}</td>
+                                <td>{{ $report->no_of_pcr_prepared }}</td>
+                                <td>{{ $report->no_of_pcr_submitted_to_regional_office }}</td>
+                                <td>{{ number_format($report->accomplishment_percentage, 2) }}%</td>
+                                <td>{{ $report->for_signing_of_ia_chief_dm_rm }}</td>
+                                <td>{{ $report->for_submission_to_ro1 }}</td>
+                                <td>{{ $report->not_yet_prepared_pending_details }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="9" style="text-align:center; padding: 30px 0; color: #a0aec0;">No PCR status data found.</td></tr>
+                        @endforelse
+                        @if($pcrStatusReports->count())
+                            <tr style="font-weight: 700; background: #f8fafc; border-top: 2px solid #0c4d05;">
+                                <td style="font-weight: 800; color: #0c4d05;">Total</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('no_of_contracts') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">&#8369;{{ number_format($pcrStatusReports->sum('allocation'), 2) }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('no_of_pcr_prepared') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('no_of_pcr_submitted_to_regional_office') }}</td>
+                                <td></td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('for_signing_of_ia_chief_dm_rm') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('for_submission_to_ro1') }}</td>
+                                <td style="font-weight: 800; color: #0c4d05;">{{ $pcrStatusReports->sum('not_yet_prepared_pending_details') }}</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+            @if($pcrStatusReports->hasPages())
+                <div class="custom-pagination">
+                    <a href="{{ $pcrStatusReports->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $pcrStatusReports->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    @php
+                        $pcrStart = max($pcrStatusReports->currentPage() - 2, 1);
+                        $pcrEnd = min($pcrStart + 4, $pcrStatusReports->lastPage());
+                        if ($pcrEnd - $pcrStart < 4) { $pcrStart = max($pcrEnd - 4, 1); }
+                    @endphp
+                    @for ($page = $pcrStart; $page <= $pcrEnd; $page++)
+                        <a href="{{ $pcrStatusReports->appends(request()->query())->url($page) }}" class="page-item {{ $page == $pcrStatusReports->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                    @endfor
+                    <a href="{{ $pcrStatusReports->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$pcrStatusReports->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    @if(isset($db_team) && $db_team === 'rpwsis_team' && isset($records) && isset($summaryRecords))
+        <div class="ui-card" id="guestRpwsisStatusSection" style="margin-top: 24px;">
+            <div class="section-title">Social And Environmental Accomplishment</div>
+            <div class="table-responsive">
+                <table class="sleek-table" style="min-width: 2200px;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Region</th>
+                            <th rowspan="2">Batch</th>
+                            <th rowspan="2">Allocation</th>
+                            <th rowspan="2">NIS</th>
+                            <th rowspan="2">Activity</th>
+                            <th rowspan="2">Remarks</th>
+                            <th rowspan="2">Amount</th>
+                            <th colspan="12" style="text-align:center;">Implementation Stage</th>
+                            <th rowspan="2">PHY %</th>
+                            <th rowspan="2">FIN %</th>
+                            <th rowspan="2">EXP</th>
+                        </tr>
+                        <tr>
+                            <th>POW Formulation</th>
+                            <th>Nursery / Bunk House / STW</th>
+                            <th>Seedling Production</th>
+                            <th>Procurement</th>
+                            <th>Site Preparation</th>
+                            <th>Vegetative Enhancement</th>
+                            <th>Wattling</th>
+                            <th>Right of Way / Rent / Wages</th>
+                            <th>Consultative Meetings</th>
+                            <th>Reading Materials</th>
+                            <th>Signboards / Signages</th>
+                            <th>Monitoring</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($records as $r)
+                            <tr>
+                                <td>{{ $r->region }}</td>
+                                <td>{{ $r->batch }}</td>
+                                <td>{{ $r->allocation }}</td>
+                                <td>{{ $r->nis }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->activity }}</div></td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->remarks }}</div></td>
+                                <td>{{ $r->amount }}</td>
+                                <td>{{ $r->c1 }}</td>
+                                <td>{{ $r->c2 }}</td>
+                                <td>{{ $r->c3 }}</td>
+                                <td>{{ $r->c4 }}</td>
+                                <td>{{ $r->c5 }}</td>
+                                <td>{{ $r->c6 }}</td>
+                                <td>{{ $r->c7 }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->c8 }}</div></td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->c9 }}</div></td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->c10 }}</div></td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->c11 }}</div></td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->c12 }}</div></td>
+                                <td>{{ $r->phy }}</td>
+                                <td>{{ $r->fin }}</td>
+                                <td>{{ $r->exp }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="22" style="text-align:center; padding: 30px 0; color: #a0aec0;">No accomplishment data found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($records->hasPages())
+                <div class="custom-pagination">
+                    <a href="{{ $records->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $records->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    @php
+                        $rsStart = max($records->currentPage() - 2, 1);
+                        $rsEnd = min($rsStart + 4, $records->lastPage());
+                        if ($rsEnd - $rsStart < 4) { $rsStart = max($rsEnd - 4, 1); }
+                    @endphp
+                    @for ($page = $rsStart; $page <= $rsEnd; $page++)
+                        <a href="{{ $records->appends(request()->query())->url($page) }}" class="page-item {{ $page == $records->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                    @endfor
+                    <a href="{{ $records->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$records->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                </div>
+            @endif
+        </div>
+
+        <div class="ui-card" id="guestRpwsisSummarySection" style="margin-top: 24px;">
+            <div class="section-title">Water Resources Supporting Irrigation System Summary</div>
+            <div class="table-responsive">
+                <table class="sleek-table" style="min-width: 1800px;">
+                    <thead>
+                        <tr>
+                            <th>Region</th>
+                            <th>Province</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
+                            <th>Type of Plantation</th>
+                            <th>Year Established</th>
+                            <th>Target Area</th>
+                            <th>Area Planted</th>
+                            <th>Species and Number of Seedlings Planted</th>
+                            <th>Spacing</th>
+                            <th>1st Year Maintenance and Protection</th>
+                            <th>Replanting Target Area</th>
+                            <th>Replanting Actual Area</th>
+                            <th>Mortality Rate</th>
+                            <th>Species Replanted</th>
+                            <th>Name of NIS</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($summaryRecords as $row)
+                            <tr>
+                                <td>{{ $row->region }}</td>
+                                <td>{{ $row->province }}</td>
+                                <td>{{ $row->municipality }}</td>
+                                <td>{{ $row->barangay }}</td>
+                                <td>{{ $row->plantation_type }}</td>
+                                <td>{{ $row->year_established }}</td>
+                                <td>{{ $row->target_area_1 }}</td>
+                                <td>{{ $row->area_planted }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $row->species_planted }}</div></td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $row->spacing }}</div></td>
+                                <td>{{ $row->maintenance }}</td>
+                                <td>{{ $row->target_area_2 }}</td>
+                                <td>{{ $row->actual_area }}</td>
+                                <td>{{ $row->mortality_rate }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $row->species_replanted }}</div></td>
+                                <td>{{ $row->nis_name }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $row->remarks }}</div></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="17" style="text-align:center; padding: 30px 0; color: #a0aec0;">No summary records found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($summaryRecords->hasPages())
+                <div class="custom-pagination">
+                    <a href="{{ $summaryRecords->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $summaryRecords->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    @php
+                        $sumStart = max($summaryRecords->currentPage() - 2, 1);
+                        $sumEnd = min($sumStart + 4, $summaryRecords->lastPage());
+                        if ($sumEnd - $sumStart < 4) { $sumStart = max($sumEnd - 4, 1); }
+                    @endphp
+                    @for ($page = $sumStart; $page <= $sumEnd; $page++)
+                        <a href="{{ $summaryRecords->appends(request()->query())->url($page) }}" class="page-item {{ $page == $summaryRecords->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                    @endfor
+                    <a href="{{ $summaryRecords->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$summaryRecords->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
                 </div>
             @endif
         </div>
@@ -534,55 +748,6 @@
     @endif
 
     <script>
-        async function handlePowExport(event, url) {
-            event.preventDefault();
-
-            const suggestedName = `program_of_works_status_monitoring_${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')}.xlsx`;
-
-            try {
-                const response = await fetch(url, {
-                    credentials: 'same-origin',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Download failed.');
-                }
-
-                const blob = await response.blob();
-
-                if ('showSaveFilePicker' in window) {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName,
-                        types: [{
-                            description: 'Excel Workbook',
-                            accept: {
-                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
-                            }
-                        }]
-                    });
-
-                    const writable = await handle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    return;
-                }
-
-                const blobUrl = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = suggestedName;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                window.URL.revokeObjectURL(blobUrl);
-            } catch (error) {
-                window.location.href = url;
-            }
-        }
-
         // 🌟 1. CHART RENDERER 🌟
         document.addEventListener('DOMContentLoaded', function() {
             Chart.defaults.font.family = "'Poppins', sans-serif";
