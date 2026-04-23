@@ -20,7 +20,11 @@ class RpwsisTeamController extends Controller
     public function index()
     {
         $resolutions = IaResolution::where('team', 'rpwsis_team')->latest()->get();
-        $events = Event::whereDate('event_date', '>=', now())->orderBy('event_date', 'asc')->take(5)->get();
+        $events = Event::with('category')
+            ->whereDate('event_date', '>=', now())
+            ->orderBy('event_date', 'asc')
+            ->take(5)
+            ->get();
 
         // ✅ ADDED THIS: Fetch records to fix the "undefined $records" error
         $records = RpwsisAccomplishment::latest()->get();

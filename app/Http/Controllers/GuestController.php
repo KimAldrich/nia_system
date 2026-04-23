@@ -63,7 +63,8 @@ class GuestController extends Controller
         $resolutions = IaResolution::latest()->get();
 
         // Fetch Calendar Events
-        $events = \App\Models\Event::whereDate('event_date', '>=', now())
+        $events = \App\Models\Event::with('category')
+            ->whereDate('event_date', '>=', now())
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();
@@ -93,7 +94,7 @@ class GuestController extends Controller
 
         // 🌟 1. Fetch the exact same data the Teams see!
         $resolutions = IaResolution::orderBy('created_at', 'desc')->get();
-        $events = Event::all();
+        $events = Event::with('category')->get();
         $categories = EventCategory::all();
 
         // 🌟 2. Set default empty variables

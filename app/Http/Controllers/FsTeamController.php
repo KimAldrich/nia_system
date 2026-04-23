@@ -77,7 +77,8 @@ class FsTeamController extends Controller
         $resolutions = IaResolution::where('team', 'fs_team')->latest()->get();
 
         // Fetch upcoming events set by the admin
-        $events = Event::whereDate('event_date', '>=', now())
+        $events = Event::with('category')
+            ->whereDate('event_date', '>=', now())
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();

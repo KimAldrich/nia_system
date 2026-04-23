@@ -25,7 +25,8 @@ class ContractManagementTeamController extends Controller
     public function index(Request $request)
     {
         $resolutions = IaResolution::where('team', 'cm_team')->latest()->get();
-        $events = Event::whereDate('event_date', '>=', now())
+        $events = Event::with('category')
+            ->whereDate('event_date', '>=', now())
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();

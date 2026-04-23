@@ -45,7 +45,8 @@ class PcrTeamController extends Controller
     public function index()
     {
         $resolutions = IaResolution::where('team', 'pcr_team')->latest()->get();
-        $events = Event::whereDate('event_date', '>=', now())
+        $events = Event::with('category')
+            ->whereDate('event_date', '>=', now())
             ->orderBy('event_date', 'asc')
             ->take(5)
             ->get();

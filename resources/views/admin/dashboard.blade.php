@@ -250,7 +250,7 @@
                 </form>
             </div>
 
-            <div class="ui-card" id="eventManagerCard">
+            <div class="ui-card" id="analyticsCard">
                 <div class="section-title">Analytics</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
@@ -266,7 +266,7 @@
         </div>
 
         <div class="side-column">
-            <div class="ui-card">
+            <div class="ui-card" id="eventManagerCard">
                 <div class="section-title" style="margin-bottom: 15px;">Event Manager</div>
 
                 <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
@@ -376,7 +376,7 @@
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;">Schedule Event</h3>
             <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">Adding event for: <strong id="displayDate" style="color: #4f46e5;"></strong></p>
             
-            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard" data-async-reset="true" data-async-close="#eventModal">
+            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard, #eventModal" data-async-reset="true" data-async-close="#eventModal">
                 @csrf
                 <div style="margin-bottom: 15px;">
                     <label class="modern-label">Event Date</label>
@@ -458,35 +458,91 @@
     <script>
         let activeMonth = {{ \Carbon\Carbon::now()->month }};
 
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializeAdminDashboard() {
+            initializeAdminCharts();
+            initializeAdminEventForm();
             updateCalendarView();
-            
+        }
+
+        function initializeAdminCharts() {
+            const barCanvas = document.getElementById('barChart');
+            const doughnutCanvas = document.getElementById('doughnutChart');
+
+            if (!barCanvas || !doughnutCanvas) {
+                return;
+            }
+
+            if (barCanvas.dataset.chartInitialized === 'true' && doughnutCanvas.dataset.chartInitialized === 'true') {
+                return;
+            }
+
+            updateCalendarView();
+
             Chart.defaults.font.family = "'Poppins', sans-serif";
             Chart.defaults.color = '#a0aec0';
-            
-            const ctxBar = document.getElementById('barChart').getContext('2d');
+
+            const existingBarChart = Chart.getChart(barCanvas);
+            if (existingBarChart) {
+                existingBarChart.destroy();
+            }
+
+            const existingDoughnutChart = Chart.getChart(doughnutCanvas);
+            if (existingDoughnutChart) {
+                existingDoughnutChart.destroy();
+            }
+
+            const ctxBar = barCanvas.getContext('2d');
             new Chart(ctxBar, { 
                 type: 'bar', 
                 data: { labels: ['W1', 'W2', 'W3', 'W4'], datasets: [{ data: [12, 19, 15, 22], backgroundColor: '#4f46e5', borderRadius: 6 }] }, 
                 options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f1f5f9' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } } 
             });
-            
-            const ctxPie = document.getElementById('doughnutChart').getContext('2d');
+
+            const ctxPie = doughnutCanvas.getContext('2d');
             new Chart(ctxPie, { 
                 type: 'doughnut', 
                 data: { labels: ['Done', 'Pending'], datasets: [{ data: [70, 30], backgroundColor: ['#10b981', '#f1f5f9'], borderWidth: 0 }] }, 
                 options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: '#475569', usePointStyle: true, boxWidth: 10 } } } } 
             });
 
-            flatpickr("#eventDateInput", { dateFormat: "Y-m-d" });
-            flatpickr("#startTime", { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "09:00" });
-            flatpickr("#endTime", { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "10:30" });
+            barCanvas.dataset.chartInitialized = 'true';
+            doughnutCanvas.dataset.chartInitialized = 'true';
+        }
 
-            document.getElementById('eventForm').addEventListener('submit', function(e) {
-                let start = document.getElementById('startTime').value;
-                let end = document.getElementById('endTime').value;
-                document.getElementById('finalTimeInput').value = start + ' - ' + end;
-            });
+        function initializeAdminEventForm() {
+            const eventDateInput = document.getElementById('eventDateInput');
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+            const eventForm = document.getElementById('eventForm');
+
+            if (eventDateInput && !eventDateInput._flatpickr) {
+                flatpickr(eventDateInput, { dateFormat: "Y-m-d" });
+            }
+
+            if (startTimeInput && !startTimeInput._flatpickr) {
+                flatpickr(startTimeInput, { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "09:00" });
+            }
+
+            if (endTimeInput && !endTimeInput._flatpickr) {
+                flatpickr(endTimeInput, { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "10:30" });
+            }
+
+            if (eventForm && eventForm.dataset.bound !== 'true') {
+                eventForm.addEventListener('submit', function() {
+                    let start = document.getElementById('startTime').value;
+                    let end = document.getElementById('endTime').value;
+                    document.getElementById('finalTimeInput').value = start + ' - ' + end;
+                });
+                eventForm.dataset.bound = 'true';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAdminDashboard();
+        });
+
+        document.addEventListener('app:async-refreshed', function() {
+            initializeAdminDashboard();
         });
 
         function changeMonth(direction) {

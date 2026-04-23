@@ -733,7 +733,11 @@
             if (!targets || !targets.length) return;
 
             return withAppLoader(async () => {
-                const response = await fetch(url, {
+                const refreshUrl = new URL(url, window.location.origin);
+                refreshUrl.searchParams.set('_async_refresh', Date.now().toString());
+
+                const response = await fetch(refreshUrl.toString(), {
+                    cache: 'no-store',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'text/html'
@@ -756,6 +760,13 @@
                         currentNode.replaceWith(nextNode);
                     }
                 });
+
+                document.dispatchEvent(new CustomEvent('app:async-refreshed', {
+                    detail: {
+                        targets,
+                        url
+                    }
+                }));
 
                 if (updateHistory) {
                     window.history.pushState({}, '', url);
