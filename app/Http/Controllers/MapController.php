@@ -2,13 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Shapefile\ShapefileReader;
 use ZipArchive;
 
 class MapController extends Controller
 {
+    private const CATEGORY_DIRECTORY_MAP = [
+        'Irrigated Area' => 'irrigated',
+        'Pangasinan Land Boundary' => 'land_boundary',
+        'Potential Irrigable Area' => 'potential',
+    ];
+
+    private const PRIMARY_FILE_EXTENSIONS = ['geojson', 'json', 'kml', 'kmz', 'zip', 'shp'];
+
+    private const PRIMARY_FILE_PRIORITY = [
+        'geojson' => 1,
+        'json' => 2,
+        'kmz' => 3,
+        'kml' => 4,
+        'zip' => 5,
+        'shp' => 6,
+    ];
+
+    private const SHAPEFILE_COMPANION_EXTENSIONS = ['shp', 'shx', 'dbf', 'prj', 'cpg'];
+
     public function Showmap()
     {
         $overlayGroups = [
@@ -20,11 +39,10 @@ class MapController extends Controller
         return view('map.map', compact('overlayGroups'));
     }
 
-    // ================= MAP FILE LOADER =================
     private function buildOverlayGroup(string $label, string $directory): array
     {
         $disk = Storage::disk('public');
-        $folder = "maps/{$directory}";
+        $folder = $this->resolveOverlayFolder($label, $directory);
 
         if (!$disk->exists($folder)) {
             return [
@@ -33,14 +51,43 @@ class MapController extends Controller
             ];
         }
 
-         $files = collect(Storage::disk('public')->allFiles($folder)) // ✅ read all file formats
-            ->map(function ($path) use ($directory) {
+        $files = collect($disk->allFiles($folder))
+            ->filter(function ($path) use ($disk) {
+                $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+                if (!in_array($extension, self::PRIMARY_FILE_EXTENSIONS, true)) {
+                    return false;
+                }
+
+                if ($extension !== 'shp') {
+                    return true;
+                }
+
+                $basePath = substr($path, 0, -4);
+
+                return $disk->exists($basePath . '.dbf') && $disk->exists($basePath . '.shx');
+            })
+            ->groupBy(function ($path) {
+                return strtolower(dirname($path) . '|' . pathinfo($path, PATHINFO_FILENAME));
+            })
+            ->map(function ($paths) {
+                return collect($paths)->sortBy(function ($path) {
+                    $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+                    return self::PRIMARY_FILE_PRIORITY[$extension] ?? 999;
+                })->first();
+            })
+            ->map(function ($path) use ($folder) {
                 return [
                     'name' => basename($path),
                     'url' => Storage::url($path),
-                    'folder' => str_replace("maps/{$directory}/", '', dirname($path))
+                    'folder' => $this->relativeOverlayFolder($path, $folder),
                 ];
             })
+            ->sortBy([
+                ['folder', 'asc'],
+                ['name', 'asc'],
+            ])
             ->values()
             ->all();
 
@@ -50,111 +97,118 @@ class MapController extends Controller
         ];
     }
 
-    // ================= UPLOAD =================
+    private function resolveOverlayFolder(string $label, string $directory): string
+    {
+        $disk = Storage::disk('public');
+        $canonicalFolder = "maps/{$directory}";
+        $legacyFolder = "maps/{$label}";
+
+        if ($disk->exists($canonicalFolder)) {
+            return $canonicalFolder;
+        }
+
+        return $legacyFolder;
+    }
+
+    private function relativeOverlayFolder(string $path, string $root): string
+    {
+        $prefix = rtrim($root, '/') . '/';
+        $relativePath = str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path;
+        $relativeFolder = dirname($relativePath);
+
+        return $relativeFolder === '.' ? '' : $relativeFolder;
+    }
+
     public function upload(Request $request)
     {
         try {
             $request->validate([
                 'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
                 'files' => 'required',
-                'files.*' => 'file|max:51200'
+                'files.*' => 'file|max:51200',
             ]);
 
-            $categoryLabel = $request->category;
-            
-            // Map category names to folder names
-            $categoryMap = [
-                'Irrigated Area' => 'irrigated',
-                'Pangasinan Land Boundary' => 'land_boundary',
-                'Potential Irrigable Area' => 'potential'
-            ];
-            
-            $folderName = $categoryMap[$categoryLabel];
-            $paths = $request->input('paths', []); // optional (for folder upload)
-
+            $category = $request->category;
+            $categoryDirectory = self::CATEGORY_DIRECTORY_MAP[$category] ?? $category;
+            $paths = $request->input('paths', []);
             $uploadedFiles = [];
+            $shapefileBasenames = [];
 
             foreach ($request->file('files') as $index => $file) {
+                if (!$file->isValid()) {
+                    continue;
+                }
 
-                if (!$file->isValid()) continue;
-
-                // 📂 handle folder structure
                 $relativePath = $paths[$index] ?? $file->getClientOriginalName();
-
                 $folderPath = dirname($relativePath);
                 $folderPath = $folderPath === '.' ? '' : $folderPath;
 
                 $baseName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                $ext = $file->getClientOriginalExtension();
+                $extension = strtolower($file->getClientOriginalExtension());
+                $safeBaseName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $baseName);
+                $basenameKey = strtolower(trim($folderPath . '/' . $baseName, '/'));
 
-                $safeName = preg_replace('/[^A-Za-z0-9\-]/', '_', $baseName);
-                $finalName = $safeName . '_' . uniqid() . '.' . $ext;
+                if (in_array($extension, self::SHAPEFILE_COMPANION_EXTENSIONS, true)) {
+                    if (!isset($shapefileBasenames[$basenameKey])) {
+                        $shapefileBasenames[$basenameKey] = $safeBaseName . '_' . uniqid();
+                    }
 
-                $storagePath = "maps/{$folderName}/{$folderPath}";
+                    $finalName = $shapefileBasenames[$basenameKey] . '.' . $extension;
+                } else {
+                    $finalName = $safeBaseName . '_' . uniqid() . '.' . $extension;
+                }
 
-                // ✅ ensure directory exists
+                $storagePath = "maps/{$categoryDirectory}/{$folderPath}";
                 Storage::disk('public')->makeDirectory($storagePath);
 
-                $path = Storage::disk('public')->putFileAs(
-                    $storagePath,
-                    $file,
-                    $finalName
-                );
+                $path = Storage::disk('public')->putFileAs($storagePath, $file, $finalName);
 
                 if ($path) {
                     $uploadedFiles[] = [
                         'name' => $finalName,
                         'path' => $path,
-                        'url' => Storage::url($path)
+                        'url' => Storage::url($path),
                     ];
                 }
             }
 
             return response()->json([
                 'message' => 'Upload successful',
-                'files' => $uploadedFiles
+                'files' => $uploadedFiles,
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Upload failed: ' . $e->getMessage()
+                'message' => 'Upload failed: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-  public function fileManager()
-{
-    $categoryMap = [
-        'irrigated' => 'Irrigated Area',
-        'land_boundary' => 'Pangasinan Land Boundary',
-        'potential' => 'Potential Irrigable Area'
-    ];
-    $filesData = [];
+    public function fileManager()
+    {
+        $filesData = [];
 
-    foreach ($categoryMap as $folderName => $categoryLabel) {
+        foreach (self::CATEGORY_DIRECTORY_MAP as $category => $directory) {
+            $folder = $this->resolveOverlayFolder($category, $directory);
 
-        $folder = "maps/" . $folderName;
+            if (!Storage::disk('public')->exists($folder)) {
+                continue;
+            }
 
-        if (!Storage::disk('public')->exists($folder)) {
-            continue;
+            $files = collect(Storage::disk('public')->allFiles($folder));
+
+            foreach ($files as $file) {
+                $filesData[] = [
+                    'name' => basename($file),
+                    'category' => $category,
+                    'url' => Storage::url($file),
+                    'path' => $file,
+                    'folder' => dirname($file),
+                ];
+            }
         }
 
-        // ✅ GET ALL FILES (NO FILTER)
-        $files = collect(Storage::disk('public')->allFiles($folder));
-
-        foreach ($files as $file) {
-            $filesData[] = [
-                'name' => basename($file),
-                'category' => $categoryLabel,
-                'url' => Storage::url($file),
-                'path' => $file,
-                'folder' => str_replace("maps/{$folderName}/", '', dirname($file))
-            ];
-        }
+        return view('map.files', compact('filesData'));
     }
-
-    return view('map.files', compact('filesData'));
-}
 
     public function deleteFile(Request $request)
     {
@@ -164,205 +218,200 @@ class MapController extends Controller
             Storage::disk('public')->delete($path);
 
             return response()->json([
-                'message' => 'Deleted'
+                'message' => 'Deleted',
             ]);
         }
 
         return response()->json([
-            'message' => 'File not found'
+            'message' => 'File not found',
         ], 404);
     }
 
-private function readShapefileZip($zipPath)
-{
-    $fullPath = storage_path('app/public/' . $zipPath);
+    private function readShapefileZip($zipPath)
+    {
+        $fullPath = storage_path('app/public/' . $zipPath);
 
-    if (!file_exists($fullPath)) return 0;
-
-    $extractPath = storage_path('app/temp/' . uniqid());
-    mkdir($extractPath, 0777, true);
-
-    $zip = new ZipArchive;
-
-    if ($zip->open($fullPath) === TRUE) {
-        $zip->extractTo($extractPath);
-        $zip->close();
-    } else {
-        return 0;
-    }
-
-    // find shp
-    $shpFile = null;
-
-    $iterator = new \RecursiveIteratorIterator(
-        new \RecursiveDirectoryIterator($extractPath)
-    );
-
-    foreach ($iterator as $file) {
-        if ($file->isFile() && strtolower($file->getExtension()) === 'shp') {
-            $shpFile = $file->getPathname();
-            break;
+        if (!file_exists($fullPath)) {
+            return 0;
         }
-    }
 
-    if (!$shpFile) return 0;
+        $extractPath = storage_path('app/temp/' . uniqid());
+        mkdir($extractPath, 0777, true);
 
-    try {
-        $reader = new ShapefileReader($shpFile);
-        $reader->setCharset('CP1252');
+        $zip = new ZipArchive;
 
-        $totalArea = 0;
+        if ($zip->open($fullPath) === true) {
+            $zip->extractTo($extractPath);
+            $zip->close();
+        } else {
+            return 0;
+        }
 
-        while ($record = $reader->fetchRecord()) {
+        $shpFile = null;
 
-            if ($record->isDeleted()) continue;
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($extractPath)
+        );
 
-            $data = $record->getDataArray();
+        foreach ($iterator as $file) {
+            if ($file->isFile() && strtolower($file->getExtension()) === 'shp') {
+                $shpFile = $file->getPathname();
+                break;
+            }
+        }
 
-            $area = 0;
+        if (!$shpFile) {
+            return 0;
+        }
 
-            foreach ($data as $key => $value) {
+        try {
+            $reader = new ShapefileReader($shpFile);
+            $reader->setCharset('CP1252');
 
-                $cleanKey = strtoupper(trim($key));
+            $totalArea = 0;
 
-                if (
-                    $cleanKey === 'AREA__HA_' ||
-                    str_contains($cleanKey, 'AREA')
-                ) {
-                    $area = (float) str_replace(',', '', $value);
-                    break;
+            while ($record = $reader->fetchRecord()) {
+                if ($record->isDeleted()) {
+                    continue;
                 }
+
+                $data = $record->getDataArray();
+                $area = 0;
+
+                foreach ($data as $key => $value) {
+                    $cleanKey = strtoupper(trim($key));
+
+                    if ($cleanKey === 'AREA__HA_' || str_contains($cleanKey, 'AREA')) {
+                        $area = (float) str_replace(',', '', $value);
+                        break;
+                    }
+                }
+
+                $totalArea += $area;
             }
 
-            $totalArea += $area;
+            return round($totalArea, 2);
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    public function getIrrigatedChartData()
+    {
+        $jsonPath = public_path('maps/details.json');
+
+        if (!file_exists($jsonPath)) {
+            return response()->json([
+                'error' => 'details.json not found',
+            ], 404);
         }
 
-        return round($totalArea, 2);
+        $rows = json_decode(file_get_contents($jsonPath), true);
 
-    } catch (\Exception $e) {
+        if (!$rows) {
+            return response()->json([
+                'error' => 'Invalid JSON',
+            ], 500);
+        }
+
+        $chartData = [];
+
+        foreach ($rows as $row) {
+            $name = $row['name'];
+            $totalLand = (float) $row['total_land_area_ha'];
+            $irrigated = (float) $row['area_developed_ha'];
+            $remaining = (float) $row['remaining_area_ha'];
+            $program = (float) $row['program_area_ha'];
+            $potential = (float) $row['potential_irrigation_area_ha'];
+
+            $ranges = [
+                'Irrigated Area' => $irrigated,
+                'Remaining Area' => $remaining,
+                'Program Area' => $program,
+                'Potential Irrigation Area' => $potential,
+            ];
+
+            $percentages = [];
+
+            foreach ($ranges as $rangeLabel => $value) {
+                $percentages[$rangeLabel] = $totalLand > 0
+                    ? round(($value / $totalLand) * 100, 2)
+                    : 0;
+            }
+
+            $chartData[$name] = [
+                'Area (ha)' => $totalLand,
+                'irrigated_total' => $irrigated,
+                'ranges' => $ranges,
+                'percentages' => $percentages,
+            ];
+        }
+
+        return response()->json($chartData);
+    }
+
+    private function getMunicipalityLandArea($municipality)
+    {
+        $jsonPath = public_path('maps/municipalities.json');
+
+        if (!file_exists($jsonPath)) {
+            return 0;
+        }
+
+        $data = json_decode(file_get_contents($jsonPath), true);
+
+        if (!$data) {
+            return 0;
+        }
+
+        foreach ($data as $item) {
+            $jsonName = strtolower(trim($item['name']));
+            $clickedName = strtolower(trim($municipality));
+
+            $jsonName = str_replace(' city', '', $jsonName);
+            $clickedName = str_replace(' city', '', $clickedName);
+
+            if ($jsonName === $clickedName) {
+                return (float) $item['total_land_area_ha'];
+            }
+        }
+
         return 0;
     }
-}
-public function getIrrigatedChartData()
-{
-    $jsonPath = public_path('maps/details.json');
 
-    if (!file_exists($jsonPath)) {
-        return response()->json([
-            'error' => 'details.json not found'
-        ], 404);
-    }
+    private function calculateGeoJsonArea($geometry)
+    {
+        $type = $geometry['type'];
+        $coords = $geometry['coordinates'];
+        $totalArea = 0;
 
-    $rows = json_decode(file_get_contents($jsonPath), true);
-
-    if (!$rows) {
-        return response()->json([
-            'error' => 'Invalid JSON'
-        ], 500);
-    }
-
-    $chartData = [];
-
-    foreach ($rows as $row) {
-
-        $name = $row['name'];
-
-        $totalLand = (float) $row['total_land_area_ha'];
-        $irrigated = (float) $row['area_developed_ha']; // developed = irrigated
-        $remaining = (float) $row['remaining_area_ha'];
-        $program   = (float) $row['program_area_ha'];
-        $potential = (float) $row['potential_irrigation_area_ha'];
-
-        $ranges = [
-            'Irrigated Area'            => $irrigated,
-            'Remaining Area'           => $remaining,
-            'Program Area'             => $program,
-            'Potential Irrigation Area'=> $potential
-        ];
-
-        $percentages = [];
-
-        foreach ($ranges as $label => $value) {
-            $percentages[$label] = $totalLand > 0
-                ? round(($value / $totalLand) * 100, 2)
-                : 0;
+        if ($type === 'Polygon') {
+            $totalArea += $this->polygonArea($coords[0]);
         }
 
-        $chartData[$name] = [
-            'Area (ha)'       => $totalLand,
-            'irrigated_total' => $irrigated,
-            'ranges'          => $ranges,
-            'percentages'     => $percentages
-        ];
-    }
-
-    return response()->json($chartData);
-}
-
-private function getMunicipalityLandArea($municipality)
-{
-    $jsonPath = public_path('maps/municipalities.json');
-
-    if (!file_exists($jsonPath)) {
-        return 0;
-    }
-
-    $data = json_decode(file_get_contents($jsonPath), true);
-
-    if (!$data) {
-        return 0;
-    }
-
-    foreach ($data as $item) {
-
-        $jsonName = strtolower(trim($item['name']));
-        $clickedName = strtolower(trim($municipality));
-
-        // normalize city names
-        $jsonName = str_replace(' city', '', $jsonName);
-        $clickedName = str_replace(' city', '', $clickedName);
-
-        if ($jsonName === $clickedName) {
-            return (float) $item['total_land_area_ha'];
+        if ($type === 'MultiPolygon') {
+            foreach ($coords as $polygon) {
+                $totalArea += $this->polygonArea($polygon[0]);
+            }
         }
+
+        return $totalArea / 10000;
     }
 
-    return 0;
-}
-private function calculateGeoJsonArea($geometry)
-{
-    $type = $geometry['type'];
-    $coords = $geometry['coordinates'];
+    private function polygonArea($ring)
+    {
+        $area = 0;
+        $points = count($ring);
 
-    $totalArea = 0;
+        for ($i = 0; $i < $points - 1; $i++) {
+            $x1 = $ring[$i][0];
+            $y1 = $ring[$i][1];
+            $x2 = $ring[$i + 1][0];
+            $y2 = $ring[$i + 1][1];
 
-    if ($type === 'Polygon') {
-        $totalArea += $this->polygonArea($coords[0]);
-    }
-
-    if ($type === 'MultiPolygon') {
-        foreach ($coords as $polygon) {
-            $totalArea += $this->polygonArea($polygon[0]);
+            $area += ($x1 * $y2) - ($x2 * $y1);
         }
+
+        return abs($area) * 111319.9 * 111319.9 / 2;
     }
-
-    // convert square meters to hectares
-    return $totalArea / 10000;
-}
-private function polygonArea($ring)
-{
-    $area = 0;
-    $points = count($ring);
-
-    for ($i = 0; $i < $points - 1; $i++) {
-        $x1 = $ring[$i][0];
-        $y1 = $ring[$i][1];
-        $x2 = $ring[$i + 1][0];
-        $y2 = $ring[$i + 1][1];
-
-        $area += ($x1 * $y2) - ($x2 * $y1);
-    }
-
-    return abs($area) * 111319.9 * 111319.9 / 2;
-}
 }

@@ -845,7 +845,7 @@ select[name="category"]:focus {
     </label>
 
     <span>🛰 Satellite</span>
-    
+
     <button id="resetMapBtn" title="Reset to default position">🔄 Reset</button>
 </div>
 
@@ -1432,33 +1432,60 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
     });
 }
 
-
 async function showOverlayCategory(categoryKey) {
     const config = overlayGroups[categoryKey];
 
     if (!config || !config.files.length) {
-        updateStatus('No files found for ' + (config?.label || categoryKey) + '.', true);
+        updateStatus('No files found for ' + (config?.label || categoryKey), true);
         return;
     }
 
     if (!overlayLayers[categoryKey]) {
         const layers = [];
+        const loadedShapeBases = new Set();
 
         for (let index = 0; index < config.files.length; index++) {
             const file = config.files[index];
+            const name = file.name.toLowerCase();
 
-            updateStatus(`Loading ${config.label} (${index + 1}/${config.files.length})...`);
+            // ✅ Allow only supported files
+            const isGeoJson = name.endsWith('.geojson') || name.endsWith('.json');
+            const isKml = name.endsWith('.kml');
+            const isKmz = name.endsWith('.kmz');
+            const isShp = name.endsWith('.shp');
+
+            if (!isGeoJson && !isKml && !isKmz && !isShp) {
+                continue;
+            }
+
+            // ✅ Prevent duplicate shapefile family loading
+            if (isShp) {
+                const base = name.replace('.shp', '');
+
+                if (loadedShapeBases.has(base)) {
+                    continue;
+                }
+
+                loadedShapeBases.add(base);
+            }
+
+            updateStatus(`Loading ${config.label} (${layers.length + 1})...`);
 
             try {
                 const geoJson = await convertStoredFileToGeoJson(file.url);
-                layers.push(createOverlayLayer(categoryKey, geoJson, file.name));
+
+                if (!geoJson) continue;
+
+                const layer = createOverlayLayer(categoryKey, geoJson, file.name);
+                layers.push(layer);
+
             } catch (error) {
-                console.error('Failed to load file:', file.name, error);
+                console.error('Failed to load:', file.name, error);
             }
         }
 
         if (!layers.length) {
-            updateStatus('No valid polygons could be loaded for ' + config.label + '.', true);
+            updateStatus('No valid layers found for ' + config.label, true);
             return;
         }
 
@@ -1469,16 +1496,21 @@ async function showOverlayCategory(categoryKey) {
         overlayLayers[categoryKey].addTo(map);
     }
 
-    // bring layers to front based on priority
-    const categoriesSorted = Object.keys(overlayLayers).sort((a, b) => overlayPriority[a] - overlayPriority[b]);
+    // Bring to front by priority
+    const categoriesSorted = Object.keys(overlayLayers)
+        .sort((a, b) => overlayPriority[a] - overlayPriority[b]);
+
     categoriesSorted.forEach(cat => {
         if (map.hasLayer(overlayLayers[cat])) {
-            overlayLayers[cat].eachLayer(layer => layer.bringToFront());
+            overlayLayers[cat].eachLayer(layer => {
+                if (layer.bringToFront) layer.bringToFront();
+            });
         }
     });
 
-    updateStatus(config.label + ' is now highlighted on the map.');
+    updateStatus(config.label + ' loaded successfully.');
 }
+
 
 
 function hideOverlayCategory(categoryKey) {
