@@ -33,11 +33,15 @@ class AdminController extends Controller
 
         // Added 'with('category')' so the colored badges load efficiently
         $events = Event::with('category')
-            ->whereDate('event_date', '>=', now()->toDateString())
+            ->where('event_date', '>', now()->format('Y-m-d'))
+            ->orWhere(function ($query) {
+                $today = now()->format('Y-m-d');
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', $today)
+                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            })
             ->orderBy('event_date', 'asc')
-            ->get()
-            ->filter(fn ($event) => $event->isUpcoming())
-            ->values();
+            ->get();
 
         // Fetch custom tags for the legend
         $categories = EventCategory::all();
@@ -241,7 +245,7 @@ class AdminController extends Controller
 
         $tagAlreadyExists = EventCategory::query()
             ->get()
-            ->contains(fn ($category) => mb_strtolower(trim($category->name)) === $normalizedName);
+            ->contains(fn($category) => mb_strtolower(trim($category->name)) === $normalizedName);
 
         if ($tagAlreadyExists) {
             return $this->errorResponse($request, 'Tag name already exists. Please use a different tag name.');
