@@ -1,231 +1,233 @@
 <style>
     .event-manager-card {
         background: #ffffff;
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
-        border: 1px solid #eef2f7;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        border: none;
     }
 
     .event-manager-card .section-title {
-        display: block;
-        margin-bottom: 24px;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
         color: #1e293b;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .event-manager-legend-section {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #f1f5f9;
     }
 
     .event-manager-label {
-        margin: 0 0 12px;
         font-size: 11px;
         font-weight: 700;
-        color: #a3b1c6;
+        color: #a0aec0;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        margin: 0 0 15px;
     }
 
     .event-manager-legend {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px 14px;
-        margin-bottom: 18px;
+        gap: 12px;
     }
 
     .event-manager-card .legend-item {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #475569;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
         text-transform: uppercase;
     }
 
     .event-manager-card .legend-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
-        flex-shrink: 0;
-    }
-
-    .event-manager-divider {
-        border: 0;
-        border-top: 1px solid #eef2f7;
-        margin: 0 0 18px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
     }
 
     .event-manager-card .calendar-carousel {
-        display: grid;
-        grid-template-columns: 48px minmax(0, 1fr) 48px;
-        gap: 14px;
+        display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 10px;
         margin-bottom: 20px;
     }
 
     .event-manager-card .nav-btn {
-        width: 40px;
-        height: 40px;
-        border: none;
-        border-radius: 14px;
         background: #f8fafc;
-        color: #64748b;
-        font-size: 22px;
-        line-height: 1;
+        border: none;
+        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        transition: 0.2s ease;
-        justify-self: center;
+        transition: 0.2s;
+        color: #64748b;
+        flex-shrink: 0;
     }
 
     .event-manager-card .nav-btn:hover:not(:disabled) {
-        background: #eef2ff;
-        color: #4f46e5;
+        background: #e2e8f0;
+        color: #1e293b;
     }
 
     .event-manager-card .nav-btn:disabled {
-        opacity: 0.4;
+        opacity: 0.3;
         cursor: not-allowed;
     }
 
     .event-manager-card .calendar-viewport {
-        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        min-height: 280px;
     }
 
     .event-manager-card .month-block {
         display: none;
+        animation: eventManagerSlideFade 0.3s ease;
     }
 
     .event-manager-card .month-block.active {
         display: block;
     }
 
+    @keyframes eventManagerSlideFade {
+        from {
+            opacity: 0;
+            transform: scale(0.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
     .event-manager-card .calendar-header {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
     }
 
     .event-manager-card .calendar-header h4 {
         margin: 0;
-        font-size: 18px;
+        font-size: 15px;
         font-weight: 700;
         color: #1e293b;
     }
 
     .event-manager-card .calendar-grid {
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 14px 10px;
+        grid-template-columns: repeat(7, 1fr);
         text-align: center;
+        row-gap: 15px;
     }
 
     .event-manager-card .day-name {
-        font-size: 12px;
-        font-weight: 700;
-        color: #a3b1c6;
+        font-size: 11px;
+        font-weight: 600;
+        color: #a0aec0;
         text-transform: uppercase;
+        margin-bottom: 5px;
     }
 
     .event-manager-card .day-num {
-        width: 36px;
-        height: 36px;
-        margin: 0 auto;
+        font-size: 13px;
+        font-weight: 500;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 999px;
-        color: #334155;
-        font-size: 14px;
-        font-weight: 600;
-        border: 2px solid transparent;
+        margin: 0 auto;
+        border-radius: 50%;
+        color: #475569;
+        transition: 0.2s;
     }
 
     .event-manager-card .day-num.empty {
         visibility: hidden;
     }
 
+    .event-manager-card .day-num.has-event {
+        font-weight: 700;
+    }
+
     .event-manager-card .day-num.today {
-        background: #5b50f0 !important;
+        background: #4f46e5 !important;
         color: #ffffff !important;
-        border-color: #5b50f0 !important;
-        box-shadow: 0 10px 22px rgba(91, 80, 240, 0.28);
+        border: none !important;
+        font-weight: 700;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
     }
 
     .event-manager-upcoming {
-        margin-top: 8px;
+        margin-top: 10px;
     }
 
     .event-manager-card .mini-event {
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 16px 0 0;
-        border-top: 1px solid #eef2f7;
-    }
-
-    .event-manager-card .mini-event + .mini-event {
-        margin-top: 14px;
+        gap: 15px;
+        padding: 12px 0;
+        border-top: 1px solid #f1f5f9;
     }
 
     .event-manager-card .mini-event-date {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: #e6e9ff;
-        color: #5b50f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
+        font-size: 16px;
         font-weight: 700;
+        color: #4f46e5;
+        min-width: 30px;
+        text-align: center;
+        background: #e0e7ff;
+        padding: 5px;
+        border-radius: 8px;
         flex-shrink: 0;
     }
 
     .event-manager-card .mini-event-title {
-        margin: 0 0 2px;
-        font-size: 15px;
-        font-weight: 700;
+        font-size: 13px;
+        font-weight: 600;
         color: #1e293b;
-        text-transform: uppercase;
+        margin: 0;
     }
 
     .event-manager-card .mini-event-time {
+        font-size: 11px;
+        color: #a0aec0;
         margin: 0;
-        font-size: 12px;
-        color: #94a3b8;
     }
 
     .event-manager-card .event-tag {
-        display: inline-flex;
-        align-items: center;
-        margin-top: 10px;
-        padding: 6px 12px;
-        border-radius: 10px;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-top: 4px;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.5px;
     }
 
     @media (max-width: 768px) {
         .event-manager-card {
             padding: 20px;
-            border-radius: 18px;
         }
 
-        .event-manager-card .calendar-carousel {
-            grid-template-columns: 40px minmax(0, 1fr) 40px;
-            gap: 10px;
-        }
-
-        .event-manager-card .calendar-grid {
-            gap: 12px 6px;
-        }
-
-        .event-manager-card .day-num {
-            width: 32px;
-            height: 32px;
-            font-size: 13px;
+        .event-manager-card .calendar-viewport {
+            min-height: auto;
         }
     }
 </style>
@@ -233,27 +235,40 @@
 @php
     $calendarYear = \Carbon\Carbon::now()->year;
     $calendarToday = \Carbon\Carbon::now();
+
+    $upcomingEvents = collect($events ?? [])
+        ->filter(function ($event) {
+            return method_exists($event, 'isUpcoming')
+                ? $event->isUpcoming()
+                : $event->event_date->isFuture();
+        })
+        ->sortBy('event_date')
+        ->values();
 @endphp
 
 <div class="ui-card event-manager-card">
     <div class="section-title">Event Manager</div>
 
-    <p class="event-manager-label">Event Legend</p>
-    <div class="event-manager-legend">
-        @forelse($categories ?? [] as $cat)
-            <div class="legend-item">
-                <div class="legend-dot" style="background: {{ $cat->color }};"></div>
-                {{ $cat->name }}
-            </div>
-        @empty
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">No tags available.</p>
-        @endforelse
+    <div class="event-manager-legend-section">
+        <p class="event-manager-label">Event Legend</p>
+        <div class="event-manager-legend">
+            @forelse($categories ?? [] as $cat)
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: {{ $cat->color }};"></div>
+                    {{ $cat->name }}
+                </div>
+            @empty
+                <p style="font-size: 11px; color: #a0aec0; margin: 0;">No custom tags created yet.</p>
+            @endforelse
+        </div>
     </div>
 
-    <hr class="event-manager-divider">
-
     <div class="calendar-carousel">
-        <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">&#8249;</button>
+        <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
 
         <div class="calendar-viewport">
             @for ($m = 1; $m <= 12; $m++)
@@ -262,7 +277,7 @@
                     $daysInMonth = $monthDate->daysInMonth;
                     $firstDayOfWeek = $monthDate->dayOfWeek;
 
-                    $eventsForMonth = collect($events ?? [])
+                    $eventsForMonth = $upcomingEvents
                         ->filter(function ($e) use ($calendarYear, $m) {
                             return $e->event_date->year == $calendarYear && $e->event_date->month == $m;
                         })
@@ -294,11 +309,13 @@
                                 $dayEvents = $eventsForMonth->get($day);
                                 $hasEvent = $dayEvents ? true : false;
                                 $isToday = $day == $calendarToday->day && $m == $calendarToday->month && $calendarYear == $calendarToday->year;
-                                $ringColor = $hasEvent && $dayEvents->first()->category ? $dayEvents->first()->category->color : '#5b50f0';
+                                $ringColor = $hasEvent && $dayEvents->first()->category ? $dayEvents->first()->category->color : '#18181b';
                             @endphp
 
-                            <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
-                                style="{{ $hasEvent && !$isToday ? 'border-color:' . $ringColor . '; color:' . $ringColor . ';' : '' }}">
+                            <div
+                                class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
+                                style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}"
+                            >
                                 {{ $day }}
                             </div>
                         @endfor
@@ -307,22 +324,29 @@
             @endfor
         </div>
 
-        <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">&#8250;</button>
+        <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
     </div>
 
     <div class="event-manager-upcoming">
         <p class="event-manager-label">Upcoming Schedule</p>
 
-        @if (isset($events) && $events->count() > 0)
-            @foreach ($events->take(5) as $event)
+        @if ($upcomingEvents->count() > 0)
+            @foreach ($upcomingEvents->take(5) as $event)
                 <div class="mini-event">
                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
                     <div>
                         <h4 class="mini-event-title">{{ $event->title }}</h4>
-                        <p class="mini-event-time">{{ $event->event_time }}</p>
+                        <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
+
                         @if (!empty($event->category))
-                            <span class="event-tag"
-                                style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;">
+                            <span
+                                class="event-tag"
+                                style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;"
+                            >
                                 {{ $event->category->name }}
                             </span>
                         @endif
@@ -330,7 +354,7 @@
                 </div>
             @endforeach
         @else
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">No upcoming events.</p>
+            <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
         @endif
     </div>
 </div>

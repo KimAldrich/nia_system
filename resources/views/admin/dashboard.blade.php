@@ -83,7 +83,8 @@
         .day-num.has-event { font-weight: 700; }
         .day-num.today { background: #4f46e5 !important; color: white !important; border: none !important; font-weight: 700; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
         .day-num.clickable { cursor: pointer; transition: 0.2s; }
-        .day-num.clickable:hover { background: #e0e7ff !important; color: #4f46e5 !important; border-color: #e0e7ff !important; font-weight: 700;}
+    .day-num.clickable:hover { background: #e0e7ff !important; color: #4f46e5 !important; border-color: #e0e7ff !important; font-weight: 700;}
+    .day-num.past { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
         /* Mini Events */
         .mini-event { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid #f1f5f9; }
@@ -300,8 +301,8 @@
                                 $daysInMonth = $monthDate->daysInMonth;
                                 $firstDayOfWeek = $monthDate->dayOfWeek;
                                 
-                                $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYear, $m) {
-                                    return $e->event_date->year == $currentYear && $e->event_date->month == $m;
+$eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYear, $m) {
+                                    return $e->event_date->year == $currentYear && $e->event_date->month == $m && $e->event_date->gte(now());
                                 })->groupBy(function($e) {
                                     return $e->event_date->format('j');
                                 }) : collect();
@@ -324,9 +325,9 @@
                                             $dateString = $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT);
                                             $ringColor = ($hasEvent && $dayEvents->first()->category) ? $dayEvents->first()->category->color : '#18181b';
                                         @endphp
-                                        <div class="day-num clickable {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}" 
-                                             style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}"
-                                             onclick="openEventModal('{{ $dateString }}')" title="Click to schedule event">
+<div class="day-num clickable {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }} {{ ($dateString < $today->format('Y-m-d')) ? 'past' : '' }}" 
+                                             style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}{{ ($dateString < $today->format('Y-m-d')) ? '; opacity: 0.4; cursor: not-allowed;' : '' }}"
+                                             onclick="openEventModal('{{ $dateString }}')" title="{{ ($dateString < $today->format('Y-m-d')) ? 'Past dates cannot be scheduled' : 'Click to schedule event' }}">
                                             {{ $day }}
                                         </div>
                                     @endfor
@@ -343,13 +344,13 @@
                 <div style="margin-top: 10px;">
                     <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">Upcoming Schedule</p>
                     @if(isset($events) && $events->count() > 0)
-                        @foreach($events->where('event_date', '>=', \Carbon\Carbon::today())->take(5) as $event)
+                        @foreach($events->take(5) as $event)
                             <div class="mini-event">
                                 <div style="display: flex; gap: 15px; align-items: center;">
                                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
                                     <div>
                                         <h4 class="mini-event-title">{{ $event->title }}</h4>
-                                        <p class="mini-event-time">{{ $event->event_time }}</p>
+                                        <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
                                         @if($event->category)
                                             <span class="event-tag" style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;">
                                                 {{ $event->category->name }}
@@ -516,7 +517,7 @@
             const eventForm = document.getElementById('eventForm');
 
             if (eventDateInput && !eventDateInput._flatpickr) {
-                flatpickr(eventDateInput, { dateFormat: "Y-m-d" });
+                flatpickr(eventDateInput, { dateFormat: "Y-m-d", minDate: "today" });
             }
 
             if (startTimeInput && !startTimeInput._flatpickr) {
@@ -562,7 +563,12 @@
             document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
         }
 
-        function openEventModal(dateStr) {
+function openEventModal(dateStr) {
+            const today = new Date().toISOString().split('T')[0];
+            if (dateStr < today) {
+                alert('Cannot schedule events in the past. Please select today or a future date.');
+                return;
+            }
             document.getElementById('eventDateInput').value = dateStr;
             document.getElementById('displayDate').innerText = dateStr;
             document.getElementById('eventModal').classList.add('active');
