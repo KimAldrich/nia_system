@@ -730,6 +730,8 @@ select[name="category"]:focus {
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 #admin-toggle-btn:hover {
@@ -961,25 +963,6 @@ fetch('/irrigated-chart-data')
     .then(data => {
         irrigatedStats = data;
     });
-function showMapLoader(message = 'Loading map data...') {
-    const loader = document.getElementById('map-loader');
-    const loaderText = document.getElementById('loader-text');
-
-    if (loaderText) {
-        loaderText.textContent = message;
-    }
-
-    if (loader) {
-        loader.style.display = 'flex';
-    }
-}
-
-function hideMapLoader() {
-    const loader = document.getElementById('map-loader');
-    if (loader) {
-        loader.style.display = 'none';
-    }
-}
 
 function buildAppUrl(path) {
     if (!path) {
@@ -991,7 +974,8 @@ function buildAppUrl(path) {
     }
 
     const normalizedPath = String(path).replace(/^\/+/, '');
-    return appBaseUrl ? `${appBaseUrl}/${normalizedPath}` : `/${normalizedPath}`;
+    const baseUrl = appBaseUrl || window.location.origin;
+    return new URL(normalizedPath, `${baseUrl.replace(/\/+$/, '')}/`).toString();
 }
 
 // Dagupan City Center
@@ -1214,6 +1198,36 @@ async function loadBaseMap() {
         onEachFeature: function(feature, layer) {
             const name = toTitleCase(getFeatureName(feature));
 
+            layer.bindTooltip(name, {
+                sticky: true,
+                direction: 'top',
+                className: 'municipality-label'
+            });
+//highlight on hover
+            layer.on('mouseover', function() {
+                layer.setStyle({
+                    color: '#f72a50',
+                    weight: 2,
+                    fillColor: '#bdbdbd',
+                    fillOpacity: 0.75
+                });
+
+                if (layer.bringToFront) {
+                    layer.bringToFront();
+                }
+
+                layer.openTooltip();
+            });
+
+            layer.on('mouseout', function() {
+                if (selectedBaseLayer === layer) {
+                    return;
+                }
+
+                geoLayer.resetStyle(layer);
+                layer.closeTooltip();
+            });
+
             layer.on('click', function() {
                 const mData = getMunicipalityData(name);
                 updateInfoPanel(name);
@@ -1332,8 +1346,41 @@ function normalizeGeoJson(data) {
     return data;
 }
 
+function hasRenderableFeatures(geoJson) {
+    const normalized = normalizeGeoJson(geoJson);
+
+    return Array.isArray(normalized?.features) && normalized.features.length > 0;
+}
+
+function isSupportedOverlayFile(fileName) {
+    const lowerName = String(fileName || '').toLowerCase();
+
+    return lowerName.endsWith('.geojson')
+        || lowerName.endsWith('.json')
+        || lowerName.endsWith('.kml')
+        || lowerName.endsWith('.kmz')
+        || lowerName.endsWith('.zip')
+        || lowerName.endsWith('.shp');
+}
+
+function getShapefileFamilyKey(fileName) {
+    const lowerName = String(fileName || '').toLowerCase();
+
+    if (lowerName.endsWith('.zip') || lowerName.endsWith('.shp')) {
+        return lowerName.replace(/\.(zip|shp)$/i, '');
+    }
+
+    return null;
+}
+
+function pauseForUi() {
+    return new Promise(resolve => {
+        window.setTimeout(resolve, 0);
+    });
+}
+
 async function convertStoredFileToGeoJson(fileUrl) {
-    const safeUrl = encodeURI(buildAppUrl(fileUrl));
+    const safeUrl = buildAppUrl(fileUrl);
     const lowerFileUrl = fileUrl.toLowerCase();
 
     if (lowerFileUrl.endsWith('.geojson') || lowerFileUrl.endsWith('.json')) {
@@ -1376,7 +1423,7 @@ async function convertStoredFileToGeoJson(fileUrl) {
         return toGeoJSON.kml(kmlDocument);
     }
 
-    if (lowerFileUrl.endsWith('.shp')) {
+    if (lowerFileUrl.endsWith('.zip') || lowerFileUrl.endsWith('.shp')) {
         return await shp(safeUrl);
     }
 
@@ -1445,82 +1492,62 @@ async function showOverlayCategory(categoryKey) {
     const config = overlayGroups[categoryKey];
 
     if (!config || !config.files.length) {
-        updateStatus('No files found for ' + (config?.label || categoryKey), true);
+        updateStatus('No files found for ' + (config?.label || categoryKey) + '.', true);
         return;
     }
 
     if (!overlayLayers[categoryKey]) {
         const layers = [];
-        const loadedShapeBases = new Set();
+        const failedFiles = [];
 
         for (let index = 0; index < config.files.length; index++) {
             const file = config.files[index];
-            const name = file.name.toLowerCase();
 
-            // ✅ Allow only supported files
-            const isGeoJson = name.endsWith('.geojson') || name.endsWith('.json');
-            const isKml = name.endsWith('.kml');
-            const isKmz = name.endsWith('.kmz');
-            const isShp = name.endsWith('.shp');
-
-            if (!isGeoJson && !isKml && !isKmz && !isShp) {
-                continue;
-            }
-
-            // ✅ Prevent duplicate shapefile family loading
-            if (isShp) {
-                const base = name.replace('.shp', '');
-
-                if (loadedShapeBases.has(base)) {
-                    continue;
-                }
-
-                loadedShapeBases.add(base);
-            }
-
-            updateStatus(`Loading ${config.label} (${layers.length + 1})...`);
+            updateStatus(`Loading ${config.label} (${index + 1}/${config.files.length})...`);
 
             try {
                 const geoJson = await convertStoredFileToGeoJson(file.url);
-
-                if (!geoJson) continue;
-
-                const layer = createOverlayLayer(categoryKey, geoJson, file.name);
-                layers.push(layer);
-
+                layers.push(createOverlayLayer(categoryKey, geoJson, file.name));
             } catch (error) {
-                console.error('Failed to load:', file.name, error);
+                console.error('Failed to load file:', file.name, error);
+                failedFiles.push(file.name);
+            }
+
+            if ((index + 1) % 5 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
 
         if (!layers.length) {
-            updateStatus('No valid layers found for ' + config.label, true);
+            updateStatus('No valid polygons could be loaded for ' + config.label + '.', true);
             return;
         }
 
         overlayLayers[categoryKey] = L.featureGroup(layers);
+
+        if (failedFiles.length) {
+            console.warn('Overlay files that failed to load:', failedFiles);
+            updateStatus(
+                `${config.label} loaded with ${failedFiles.length} failed file(s): ${failedFiles.slice(0, 5).join(', ')}${failedFiles.length > 5 ? '...' : ''}`,
+                true
+            );
+        }
     }
 
     if (!map.hasLayer(overlayLayers[categoryKey])) {
         overlayLayers[categoryKey].addTo(map);
     }
 
-    // Bring to front by priority
-    const categoriesSorted = Object.keys(overlayLayers)
-        .sort((a, b) => overlayPriority[a] - overlayPriority[b]);
-
+    // bring layers to front based on priority
+    const categoriesSorted = Object.keys(overlayLayers).sort((a, b) => overlayPriority[a] - overlayPriority[b]);
     categoriesSorted.forEach(cat => {
         if (map.hasLayer(overlayLayers[cat])) {
-            overlayLayers[cat].eachLayer(layer => {
-                if (layer.bringToFront) layer.bringToFront();
-            });
+            overlayLayers[cat].eachLayer(layer => layer.bringToFront());
         }
     });
 
-    updateStatus(config.label + ' loaded successfully.');
+    updateStatus(config.label + ' is now highlighted on the map.');
 }
-
-
 
 function hideOverlayCategory(categoryKey) {
     if (overlayLayers[categoryKey] && map.hasLayer(overlayLayers[categoryKey])) {
@@ -1531,22 +1558,25 @@ function hideOverlayCategory(categoryKey) {
     updateStatus((config?.label || 'Selected layer') + ' has been hidden.');
 }
 
-
-
 Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
     if (!checkbox) return;
 
     checkbox.addEventListener('change', async () => {
+        const loader = document.getElementById('map-loader');
+
         if (checkbox.checked) {
-            showMapLoader('Loading layer...');
+            // 1. Show the loader immediately
+            if (loader) loader.style.display = 'flex';
 
             try {
+                // 2. Wait for the heavy map data to load
                 await showOverlayCategory(categoryKey);
             } catch (error) {
                 console.error("Error loading map layer:", error);
                 updateStatus("Failed to load layer.", true);
             } finally {
-                hideMapLoader();
+                // 3. Hide the loader once finished (or if it fails)
+                if (loader) loader.style.display = 'none';
             }
         } else {
             hideOverlayCategory(categoryKey);
@@ -1639,20 +1669,14 @@ function showMiniMap(feature) {
 //         miniMap.fitBounds(miniGeoLayer.getBounds());
 //     }
 
-async function loadMunicipalityDataset() {
-    const response = await fetch(buildAppUrl('maps/municipalities.json'));
-
-    if (!response.ok) {
-        throw new Error('Unable to load municipality data.');
-    }
-
-    municipalityData = await response.json();
-    console.log("Municipality data loaded:", municipalityData);
-}
+fetch(buildAppUrl('maps/municipalities.json'))
+    .then(res => res.json())
+    .then(data => {
+        municipalityData = data;
+        console.log("Municipality data loaded:", municipalityData);
+    });
 
 (async function initializeMap() {
-    showMapLoader('Loading map...');
-
     try {
         // 1. Create the high-priority layer (Pane) for the Province Label
         // This ensures "PANGASINAN" stays above all other map layers
@@ -1660,18 +1684,12 @@ async function loadMunicipalityDataset() {
         map.getPane('provincePane').style.zIndex = 650;
         map.getPane('provincePane').style.pointerEvents = 'none';
 
-        // 2. Load the map data needed on first render
-        await Promise.all([
-            loadBaseMap(),
-            loadMunicipalityDataset()
-        ]);
+        // 2. Load the map data
+        await loadBaseMap();
 
-        updateStatus('Map is ready. Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.');
     } catch (error) {
         console.error(error);
         updateStatus(error.message, true);
-    } finally {
-        hideMapLoader();
     }
 })();
 
@@ -1686,7 +1704,6 @@ if (form) {
 
         const fileInput = document.getElementById('fileInput');
         const folderInput = document.getElementById('folderInput');
-        const submitButton = form.querySelector('.submit-btn');
 
         const files = fileInput.files;
         const folderFiles = folderInput.files;
@@ -1726,15 +1743,6 @@ if (form) {
         statusBoxUpload.className = 'upload-status upload-loading';
         statusBoxUpload.innerHTML = 'Uploading...';
 
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.classList.add('is-loading');
-        }
-
-        if (typeof showAppLoader === 'function') {
-            showAppLoader('Uploading map data...');
-        }
-
         try {
             const response = await fetch("{{ route('map.upload') }}", {
                 method: "POST",
@@ -1747,10 +1755,6 @@ if (form) {
                 statusBoxUpload.className = 'upload-status upload-success';
                 statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
                 form.reset();
-
-                if (typeof showLiveAlert === 'function') {
-                    showLiveAlert(result.message || `Uploaded ${result.files.length} file(s) successfully.`, 'success');
-                }
             } else {
                 throw new Error(result.message || 'Upload failed');
             }
@@ -1758,19 +1762,6 @@ if (form) {
         } catch (error) {
             statusBoxUpload.className = 'upload-status upload-error';
             statusBoxUpload.innerHTML = '❌ ' + error.message;
-
-            if (typeof showLiveAlert === 'function') {
-                showLiveAlert(error.message || 'Upload failed.', 'error');
-            }
-        } finally {
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.classList.remove('is-loading');
-            }
-
-            if (typeof hideAppLoader === 'function') {
-                hideAppLoader();
-            }
         }
     });
 }
@@ -1782,7 +1773,6 @@ const overlayPriority = {
 //Details
 
 let municipalityData = [];
-
 function getMunicipalityData(name) {
     return municipalityData.find(m =>
         m.name.toLowerCase() === name.toLowerCase()
@@ -1967,6 +1957,12 @@ const openBtn = document.getElementById('admin-toggle-btn');
 const closeBtn = document.getElementById('close-sidebar');
 const mainSidebar = document.getElementById('sidebar');
 
+if (openBtn) {
+    openBtn.style.display = 'flex';
+    openBtn.style.opacity = '1';
+    openBtn.style.visibility = 'visible';
+}
+
 // OPEN sidebar
 if (openBtn && adminSidebar) {
     openBtn.addEventListener('click', () => {
@@ -2073,5 +2069,27 @@ function getIrrigatedStatByName(name) {
     return key ? irrigatedStats[key] : null;
 }
 </script>
+<script>
+function showMapLoader(message = 'Loading map data...') {
+    const loader = document.getElementById('map-loader');
+    const loaderText = document.getElementById('loader-text');
 
+    if (loaderText) {
+        loaderText.textContent = message;
+    }
+
+    if (loader) {
+        loader.style.display = 'flex';
+    }
+}
+
+function hideMapLoader() {
+    const loader = document.getElementById('map-loader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+}
+
+
+</script>
 @endsection
