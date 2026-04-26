@@ -44,7 +44,7 @@
         .badge-light { background: #fda611; color: #ffffff; }
         .badge-outline { border: 1px solid #e4e4e7; color: #71717a; }
 
-        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 105px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
+        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 40px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px);}
         .btn-edit-icon { background: #e0e7ff; color: #4f46e5; border: none; min-width: 40px; height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12); flex-shrink: 0; white-space: nowrap; }
         .btn-edit-icon:hover { background: #c7d2fe; color: #3730a3; transform: translateY(-1px); }
@@ -171,7 +171,7 @@
             </form>
 
             @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
-                <button onclick="openProcAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                <button onclick="openProcAddModal()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                     + Add Data
                 </button>
             @endif

@@ -82,7 +82,7 @@
         
         .acc-badge { background: #f8fafc; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; font-weight: 700; color: #1e293b; font-size: 11px; display: inline-block; white-space: nowrap;}
 
-        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 105px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
+        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 40px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px); }
         .btn-edit-icon { background: #e0e7ff; color: #4f46e5; border: none; min-width: 40px; height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12); flex-shrink: 0; white-space: nowrap; }
         .btn-edit-icon:hover { background: #c7d2fe; color: #3730a3; transform: translateY(-1px); }
@@ -239,7 +239,7 @@
             Hydro-Georesistivity Status Monitoring
             <div style="display: flex; gap: 10px;">
                 @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
-                    <button onclick="openAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                    <button onclick="openAddModal()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                         + Add Data
                     </button>
                 @endif
@@ -356,7 +356,7 @@
             Monthly FSDE Status Report
             <div style="display: flex; gap: 10px;">
                 @if (auth()->check() && in_array(auth()->user()->role, ['fs_team', 'admin']))
-                    <button onclick="openFsdeAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                    <button onclick="openFsdeAddModal()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                         + Add Data
                     </button>
                 @endif

@@ -160,12 +160,12 @@
         }
 
         .toolbar-btn.add {
-            background: #0c4d05;
+            background: #2563eb;
             color: #ffffff;
         }
 
         .toolbar-btn.add:hover {
-            background: #083803;
+            background: #1d4ed8;
             transform: translateY(-1px);
         }
 
@@ -990,10 +990,10 @@
     {{-- // -------------------------------------------------------------------------------- --}}
     <div class="ui-card">
         <div class="section-title">
-            A. ACCOMPLISHMENT AS OF FEBRUARY 15, 2025 OF R&P WRSIS
+            A. ACCOMPLISHMENT OF SOCIAL AND ENVIRONMENTAL
             <div class="toolbar-actions">
                 @if ($canManageRpwsis)
-                    <button onclick="openModal()" class="toolbar-btn add">+ Add Record</button>
+                    <button onclick="openModal()" class="toolbar-btn add">+ Add Data</button>
                 @endif
                 <button onclick="exportExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1221,7 +1221,7 @@
             </div>
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openSummaryModal()" class="toolbar-btn add">+ Add Record</button>
+                    <button onclick="openSummaryModal()" class="toolbar-btn add">+ Add Data</button>
                 @endif
                 <button onclick="exportSummaryExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1428,7 +1428,7 @@
             B. Nursery Establishment
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openNurseryModal()" class="toolbar-btn add">+ Add Record</button>
+                    <button onclick="openNurseryModal()" class="toolbar-btn add">+ Add Data</button>
                 @endif
                 <button onclick="exportNurseryExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1552,7 +1552,7 @@
             C. Informative Signages Installed
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openSignagesModal()" class="toolbar-btn add">+ Add Record</button>
+                    <button onclick="openSignagesModal()" class="toolbar-btn add">+ Add Data</button>
                 @endif
                 <button onclick="exportSignagesExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1672,7 +1672,7 @@
             D. Other Infrastructures
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openInfrastructureModal()" class="toolbar-btn add">+ Add Record</button>
+                    <button onclick="openInfrastructureModal()" class="toolbar-btn add">+ Add Data</button>
                 @endif
                 <button onclick="exportInfrastructureExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>

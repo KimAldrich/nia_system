@@ -562,7 +562,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            min-width: 105px;
+            min-width: 40px;
             line-height: 1;
         }
 
@@ -571,16 +571,21 @@
             color: #4f46e5;
             border: none;
             min-width: 40px;
-            padding: 10px 16px;
-            border-radius: 10px;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 8px;
             font-family: 'Poppins', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12);
+            flex-shrink: 0;
+            white-space: nowrap;
             transition: 0.2s;
         }
 
@@ -654,7 +659,7 @@
             Project Completion Report Status Monitoring
             <div style="display: flex; gap: 10px;">
                 @if ($canManagePcr)
-                    <button onclick="openPcrAddModal()" style="background: #0c4d05; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                    <button onclick="openPcrAddModal()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                         + Add Data
                     </button>
                 @endif
