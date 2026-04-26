@@ -453,9 +453,9 @@ class PaoTeamController extends Controller
         $sheet->getStyle("A{$footerRow2}")->getFont()->setSize(9);
         $sheet->getStyle("A{$footerRow2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $this->addPowLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_6.png'), 'A1', 65, 45);
-        $this->addPowLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_4.png'), 'B1', 55, 45);
-        $this->addPowLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_5.png'), 'J1', 60, 45);
+        $this->addPowLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_6.png'), 'A1', 65, 45);
+        $this->addPowLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_4.png'), 'B1', 55, 45);
+        $this->addPowLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_5.png'), 'J1', 60, 45);
 
         $writer = new Xlsx($spreadsheet);
 

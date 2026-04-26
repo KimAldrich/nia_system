@@ -656,35 +656,49 @@ class FsTeamController extends Controller
 
         $currentRow = 14;
         foreach ($rows as $row) {
+            $contractAmount = $this->normalizeExcelNumber($row->contract_amount);
+            $actualObligation = $this->normalizeExcelNumber($row->actual_obligation);
+            $valueOfAccomplishment = $this->normalizeExcelNumber($row->value_of_acc);
+            $actualExpenditures = $this->normalizeExcelNumber($row->actual_expenditures);
+            $previousPhy = $this->normalizeExcelNumber($row->{$previousMonthKey . '_phy'});
+            $previousFin = $this->normalizeExcelNumber($row->{$previousMonthKey . '_fin'});
+            $currentPhy = $this->normalizeExcelNumber($row->{$currentMonthKey . '_phy'});
+            $currentFin = $this->normalizeExcelNumber($row->{$currentMonthKey . '_fin'});
+
             $sheet->setCellValue("A{$currentRow}", $row->year);
             $sheet->setCellValue("B{$currentRow}", $row->project_name);
             $sheet->setCellValue("C{$currentRow}", $row->municipality);
             $sheet->setCellValue("D{$currentRow}", $row->type_of_study);
-            $sheet->setCellValue("E{$currentRow}", $row->contract_amount === null ? '' : (float) $row->contract_amount);
-            $sheet->setCellValue("F{$currentRow}", $row->contract_amount === null ? '' : (float) $row->contract_amount);
+            $sheet->setCellValue("E{$currentRow}", $contractAmount ?? '');
+            $sheet->setCellValue("F{$currentRow}", $contractAmount ?? '');
             $sheet->setCellValue("G{$currentRow}", $row->consultant);
             $sheet->setCellValue("H{$currentRow}", $row->period_start ? \Carbon\Carbon::parse($row->period_start)->format('F d, Y') : '');
             $sheet->setCellValue("I{$currentRow}", $row->period_end ? \Carbon\Carbon::parse($row->period_end)->format('F d, Y') : '');
-            $sheet->setCellValue("J{$currentRow}", $row->contract_amount === null ? '' : (float) $row->contract_amount);
-            $sheet->setCellValue("K{$currentRow}", $row->actual_obligation === null ? '' : (float) $row->actual_obligation);
-            $sheet->setCellValue("L{$currentRow}", $row->value_of_acc === null ? '' : (float) $row->value_of_acc);
-            $sheet->setCellValue("M{$currentRow}", $row->actual_expenditures === null ? '' : (float) $row->actual_expenditures);
-            $sheet->setCellValue("N{$currentRow}", $row->{$previousMonthKey . '_phy'} === null ? '' : (float) $row->{$previousMonthKey . '_phy'});
-            $sheet->setCellValue("O{$currentRow}", $row->{$previousMonthKey . '_fin'} === null ? '' : (float) $row->{$previousMonthKey . '_fin'});
-            $sheet->setCellValue("P{$currentRow}", $row->{$currentMonthKey . '_phy'} === null ? '' : (float) $row->{$currentMonthKey . '_phy'});
-            $sheet->setCellValue("Q{$currentRow}", $row->{$currentMonthKey . '_fin'} === null ? '' : (float) $row->{$currentMonthKey . '_fin'});
+            $sheet->setCellValue("J{$currentRow}", $contractAmount ?? '');
+            $sheet->setCellValue("K{$currentRow}", $actualObligation ?? '');
+            $sheet->setCellValue("L{$currentRow}", $valueOfAccomplishment ?? '');
+            $sheet->setCellValue("M{$currentRow}", $actualExpenditures ?? '');
+            $sheet->setCellValue("N{$currentRow}", $previousPhy ?? '');
+            $sheet->setCellValue("O{$currentRow}", $previousFin ?? '');
+            $sheet->setCellValue("P{$currentRow}", $currentPhy ?? '');
+            $sheet->setCellValue("Q{$currentRow}", $currentFin ?? '');
             $sheet->setCellValue("R{$currentRow}", $row->remarks);
             $sheet->getRowDimension($currentRow)->setRowHeight(34);
             $currentRow++;
         }
 
+        $totalContractAmount = $rows->sum(fn($row) => $this->normalizeExcelNumber($row->contract_amount) ?? 0.0);
+        $totalActualObligation = $rows->sum(fn($row) => $this->normalizeExcelNumber($row->actual_obligation) ?? 0.0);
+        $totalValueOfAccomplishment = $rows->sum(fn($row) => $this->normalizeExcelNumber($row->value_of_acc) ?? 0.0);
+        $totalActualExpenditures = $rows->sum(fn($row) => $this->normalizeExcelNumber($row->actual_expenditures) ?? 0.0);
+
         $sheet->setCellValue("A{$currentRow}", 'TOTAL FOR PANGASINAN');
-        $sheet->setCellValue("E{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("F{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("J{$currentRow}", (float) $rows->sum(fn($row) => $row->contract_amount ?? 0));
-        $sheet->setCellValue("K{$currentRow}", (float) $rows->sum(fn($row) => $row->actual_obligation ?? 0));
-        $sheet->setCellValue("L{$currentRow}", (float) $rows->sum(fn($row) => $row->value_of_acc ?? 0));
-        $sheet->setCellValue("M{$currentRow}", (float) $rows->sum(fn($row) => $row->actual_expenditures ?? 0));
+        $sheet->setCellValue("E{$currentRow}", $totalContractAmount);
+        $sheet->setCellValue("F{$currentRow}", $totalContractAmount);
+        $sheet->setCellValue("J{$currentRow}", $totalContractAmount);
+        $sheet->setCellValue("K{$currentRow}", $totalActualObligation);
+        $sheet->setCellValue("L{$currentRow}", $totalValueOfAccomplishment);
+        $sheet->setCellValue("M{$currentRow}", $totalActualExpenditures);
 
         $sheet->getStyle("A{$currentRow}:R{$currentRow}")->applyFromArray([
             'font' => [
@@ -781,9 +795,9 @@ class FsTeamController extends Controller
         ]);
         $sheet->getStyle("B{$signatureTitleRow}:Q{$signatureTitleRow}")->getFont()->setBold(false);
 
-        $this->addFsExcelLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_6.png'), 'G1', 109, 8, 8);
-        $this->addFsExcelLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_4.png'), 'I1', 109, 8, 10);
-        $this->addFsExcelLogo($sheet, storage_path('app/public/pow_pdf_assets/page_1_image_5.png'), 'K1', 109, 8, 8);
+        $this->addFsExcelLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_6.png'), 'G1', 109, 8, 8);
+        $this->addFsExcelLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_4.png'), 'I1', 109, 8, 10);
+        $this->addFsExcelLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_5.png'), 'K1', 109, 8, 8);
 
         $writer = new Xlsx($spreadsheet);
         $filename = 'MONTHLY FSDE STATUS REPORT ' . strtoupper($currentDate->format('Fj Y')) . '.xlsx';
@@ -829,5 +843,34 @@ class FsTeamController extends Controller
         $drawing->setOffsetX($offsetX);
         $drawing->setOffsetY($offsetY);
         $drawing->setWorksheet($sheet);
+    }
+
+    private function normalizeExcelNumber($value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $cleaned = trim($value);
+        if ($cleaned === '') {
+            return null;
+        }
+
+        $cleaned = str_replace(',', '', $cleaned);
+        $cleaned = preg_replace('/[^0-9.\-]/', '', $cleaned);
+
+        if ($cleaned === '' || !is_numeric($cleaned)) {
+            return null;
+        }
+
+        return (float) $cleaned;
     }
 }

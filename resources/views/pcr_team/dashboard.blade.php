@@ -441,12 +441,17 @@
 
         .custom-pagination {
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
             margin-top: 20px;
             gap: 8px;
             font-family: 'Poppins', sans-serif;
             flex-wrap: wrap;
+        }
+
+        .custom-pagination svg {
+            width: 16px;
+            height: 16px;
         }
 
         .custom-pagination .page-item {
@@ -735,11 +740,11 @@
         @if(isset($pcrStatusReports) && $pcrStatusReports->hasPages())
             <div class="custom-pagination">
                 @if ($pcrStatusReports->onFirstPage())
-                    <span class="page-item disabled">&lt;</span>
+                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
                 @else
-                    <a href="{{ $pcrStatusReports->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#pcrStatusSection">&lt;</a>
+                    <a href="{{ $pcrStatusReports->withQueryString()->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#pcrStatusSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
                 @endif
-                @foreach ($pcrStatusReports->links()->elements as $element)
+                @foreach ($pcrStatusReports->withQueryString()->links()->elements as $element)
                     @if (is_string($element))
                         <span class="page-item disabled">{{ $element }}</span>
                     @endif
@@ -754,9 +759,9 @@
                     @endif
                 @endforeach
                 @if ($pcrStatusReports->hasMorePages())
-                    <a href="{{ $pcrStatusReports->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#pcrStatusSection">&gt;</a>
+                    <a href="{{ $pcrStatusReports->withQueryString()->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#pcrStatusSection"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
                 @else
-                    <span class="page-item disabled">&gt;</span>
+                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
                 @endif
             </div>
         @endif
