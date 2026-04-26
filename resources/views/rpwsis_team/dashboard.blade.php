@@ -31,17 +31,26 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 40px;
+            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .main-column,
+        .side-column {
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
         }
 
         .ui-card {
             background: #ffffff;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            margin-bottom: 30px;
-            border: 1px solid #e4e4e7;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            border: none;
+            overflow: hidden;
         }
 
         .ui-card.dark {
@@ -125,6 +134,49 @@
 
         .status-select:hover {
             border-color: #18181b;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+            text-decoration: none;
+            line-height: 1.2;
+        }
+
+        .toolbar-btn.add {
+            background: #0c4d05;
+            color: #ffffff;
+        }
+
+        .toolbar-btn.add:hover {
+            background: #083803;
+            transform: translateY(-1px);
+        }
+
+        .toolbar-btn.export {
+            background: #16a34a;
+            color: #ffffff;
+        }
+
+        .toolbar-btn.export:hover {
+            background: #15803d;
+            transform: translateY(-1px);
         }
 
         /* CALENDAR STYLES */
@@ -264,22 +316,191 @@
 
         /* MODALS */
         .modal-overlay {
-            display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s;
         }
 
         .modal-box {
-            width: 95%;
-            max-width: 1000px;
+            width: 100%;
+            max-width: 900px;
             background: #fff;
-            margin: 40px auto;
-            border-radius: 14px;
-            padding: 25px;
+            margin: 0 auto;
+            border-radius: 16px;
+            padding: 30px;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .rpwsis-modal-box {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            margin: 0 auto;
+            border-radius: 16px;
+            padding: 30px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .rpwsis-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .rpwsis-modal-title {
+            margin: 0;
+            font-size: 18px;
+            color: #1e293b;
+        }
+
+        .rpwsis-modal-close {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            color: #a1a1aa;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .rpwsis-modal-close:hover {
+            color: #ef4444;
+        }
+
+        .modal-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal-section {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e4e4e7;
+        }
+
+        .modal-section-title {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #0c4d05;
+        }
+
+        .modal-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .modal-grid.two {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .modal-grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .modal-grid.four {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .modal-span-2 {
+            grid-column: span 2;
+        }
+
+        .modal-span-3 {
+            grid-column: span 3;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modern-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            outline: none;
+            background: #ffffff;
+            color: #1e293b;
+            transition: 0.2s;
+        }
+
+        .modern-input:focus {
+            border-color: #0c4d05;
+            box-shadow: 0 0 0 3px rgba(12, 77, 5, 0.1);
+        }
+
+        textarea.modern-input {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .modern-btn {
+            width: 100%;
+            padding: 10px;
+            background: #0c4d05;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .modern-btn:hover {
+            background: #083803;
+        }
+
+        .modern-btn-outline {
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+        }
+
+        .modern-btn-outline:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .delete-modal-overlay {
@@ -375,33 +596,40 @@
         .custom-table {
             border-collapse: collapse;
             min-width: 2000px;
+            width: 100%;
             background: #fff;
+            table-layout: fixed;
         }
 
         .custom-table thead th {
             font-size: 11px;
-            color: #3f3f46;
+            color: #a0aec0;
             font-weight: 600;
             text-align: center;
-            padding: 12px 8px;
-            border: 1px solid #e4e4e7;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f5f9;
             background: #f8fafc;
             vertical-align: middle;
             transition: 0.2s;
+            line-height: 1.4;
         }
 
         .custom-table tbody td {
-            padding: 12px 10px;
+            padding: 15px;
             font-size: 12px;
             text-align: center;
-            border: 1px solid #e4e4e7;
+            border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
-            color: #18181b;
+            color: #475569;
             transition: 0.2s;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .custom-table tbody tr:hover td {
-            background: #f0f9ff;
+            background: #f8fafc;
         }
 
         .sleek-table {
@@ -447,8 +675,97 @@
         }
 
         .col-action {
-            min-width: 80px;
-            text-align: right;
+            min-width: 110px;
+            text-align: center;
+        }
+
+        .btn-delete,
+        .table-delete-btn {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 40px;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-delete:hover,
+        .table-delete-btn:hover {
+            background: #fecaca;
+            color: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit-icon {
+            background: #e0e7ff;
+            color: #4f46e5;
+            border: none;
+            min-width: 40px;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .btn-edit-icon:hover {
+            background: #c7d2fe;
+            color: #3730a3;
+            transform: translateY(-1px);
+        }
+
+        .action-cell {
+            text-align: center;
+            white-space: nowrap !important;
+            word-wrap: normal !important;
+            overflow-wrap: normal !important;
+            word-break: normal !important;
+        }
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 5px;
+            min-width: max-content;
+        }
+
+        .btn-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: buttonSpin 0.7s linear infinite;
+        }
+
+        @keyframes buttonSpin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         #summaryTable {
@@ -557,15 +874,17 @@
         /* SCROLL BARS */
         .table-responsive-wrapper {
             width: 100%;
-            overflow-x: scroll;
+            overflow-x: auto;
             max-height: 600px;
             overflow-y: auto;
-            border-radius: 10px;
-            border: 1px solid #e4e4e7;
+            border-radius: 12px;
+            border: 1px solid #f1f5f9;
             -webkit-overflow-scrolling: touch;
             margin-bottom: 20px;
+            padding-bottom: 15px;
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 #f8fafc;
+            background: #ffffff;
         }
 
         .table-responsive-wrapper::-webkit-scrollbar {
@@ -587,6 +906,29 @@
 
         .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
+        }
+
+        @media (max-width: 1300px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .modal-grid.two,
+            .modal-grid.three,
+            .modal-grid.four {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-span-2,
+            .modal-span-3 {
+                grid-column: span 1;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
         }
     </style>
 
@@ -649,13 +991,14 @@
     <div class="ui-card">
         <div class="section-title">
             A. ACCOMPLISHMENT AS OF FEBRUARY 15, 2025 OF R&P WRSIS
-            <div style="display:flex; gap:8px;">
+            <div class="toolbar-actions">
                 @if ($canManageRpwsis)
-                    <button onclick="openModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb;">+ Add Record</button>
+                    <button onclick="openModal()" class="toolbar-btn add">+ Add Record</button>
                 @endif
-                <button onclick="exportExcel()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a;">Export Excel</button>
+                <button onclick="exportExcel()" class="toolbar-btn export">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export Excel
+                </button>
             </div>
         </div>
 
@@ -729,7 +1072,31 @@
                                 $r->exp,
                             ];
                         @endphp
-                        <tr>
+                        <tr data-record="{{ e(json_encode([
+                            'id' => $r->id,
+                            'region' => $r->region,
+                            'batch' => $r->batch,
+                            'allocation' => $r->allocation,
+                            'nis' => $r->nis,
+                            'activity' => $r->activity,
+                            'remarks' => $r->remarks,
+                            'amount' => $r->amount,
+                            'c1' => $r->c1,
+                            'c2' => $r->c2,
+                            'c3' => $r->c3,
+                            'c4' => $r->c4,
+                            'c5' => $r->c5,
+                            'c6' => $r->c6,
+                            'c7' => $r->c7,
+                            'c8' => $r->c8,
+                            'c9' => $r->c9,
+                            'c10' => $r->c10,
+                            'c11' => $r->c11,
+                            'c12' => $r->c12,
+                            'phy' => $r->phy,
+                            'fin' => $r->fin,
+                            'exp' => $r->exp,
+                        ])) }}">
                             @foreach ($statusValues as $index => $value)
                                 @php
                                     $colClass = 'col-standard';
@@ -763,9 +1130,19 @@
                                 </td>
                             @endforeach
                             @if ($canManageRpwsis)
-                                <td class="col-action" style="text-align:right;">
-                                    <button onclick="openDeleteModal('accomplishment', {{ $r->id }}, this)"
-                                        class="status-select">Delete</button>
+                                <td class="col-action action-cell">
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Record"
+                                            onclick="openAccomplishmentEditModal(this)">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                            Edit
+                                        </button>
+                                        <button type="button"
+                                            onclick="openDeleteModal('accomplishment', {{ $r->id }}, this)"
+                                            class="btn-delete" title="Delete Record">
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -775,71 +1152,57 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="statusModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
-                <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Accomplishment</h3>
-                        <button onclick="closeModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'"
-                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
+            <div id="statusModal" class="modal-overlay">
+                <div class="rpwsis-modal-box">
+                    <div class="rpwsis-modal-header">
+                        <h3 class="rpwsis-modal-title" id="statusModalTitle">Add Accomplishment</h3>
+                        <button onclick="closeModal()" class="rpwsis-modal-close">&times;</button>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project
-                                Information</p>
-                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="region" placeholder="Region" class="status-select" maxlength="100"
-                                    required>
-                                <input id="batch" placeholder="Batch" class="status-select" maxlength="100">
-                                <input id="allocation" placeholder="Allocation" class="status-select" maxlength="255">
-                                <input id="nis" placeholder="NIS" class="status-select" maxlength="255">
-                                <input id="activity" placeholder="Activity Type" class="status-select" maxlength="255"
-                                    required>
-                                <input id="remarks" placeholder="Remarks" class="status-select" maxlength="1000">
-                                <input id="amount" placeholder="Amount" class="status-select" type="number"
-                                    min="0" step="0.01">
+                    <div class="modal-stack">
+                        <div class="modal-section">
+                            <span class="modal-section-title">Project Information</span>
+                            <div class="modal-grid three">
+                                <input id="region" placeholder="Region" class="modern-input" maxlength="100" required>
+                                <input id="batch" placeholder="Batch" class="modern-input" maxlength="100">
+                                <input id="allocation" placeholder="Allocation" class="modern-input" maxlength="255">
+                                <input id="nis" placeholder="NIS" class="modern-input" maxlength="255">
+                                <input id="activity" placeholder="Activity Type" class="modern-input" maxlength="255" required>
+                                <input id="remarks" placeholder="Remarks" class="modern-input" maxlength="1000">
+                                <input id="amount" placeholder="Amount" class="modern-input" type="number" min="0" step="0.01">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Implementation
-                                Stage</p>
-                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="c1" placeholder="POW" class="status-select" maxlength="255">
-                                <input id="c2" placeholder="Nursery" class="status-select" maxlength="255">
-                                <input id="c3" placeholder="Seedling" class="status-select" maxlength="255">
-                                <input id="c4" placeholder="Procurement" class="status-select" maxlength="255">
-                                <input id="c5" placeholder="Site Prep" class="status-select" maxlength="255">
-                                <input id="c6" placeholder="Vegetative" class="status-select" maxlength="255">
-                                <input id="c7" placeholder="Wattling" class="status-select" maxlength="255">
-                                <input id="c8" placeholder="Right of Way" class="status-select" maxlength="255">
-                                <input id="c9" placeholder="Consultative" class="status-select" maxlength="255">
-                                <input id="c10" placeholder="Distribution" class="status-select" maxlength="255">
-                                <input id="c11" placeholder="Signages" class="status-select" maxlength="255">
-                                <input id="c12" placeholder="Monitoring" class="status-select" maxlength="255">
+                        <div class="modal-section">
+                            <span class="modal-section-title">Implementation Stage</span>
+                            <div class="modal-grid four">
+                                <input id="c1" placeholder="POW" class="modern-input" maxlength="255">
+                                <input id="c2" placeholder="Nursery" class="modern-input" maxlength="255">
+                                <input id="c3" placeholder="Seedling" class="modern-input" maxlength="255">
+                                <input id="c4" placeholder="Procurement" class="modern-input" maxlength="255">
+                                <input id="c5" placeholder="Site Prep" class="modern-input" maxlength="255">
+                                <input id="c6" placeholder="Vegetative" class="modern-input" maxlength="255">
+                                <input id="c7" placeholder="Wattling" class="modern-input" maxlength="255">
+                                <input id="c8" placeholder="Right of Way" class="modern-input" maxlength="255">
+                                <input id="c9" placeholder="Consultative" class="modern-input" maxlength="255">
+                                <input id="c10" placeholder="Distribution" class="modern-input" maxlength="255">
+                                <input id="c11" placeholder="Signages" class="modern-input" maxlength="255">
+                                <input id="c12" placeholder="Monitoring" class="modern-input" maxlength="255">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Project Metrics
-                            </p>
-                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="phy" placeholder="PHY %" class="status-select" type="number"
-                                    min="0" max="100" step="0.01">
-                                <input id="fin" placeholder="FIN %" class="status-select" type="number"
-                                    min="0" max="100" step="0.01">
-                                <input id="exp" placeholder="Expenditures" class="status-select" type="number"
-                                    min="0" step="0.01">
+                        <div class="modal-section">
+                            <span class="modal-section-title">Project Metrics</span>
+                            <div class="modal-grid three">
+                                <input id="phy" placeholder="PHY %" class="modern-input" type="number" min="0" max="100" step="0.01">
+                                <input id="fin" placeholder="FIN %" class="modern-input" type="number" min="0" max="100" step="0.01">
+                                <input id="exp" placeholder="Expenditures" class="modern-input" type="number" min="0" step="0.01">
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeModal()" class="status-select" style="width: auto;">Cancel</button>
-                            <button onclick="saveRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        <div class="modal-actions">
+                            <button onclick="closeModal()" class="modern-btn modern-btn-outline" type="button">Cancel</button>
+                            <button onclick="saveRecord(this)" class="modern-btn" id="statusModalActionBtn" type="button">Save Record</button>
                         </div>
                     </div>
                 </div>
@@ -856,15 +1219,14 @@
             REHABILITATION AND PROTECTION OF WATER RESOURCES SUPPORTING IRRIGATION SYSTEM (R&P WRSIS)
             <div style="font-size: 14px; font-weight: normal; margin-top: 4px; opacity: 0.9;">Summary of Accomplishment
             </div>
-            <div style="display:flex; gap:8px; margin-top: 12px;">
+            <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openSummaryModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb; width: auto;">+ Add
-                        Record</button>
+                    <button onclick="openSummaryModal()" class="toolbar-btn add">+ Add Record</button>
                 @endif
-                <button onclick="exportSummaryExcel()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a; width: auto;">Export
-                    Excel</button>
+                <button onclick="exportSummaryExcel()" class="toolbar-btn export">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export Excel
+                </button>
             </div>
         </div>
 
@@ -896,7 +1258,26 @@
                 </thead>
                 <tbody id="summaryTableBody">
                     @foreach ($summaryRecords ?? [] as $row)
-                        <tr>
+                        <tr data-record="{{ e(json_encode([
+                            'id' => $row->id,
+                            'sum_region' => $row->region,
+                            'sum_province' => $row->province,
+                            'sum_municipality' => $row->municipality,
+                            'sum_barangay' => $row->barangay,
+                            'sum_type' => $row->plantation_type,
+                            'sum_year' => $row->year_established,
+                            'sum_target_1' => $row->target_area_1,
+                            'sum_area_planted' => $row->area_planted,
+                            'sum_species' => $row->species_planted,
+                            'sum_spacing' => $row->spacing,
+                            'sum_maintenance' => $row->maintenance,
+                            'sum_target_2' => $row->target_area_2,
+                            'sum_actual' => $row->actual_area,
+                            'sum_mortality' => $row->mortality_rate,
+                            'sum_replanted' => $row->species_replanted,
+                            'sum_nis' => $row->nis_name,
+                            'sum_remarks' => $row->remarks,
+                        ])) }}">
                             <td class="col-standard">{{ $row->region }}</td>
                             <td class="col-standard">{{ $row->province }}</td>
                             <td class="col-standard">{{ $row->municipality }}</td>
@@ -963,9 +1344,18 @@
                             <td class="col-medium">{{ $row->nis_name }}</td>
                             <td class="col-medium">{{ $row->remarks }}</td>
                             @if ($canManageRpwsis)
-                                <td class="col-action" style="text-align:right;">
-                                    <button onclick="openDeleteModal('summary', {{ $row->id }}, this)"
-                                        class="status-select">Delete</button>
+                                <td class="col-action action-cell">
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Record"
+                                            onclick="openSummaryEditModal(this)">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                            Edit
+                                        </button>
+                                        <button type="button" onclick="openDeleteModal('summary', {{ $row->id }}, this)"
+                                            class="btn-delete" title="Delete Record">
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -975,66 +1365,53 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="summaryModal"
-                style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
-                <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Summary Record</h3>
-                        <button onclick="closeSummaryModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'"
-                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
+            <div id="summaryModal" class="modal-overlay">
+                <div class="rpwsis-modal-box">
+                    <div class="rpwsis-modal-header">
+                        <h3 class="rpwsis-modal-title" id="summaryModalTitle">Add Summary Record</h3>
+                        <button onclick="closeSummaryModal()" class="rpwsis-modal-close">&times;</button>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details
-                            </p>
-                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="sum_region" placeholder="Region" class="status-select">
-                                <input id="sum_province" placeholder="Province" class="status-select">
-                                <input id="sum_municipality" placeholder="Municipality" class="status-select">
-                                <input id="sum_barangay" placeholder="Barangay" class="status-select">
+                    <div class="modal-stack">
+                        <div class="modal-section">
+                            <span class="modal-section-title">Location Details</span>
+                            <div class="modal-grid four">
+                                <input id="sum_region" placeholder="Region" class="modern-input">
+                                <input id="sum_province" placeholder="Province" class="modern-input">
+                                <input id="sum_municipality" placeholder="Municipality" class="modern-input">
+                                <input id="sum_barangay" placeholder="Barangay" class="modern-input">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Plantation Info
-                            </p>
-                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="sum_type" placeholder="Type of Plantation" class="status-select">
-                                <input id="sum_year" placeholder="Year Established" class="status-select">
-                                <input id="sum_target_1" placeholder="Target Area" class="status-select">
-                                <input id="sum_area_planted" placeholder="Area Planted" class="status-select">
-                                <textarea id="sum_spacing" placeholder="Spacing (one per line)" class="status-select"
-                                    style="min-height: 60px; resize: vertical;"></textarea>
-                                <input id="sum_maintenance" placeholder="1st Year M&P" class="status-select">
-                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="status-select"
-                                    style="grid-column: span 3; height: 60px;"></textarea>
+                        <div class="modal-section">
+                            <span class="modal-section-title">Plantation Info</span>
+                            <div class="modal-grid three">
+                                <input id="sum_type" placeholder="Type of Plantation" class="modern-input">
+                                <input id="sum_year" placeholder="Year Established" class="modern-input">
+                                <input id="sum_target_1" placeholder="Target Area" class="modern-input">
+                                <input id="sum_area_planted" placeholder="Area Planted" class="modern-input">
+                                <textarea id="sum_spacing" placeholder="Spacing (one per line)" class="modern-input"></textarea>
+                                <input id="sum_maintenance" placeholder="1st Year M&P" class="modern-input">
+                                <textarea id="sum_species" placeholder="Species & Number Planted (Use Enter for new lines)" class="modern-input modal-span-3"></textarea>
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Replanting
-                                Status & Extras</p>
-                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="sum_target_2" placeholder="Replanting Target Area" class="status-select">
-                                <input id="sum_actual" placeholder="Replanting Actual Area" class="status-select">
-                                <input id="sum_mortality" placeholder="Mortality Rate" class="status-select">
-                                <input id="sum_nis" placeholder="Name of NIS" class="status-select">
-                                <input id="sum_remarks" placeholder="Remarks" class="status-select">
-                                <div style="grid-column: span 1;"></div>
-                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="status-select"
-                                    style="grid-column: span 3; height: 60px;"></textarea>
+                        <div class="modal-section">
+                            <span class="modal-section-title">Replanting Status & Extras</span>
+                            <div class="modal-grid three">
+                                <input id="sum_target_2" placeholder="Replanting Target Area" class="modern-input">
+                                <input id="sum_actual" placeholder="Replanting Actual Area" class="modern-input">
+                                <input id="sum_mortality" placeholder="Mortality Rate" class="modern-input">
+                                <input id="sum_nis" placeholder="Name of NIS" class="modern-input">
+                                <input id="sum_remarks" placeholder="Remarks" class="modern-input">
+                                <div></div>
+                                <textarea id="sum_replanted" placeholder="Species Replanted (Use Enter for new lines)" class="modern-input modal-span-3"></textarea>
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeSummaryModal()" class="status-select"
-                                style="width: auto;">Cancel</button>
-                            <button onclick="saveSummaryRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        <div class="modal-actions">
+                            <button onclick="closeSummaryModal()" class="modern-btn modern-btn-outline" type="button">Cancel</button>
+                            <button onclick="saveSummaryRecord(this)" class="modern-btn" id="summaryModalActionBtn" type="button">Save Record</button>
                         </div>
                     </div>
                 </div>
@@ -1049,15 +1426,14 @@
     <div class="ui-card" style="margin-top: 2rem;">
         <div class="section-title">
             B. Nursery Establishment
-            <div style="display:flex; gap:8px; margin-top: 12px;">
+            <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openNurseryModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb; width: auto;">+ Add
-                        Record</button>
+                    <button onclick="openNurseryModal()" class="toolbar-btn add">+ Add Record</button>
                 @endif
-                <button onclick="exportNurseryExcel()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a; width: auto;">Export
-                    Excel</button>
+                <button onclick="exportNurseryExcel()" class="toolbar-btn export">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export Excel
+                </button>
             </div>
         </div>
 
@@ -1082,7 +1458,19 @@
                 </thead>
                 <tbody id="nurseryTableBody">
                     @foreach ($nurseryRecords ?? [] as $row)
-                        <tr>
+                        <tr data-record="{{ e(json_encode([
+                            'id' => $row->id,
+                            'nur_region' => $row->region,
+                            'nur_province' => $row->province,
+                            'nur_municipality' => $row->municipality,
+                            'nur_barangay' => $row->barangay,
+                            'nur_x_coord' => $row->x_coordinates,
+                            'nur_y_coord' => $row->y_coordinates,
+                            'nur_seedlings' => $row->seedlings_produced,
+                            'nur_type' => $row->nursery_type,
+                            'nur_nis' => $row->nis_name,
+                            'nur_remarks' => $row->remarks,
+                        ])) }}">
                             <td class="col-standard">{{ $row->region }}</td>
                             <td class="col-standard">{{ $row->province }}</td>
                             <td class="col-standard">{{ $row->municipality }}</td>
@@ -1094,9 +1482,18 @@
                             <td class="col-medium">{{ $row->nis_name }}</td>
                             <td class="col-wide">{!! nl2br(e($row->remarks)) !!}</td>
                             @if ($canManageRpwsis)
-                                <td class="col-action" style="text-align:right;">
-                                    <button onclick="openDeleteModal('nursery', {{ $row->id }}, this)"
-                                        class="status-select">Delete</button>
+                                <td class="col-action action-cell">
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Record"
+                                            onclick="openNurseryEditModal(this)">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                            Edit
+                                        </button>
+                                        <button type="button" onclick="openDeleteModal('nursery', {{ $row->id }}, this)"
+                                            class="btn-delete" title="Delete Record">
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -1106,47 +1503,39 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="nurseryModal"
-                style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
-                <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Nursery Record</h3>
-                        <button onclick="closeNurseryModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'"
-                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
+            <div id="nurseryModal" class="modal-overlay">
+                <div class="rpwsis-modal-box">
+                    <div class="rpwsis-modal-header">
+                        <h3 class="rpwsis-modal-title" id="nurseryModalTitle">Add Nursery Record</h3>
+                        <button onclick="closeNurseryModal()" class="rpwsis-modal-close">&times;</button>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details
-                            </p>
-                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="nur_region" placeholder="Region" class="status-select">
-                                <input id="nur_province" placeholder="Province" class="status-select">
-                                <input id="nur_municipality" placeholder="Municipality" class="status-select">
-                                <input id="nur_barangay" placeholder="Barangay" class="status-select">
+                    <div class="modal-stack">
+                        <div class="modal-section">
+                            <span class="modal-section-title">Location Details</span>
+                            <div class="modal-grid four">
+                                <input id="nur_region" placeholder="Region" class="modern-input">
+                                <input id="nur_province" placeholder="Province" class="modern-input">
+                                <input id="nur_municipality" placeholder="Municipality" class="modern-input">
+                                <input id="nur_barangay" placeholder="Barangay" class="modern-input">
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Nursery Info</p>
-                            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                                <input id="nur_x_coord" placeholder="X-Coordinates" class="status-select">
-                                <input id="nur_y_coord" placeholder="Y-Coordinates" class="status-select">
-                                <input id="nur_seedlings" placeholder="Number Seedlings Produced" class="status-select">
-                                <input id="nur_type" placeholder="Type of Nursery" class="status-select">
-                                <input id="nur_nis" placeholder="Name of NIS" class="status-select">
-                                <textarea id="nur_remarks" placeholder="Remarks" class="status-select" style="grid-column: span 3; height: 60px;"></textarea>
+                        <div class="modal-section">
+                            <span class="modal-section-title">Nursery Info</span>
+                            <div class="modal-grid three">
+                                <input id="nur_x_coord" placeholder="X-Coordinates" class="modern-input">
+                                <input id="nur_y_coord" placeholder="Y-Coordinates" class="modern-input">
+                                <input id="nur_seedlings" placeholder="Number Seedlings Produced" class="modern-input">
+                                <input id="nur_type" placeholder="Type of Nursery" class="modern-input">
+                                <input id="nur_nis" placeholder="Name of NIS" class="modern-input">
+                                <textarea id="nur_remarks" placeholder="Remarks" class="modern-input modal-span-3"></textarea>
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeNurseryModal()" class="status-select"
-                                style="width: auto;">Cancel</button>
-                            <button onclick="saveNurseryRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        <div class="modal-actions">
+                            <button onclick="closeNurseryModal()" class="modern-btn modern-btn-outline" type="button">Cancel</button>
+                            <button onclick="saveNurseryRecord(this)" class="modern-btn" id="nurseryModalActionBtn" type="button">Save Record</button>
                         </div>
                     </div>
                 </div>
@@ -1161,15 +1550,14 @@
     <div class="ui-card" style="margin-top: 2rem;">
         <div class="section-title">
             C. Informative Signages Installed
-            <div style="display:flex; gap:8px; margin-top: 12px;">
+            <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openSignagesModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb; width: auto;">+ Add
-                        Record</button>
+                    <button onclick="openSignagesModal()" class="toolbar-btn add">+ Add Record</button>
                 @endif
-                <button onclick="exportSignagesExcel()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a; width: auto;">Export
-                    Excel</button>
+                <button onclick="exportSignagesExcel()" class="toolbar-btn export">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export Excel
+                </button>
             </div>
         </div>
 
@@ -1193,7 +1581,18 @@
                 </thead>
                 <tbody id="signagesTableBody">
                     @foreach ($signageRecords ?? [] as $row)
-                        <tr>
+                        <tr data-record="{{ e(json_encode([
+                            'id' => $row->id,
+                            'sig_region' => $row->region,
+                            'sig_province' => $row->province,
+                            'sig_municipality' => $row->municipality,
+                            'sig_barangay' => $row->barangay,
+                            'sig_x_coord' => $row->x_coordinates,
+                            'sig_y_coord' => $row->y_coordinates,
+                            'sig_type' => $row->signage_type,
+                            'sig_nis' => $row->nis_name,
+                            'sig_remarks' => $row->remarks,
+                        ])) }}">
                             <td class="col-standard">{{ $row->region }}</td>
                             <td class="col-standard">{{ $row->province }}</td>
                             <td class="col-standard">{{ $row->municipality }}</td>
@@ -1204,9 +1603,18 @@
                             <td class="col-medium">{{ $row->nis_name }}</td>
                             <td class="col-wide">{!! nl2br(e($row->remarks)) !!}</td>
                             @if ($canManageRpwsis)
-                                <td class="col-action" style="text-align:right;">
-                                    <button onclick="openDeleteModal('signages', {{ $row->id }}, this)"
-                                        class="status-select">Delete</button>
+                                <td class="col-action action-cell">
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Record"
+                                            onclick="openSignagesEditModal(this)">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                            Edit
+                                        </button>
+                                        <button type="button" onclick="openDeleteModal('signages', {{ $row->id }}, this)"
+                                            class="btn-delete" title="Delete Record">
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -1216,50 +1624,38 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="signagesModal"
-                style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
-                <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Signage Record</h3>
-                        <button onclick="closeSignagesModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;"
-                            onmouseover="this.style.color='#ef4444'"
-                            onmouseout="this.style.color='#a1a1aa'">&times;</button>
+            <div id="signagesModal" class="modal-overlay">
+                <div class="rpwsis-modal-box">
+                    <div class="rpwsis-modal-header">
+                        <h3 class="rpwsis-modal-title" id="signagesModalTitle">Add Signage Record</h3>
+                        <button onclick="closeSignagesModal()" class="rpwsis-modal-close">&times;</button>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details
-                            </p>
-                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="sig_region" placeholder="Region" class="status-select">
-                                <input id="sig_province" placeholder="Province" class="status-select">
-                                <input id="sig_municipality" placeholder="Municipality" class="status-select">
-                                <textarea id="sig_barangay" placeholder="Barangay (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
+                    <div class="modal-stack">
+                        <div class="modal-section">
+                            <span class="modal-section-title">Location Details</span>
+                            <div class="modal-grid four">
+                                <input id="sig_region" placeholder="Region" class="modern-input">
+                                <input id="sig_province" placeholder="Province" class="modern-input">
+                                <input id="sig_municipality" placeholder="Municipality" class="modern-input">
+                                <textarea id="sig_barangay" placeholder="Barangay (Use Enter for multiple)" class="modern-input"></textarea>
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Signage Info</p>
-                            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
-                                <textarea id="sig_x_coord" placeholder="X-Coordinates (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
-                                <textarea id="sig_y_coord" placeholder="Y-Coordinates (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
-                                <textarea id="sig_type" placeholder="Type of Signages (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
-                                <input id="sig_nis" placeholder="Name of NIS" class="status-select">
-                                <textarea id="sig_remarks" placeholder="Remarks" class="status-select" style="grid-column: span 2; height: 60px;"></textarea>
+                        <div class="modal-section">
+                            <span class="modal-section-title">Signage Info</span>
+                            <div class="modal-grid two">
+                                <textarea id="sig_x_coord" placeholder="X-Coordinates (Use Enter for multiple)" class="modern-input"></textarea>
+                                <textarea id="sig_y_coord" placeholder="Y-Coordinates (Use Enter for multiple)" class="modern-input"></textarea>
+                                <textarea id="sig_type" placeholder="Type of Signages (Use Enter for multiple)" class="modern-input"></textarea>
+                                <input id="sig_nis" placeholder="Name of NIS" class="modern-input">
+                                <textarea id="sig_remarks" placeholder="Remarks" class="modern-input modal-span-2"></textarea>
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeSignagesModal()" class="status-select"
-                                style="width: auto;">Cancel</button>
-                            <button onclick="saveSignagesRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        <div class="modal-actions">
+                            <button onclick="closeSignagesModal()" class="modern-btn modern-btn-outline" type="button">Cancel</button>
+                            <button onclick="saveSignagesRecord(this)" class="modern-btn" id="signagesModalActionBtn" type="button">Save Record</button>
                         </div>
                     </div>
                 </div>
@@ -1274,15 +1670,14 @@
     <div class="ui-card" style="margin-top: 2rem;">
         <div class="section-title">
             D. Other Infrastructures
-            <div style="display:flex; gap:8px; margin-top: 12px;">
+            <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
-                    <button onclick="openInfrastructureModal()" class="status-select"
-                        style="background-color: #2563eb; color: white; border-color: #2563eb; width: auto;">+ Add
-                        Record</button>
+                    <button onclick="openInfrastructureModal()" class="toolbar-btn add">+ Add Record</button>
                 @endif
-                <button onclick="exportInfrastructureExcel()" class="status-select"
-                    style="background-color: #16a34a; color: white; border-color: #16a34a; width: auto;">Export
-                    Excel</button>
+                <button onclick="exportInfrastructureExcel()" class="toolbar-btn export">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export Excel
+                </button>
             </div>
         </div>
 
@@ -1306,7 +1701,18 @@
                 </thead>
                 <tbody id="infrastructureTableBody">
                     @foreach ($infrastructureRecords ?? [] as $row)
-                        <tr>
+                        <tr data-record="{{ e(json_encode([
+                            'id' => $row->id,
+                            'inf_region' => $row->region,
+                            'inf_province' => $row->province,
+                            'inf_municipality' => $row->municipality,
+                            'inf_barangay' => $row->barangay,
+                            'inf_x_coord' => $row->x_coordinates,
+                            'inf_y_coord' => $row->y_coordinates,
+                            'inf_type' => $row->infrastructure_type,
+                            'inf_nis' => $row->nis_name,
+                            'inf_remarks' => $row->remarks,
+                        ])) }}">
                             <td class="col-standard">{{ $row->region }}</td>
                             <td class="col-standard">{{ $row->province }}</td>
                             <td class="col-standard">{{ $row->municipality }}</td>
@@ -1317,9 +1723,18 @@
                             <td class="col-medium">{{ $row->nis_name }}</td>
                             <td class="col-wide">{!! nl2br(e($row->remarks)) !!}</td>
                             @if ($canManageRpwsis)
-                                <td class="col-action" style="text-align:right;">
-                                    <button onclick="openDeleteModal('infrastructure', {{ $row->id }}, this)"
-                                        class="status-select">Delete</button>
+                                <td class="col-action action-cell">
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn-edit-icon" title="Edit Record"
+                                            onclick="openInfrastructureEditModal(this)">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                                            Edit
+                                        </button>
+                                        <button type="button" onclick="openDeleteModal('infrastructure', {{ $row->id }}, this)"
+                                            class="btn-delete" title="Delete Record">
+                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
@@ -1329,49 +1744,38 @@
         </div>
 
         @if ($canManageRpwsis)
-            <div id="infrastructureModal"
-                style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;">
-                <div
-                    style="width:90%; max-width:900px; background:#fff; margin:40px auto; border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.2); max-height:90vh; overflow:auto;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; color:#0c4d05;">Add Infrastructure Record</h3>
-                        <button onclick="closeInfrastructureModal()"
-                            style="background:transparent; border:none; font-size:24px; color:#a1a1aa; cursor:pointer; padding:0; line-height:1; outline:none;">&times;</button>
+            <div id="infrastructureModal" class="modal-overlay">
+                <div class="rpwsis-modal-box">
+                    <div class="rpwsis-modal-header">
+                        <h3 class="rpwsis-modal-title" id="infrastructureModalTitle">Add Infrastructure Record</h3>
+                        <button onclick="closeInfrastructureModal()" class="rpwsis-modal-close">&times;</button>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Location Details
-                            </p>
-                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                                <input id="inf_region" placeholder="Region" class="status-select">
-                                <input id="inf_province" placeholder="Province" class="status-select">
-                                <input id="inf_municipality" placeholder="Municipality" class="status-select">
-                                <textarea id="inf_barangay" placeholder="Barangay (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
+                    <div class="modal-stack">
+                        <div class="modal-section">
+                            <span class="modal-section-title">Location Details</span>
+                            <div class="modal-grid four">
+                                <input id="inf_region" placeholder="Region" class="modern-input">
+                                <input id="inf_province" placeholder="Province" class="modern-input">
+                                <input id="inf_municipality" placeholder="Municipality" class="modern-input">
+                                <textarea id="inf_barangay" placeholder="Barangay (Use Enter for multiple)" class="modern-input"></textarea>
                             </div>
                         </div>
 
-                        <div style="background:#f9fafb; padding:15px; border-radius:10px; border:1px solid #e4e4e7;">
-                            <p style="font-size:12px; font-weight:600; margin-bottom:10px; color:#0c4d05;">Infrastructure
-                                Info</p>
-                            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
-                                <textarea id="inf_x_coord" placeholder="X-Coordinates (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
-                                <textarea id="inf_y_coord" placeholder="Y-Coordinates (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
-                                <textarea id="inf_type" placeholder="Type of Infrastructure (Use Enter for multiple)" class="status-select"
-                                    style="height: 60px;"></textarea>
-                                <input id="inf_nis" placeholder="Name of NIS" class="status-select">
-                                <textarea id="inf_remarks" placeholder="Remarks" class="status-select" style="grid-column: span 2; height: 60px;"></textarea>
+                        <div class="modal-section">
+                            <span class="modal-section-title">Infrastructure Info</span>
+                            <div class="modal-grid two">
+                                <textarea id="inf_x_coord" placeholder="X-Coordinates (Use Enter for multiple)" class="modern-input"></textarea>
+                                <textarea id="inf_y_coord" placeholder="Y-Coordinates (Use Enter for multiple)" class="modern-input"></textarea>
+                                <textarea id="inf_type" placeholder="Type of Infrastructure (Use Enter for multiple)" class="modern-input"></textarea>
+                                <input id="inf_nis" placeholder="Name of NIS" class="modern-input">
+                                <textarea id="inf_remarks" placeholder="Remarks" class="modern-input modal-span-2"></textarea>
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeInfrastructureModal()" class="status-select"
-                                style="width: auto;">Cancel</button>
-                            <button onclick="saveInfrastructureRecord(this)" class="status-select"
-                                style="background:#0c4d05; color:white; width: auto;">Save Record</button>
+                        <div class="modal-actions">
+                            <button onclick="closeInfrastructureModal()" class="modern-btn modern-btn-outline" type="button">Cancel</button>
+                            <button onclick="saveInfrastructureRecord(this)" class="modern-btn" id="infrastructureModalActionBtn" type="button">Save Record</button>
                         </div>
                     </div>
                 </div>
@@ -1388,6 +1792,16 @@
                 <div class="delete-modal-actions">
                     <button type="button" onclick="closeDeleteModal()" class="delete-modal-btn cancel">Cancel</button>
                     <button type="button" id="confirmDeleteBtn" class="delete-modal-btn confirm">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="rpwsisSuccessModal">
+            <div class="modal-box">
+                <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+                <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">Saved successfully.</p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closeRpwsisSuccessModal()" class="modern-btn" style="flex: 1;">OK</button>
                 </div>
             </div>
         </div>
@@ -1484,63 +1898,290 @@
 
         function setButtonLoading(button, isLoading, loadingText = 'Saving...') {
             if (!button) return;
-            if (!button.dataset.originalText) {
+            if (!button.dataset.originalText && !button.dataset.originalHtml) {
                 button.dataset.originalText = button.textContent.trim();
+                button.dataset.originalHtml = button.innerHTML;
             }
             button.disabled = isLoading;
             button.style.opacity = isLoading ? '0.7' : '1';
             button.style.cursor = isLoading ? 'not-allowed' : 'pointer';
-            button.textContent = isLoading ? loadingText : button.dataset.originalText;
+            const iconButton = button.classList.contains('btn-edit-icon') || button.classList.contains('btn-delete');
+            if (iconButton) {
+                button.innerHTML = isLoading ? '<span class="btn-spinner"></span>' : button.dataset.originalHtml;
+            } else {
+                button.textContent = isLoading ? loadingText : button.dataset.originalText;
+            }
+        }
+
+        async function parseJsonResponse(res, fallbackMessage) {
+            const contentType = res.headers.get('content-type') || '';
+            const payload = contentType.includes('application/json')
+                ? await res.json().catch(() => null)
+                : null;
+
+            if (!res.ok || !payload) {
+                const validationMessage = payload?.message || Object.values(payload?.errors || {}).flat()[0];
+                throw new Error(validationMessage || fallbackMessage);
+            }
+
+            if (payload.success === false) {
+                throw new Error(payload.message || fallbackMessage);
+            }
+
+            return payload;
+        }
+
+        function showRpwsisSuccessModal(message, title = 'Success') {
+            if (typeof window.openAsyncSuccessModal === 'function') {
+                const opened = window.openAsyncSuccessModal('#rpwsisSuccessModal', message, title);
+                if (opened) return;
+            }
+
+            if (typeof window.showLiveAlert === 'function') {
+                window.showLiveAlert(message, 'success');
+                return;
+            }
+
+            alert(message);
+        }
+
+        function closeRpwsisSuccessModal() {
+            const modal = document.getElementById('rpwsisSuccessModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        const modalConfig = {
+            accomplishment: {
+                modalId: 'statusModal',
+                titleId: 'statusModalTitle',
+                actionBtnId: 'statusModalActionBtn',
+                addTitle: 'Add Accomplishment',
+                editTitle: 'Edit Accomplishment',
+                addText: 'Save Data',
+                editText: 'Update Data',
+                fields: ['region', 'batch', 'allocation', 'nis', 'activity', 'remarks', 'amount', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c11', 'c12', 'phy', 'fin', 'exp'],
+            },
+            summary: {
+                modalId: 'summaryModal',
+                titleId: 'summaryModalTitle',
+                actionBtnId: 'summaryModalActionBtn',
+                addTitle: 'Add Summary Record',
+                editTitle: 'Edit Summary Record',
+                addText: 'Save Data',
+                editText: 'Update Data',
+                fields: ['sum_region', 'sum_province', 'sum_municipality', 'sum_barangay', 'sum_type', 'sum_year', 'sum_target_1', 'sum_area_planted', 'sum_species', 'sum_spacing', 'sum_maintenance', 'sum_target_2', 'sum_actual', 'sum_mortality', 'sum_replanted', 'sum_nis', 'sum_remarks'],
+            },
+            nursery: {
+                modalId: 'nurseryModal',
+                titleId: 'nurseryModalTitle',
+                actionBtnId: 'nurseryModalActionBtn',
+                addTitle: 'Add Nursery Record',
+                editTitle: 'Edit Nursery Record',
+                addText: 'Save Data',
+                editText: 'Update Data',
+                fields: ['nur_region', 'nur_province', 'nur_municipality', 'nur_barangay', 'nur_x_coord', 'nur_y_coord', 'nur_seedlings', 'nur_type', 'nur_nis', 'nur_remarks'],
+            },
+            signages: {
+                modalId: 'signagesModal',
+                titleId: 'signagesModalTitle',
+                actionBtnId: 'signagesModalActionBtn',
+                addTitle: 'Add Signage Record',
+                editTitle: 'Edit Signage Record',
+                addText: 'Save Data',
+                editText: 'Update Data',
+                fields: ['sig_region', 'sig_province', 'sig_municipality', 'sig_barangay', 'sig_x_coord', 'sig_y_coord', 'sig_type', 'sig_nis', 'sig_remarks'],
+            },
+            infrastructure: {
+                modalId: 'infrastructureModal',
+                titleId: 'infrastructureModalTitle',
+                actionBtnId: 'infrastructureModalActionBtn',
+                addTitle: 'Add Infrastructure Record',
+                editTitle: 'Edit Infrastructure Record',
+                addText: 'Save Data',
+                editText: 'Update Data',
+                fields: ['inf_region', 'inf_province', 'inf_municipality', 'inf_barangay', 'inf_x_coord', 'inf_y_coord', 'inf_type', 'inf_nis', 'inf_remarks'],
+            }
+        };
+
+        const currentEditState = {
+            accomplishment: null,
+            summary: null,
+            nursery: null,
+            signages: null,
+            infrastructure: null,
+        };
+
+        function resetModalForm(type) {
+            const config = modalConfig[type];
+            if (!config) return;
+            config.fields.forEach(id => {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.value = '';
+                    field.style.borderColor = '';
+                    field.style.boxShadow = '';
+                }
+            });
+        }
+
+        function configureModalForMode(type, mode = 'add') {
+            const config = modalConfig[type];
+            if (!config) return;
+            const title = document.getElementById(config.titleId);
+            const actionBtn = document.getElementById(config.actionBtnId);
+            if (title) title.textContent = mode === 'edit' ? config.editTitle : config.addTitle;
+            if (actionBtn) {
+                actionBtn.textContent = mode === 'edit' ? config.editText : config.addText;
+                actionBtn.disabled = false;
+                actionBtn.style.opacity = '1';
+                actionBtn.style.cursor = 'pointer';
+                actionBtn.dataset.originalText = mode === 'edit' ? config.editText : config.addText;
+                actionBtn.dataset.originalHtml = mode === 'edit' ? config.editText : config.addText;
+            }
+        }
+
+        function showModal(type) {
+            const config = modalConfig[type];
+            const modal = config ? document.getElementById(config.modalId) : null;
+            if (modal) modal.classList.add('active');
+        }
+
+        function hideModal(type) {
+            const config = modalConfig[type];
+            const modal = config ? document.getElementById(config.modalId) : null;
+            if (modal) modal.classList.remove('active');
+            currentEditState[type] = null;
+            configureModalForMode(type, 'add');
+            resetModalForm(type);
+        }
+
+        function populateModalFields(type, record) {
+            const config = modalConfig[type];
+            if (!config) return;
+            config.fields.forEach(id => {
+                const field = document.getElementById(id);
+                if (field) field.value = record?.[id] ?? '';
+            });
+        }
+
+        function getRowRecord(button) {
+            const row = button?.closest('tr') || button?.closest('[data-record]');
+            const rawRecord = row?.dataset?.record || row?.getAttribute?.('data-record');
+            if (!rawRecord) return null;
+
+            try {
+                return {
+                    row,
+                    record: JSON.parse(rawRecord)
+                };
+            } catch (error) {
+                try {
+                    const decoder = document.createElement('textarea');
+                    decoder.innerHTML = rawRecord;
+
+                    return {
+                        row,
+                        record: JSON.parse(decoder.value)
+                    };
+                } catch (nestedError) {
+                    return null;
+                }
+            }
+        }
+
+        function openEditModal(type, button) {
+            const payload = getRowRecord(button);
+            if (!payload?.record?.id) {
+                if (typeof window.showLiveAlert === 'function') {
+                    window.showLiveAlert('Unable to open the edit modal for this record.', 'error');
+                } else {
+                    alert('Unable to open the edit modal for this record.');
+                }
+                return;
+            }
+            currentEditState[type] = {
+                id: payload.record.id,
+                row: payload.row,
+            };
+            configureModalForMode(type, 'edit');
+            resetModalForm(type);
+            populateModalFields(type, payload.record);
+            showModal(type);
         }
 
         function openModal() {
-            const modal = document.getElementById('statusModal');
-            if (modal) modal.style.display = 'block';
+            currentEditState.accomplishment = null;
+            resetModalForm('accomplishment');
+            configureModalForMode('accomplishment', 'add');
+            showModal('accomplishment');
         }
 
         function closeModal() {
-            const modal = document.getElementById('statusModal');
-            if (modal) modal.style.display = 'none';
+            hideModal('accomplishment');
         }
 
         function openSummaryModal() {
-            const modal = document.getElementById('summaryModal');
-            if (modal) modal.style.display = 'block';
+            currentEditState.summary = null;
+            resetModalForm('summary');
+            configureModalForMode('summary', 'add');
+            showModal('summary');
         }
 
         function closeSummaryModal() {
-            const modal = document.getElementById('summaryModal');
-            if (modal) modal.style.display = 'none';
+            hideModal('summary');
         }
 
         function openNurseryModal() {
-            const modal = document.getElementById('nurseryModal');
-            if (modal) modal.style.display = 'block';
+            currentEditState.nursery = null;
+            resetModalForm('nursery');
+            configureModalForMode('nursery', 'add');
+            showModal('nursery');
         }
 
         function closeNurseryModal() {
-            const modal = document.getElementById('nurseryModal');
-            if (modal) modal.style.display = 'none';
+            hideModal('nursery');
         }
 
         function openSignagesModal() {
-            const modal = document.getElementById('signagesModal');
-            if (modal) modal.style.display = 'block';
+            currentEditState.signages = null;
+            resetModalForm('signages');
+            configureModalForMode('signages', 'add');
+            showModal('signages');
         }
 
         function closeSignagesModal() {
-            const modal = document.getElementById('signagesModal');
-            if (modal) modal.style.display = 'none';
+            hideModal('signages');
         }
 
         function openInfrastructureModal() {
-            const modal = document.getElementById('infrastructureModal');
-            if (modal) modal.style.display = 'block';
+            currentEditState.infrastructure = null;
+            resetModalForm('infrastructure');
+            configureModalForMode('infrastructure', 'add');
+            showModal('infrastructure');
         }
 
         function closeInfrastructureModal() {
-            const modal = document.getElementById('infrastructureModal');
-            if (modal) modal.style.display = 'none';
+            hideModal('infrastructure');
+        }
+
+        function openAccomplishmentEditModal(button) {
+            openEditModal('accomplishment', button);
+        }
+
+        function openSummaryEditModal(button) {
+            openEditModal('summary', button);
+        }
+
+        function openNurseryEditModal(button) {
+            openEditModal('nursery', button);
+        }
+
+        function openSignagesEditModal(button) {
+            openEditModal('signages', button);
+        }
+
+        function openInfrastructureEditModal(button) {
+            openEditModal('infrastructure', button);
         }
 
         let pendingDelete = {
@@ -1615,6 +2256,10 @@
             deleteAccomplishment(pendingDelete.id, pendingDelete.button, true);
         }
 
+        function getDeleteConfirmButton() {
+            return document.getElementById('confirmDeleteBtn');
+        }
+
         document.addEventListener('click', function(e) {
             const statusModal = document.getElementById('statusModal');
             const summaryModal = document.getElementById('summaryModal');
@@ -1635,6 +2280,210 @@
             const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
             if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', performDelete);
         });
+
+        function escapeAttribute(value) {
+            return escapeSummaryHtml(value).replace(/"/g, '&quot;');
+        }
+
+        function serializeRecord(record) {
+            return escapeAttribute(JSON.stringify(record ?? {}));
+        }
+
+        function formatText(value) {
+            return value ? String(value).replace(/\n/g, '<br>') : '-';
+        }
+
+        function renderActionButtons(type, id) {
+            return `@if ($canManageRpwsis)
+                <td class="col-action action-cell">
+                    <div class="action-buttons">
+                        <button type="button" class="btn-edit-icon" title="Edit Record" onclick="open${type}EditModal(this)">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
+                            Edit
+                        </button>
+                        <button type="button" class="btn-delete" title="Delete Record" onclick="openDeleteModal('${type.toLowerCase()}', ${id}, this)">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </td>
+            @endif`;
+        }
+
+        function renderAccomplishmentRow(record) {
+            const rowValues = [
+                record.region, record.batch, record.allocation, record.nis, record.activity, record.remarks, record.amount,
+                record.c1, record.c2, record.c3, record.c4, record.c5, record.c6, record.c7, record.c8, record.c9, record.c10,
+                record.c11, record.c12, record.phy, record.fin, record.exp
+            ];
+
+            const renderedCells = rowValues.map((value, index) => {
+                let colClass = 'col-standard';
+                if (index === 4) colClass = 'col-activity';
+                if (index === 5 || (index >= 14 && index <= 18)) colClass = 'col-remarks';
+                if (index === 6) colClass = 'col-amount';
+                const className = `${(index >= 7 && index <= 18) ? 'impl ' : ''}${colClass} status-compact-cell`.trim();
+                return renderStatusExpandableCell(value, className);
+            }).join('');
+
+            return `<tr data-record="${serializeRecord(record)}">${renderedCells}${renderActionButtons('Accomplishment', record.id)}</tr>`;
+        }
+
+        function renderSummaryRow(record) {
+            return `<tr data-record="${serializeRecord({
+                id: record.id,
+                sum_region: record.region,
+                sum_province: record.province,
+                sum_municipality: record.municipality,
+                sum_barangay: record.barangay,
+                sum_type: record.plantation_type,
+                sum_year: record.year_established,
+                sum_target_1: record.target_area_1,
+                sum_area_planted: record.area_planted,
+                sum_species: record.species_planted,
+                sum_spacing: record.spacing,
+                sum_maintenance: record.maintenance,
+                sum_target_2: record.target_area_2,
+                sum_actual: record.actual_area,
+                sum_mortality: record.mortality_rate,
+                sum_replanted: record.species_replanted,
+                sum_nis: record.nis_name,
+                sum_remarks: record.remarks,
+            })}">
+                <td class="col-standard">${record.region || '-'}</td>
+                <td class="col-standard">${record.province || '-'}</td>
+                <td class="col-standard">${record.municipality || '-'}</td>
+                <td class="col-standard">${record.barangay || '-'}</td>
+                <td class="col-medium">${record.plantation_type || '-'}</td>
+                <td class="col-standard">${record.year_established || '-'}</td>
+                <td class="col-standard">${record.target_area_1 || '-'}</td>
+                <td class="col-standard">${record.area_planted || '-'}</td>
+                <td class="col-expandable" data-export-value="${escapeSummaryHtml(record.species_planted || '')}">${renderExpandableSummaryCell(record.species_planted, 60)}</td>
+                <td class="col-expandable" data-export-value="${escapeSummaryHtml(record.spacing || '')}">${renderExpandableSummaryCell(record.spacing, 45)}</td>
+                <td class="col-medium">${record.maintenance || '-'}</td>
+                <td class="col-standard">${record.target_area_2 || '-'}</td>
+                <td class="col-standard">${record.actual_area || '-'}</td>
+                <td class="col-standard">${record.mortality_rate || '-'}</td>
+                <td class="col-expandable" data-export-value="${escapeSummaryHtml(record.species_replanted || '')}">${renderExpandableSummaryCell(record.species_replanted, 60)}</td>
+                <td class="col-medium">${record.nis_name || '-'}</td>
+                <td class="col-medium">${record.remarks || '-'}</td>
+                ${renderActionButtons('Summary', record.id)}
+            </tr>`;
+        }
+
+        function renderNurseryRow(record) {
+            return `<tr data-record="${serializeRecord({
+                id: record.id,
+                nur_region: record.region,
+                nur_province: record.province,
+                nur_municipality: record.municipality,
+                nur_barangay: record.barangay,
+                nur_x_coord: record.x_coordinates,
+                nur_y_coord: record.y_coordinates,
+                nur_seedlings: record.seedlings_produced,
+                nur_type: record.nursery_type,
+                nur_nis: record.nis_name,
+                nur_remarks: record.remarks,
+            })}">
+                <td class="col-standard">${record.region || '-'}</td>
+                <td class="col-standard">${record.province || '-'}</td>
+                <td class="col-standard">${record.municipality || '-'}</td>
+                <td class="col-standard">${record.barangay || '-'}</td>
+                <td class="col-medium">${record.x_coordinates || '-'}</td>
+                <td class="col-medium">${record.y_coordinates || '-'}</td>
+                <td class="col-medium">${record.seedlings_produced || '-'}</td>
+                <td class="col-medium">${record.nursery_type || '-'}</td>
+                <td class="col-medium">${record.nis_name || '-'}</td>
+                <td class="col-wide">${formatText(record.remarks)}</td>
+                ${renderActionButtons('Nursery', record.id)}
+            </tr>`;
+        }
+
+        function renderSignagesRow(record) {
+            return `<tr data-record="${serializeRecord({
+                id: record.id,
+                sig_region: record.region,
+                sig_province: record.province,
+                sig_municipality: record.municipality,
+                sig_barangay: record.barangay,
+                sig_x_coord: record.x_coordinates,
+                sig_y_coord: record.y_coordinates,
+                sig_type: record.signage_type,
+                sig_nis: record.nis_name,
+                sig_remarks: record.remarks,
+            })}">
+                <td class="col-standard">${record.region || '-'}</td>
+                <td class="col-standard">${record.province || '-'}</td>
+                <td class="col-standard">${record.municipality || '-'}</td>
+                <td class="col-standard">${formatText(record.barangay)}</td>
+                <td class="col-medium">${formatText(record.x_coordinates)}</td>
+                <td class="col-medium">${formatText(record.y_coordinates)}</td>
+                <td class="col-medium">${formatText(record.signage_type)}</td>
+                <td class="col-medium">${record.nis_name || '-'}</td>
+                <td class="col-wide">${formatText(record.remarks)}</td>
+                ${renderActionButtons('Signages', record.id)}
+            </tr>`;
+        }
+
+        function renderInfrastructureRow(record) {
+            return `<tr data-record="${serializeRecord({
+                id: record.id,
+                inf_region: record.region,
+                inf_province: record.province,
+                inf_municipality: record.municipality,
+                inf_barangay: record.barangay,
+                inf_x_coord: record.x_coordinates,
+                inf_y_coord: record.y_coordinates,
+                inf_type: record.infrastructure_type,
+                inf_nis: record.nis_name,
+                inf_remarks: record.remarks,
+            })}">
+                <td class="col-standard">${record.region || '-'}</td>
+                <td class="col-standard">${record.province || '-'}</td>
+                <td class="col-standard">${record.municipality || '-'}</td>
+                <td class="col-standard">${formatText(record.barangay)}</td>
+                <td class="col-medium">${formatText(record.x_coordinates)}</td>
+                <td class="col-medium">${formatText(record.y_coordinates)}</td>
+                <td class="col-medium">${formatText(record.infrastructure_type)}</td>
+                <td class="col-medium">${record.nis_name || '-'}</td>
+                <td class="col-wide">${formatText(record.remarks)}</td>
+                ${renderActionButtons('Infrastructure', record.id)}
+            </tr>`;
+        }
+
+        function insertOrReplaceRow(type, record) {
+            const renderers = {
+                accomplishment: {
+                    bodyId: 'tableBody',
+                    render: renderAccomplishmentRow,
+                },
+                summary: {
+                    bodyId: 'summaryTableBody',
+                    render: renderSummaryRow,
+                },
+                nursery: {
+                    bodyId: 'nurseryTableBody',
+                    render: renderNurseryRow,
+                },
+                signages: {
+                    bodyId: 'signagesTableBody',
+                    render: renderSignagesRow,
+                },
+                infrastructure: {
+                    bodyId: 'infrastructureTableBody',
+                    render: renderInfrastructureRow,
+                }
+            };
+
+            const config = renderers[type];
+            if (!config) return;
+            const html = config.render(record);
+            const editState = currentEditState[type];
+            if (editState?.row) {
+                editState.row.outerHTML = html;
+            } else {
+                document.getElementById(config.bodyId).insertAdjacentHTML('beforeend', html);
+            }
+        }
 
         // ======================= SAVE ACCOMPLISHMENT (FIRST TABLE) =======================
         function saveRecord(button = null) {
@@ -1660,62 +2509,43 @@
                 data[id] = field ? field.value.trim() : '';
             });
 
-            setButtonLoading(button, true);
+            const editState = currentEditState.accomplishment;
+            const url = editState ? `/rpwsis_team/accomplishments/${editState.id}/update` : '/rpwsis_team/accomplishments/store';
+            const method = editState ? 'PUT' : 'POST';
+            setButtonLoading(button, true, editState ? 'Updating Data...' : 'Saving Data...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader(editState ? 'Updating data...' : 'Saving data...');
+            }
 
-            fetch('/rpwsis_team/accomplishments/store', {
-                    method: 'POST',
+            fetch(url, {
+                    method,
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify(data)
                 })
-                .then(async res => {
-                    const payload = await res.json().catch(() => null);
-                    if (!res.ok || !payload) throw new Error(payload?.message ||
-                        'Unable to save the record right now.');
-                    return payload;
-                })
+                .then(res => parseJsonResponse(res, `Unable to ${editState ? 'update' : 'save'} the record right now.`))
                 .then(payload => {
                     const res = payload.record || payload;
-                    const rowValues = [
-                        res.region, res.batch, res.allocation, res.nis, res.activity, res.remarks, res.amount,
-                        res.c1, res.c2, res.c3, res.c4, res.c5, res.c6, res.c7, res.c8, res.c9, res.c10, res.c11,
-                        res.c12,
-                        res.phy, res.fin, res.exp
-                    ];
-
-                    const renderedCells = rowValues.map((value, index) => {
-                        let colClass = 'col-standard';
-                        if (index === 4) colClass = 'col-activity';
-                        if (index === 5 || (index >= 14 && index <= 18)) colClass = 'col-remarks';
-                        if (index === 6) colClass = 'col-amount';
-                        const className =
-                            `${(index >= 7 && index <= 18) ? 'impl ' : ''}${colClass} status-compact-cell`
-                            .trim();
-                        return renderStatusExpandableCell(value, className);
-                    }).join('');
-
-                    const actionCell =
-                        `@if ($canManageRpwsis)<td class="col-action" style="text-align:right;"><button onclick="openDeleteModal('accomplishment', ${res.id}, this)" class="status-select">Delete</button></td>@endif`;
-                    const newRow = `<tr>${renderedCells}${actionCell}</tr>`;
-
-                    document.getElementById('tableBody').insertAdjacentHTML('beforeend', newRow);
-                    fields.forEach(id => {
-                        const field = document.getElementById(id);
-                        if (field) {
-                            field.value = '';
-                            field.style.borderColor = '';
-                            field.style.boxShadow = '';
-                        }
-                    });
+                    insertOrReplaceRow('accomplishment', res);
                     closeModal();
+                    showRpwsisSuccessModal(payload.message || (editState ? 'Updated successfully.' : 'Added successfully.'));
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to save the record. Please try again.');
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || `Unable to ${editState ? 'update' : 'save'} the record. Please try again.`, 'error');
+                    } else {
+                        alert(error.message || `Unable to ${editState ? 'update' : 'save'} the record. Please try again.`);
+                    }
                 })
                 .finally(() => {
                     setButtonLoading(button, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -1728,7 +2558,9 @@
                 'sum_replanted', 'sum_nis', 'sum_remarks'
             ];
 
-            if (!validateRequiredFields(fields)) return;
+            if (!validateRequiredFields([
+                'sum_region', 'sum_province', 'sum_municipality', 'sum_barangay', 'sum_type', 'sum_year'
+            ])) return;
 
             const data = {};
             fields.forEach(id => {
@@ -1736,67 +2568,43 @@
                 data[id] = field ? field.value.trim() : '';
             });
 
-            setButtonLoading(button, true);
+            const editState = currentEditState.summary;
+            const url = editState ? `/rpwsis_team/summary/${editState.id}/update` : '/rpwsis_team/summary/store';
+            const method = editState ? 'PUT' : 'POST';
+            setButtonLoading(button, true, editState ? 'Updating Data...' : 'Saving Data...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader(editState ? 'Updating data...' : 'Saving data...');
+            }
 
-            fetch('/rpwsis_team/summary/store', {
-                    method: 'POST',
+            fetch(url, {
+                    method,
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify(data)
                 })
-                .then(async res => {
-                    const payload = await res.json().catch(() => null);
-                    if (!res.ok || !payload) throw new Error(payload?.message ||
-                        'Unable to save the summary record right now.');
-                    return payload;
-                })
+                .then(res => parseJsonResponse(res, `Unable to ${editState ? 'update' : 'save'} the summary record right now.`))
                 .then(payload => {
                     const res = payload.record || payload;
-                    const formatText = (text) => text ? String(text).replace(/\n/g, '<br>') : '-';
-
-                    let row = `<tr>
-                    <td class="col-standard">${res.region || '-'}</td>
-                    <td class="col-standard">${res.province || '-'}</td>
-                    <td class="col-standard">${res.municipality || '-'}</td>
-                    <td class="col-standard">${res.barangay || '-'}</td>
-                    <td class="col-medium">${res.plantation_type || '-'}</td>
-                    <td class="col-standard">${res.year_established || '-'}</td>
-                    <td class="col-standard">${res.target_area_1 || '-'}</td>
-                    <td class="col-standard">${res.area_planted || '-'}</td>
-                    <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.species_planted || '')}">${renderExpandableSummaryCell(res.species_planted, 60)}</td>
-                    <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.spacing || '')}">${renderExpandableSummaryCell(res.spacing, 45)}</td>
-                    <td class="col-medium">${res.maintenance || '-'}</td>
-                    <td class="col-standard">${res.target_area_2 || '-'}</td>
-                    <td class="col-standard">${res.actual_area || '-'}</td>
-                    <td class="col-standard">${res.mortality_rate || '-'}</td>
-                    <td class="col-expandable" data-export-value="${escapeSummaryHtml(res.species_replanted || '')}">${renderExpandableSummaryCell(res.species_replanted, 60)}</td>
-                    <td class="col-medium">${res.nis_name || '-'}</td>
-                    <td class="col-medium">${res.remarks || '-'}</td>
-                    @if ($canManageRpwsis)
-                        <td class="col-action" style="text-align:right;">
-                            <button onclick="openDeleteModal('summary', ${res.id}, this)" class="status-select">Delete</button>
-                        </td>
-                    @endif
-                </tr>`;
-
-                    document.getElementById('summaryTableBody').insertAdjacentHTML('beforeend', row);
-                    fields.forEach(id => {
-                        const field = document.getElementById(id);
-                        if (field) {
-                            field.value = '';
-                            field.style.borderColor = '';
-                            field.style.boxShadow = '';
-                        }
-                    });
+                    insertOrReplaceRow('summary', res);
                     closeSummaryModal();
+                    showRpwsisSuccessModal(payload.message || (editState ? 'Updated successfully.' : 'Added successfully.'));
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to save the summary record. Please try again.');
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || `Unable to ${editState ? 'update' : 'save'} the summary record. Please try again.`, 'error');
+                    } else {
+                        alert(error.message || `Unable to ${editState ? 'update' : 'save'} the summary record. Please try again.`);
+                    }
                 })
                 .finally(() => {
                     setButtonLoading(button, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -1807,7 +2615,9 @@
                 'nur_x_coord', 'nur_y_coord', 'nur_seedlings', 'nur_type', 'nur_nis', 'nur_remarks'
             ];
 
-            if (!validateRequiredFields(fields)) return;
+            if (!validateRequiredFields([
+                'nur_region', 'nur_province', 'nur_municipality', 'nur_barangay', 'nur_type'
+            ])) return;
 
             const data = {};
             fields.forEach(id => {
@@ -1815,60 +2625,43 @@
                 data[id] = field ? field.value.trim() : '';
             });
 
-            setButtonLoading(button, true);
+            const editState = currentEditState.nursery;
+            const url = editState ? `/rpwsis_team/nursery/${editState.id}/update` : '/rpwsis_team/nursery/store';
+            const method = editState ? 'PUT' : 'POST';
+            setButtonLoading(button, true, editState ? 'Updating Data...' : 'Saving Data...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader(editState ? 'Updating data...' : 'Saving data...');
+            }
 
-            fetch('/rpwsis_team/nursery/store', {
-                    method: 'POST',
+            fetch(url, {
+                    method,
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify(data)
                 })
-                .then(async res => {
-                    const payload = await res.json().catch(() => null);
-                    if (!res.ok || !payload) throw new Error(payload?.message ||
-                        'Unable to save the nursery record right now.');
-                    return payload;
-                })
+                .then(res => parseJsonResponse(res, `Unable to ${editState ? 'update' : 'save'} the nursery record right now.`))
                 .then(payload => {
                     const res = payload.record || payload;
-                    const formatText = (text) => text ? String(text).replace(/\n/g, '<br>') : '-';
-
-                    let row = `<tr>
-                    <td class="col-standard">${res.region || '-'}</td>
-                    <td class="col-standard">${res.province || '-'}</td>
-                    <td class="col-standard">${res.municipality || '-'}</td>
-                    <td class="col-standard">${res.barangay || '-'}</td>
-                    <td class="col-medium">${res.x_coordinates || '-'}</td>
-                    <td class="col-medium">${res.y_coordinates || '-'}</td>
-                    <td class="col-medium">${res.seedlings_produced || '-'}</td>
-                    <td class="col-medium">${res.nursery_type || '-'}</td>
-                    <td class="col-medium">${res.nis_name || '-'}</td>
-                    <td class="col-wide">${formatText(res.remarks)}</td>
-                    @if ($canManageRpwsis)
-                        <td class="col-action" style="text-align:right;">
-                            <button onclick="openDeleteModal('nursery', ${res.id}, this)" class="status-select">Delete</button>
-                        </td>
-                    @endif
-                </tr>`;
-
-                    document.getElementById('nurseryTableBody').insertAdjacentHTML('beforeend', row);
-                    fields.forEach(id => {
-                        const field = document.getElementById(id);
-                        if (field) {
-                            field.value = '';
-                            field.style.borderColor = '';
-                            field.style.boxShadow = '';
-                        }
-                    });
+                    insertOrReplaceRow('nursery', res);
                     closeNurseryModal();
+                    showRpwsisSuccessModal(payload.message || (editState ? 'Updated successfully.' : 'Added successfully.'));
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to save the nursery record. Please try again.');
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || `Unable to ${editState ? 'update' : 'save'} the nursery record. Please try again.`, 'error');
+                    } else {
+                        alert(error.message || `Unable to ${editState ? 'update' : 'save'} the nursery record. Please try again.`);
+                    }
                 })
                 .finally(() => {
                     setButtonLoading(button, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -1879,7 +2672,9 @@
                 'sig_x_coord', 'sig_y_coord', 'sig_type', 'sig_nis', 'sig_remarks'
             ];
 
-            if (!validateRequiredFields(fields)) return;
+            if (!validateRequiredFields([
+                'sig_region', 'sig_province', 'sig_municipality', 'sig_barangay', 'sig_type'
+            ])) return;
 
             const data = {};
             fields.forEach(id => {
@@ -1887,59 +2682,43 @@
                 data[id] = field ? field.value.trim() : '';
             });
 
-            setButtonLoading(button, true);
+            const editState = currentEditState.signages;
+            const url = editState ? `/rpwsis_team/signages/${editState.id}/update` : '/rpwsis_team/signages/store';
+            const method = editState ? 'PUT' : 'POST';
+            setButtonLoading(button, true, editState ? 'Updating Data...' : 'Saving Data...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader(editState ? 'Updating data...' : 'Saving data...');
+            }
 
-            fetch('/rpwsis_team/signages/store', {
-                    method: 'POST',
+            fetch(url, {
+                    method,
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify(data)
                 })
-                .then(async res => {
-                    const payload = await res.json().catch(() => null);
-                    if (!res.ok || !payload) throw new Error(payload?.message ||
-                        'Unable to save the signage record right now.');
-                    return payload;
-                })
+                .then(res => parseJsonResponse(res, `Unable to ${editState ? 'update' : 'save'} the signage record right now.`))
                 .then(payload => {
                     const res = payload.record || payload;
-                    const formatText = (text) => text ? String(text).replace(/\n/g, '<br>') : '-';
-
-                    let row = `<tr>
-                    <td class="col-standard">${res.region || '-'}</td>
-                    <td class="col-standard">${res.province || '-'}</td>
-                    <td class="col-standard">${res.municipality || '-'}</td>
-                    <td class="col-standard">${formatText(res.barangay)}</td>
-                    <td class="col-medium">${formatText(res.x_coordinates)}</td>
-                    <td class="col-medium">${formatText(res.y_coordinates)}</td>
-                    <td class="col-medium">${formatText(res.signage_type)}</td>
-                    <td class="col-medium">${res.nis_name || '-'}</td>
-                    <td class="col-wide">${formatText(res.remarks)}</td>
-                    @if ($canManageRpwsis)
-                        <td class="col-action" style="text-align:right;">
-                            <button onclick="openDeleteModal('signages', ${res.id}, this)" class="status-select">Delete</button>
-                        </td>
-                    @endif
-                </tr>`;
-
-                    document.getElementById('signagesTableBody').insertAdjacentHTML('beforeend', row);
-                    fields.forEach(id => {
-                        const field = document.getElementById(id);
-                        if (field) {
-                            field.value = '';
-                            field.style.borderColor = '';
-                            field.style.boxShadow = '';
-                        }
-                    });
+                    insertOrReplaceRow('signages', res);
                     closeSignagesModal();
+                    showRpwsisSuccessModal(payload.message || (editState ? 'Updated successfully.' : 'Added successfully.'));
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to save the signage record. Please try again.');
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || `Unable to ${editState ? 'update' : 'save'} the signage record. Please try again.`, 'error');
+                    } else {
+                        alert(error.message || `Unable to ${editState ? 'update' : 'save'} the signage record. Please try again.`);
+                    }
                 })
                 .finally(() => {
                     setButtonLoading(button, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -1950,7 +2729,9 @@
                 'inf_x_coord', 'inf_y_coord', 'inf_type', 'inf_nis', 'inf_remarks'
             ];
 
-            if (!validateRequiredFields(fields)) return;
+            if (!validateRequiredFields([
+                'inf_region', 'inf_province', 'inf_municipality', 'inf_barangay', 'inf_type'
+            ])) return;
 
             const data = {};
             fields.forEach(id => {
@@ -1958,59 +2739,43 @@
                 data[id] = field ? field.value.trim() : '';
             });
 
-            setButtonLoading(button, true);
+            const editState = currentEditState.infrastructure;
+            const url = editState ? `/rpwsis_team/infrastructure/${editState.id}/update` : '/rpwsis_team/infrastructure/store';
+            const method = editState ? 'PUT' : 'POST';
+            setButtonLoading(button, true, editState ? 'Updating Data...' : 'Saving Data...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader(editState ? 'Updating data...' : 'Saving data...');
+            }
 
-            fetch('/rpwsis_team/infrastructure/store', {
-                    method: 'POST',
+            fetch(url, {
+                    method,
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify(data)
                 })
-                .then(async res => {
-                    const payload = await res.json().catch(() => null);
-                    if (!res.ok || !payload) throw new Error(payload?.message ||
-                        'Unable to save the infrastructure record right now.');
-                    return payload;
-                })
+                .then(res => parseJsonResponse(res, `Unable to ${editState ? 'update' : 'save'} the infrastructure record right now.`))
                 .then(payload => {
                     const res = payload.record || payload;
-                    const formatText = (text) => text ? String(text).replace(/\n/g, '<br>') : '-';
-
-                    let row = `<tr>
-                    <td class="col-standard">${res.region || '-'}</td>
-                    <td class="col-standard">${res.province || '-'}</td>
-                    <td class="col-standard">${res.municipality || '-'}</td>
-                    <td class="col-standard">${formatText(res.barangay)}</td>
-                    <td class="col-medium">${formatText(res.x_coordinates)}</td>
-                    <td class="col-medium">${formatText(res.y_coordinates)}</td>
-                    <td class="col-medium">${formatText(res.infrastructure_type)}</td>
-                    <td class="col-medium">${res.nis_name || '-'}</td>
-                    <td class="col-wide">${formatText(res.remarks)}</td>
-                    @if ($canManageRpwsis)
-                        <td class="col-action" style="text-align:right;">
-                            <button onclick="openDeleteModal('infrastructure', ${res.id}, this)" class="status-select">Delete</button>
-                        </td>
-                    @endif
-                </tr>`;
-
-                    document.getElementById('infrastructureTableBody').insertAdjacentHTML('beforeend', row);
-                    fields.forEach(id => {
-                        const field = document.getElementById(id);
-                        if (field) {
-                            field.value = '';
-                            field.style.borderColor = '';
-                            field.style.boxShadow = '';
-                        }
-                    });
+                    insertOrReplaceRow('infrastructure', res);
                     closeInfrastructureModal();
+                    showRpwsisSuccessModal(payload.message || (editState ? 'Updated successfully.' : 'Added successfully.'));
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to save the infrastructure record. Please try again.');
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || `Unable to ${editState ? 'update' : 'save'} the infrastructure record. Please try again.`, 'error');
+                    } else {
+                        alert(error.message || `Unable to ${editState ? 'update' : 'save'} the infrastructure record. Please try again.`);
+                    }
                 })
                 .finally(() => {
                     setButtonLoading(button, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -2021,7 +2786,12 @@
                 openDeleteModal('accomplishment', id, btn);
                 return;
             }
-            btn.disabled = true;
+            const confirmButton = getDeleteConfirmButton();
+            setButtonLoading(btn, true, 'Deleting...');
+            setButtonLoading(confirmButton, true, 'Deleting...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader('Deleting record...');
+            }
             fetch(`/rpwsis_team/accomplishments/${id}/delete`, {
                     method: 'DELETE',
                     headers: {
@@ -2041,10 +2811,18 @@
                     closeDeleteModal();
                 })
                 .catch(error => {
-                    alert(error.message || 'An error occurred while deleting.');
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || 'An error occurred while deleting.', 'error');
+                    } else {
+                        alert(error.message || 'An error occurred while deleting.');
+                    }
                 })
                 .finally(() => {
-                    btn.disabled = false;
+                    setButtonLoading(btn, false);
+                    setButtonLoading(confirmButton, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -2052,6 +2830,12 @@
             if (!skipPrompt) {
                 openDeleteModal('summary', id, btn);
                 return;
+            }
+            const confirmButton = getDeleteConfirmButton();
+            setButtonLoading(btn, true, 'Deleting...');
+            setButtonLoading(confirmButton, true, 'Deleting...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader('Deleting record...');
             }
             fetch(`/rpwsis_team/summary/${id}/delete`, {
                     method: 'DELETE',
@@ -2071,7 +2855,18 @@
                     }
                 })
                 .catch(error => {
-                    alert("An error occurred while deleting.");
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || 'An error occurred while deleting.', 'error');
+                    } else {
+                        alert('An error occurred while deleting.');
+                    }
+                })
+                .finally(() => {
+                    setButtonLoading(btn, false);
+                    setButtonLoading(confirmButton, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -2079,6 +2874,12 @@
             if (!skipPrompt) {
                 openDeleteModal('nursery', id, btn);
                 return;
+            }
+            const confirmButton = getDeleteConfirmButton();
+            setButtonLoading(btn, true, 'Deleting...');
+            setButtonLoading(confirmButton, true, 'Deleting...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader('Deleting record...');
             }
             fetch(`/rpwsis_team/nursery/${id}/delete`, {
                     method: 'DELETE',
@@ -2098,7 +2899,18 @@
                     }
                 })
                 .catch(error => {
-                    alert("An error occurred while deleting.");
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || 'An error occurred while deleting.', 'error');
+                    } else {
+                        alert('An error occurred while deleting.');
+                    }
+                })
+                .finally(() => {
+                    setButtonLoading(btn, false);
+                    setButtonLoading(confirmButton, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -2106,6 +2918,12 @@
             if (!skipPrompt) {
                 openDeleteModal('signages', id, btn);
                 return;
+            }
+            const confirmButton = getDeleteConfirmButton();
+            setButtonLoading(btn, true, 'Deleting...');
+            setButtonLoading(confirmButton, true, 'Deleting...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader('Deleting record...');
             }
             fetch(`/rpwsis_team/signages/${id}/delete`, {
                     method: 'DELETE',
@@ -2125,7 +2943,18 @@
                     }
                 })
                 .catch(error => {
-                    alert("An error occurred while deleting.");
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || 'An error occurred while deleting.', 'error');
+                    } else {
+                        alert('An error occurred while deleting.');
+                    }
+                })
+                .finally(() => {
+                    setButtonLoading(btn, false);
+                    setButtonLoading(confirmButton, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 
@@ -2133,6 +2962,12 @@
             if (!skipPrompt) {
                 openDeleteModal('infrastructure', id, btn);
                 return;
+            }
+            const confirmButton = getDeleteConfirmButton();
+            setButtonLoading(btn, true, 'Deleting...');
+            setButtonLoading(confirmButton, true, 'Deleting...');
+            if (typeof window.showAppLoader === 'function') {
+                window.showAppLoader('Deleting record...');
             }
             fetch(`/rpwsis_team/infrastructure/${id}/delete`, {
                     method: 'DELETE',
@@ -2152,7 +2987,18 @@
                     }
                 })
                 .catch(error => {
-                    alert("An error occurred while deleting.");
+                    if (typeof window.showLiveAlert === 'function') {
+                        window.showLiveAlert(error.message || 'An error occurred while deleting.', 'error');
+                    } else {
+                        alert('An error occurred while deleting.');
+                    }
+                })
+                .finally(() => {
+                    setButtonLoading(btn, false);
+                    setButtonLoading(confirmButton, false);
+                    if (typeof window.hideAppLoader === 'function') {
+                        window.hideAppLoader();
+                    }
                 });
         }
 

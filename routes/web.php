@@ -157,14 +157,17 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 // Nursery table routes
                     Route::post('/nursery/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeNursery'])->name('rpwsis.nursery.store');
+                    Route::put('/nursery/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateNursery'])->name('rpwsis.nursery.update');
                     Route::delete('/nursery/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteNursery'])->name('rpwsis.nursery.delete');
                 
                     // Signages table routes
                 Route::post('/signages/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeSignages'])->name('rpwsis.signages.store');
+                Route::put('/signages/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateSignages'])->name('rpwsis.signages.update');
                 Route::delete('/signages/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteSignages'])->name('rpwsis.signages.delete');
 
                 // Infrastructure table routes
                 Route::post('/infrastructure/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeInfrastructure'])->name('rpwsis.infrastructure.store');
+                Route::put('/infrastructure/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateInfrastructure'])->name('rpwsis.infrastructure.update');
                 Route::delete('/infrastructure/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteInfrastructure'])->name('rpwsis.infrastructure.delete');
 
             });

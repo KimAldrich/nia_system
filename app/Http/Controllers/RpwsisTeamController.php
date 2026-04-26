@@ -20,10 +20,96 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-
 class RpwsisTeamController extends Controller
 {
     use HandlesAsyncRequests;
+
+    private function validateAccomplishment(Request $request): array
+    {
+        return $request->validate([
+            'region' => ['required', 'string', 'max:100'],
+            'batch' => ['nullable', 'string', 'max:100'],
+            'allocation' => ['nullable', 'string', 'max:255'],
+            'nis' => ['nullable', 'string', 'max:255'],
+            'activity' => ['required', 'string', 'max:255'],
+            'remarks' => ['nullable', 'string', 'max:1000'],
+            'amount' => ['nullable', 'numeric', 'min:0'],
+            'phy' => ['nullable', 'numeric', 'between:0,100'],
+            'fin' => ['nullable', 'numeric', 'between:0,100'],
+            'exp' => ['nullable', 'numeric', 'min:0'],
+        ] + collect(range(1, 12))->mapWithKeys(fn($index) => [
+            'c' . $index => ['nullable', 'string', 'max:255'],
+        ])->toArray());
+    }
+
+    private function validateSummary(Request $request): array
+    {
+        return $request->validate([
+            'sum_region' => ['required', 'string', 'max:100'],
+            'sum_province' => ['required', 'string', 'max:100'],
+            'sum_municipality' => ['required', 'string', 'max:100'],
+            'sum_barangay' => ['required', 'string', 'max:255'],
+            'sum_type' => ['required', 'string', 'max:255'],
+            'sum_year' => ['required', 'digits:4', 'integer', 'min:1900', 'max:2100'],
+            'sum_target_1' => ['nullable', 'string', 'max:255'],
+            'sum_area_planted' => ['nullable', 'string', 'max:255'],
+            'sum_species' => ['nullable', 'string', 'max:5000'],
+            'sum_spacing' => ['nullable', 'string', 'max:255'],
+            'sum_maintenance' => ['nullable', 'string', 'max:255'],
+            'sum_target_2' => ['nullable', 'string', 'max:255'],
+            'sum_actual' => ['nullable', 'string', 'max:255'],
+            'sum_mortality' => ['nullable', 'string', 'max:255'],
+            'sum_replanted' => ['nullable', 'string', 'max:5000'],
+            'sum_nis' => ['nullable', 'string', 'max:255'],
+            'sum_remarks' => ['nullable', 'string', 'max:5000'],
+        ]);
+    }
+
+    private function validateNursery(Request $request): array
+    {
+        return $request->validate([
+            'nur_region' => ['required', 'string', 'max:100'],
+            'nur_province' => ['required', 'string', 'max:100'],
+            'nur_municipality' => ['required', 'string', 'max:100'],
+            'nur_barangay' => ['required', 'string', 'max:255'],
+            'nur_x_coord' => ['nullable', 'string', 'max:255'],
+            'nur_y_coord' => ['nullable', 'string', 'max:255'],
+            'nur_seedlings' => ['nullable', 'string', 'max:255'],
+            'nur_type' => ['required', 'string', 'max:255'],
+            'nur_nis' => ['nullable', 'string', 'max:255'],
+            'nur_remarks' => ['nullable', 'string', 'max:5000'],
+        ]);
+    }
+
+    private function validateSignages(Request $request): array
+    {
+        return $request->validate([
+            'sig_region' => ['required', 'string', 'max:100'],
+            'sig_province' => ['required', 'string', 'max:100'],
+            'sig_municipality' => ['required', 'string', 'max:100'],
+            'sig_barangay' => ['required', 'string', 'max:255'],
+            'sig_x_coord' => ['nullable', 'string', 'max:255'],
+            'sig_y_coord' => ['nullable', 'string', 'max:255'],
+            'sig_type' => ['required', 'string', 'max:255'],
+            'sig_nis' => ['nullable', 'string', 'max:255'],
+            'sig_remarks' => ['nullable', 'string', 'max:5000'],
+        ]);
+    }
+
+    private function validateInfrastructure(Request $request): array
+    {
+        return $request->validate([
+            'inf_region' => ['required', 'string', 'max:100'],
+            'inf_province' => ['required', 'string', 'max:100'],
+            'inf_municipality' => ['required', 'string', 'max:100'],
+            'inf_barangay' => ['required', 'string', 'max:5000'],
+            'inf_x_coord' => ['nullable', 'string', 'max:5000'],
+            'inf_y_coord' => ['nullable', 'string', 'max:5000'],
+            'inf_type' => ['required', 'string', 'max:5000'],
+            'inf_nis' => ['nullable', 'string', 'max:255'],
+            'inf_remarks' => ['nullable', 'string', 'max:5000'],
+        ]);
+    }
 
     // 1. Dashboard
     public function index()
@@ -237,26 +323,11 @@ class RpwsisTeamController extends Controller
     //10
     public function storeAccomplishment(Request $request)
     {
-        $validated = $request->validate([
-            'region' => ['required', 'string', 'max:100'],
-            'batch' => ['nullable', 'string', 'max:100'],
-            'allocation' => ['nullable', 'string', 'max:255'],
-            'nis' => ['nullable', 'string', 'max:255'],
-            'activity' => ['required', 'string', 'max:255'],
-            'remarks' => ['nullable', 'string', 'max:1000'],
-            'amount' => ['nullable', 'numeric', 'min:0'],
-            'phy' => ['nullable', 'numeric', 'between:0,100'],
-            'fin' => ['nullable', 'numeric', 'between:0,100'],
-            'exp' => ['nullable', 'numeric', 'min:0'],
-        ] + collect(range(1, 12))->mapWithKeys(fn($index) => [
-                'c' . $index => ['nullable', 'string', 'max:255'],
-            ])->toArray());
+        $validated = $this->validateAccomplishment($request);
 
         $record = RpwsisAccomplishment::create($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Accomplishment record saved successfully.',
+        return $this->successResponse($request, 'Added successfully.', [
             'record' => $record,
         ]);
     }
@@ -272,27 +343,12 @@ class RpwsisTeamController extends Controller
 
     public function updateAccomplishment(Request $request, $id)
     {
-        $validated = $request->validate([
-            'region' => ['required', 'string', 'max:100'],
-            'batch' => ['nullable', 'string', 'max:100'],
-            'allocation' => ['nullable', 'string', 'max:255'],
-            'nis' => ['nullable', 'string', 'max:255'],
-            'activity' => ['required', 'string', 'max:255'],
-            'remarks' => ['nullable', 'string', 'max:1000'],
-            'amount' => ['nullable', 'numeric', 'min:0'],
-            'phy' => ['nullable', 'numeric', 'between:0,100'],
-            'fin' => ['nullable', 'numeric', 'between:0,100'],
-            'exp' => ['nullable', 'numeric', 'min:0'],
-        ] + collect(range(1, 12))->mapWithKeys(fn($index) => [
-                'c' . $index => ['nullable', 'string', 'max:255'],
-            ])->toArray());
+        $validated = $this->validateAccomplishment($request);
 
         $record = RpwsisAccomplishment::findOrFail($id);
         $record->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Accomplishment record updated successfully.',
+        return $this->successResponse($request, 'Updated successfully.', [
             'record' => $record->fresh(),
         ]);
     }
@@ -304,60 +360,58 @@ class RpwsisTeamController extends Controller
     // 12. Store Summary Accomplishment
     public function storeSummary(Request $request)
     {
-        // Map the inputs from your JS variables to the database columns
+        $validated = $this->validateSummary($request);
+
         $record = RpwsisAccomplishmentSummary::create([
-            'region' => $request->sum_region,
-            'province' => $request->sum_province,
-            'municipality' => $request->sum_municipality,
-            'barangay' => $request->sum_barangay,
-            'plantation_type' => $request->sum_type,
-            'year_established' => $request->sum_year,
-            'target_area_1' => $request->sum_target_1,
-            'area_planted' => $request->sum_area_planted,
-            'species_planted' => $request->sum_species,
-            'spacing' => $request->sum_spacing,
-            'maintenance' => $request->sum_maintenance,
-            'target_area_2' => $request->sum_target_2,
-            'actual_area' => $request->sum_actual,
-            'mortality_rate' => $request->sum_mortality,
-            'species_replanted' => $request->sum_replanted,
-            'nis_name' => $request->sum_nis,
-            'remarks' => $request->sum_remarks,
+            'region' => $validated['sum_region'],
+            'province' => $validated['sum_province'],
+            'municipality' => $validated['sum_municipality'],
+            'barangay' => $validated['sum_barangay'],
+            'plantation_type' => $validated['sum_type'],
+            'year_established' => $validated['sum_year'],
+            'target_area_1' => $validated['sum_target_1'] ?? null,
+            'area_planted' => $validated['sum_area_planted'] ?? null,
+            'species_planted' => $validated['sum_species'] ?? null,
+            'spacing' => $validated['sum_spacing'] ?? null,
+            'maintenance' => $validated['sum_maintenance'] ?? null,
+            'target_area_2' => $validated['sum_target_2'] ?? null,
+            'actual_area' => $validated['sum_actual'] ?? null,
+            'mortality_rate' => $validated['sum_mortality'] ?? null,
+            'species_replanted' => $validated['sum_replanted'] ?? null,
+            'nis_name' => $validated['sum_nis'] ?? null,
+            'remarks' => $validated['sum_remarks'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Summary record saved successfully.',
+        return $this->successResponse($request, 'Added successfully.', [
             'record' => $record,
         ]);
     }
 
     public function updateSummary(Request $request, $id)
     {
+        $validated = $this->validateSummary($request);
         $record = RpwsisAccomplishmentSummary::findOrFail($id);
         $record->update([
-            'region' => $request->sum_region,
-            'province' => $request->sum_province,
-            'municipality' => $request->sum_municipality,
-            'barangay' => $request->sum_barangay,
-            'plantation_type' => $request->sum_type,
-            'year_established' => $request->sum_year,
-            'target_area_1' => $request->sum_target_1,
-            'area_planted' => $request->sum_area_planted,
-            'species_planted' => $request->sum_species,
-            'spacing' => $request->sum_spacing,
-            'maintenance' => $request->sum_maintenance,
-            'target_area_2' => $request->sum_target_2,
-            'actual_area' => $request->sum_actual,
-            'mortality_rate' => $request->sum_mortality,
-            'species_replanted' => $request->sum_replanted,
-            'nis_name' => $request->sum_nis,
-            'remarks' => $request->sum_remarks,
+            'region' => $validated['sum_region'],
+            'province' => $validated['sum_province'],
+            'municipality' => $validated['sum_municipality'],
+            'barangay' => $validated['sum_barangay'],
+            'plantation_type' => $validated['sum_type'],
+            'year_established' => $validated['sum_year'],
+            'target_area_1' => $validated['sum_target_1'] ?? null,
+            'area_planted' => $validated['sum_area_planted'] ?? null,
+            'species_planted' => $validated['sum_species'] ?? null,
+            'spacing' => $validated['sum_spacing'] ?? null,
+            'maintenance' => $validated['sum_maintenance'] ?? null,
+            'target_area_2' => $validated['sum_target_2'] ?? null,
+            'actual_area' => $validated['sum_actual'] ?? null,
+            'mortality_rate' => $validated['sum_mortality'] ?? null,
+            'species_replanted' => $validated['sum_replanted'] ?? null,
+            'nis_name' => $validated['sum_nis'] ?? null,
+            'remarks' => $validated['sum_remarks'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Summary record updated successfully.',
+        return $this->successResponse($request, 'Updated successfully.', [
             'record' => $record->fresh(),
         ]);
     }
@@ -378,22 +432,21 @@ class RpwsisTeamController extends Controller
 
     public function storeNursery(Request $request)
     {
+        $validated = $this->validateNursery($request);
         $record = RpwsisNurseryEstablishment::create([
-            'region'             => $request->nur_region,
-            'province'           => $request->nur_province,
-            'municipality'       => $request->nur_municipality,
-            'barangay'           => $request->nur_barangay,
-            'x_coordinates'      => $request->nur_x_coord,
-            'y_coordinates'      => $request->nur_y_coord,
-            'seedlings_produced' => $request->nur_seedlings,
-            'nursery_type'       => $request->nur_type,
-            'nis_name'           => $request->nur_nis,
-            'remarks'            => $request->nur_remarks,
+            'region'             => $validated['nur_region'],
+            'province'           => $validated['nur_province'],
+            'municipality'       => $validated['nur_municipality'],
+            'barangay'           => $validated['nur_barangay'],
+            'x_coordinates'      => $validated['nur_x_coord'] ?? null,
+            'y_coordinates'      => $validated['nur_y_coord'] ?? null,
+            'seedlings_produced' => $validated['nur_seedlings'] ?? null,
+            'nursery_type'       => $validated['nur_type'],
+            'nis_name'           => $validated['nur_nis'] ?? null,
+            'remarks'            => $validated['nur_remarks'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Nursery record saved successfully.',
+        return $this->successResponse($request, 'Added successfully.', [
             'record' => $record,
         ]);
     }
@@ -406,28 +459,48 @@ class RpwsisTeamController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function updateNursery(Request $request, $id)
+    {
+        $validated = $this->validateNursery($request);
+        $record = RpwsisNurseryEstablishment::findOrFail($id);
+        $record->update([
+            'region'             => $validated['nur_region'],
+            'province'           => $validated['nur_province'],
+            'municipality'       => $validated['nur_municipality'],
+            'barangay'           => $validated['nur_barangay'],
+            'x_coordinates'      => $validated['nur_x_coord'] ?? null,
+            'y_coordinates'      => $validated['nur_y_coord'] ?? null,
+            'seedlings_produced' => $validated['nur_seedlings'] ?? null,
+            'nursery_type'       => $validated['nur_type'],
+            'nis_name'           => $validated['nur_nis'] ?? null,
+            'remarks'            => $validated['nur_remarks'] ?? null,
+        ]);
+
+        return $this->successResponse($request, 'Updated successfully.', [
+            'record' => $record->fresh(),
+        ]);
+    }
+
     // ----------------------------------------------------------------------
     // ✅ NEW: INFORMATIVE SIGNAGES TABLE
     // ----------------------------------------------------------------------
 
     public function storeSignages(Request $request)
     {
-        // Maps the inputs from the blade view (sig_ prefix) to the database columns
+        $validated = $this->validateSignages($request);
         $record = RpwsisSignage::create([
-            'region'        => $request->sig_region,
-            'province'      => $request->sig_province,
-            'municipality'  => $request->sig_municipality,
-            'barangay'      => $request->sig_barangay,
-            'x_coordinates' => $request->sig_x_coord,
-            'y_coordinates' => $request->sig_y_coord,
-            'signage_type'  => $request->sig_type,
-            'nis_name'      => $request->sig_nis,
-            'remarks'       => $request->sig_remarks,
+            'region'        => $validated['sig_region'],
+            'province'      => $validated['sig_province'],
+            'municipality'  => $validated['sig_municipality'],
+            'barangay'      => $validated['sig_barangay'],
+            'x_coordinates' => $validated['sig_x_coord'] ?? null,
+            'y_coordinates' => $validated['sig_y_coord'] ?? null,
+            'signage_type'  => $validated['sig_type'],
+            'nis_name'      => $validated['sig_nis'] ?? null,
+            'remarks'       => $validated['sig_remarks'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Signage record saved successfully.',
+        return $this->successResponse($request, 'Added successfully.', [
             'record' => $record,
         ]);
     }
@@ -440,6 +513,27 @@ class RpwsisTeamController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function updateSignages(Request $request, $id)
+    {
+        $validated = $this->validateSignages($request);
+        $record = RpwsisSignage::findOrFail($id);
+        $record->update([
+            'region'        => $validated['sig_region'],
+            'province'      => $validated['sig_province'],
+            'municipality'  => $validated['sig_municipality'],
+            'barangay'      => $validated['sig_barangay'],
+            'x_coordinates' => $validated['sig_x_coord'] ?? null,
+            'y_coordinates' => $validated['sig_y_coord'] ?? null,
+            'signage_type'  => $validated['sig_type'],
+            'nis_name'      => $validated['sig_nis'] ?? null,
+            'remarks'       => $validated['sig_remarks'] ?? null,
+        ]);
+
+        return $this->successResponse($request, 'Updated successfully.', [
+            'record' => $record->fresh(),
+        ]);
+    }
+
 
     // ----------------------------------------------------------------------
     // ✅ NEW: OTHER INFRASTRUCTURES TABLE
@@ -447,21 +541,20 @@ class RpwsisTeamController extends Controller
 
     public function storeInfrastructure(Request $request)
     {
+        $validated = $this->validateInfrastructure($request);
         $record = RpwsisInfrastructure::create([
-            'region'              => $request->inf_region,
-            'province'            => $request->inf_province,
-            'municipality'        => $request->inf_municipality,
-            'barangay'            => $request->inf_barangay,
-            'x_coordinates'       => $request->inf_x_coord,
-            'y_coordinates'       => $request->inf_y_coord,
-            'infrastructure_type' => $request->inf_type,
-            'nis_name'            => $request->inf_nis,
-            'remarks'             => $request->inf_remarks,
+            'region'              => $validated['inf_region'],
+            'province'            => $validated['inf_province'],
+            'municipality'        => $validated['inf_municipality'],
+            'barangay'            => $validated['inf_barangay'],
+            'x_coordinates'       => $validated['inf_x_coord'] ?? null,
+            'y_coordinates'       => $validated['inf_y_coord'] ?? null,
+            'infrastructure_type' => $validated['inf_type'],
+            'nis_name'            => $validated['inf_nis'] ?? null,
+            'remarks'             => $validated['inf_remarks'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Infrastructure record saved successfully.',
+        return $this->successResponse($request, 'Added successfully.', [
             'record' => $record,
         ]);
     }
@@ -471,6 +564,27 @@ class RpwsisTeamController extends Controller
         $record = RpwsisInfrastructure::findOrFail($id);
         $record->delete();
         return response()->json(['success' => true]);
+    }
+
+    public function updateInfrastructure(Request $request, $id)
+    {
+        $validated = $this->validateInfrastructure($request);
+        $record = RpwsisInfrastructure::findOrFail($id);
+        $record->update([
+            'region'              => $validated['inf_region'],
+            'province'            => $validated['inf_province'],
+            'municipality'        => $validated['inf_municipality'],
+            'barangay'            => $validated['inf_barangay'],
+            'x_coordinates'       => $validated['inf_x_coord'] ?? null,
+            'y_coordinates'       => $validated['inf_y_coord'] ?? null,
+            'infrastructure_type' => $validated['inf_type'],
+            'nis_name'            => $validated['inf_nis'] ?? null,
+            'remarks'             => $validated['inf_remarks'] ?? null,
+        ]);
+
+        return $this->successResponse($request, 'Updated successfully.', [
+            'record' => $record->fresh(),
+        ]);
     }
 
     // ----------------------------------------------------------------------

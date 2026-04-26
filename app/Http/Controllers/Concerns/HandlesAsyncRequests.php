@@ -8,7 +8,7 @@ trait HandlesAsyncRequests
 {
     protected function respondsWithJson(Request $request): bool
     {
-        return $request->expectsJson() || $request->ajax();
+        return $request->expectsJson() || $request->ajax() || $request->wantsJson() || $request->isJson();
     }
 
     protected function successResponse(Request $request, string $message, array $data = [], int $status = 200)
