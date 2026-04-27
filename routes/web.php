@@ -26,6 +26,7 @@ Route::post('/guest/accept-terms', [GuestController::class, 'acceptTerms'])->nam
 Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.dashboard');
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 
+Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
 Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'teamResolutions'])->name('guest.team.resolutions');

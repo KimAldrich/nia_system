@@ -17,7 +17,7 @@
             --sidebar-icon: #ffffff;
             --tree-line: rgba(255, 255, 255, 0.3);
             /* NEW: Slightly lighter background to make white cards pop */
-            --bg-color: #f4f7fe; 
+            --bg-color: #f4f7fe;
             --card-bg: #ffffff;
             --text-main: #334155;
             --border-color: #e2e8f0;
@@ -70,16 +70,16 @@
         .content { padding: 30px; overflow-y: auto; overflow-x: hidden; flex: 1; width: 100%; box-sizing: border-box; }
 
         /* 🌟 NEW SOFT UI CARD STYLES (Matches Image) 🌟 */
-        .card, .ui-card { 
-            background: var(--card-bg); 
+        .card, .ui-card {
+            background: var(--card-bg);
             border-radius: 16px; /* Smoother, rounder corners */
-            padding: 24px; 
+            padding: 24px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); /* Soft, blurred shadow */
-            margin-bottom: 20px; 
+            margin-bottom: 20px;
             border: none; /* Removed the hard border! */
-            max-width: 100%; box-sizing: border-box; overflow-x: auto; 
+            max-width: 100%; box-sizing: border-box; overflow-x: auto;
         }
-        
+
         .page-title { margin-top: 0; color: #1e293b; font-size: 22px; margin-bottom: 15px; font-weight: 700; }
         .section-title { font-size: 16px; color: #64748b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
 
@@ -99,11 +99,11 @@
 
         /* 🌟 GRID LAYOUT FOR CHARTS & CALENDAR 🌟 */
         .dashboard-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
-        
+
         table { width: 100%; border-collapse: collapse; margin-top: 5px; table-layout: fixed; }
         th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #f1f5f9; word-break: break-word; font-size: 13px; color: #334155; }
         th { background-color: transparent; color: #a0aec0; font-weight: 600; text-transform: capitalize; font-size: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
-        
+
         .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge-pending { background: #ffedd5; color: #ea580c; }
         .badge-progress { background: #e0e7ff; color: #4f46e5; }
@@ -168,7 +168,7 @@
         </div>
 
         <div class="nav-links">
-            
+
             @if(auth()->check() && auth()->user()->role == 'admin')
                 <div class="nav-label">Admin Controls</div>
                 <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -289,15 +289,15 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            
+
             if (window.innerWidth > 900) {
                 sidebar.classList.toggle('collapsed');
             } else {
                 sidebar.classList.toggle('open');
-                if(sidebar.classList.contains('open')) { 
-                    overlay.classList.add('show'); 
-                } else { 
-                    overlay.classList.remove('show'); 
+                if(sidebar.classList.contains('open')) {
+                    overlay.classList.add('show');
+                } else {
+                    overlay.classList.remove('show');
                 }
             }
         }

@@ -12,13 +12,18 @@
     padding: 0 !important;
     margin: 0 !important;
     height: 100vh !important;
+    width: 100% !important;
     max-width: none !important;
+    overflow: hidden !important;
 }
 #map-container {
     position: relative;
-    /* position: absolute; */
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
+    max-width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    transition: margin-right 0.3s ease;
 }
 .map-loader {
     position: absolute;
@@ -132,6 +137,27 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
+}
+
+#resetMapBtn {
+    background: none;
+    color: #ebeef2;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: inherit;
+    transition: all 0.3s ease;
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+}
+
+#resetMapBtn:hover {
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black, 0 0 8px rgba(255,255,255,0.5);
+    transform: scale(1.08);
+}
+
+#resetMapBtn:active {
+    transform: scale(0.95);
 }
 
 #layer-controls {
@@ -359,25 +385,7 @@ input:checked + .slider:before {
 }
 
 /* INFO PANEL */
-.info-panel {
-    position: absolute;
-    top: 0;
-    right: -400px;
-    width: 250px;
-    color: white;
-    text-shadow:
-        -1px -1px 0 black,
-         1px -1px 0 black,
-        -1px  1px 0 black,
-         1px  1px 0 black;
-    height: 100%;
-    background: #81717187;
-    box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53);
-    z-index: 1000;
-    transition: right 0.3s ease;
-    display: flex;
-    flex-direction: column;
-}
+.info-panel { position: fixed; /* 🔥 CHANGE from absolute */ top: 0; right: -400px; width: 250px; height: 100vh; background: #81717187; box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53); z-index: 10000 !important; /* 🔥 STRONGER than everything */ transition: right 0.3s ease; display: flex; flex-direction: column; }
 
 .info-panel.active {
     right: 0;
@@ -426,6 +434,18 @@ input:checked + .slider:before {
 #legendContainer {
     margin-top: 5px; /* reduce gap */
     text-align: left;
+}
+
+#legendContainer,
+#legendContainer .legend-item,
+#infoTitle,
+.detail-content,
+.info-content{
+    color: white;
+    text-shadow:
+        0 0 2px #020202,
+        0 0 4px #000000,
+        1px 1px 2px #000000;
 }
 
 .legend-item {
@@ -710,6 +730,8 @@ select[name="category"]:focus {
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 #admin-toggle-btn:hover {
@@ -826,6 +848,8 @@ select[name="category"]:focus {
     </label>
 
     <span>🛰 Satellite</span>
+
+    <button id="resetMapBtn" title="Reset to default position">🔄 Reset</button>
 </div>
 
     <div id="layer-controls">
@@ -880,6 +904,14 @@ select[name="category"]:focus {
                 </div>
 
                 <div class="form-group">
+                    <label>Destination Folder</label>
+                    <select name="target_folder" id="targetFolderSelect">
+                        <option value="">Category root</option>
+                    </select>
+                    <small id="targetFolderHint">Choose the municipality or folder where the files should be added.</small>
+                </div>
+
+                <div class="form-group">
                     <label>Upload Source</label>
                     <div class="upload-stack">
                         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
@@ -896,6 +928,7 @@ select[name="category"]:focus {
                             <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
                         </div>
                     </div>
+                    <div id="uploadSelectionInfo" class="upload-selection-info">No files selected.</div>
                 </div>
 
                 <button type="submit" class="submit-btn">
@@ -907,8 +940,6 @@ select[name="category"]:focus {
     </div>
 </div>
 </div>
-
-<div id="uploadStatus" class="upload-status" style="display:none;"></div>
 @endif
 
 <!-- the map -->
@@ -926,13 +957,20 @@ function toTitleCase(str) {
 }
 
 const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
+const uploadTargets = JSON.parse('{!! json_encode($uploadTargets ?? []) !!}');
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 let landChart = null;
 let selectedMunicipality = null;
 let activeSliceIndex = null;
 let municipalityMarkers = [];
 let provinceLabelLayer = null;
+let irrigatedStats = {};
 
+fetch('/irrigated-chart-data')
+    .then(res => res.json())
+    .then(data => {
+        irrigatedStats = data;
+    });
 
 function buildAppUrl(path) {
     if (!path) {
@@ -944,11 +982,14 @@ function buildAppUrl(path) {
     }
 
     const normalizedPath = String(path).replace(/^\/+/, '');
-    return appBaseUrl ? `${appBaseUrl}/${normalizedPath}` : `/${normalizedPath}`;
+    const baseUrl = appBaseUrl || window.location.origin;
+    return new URL(normalizedPath, `${baseUrl.replace(/\/+$/, '')}/`).toString();
 }
 
 // Dagupan City Center
-let map = L.map('map').setView([16.0433, 120.3333], 10);
+const DEFAULT_CENTER = [16.0433, 120.3333];
+const DEFAULT_ZOOM = 10;
+let map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -996,13 +1037,67 @@ const overlayStyles = {
     }
 };
 
+// Reset map to default position
+document.getElementById('resetMapBtn').addEventListener('click', function() {
+    map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, {
+        duration: 1.5,
+        easeLinearity: 0.25
+    });
+});
+
 let geoLayer;
 let selectedBaseLayer;
 let miniGeoLayer;
 const overlayLayers = {};
+const mapContainer = document.getElementById('map-container');
+const contentContainer = document.querySelector('.content');
+const mainWrapper = document.querySelector('.main-wrapper');
+let mapLayoutTimer = null;
+let mapResizeObserver = null;
 
 const toggleContainer = document.getElementById('map-toggle');
 const layerControls = document.getElementById('layer-controls');
+
+function syncMapLayout() {
+    if (contentContainer && mapContainer) {
+        const contentRect = contentContainer.getBoundingClientRect();
+        const availableWidth = Math.max(0, Math.floor(contentRect.width));
+        const availableHeight = Math.max(0, Math.floor(contentRect.height || window.innerHeight));
+
+        if (availableWidth > 0) {
+            mapContainer.style.width = `${availableWidth}px`;
+            mapContainer.style.maxWidth = `${availableWidth}px`;
+        }
+
+        if (availableHeight > 0) {
+            mapContainer.style.height = `${availableHeight}px`;
+        }
+
+        const mapElement = document.getElementById('map');
+        if (mapElement) {
+            mapElement.style.width = '100%';
+            mapElement.style.height = '100%';
+        }
+    }
+
+    requestAnimationFrame(() => {
+        map.invalidateSize();
+    });
+
+    clearTimeout(mapLayoutTimer);
+    mapLayoutTimer = setTimeout(() => {
+        map.invalidateSize();
+    }, 350);
+}
+
+function queueMapLayoutSync() {
+    requestAnimationFrame(() => {
+        syncMapLayout();
+    });
+
+    setTimeout(syncMapLayout, 120);
+    setTimeout(syncMapLayout, 320);
+}
 
 toggle.addEventListener('change', () => {
     if (toggle.checked) {
@@ -1087,12 +1182,7 @@ function setSelectedBaseLayer(layer) {
     }
 
     selectedBaseLayer = layer;
-    // selectedBaseLayer.setStyle({
-    //     color: '#ffd400',
-    //     weight: 2,
-    //     fillColor: '#ff5a36',
-    //     fillOpacity: 0.8
-    // });
+
 }
 
 async function loadBaseMap() {
@@ -1116,25 +1206,58 @@ async function loadBaseMap() {
         onEachFeature: function(feature, layer) {
             const name = toTitleCase(getFeatureName(feature));
 
+
+            layer.on('mouseover', function() {
+                layer.setStyle({
+                    color: '#fc756b',
+                    weight: 2,
+                    fillColor: '#bdbdbd',
+                    fillOpacity: 0.75
+                });
+
+                if (layer.bringToFront) {
+                    layer.bringToFront();
+                }
+
+                layer.openTooltip();
+            });
+
+            layer.on('mouseout', function() {
+                if (selectedBaseLayer === layer) {
+                    return;
+                }
+
+                geoLayer.resetStyle(layer);
+                layer.closeTooltip();
+            });
+
             layer.on('click', function() {
-                const mData = getMunicipalityData(name);
+                const stat = getIrrigatedStatByName(name);
                 updateInfoPanel(name);
-                selectedMunicipality = mData;
+                selectedMunicipality = stat;
                 setSelectedBaseLayer(layer);
                 document.getElementById('infoTitle').innerText = name;
-
-                if (mData) {
-                    const landData = {
-                        labels: ["Total Land Area (ha)", "Primary Crops", "Canals", "Dams", "Annual Crop Area (ha)"],
-                        values: [
-                            mData.total_land_area_ha,
-                            mData.primary_crops.length,
-                            mData.infrastructure.canals,
-                            mData.infrastructure.dams.length,
-                            mData.annual_crop_ha
-                        ],
-                        colors: ["#2e7d32", "#ffa726", "#42a5f5", "#8d6e63", "#4caf50"]
-                    };
+                if (stat) {
+const landData = {
+    labels: [
+        "Total Land Area (ha)",
+        "PIA (ha)",
+        "Irrigated Area (ha)",
+        "Remaining Area (ha)"
+    ],
+    values: [
+        Number(stat.total_land_area_ha) || 0,
+        Number(stat.pia_area) || 0,
+        Number(stat.irrigated_area) || 0,
+        Number(stat.remaining_area) || 0
+    ],
+    colors: [
+        "#1565c0",
+        "#f9a825",
+        "#2e7d32",
+        "#ef6c00"
+    ]
+};
                     renderChart(landData);
                     renderLegend(landData);
                     openDetail();
@@ -1201,8 +1324,41 @@ function normalizeGeoJson(data) {
     return data;
 }
 
+function hasRenderableFeatures(geoJson) {
+    const normalized = normalizeGeoJson(geoJson);
+
+    return Array.isArray(normalized?.features) && normalized.features.length > 0;
+}
+
+function isSupportedOverlayFile(fileName) {
+    const lowerName = String(fileName || '').toLowerCase();
+
+    return lowerName.endsWith('.geojson')
+        || lowerName.endsWith('.json')
+        || lowerName.endsWith('.kml')
+        || lowerName.endsWith('.kmz')
+        || lowerName.endsWith('.zip')
+        || lowerName.endsWith('.shp');
+}
+
+function getShapefileFamilyKey(fileName) {
+    const lowerName = String(fileName || '').toLowerCase();
+
+    if (lowerName.endsWith('.zip') || lowerName.endsWith('.shp')) {
+        return lowerName.replace(/\.(zip|shp)$/i, '');
+    }
+
+    return null;
+}
+
+function pauseForUi() {
+    return new Promise(resolve => {
+        window.setTimeout(resolve, 0);
+    });
+}
+
 async function convertStoredFileToGeoJson(fileUrl) {
-    const safeUrl = encodeURI(buildAppUrl(fileUrl));
+    const safeUrl = buildAppUrl(fileUrl);
     const lowerFileUrl = fileUrl.toLowerCase();
 
     if (lowerFileUrl.endsWith('.geojson') || lowerFileUrl.endsWith('.json')) {
@@ -1245,7 +1401,7 @@ async function convertStoredFileToGeoJson(fileUrl) {
         return toGeoJSON.kml(kmlDocument);
     }
 
-    if (lowerFileUrl.endsWith('.shp')) {
+    if (lowerFileUrl.endsWith('.zip') || lowerFileUrl.endsWith('.shp')) {
         return await shp(safeUrl);
     }
 
@@ -1300,31 +1456,6 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
 
     layer.on('click', function(e) {
 
-        // 🔥 highlight selected overlay
-        // layer.setStyle({
-        //     color: '#ff0000',
-        //     weight: 3,
-        //     fillColor: '#ff5722',
-        //     fillOpacity: 0.9
-        // });
-
-        // reset others
-//         Object.values(overlayLayers).forEach(group => {
-//             group.eachLayer(l => {
-//                 if (l !== layer) {
-//                     l.setStyle(styleOverlayFeature(categoryKey, l.feature));
-//                 }
-//             });
-//         });
-// // 🔥 bring overlays to front
-// Object.values(overlayLayers).forEach(group => {
-//     group.eachLayer(layer => layer.bringToFront());
-// });
-
-// // 🔥 keep Pangasinan layer BELOW (but visible)
-// if (geoLayer) {
-//     geoLayer.eachLayer(layer => layer.bringToBack());
-// }
         // 🔥 zoom to clicked overlay
         map.fitBounds(layer.getBounds());
 
@@ -1334,42 +1465,6 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
 }
     });
 }
-
-// async function showOverlayCategory(categoryKey) {
-//     const config = overlayGroups[categoryKey];
-
-//     if (!config || !config.files.length) {
-//         updateStatus('No files found for ' + (config?.label || categoryKey) + '.', true);
-//         return;
-//     }
-
-//     if (!overlayLayers[categoryKey]) {
-//         const layers = [];
-
-//         for (let index = 0; index < config.files.length; index++) {
-//             const file = config.files[index];
-
-//             updateStatus(`Loading ${config.label} (${index + 1}/${config.files.length})...`);
-
-//             try {
-//                 const geoJson = await convertStoredFileToGeoJson(file.url);
-//                 layers.push(createOverlayLayer(categoryKey, geoJson, file.name));
-//             } catch (error) {
-//                 console.error('Failed to load file:', file.name, error);
-//             }
-//         }
-
-//         if (!layers.length) {
-//             updateStatus('No valid polygons could be loaded for ' + config.label + '.', true);
-//             return;
-//         }
-
-//         overlayLayers[categoryKey] = L.featureGroup(layers);
-//     }
-
-//     if (!map.hasLayer(overlayLayers[categoryKey])) {
-//         overlayLayers[categoryKey].addTo(map);
-//     }
 
 async function showOverlayCategory(categoryKey) {
     const config = overlayGroups[categoryKey];
@@ -1381,6 +1476,7 @@ async function showOverlayCategory(categoryKey) {
 
     if (!overlayLayers[categoryKey]) {
         const layers = [];
+        const failedFiles = [];
 
         for (let index = 0; index < config.files.length; index++) {
             const file = config.files[index];
@@ -1392,6 +1488,11 @@ async function showOverlayCategory(categoryKey) {
                 layers.push(createOverlayLayer(categoryKey, geoJson, file.name));
             } catch (error) {
                 console.error('Failed to load file:', file.name, error);
+                failedFiles.push(file.name);
+            }
+
+            if ((index + 1) % 5 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
 
@@ -1401,6 +1502,14 @@ async function showOverlayCategory(categoryKey) {
         }
 
         overlayLayers[categoryKey] = L.featureGroup(layers);
+
+        if (failedFiles.length) {
+            console.warn('Overlay files that failed to load:', failedFiles);
+            updateStatus(
+                `${config.label} loaded with ${failedFiles.length} failed file(s): ${failedFiles.slice(0, 5).join(', ')}${failedFiles.length > 5 ? '...' : ''}`,
+                true
+            );
+        }
     }
 
     if (!map.hasLayer(overlayLayers[categoryKey])) {
@@ -1415,21 +1524,8 @@ async function showOverlayCategory(categoryKey) {
         }
     });
 
-    // const bounds = overlayLayers[categoryKey].getBounds();
-    // if (bounds.isValid()) {
-    //     map.fitBounds(bounds, { padding: [25, 25] });
-    // }
-
     updateStatus(config.label + ' is now highlighted on the map.');
 }
-
-//     const bounds = overlayLayers[categoryKey].getBounds();
-//     if (bounds.isValid()) {
-//         map.fitBounds(bounds, { padding: [25, 25] });
-//     }
-
-//     updateStatus(config.label + ' is now highlighted on the map.');
-// }
 
 function hideOverlayCategory(categoryKey) {
     if (overlayLayers[categoryKey] && map.hasLayer(overlayLayers[categoryKey])) {
@@ -1439,8 +1535,6 @@ function hideOverlayCategory(categoryKey) {
     const config = overlayGroups[categoryKey];
     updateStatus((config?.label || 'Selected layer') + ' has been hidden.');
 }
-
-
 
 Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
     if (!checkbox) return;
@@ -1575,20 +1669,69 @@ const form = document.getElementById('uploadForm');
 
 if (form) {
     const statusBoxUpload = document.getElementById('uploadStatus');
+    const categorySelect = document.querySelector('select[name="category"]');
+    const targetFolderSelect = document.getElementById('targetFolderSelect');
+    const uploadSelectionInfo = document.getElementById('uploadSelectionInfo');
+
+    function updateTargetFolderOptions() {
+        const category = categorySelect.value;
+        const folders = uploadTargets[category] || [{ value: '', label: 'Category root' }];
+
+        targetFolderSelect.innerHTML = folders.map(folder =>
+            `<option value="${folder.value}">${folder.label}</option>`
+        ).join('');
+    }
+
+    function updateSelectionInfo(message) {
+        if (uploadSelectionInfo) {
+            uploadSelectionInfo.textContent = message;
+        }
+    }
+
+    const fileInput = document.getElementById('fileInput');
+    const folderInput = document.getElementById('folderInput');
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            folderInput.value = '';
+        }
+
+        updateSelectionInfo(
+            fileInput.files.length
+                ? `${fileInput.files.length} file(s) selected for upload.`
+                : 'No files selected.'
+        );
+    });
+
+    folderInput.addEventListener('change', () => {
+        if (folderInput.files.length > 0) {
+            fileInput.value = '';
+        }
+
+        if (folderInput.files.length > 0) {
+            const firstPath = folderInput.files[0].webkitRelativePath || folderInput.files[0].name;
+            const rootFolder = firstPath.split('/')[0];
+            updateSelectionInfo(`${folderInput.files.length} file(s) selected from folder "${rootFolder}".`);
+            return;
+        }
+
+        updateSelectionInfo('No files selected.');
+    });
+
+    categorySelect.addEventListener('change', updateTargetFolderOptions);
+    updateTargetFolderOptions();
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
-
-        const fileInput = document.getElementById('fileInput');
-        const folderInput = document.getElementById('folderInput');
 
         const files = fileInput.files;
         const folderFiles = folderInput.files;
 
         const formData = new FormData();
 
-        const category = document.querySelector('select[name="category"]').value;
+        const category = categorySelect.value;
         formData.append('category', category);
+        formData.append('target_folder', targetFolderSelect.value || '');
 
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
@@ -1619,6 +1762,8 @@ if (form) {
         statusBoxUpload.style.display = 'block';
         statusBoxUpload.className = 'upload-status upload-loading';
         statusBoxUpload.innerHTML = 'Uploading...';
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
 
         try {
             const response = await fetch("{{ route('map.upload') }}", {
@@ -1626,12 +1771,21 @@ if (form) {
                 body: formData
             });
 
-            const result = await response.json();
+            const result = await response.json().catch(() => ({
+                message: 'Upload failed. The server returned an invalid response.',
+                files: []
+            }));
 
             if (response.ok && result.files.length > 0) {
                 statusBoxUpload.className = 'upload-status upload-success';
                 statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
+                const targetLabel = targetFolderSelect.value ? ` to ${targetFolderSelect.value}` : '';
+                statusBoxUpload.innerHTML = `Uploaded ${result.files.length} file(s)${targetLabel}.`;
                 form.reset();
+                updateTargetFolderOptions();
+                updateSelectionInfo('No files selected.');
+                irrigatedStats = await fetch('/irrigated-chart-data').then(res => res.json());
+                window.setTimeout(() => window.location.reload(), 800);
             } else {
                 throw new Error(result.message || 'Upload failed');
             }
@@ -1639,6 +1793,8 @@ if (form) {
         } catch (error) {
             statusBoxUpload.className = 'upload-status upload-error';
             statusBoxUpload.innerHTML = '❌ ' + error.message;
+        } finally {
+            submitButton.disabled = false;
         }
     });
 }
@@ -1650,19 +1806,8 @@ const overlayPriority = {
 //Details
 
 let municipalityData = [];
-
-// load your dataset
-fetch(buildAppUrl('maps/municipalities.json'))
-    .then(res => res.json())
-    .then(data => {
-        municipalityData = data;
-        console.log("Municipality data loaded:", municipalityData);
-    });
-
 function getMunicipalityData(name) {
-    return municipalityData.find(m =>
-        m.name.toLowerCase() === name.toLowerCase()
-    );
+    return getIrrigatedStatByName(name);
 }
 function openPanel() {
     document.getElementById('infoPanel').classList.add('active');
@@ -1685,63 +1830,7 @@ function closeAllPanels() {
 }
 
 
-// if (data) {
 
-//     // 🔥 Convert your real data into chart format
-//     const landData = {
-//         labels: [
-//             "Land Area (ha)",
-//             "Annual Palay (MT)",
-//             "Canals",
-//             "Dams"
-//         ],
-//         values: [
-//             data.land_area_ha,
-//             data.annual_palay_mt,
-//             data.canals_count,
-//             data.dams.length
-//         ],
-//         colors: [
-//             "#2e7d32",
-//             "#66bb6a",
-//             "#42a5f5",
-//             "#8d6e63"
-//         ]
-//     };
-
-//     renderChart(landData);
-//     renderLegend(landData);
-
-// // if (data) {
-
-// //     const landData = {
-// //         labels: [
-// //             "Land Area (ha)",
-// //             "Annual Crop (ha)",
-// //             "Canals",
-// //             "Dams"
-// //         ],
-// //         values: [
-// //             data.total_land_area_ha || 0,
-// //             data.annual_crop_ha || 0,
-// //             data.infrastructure?.canals || 0,
-// //             data.infrastructure?.dams?.length || 0
-// //         ],
-// //         colors: [
-// //             "#2e7d32",
-// //             "#66bb6a",
-// //             "#42a5f5",
-// //             "#8d6e63"
-// //         ]
-// //     };
-
-// //     renderChart(landData);
-// //     renderLegend(landData);
-// //     openDetail();
-
-// // }
-
-// }
 function openDetail() {
 
     if (!selectedMunicipality) {
@@ -1750,6 +1839,12 @@ function openDetail() {
     }
 
     const data = selectedMunicipality;
+    const sourceFiles = Array.isArray(data.source_files) && data.source_files.length
+        ? data.source_files.join(', ')
+        : 'No DBF files matched';
+    const irrigatedAreaDescription = data.irrigated_area_source === 'details_json'
+        ? 'Fallback from details.json area_developed_ha'
+        : 'Summed from matched irrigated DBF records';
 
     document.getElementById('detailContent').innerHTML = `
         <div class="detail-table">
@@ -1761,39 +1856,45 @@ function openDetail() {
             </div>
 
             <div class="detail-row">
-                <div>Land Area</div>
+                <div>Municipality</div>
+                <div>${data.name}</div>
+                <div>Matched municipality name</div>
+            </div>
+
+            <div class="detail-row">
+                <div>Total Land Area</div>
                 <div>${data.total_land_area_ha.toLocaleString()} ha</div>
                 <div>Total land area</div>
             </div>
 
             <div class="detail-row">
-                <div>Annual Crop</div>
-                <div>${data.annual_crop_ha.toLocaleString()} ha</div>
-                <div>Planted crop area</div>
+                <div>PIA</div>
+                <div>${Number(data.pia_area || 0).toLocaleString()} ha</div>
+                <div>Potential irrigable area</div>
             </div>
 
             <div class="detail-row">
-                <div>Canals</div>
-                <div>${data.infrastructure?.canals || 0}</div>
-                <div>Irrigation canals</div>
+                <div>Irrigated Area</div>
+                <div>${Number(data.irrigated_area || 0).toLocaleString()} ha</div>
+                <div>${irrigatedAreaDescription}</div>
             </div>
 
             <div class="detail-row">
-                <div>Dams</div>
-                <div>${data.infrastructure?.dams?.join(', ') || 'None'}</div>
-                <div>Water infrastructure</div>
+                <div>Remaining Area</div>
+                <div>${Number(data.remaining_area || 0).toLocaleString()} ha</div>
+                <div>Computed as PIA minus irrigated area</div>
             </div>
 
             <div class="detail-row">
-                <div>Primary Crops</div>
-                <div>${data.primary_crops.join(', ')}</div>
-                <div>Main crops grown</div>
+                <div>Matched DBF Files</div>
+                <div>${Number(data.dbf_file_count || 0)}</div>
+                <div>Number of irrigated DBF files used</div>
             </div>
 
             <div class="detail-row">
-                <div>Classification</div>
-                <div>${data.classification}</div>
-                <div>Land classification</div>
+                <div>Source Files</div>
+                <div>${sourceFiles}</div>
+                <div>Irrigated folder DBF matches</div>
             </div>
 
         </div>
@@ -1811,7 +1912,8 @@ function renderChart(landData) {
 
     activeSliceIndex = null;
 
-    const total = landData.values.reduce((a, b) => a + b, 0);
+    // ✅ Base total land area only
+    const totalLand = Number(landData.values[0]) || 0;
 
     landChart = new Chart(ctx, {
         type: 'doughnut',
@@ -1821,12 +1923,10 @@ function renderChart(landData) {
                 data: landData.values,
                 backgroundColor: landData.colors,
 
-                // ✅ DYNAMIC OFFSET (PERSISTENT)
                 offset: (ctx) => {
                     return ctx.dataIndex === activeSliceIndex ? 20 : 0;
                 },
 
-                // ✅ DYNAMIC BORDER
                 borderWidth: (ctx) => {
                     return ctx.dataIndex === activeSliceIndex ? 3 : 1;
                 },
@@ -1846,8 +1946,12 @@ function renderChart(landData) {
                     callbacks: {
                         label: function(context) {
                             const value = context.raw;
-                            const percent = ((value / total) * 100).toFixed(2);
-                            return `${context.label}: ${value} (${percent}%)`;
+
+                            const percent = totalLand > 0
+                                ? ((value / totalLand) * 100).toFixed(2)
+                                : 0;
+
+                            return `${context.label}: ${value.toLocaleString()} (${percent}%)`;
                         }
                     }
                 }
@@ -1855,15 +1959,19 @@ function renderChart(landData) {
         }
     });
 }
+
 function renderLegend(landData) {
     const container = document.getElementById('legendContainer');
     container.innerHTML = '';
 
-    const total = landData.values.reduce((a, b) => a + b, 0);
+    const totalLand = Number(landData.values[0]) || 0;
 
     landData.labels.forEach((label, index) => {
-        const value = landData.values[index];
-        const percent = ((value / total) * 100).toFixed(2);
+        const value = Number(landData.values[index]) || 0;
+
+        const percent = totalLand > 0
+            ? ((value / totalLand) * 100).toFixed(2)
+            : 0;
 
         const item = document.createElement('div');
         item.className = 'legend-item active';
@@ -1873,34 +1981,149 @@ function renderLegend(landData) {
             ${label}: ${value.toLocaleString()} (${percent}%)
         `;
 
-        // 🔥 CLICK TO TOGGLE SLICE
         item.onclick = function () {
-     if (!landChart) return;
+            if (!landChart) return;
 
-    activeSliceIndex = index;
-    landChart.update();
-
-};
+            activeSliceIndex = index;
+            landChart.update();
+        };
 
         container.appendChild(item);
     });
 }
+
 function updateInfoPanel(municipalityName) {
     document.getElementById("municipalityName").textContent = municipalityName + " Details";
 }
 const adminSidebar = document.getElementById('admin-sidebar');
 const openBtn = document.getElementById('admin-toggle-btn');
 const closeBtn = document.getElementById('close-sidebar');
+const mainSidebar = document.getElementById('sidebar');
+
+if (openBtn) {
+    openBtn.style.display = 'flex';
+    openBtn.style.opacity = '1';
+    openBtn.style.visibility = 'visible';
+}
 
 // OPEN sidebar
-openBtn.addEventListener('click', () => {
-    adminSidebar.classList.remove('sidebar-closed');
-});
+if (openBtn && adminSidebar) {
+    openBtn.addEventListener('click', () => {
+        adminSidebar.classList.remove('sidebar-closed');
+        syncMapLayout();
+    });
+}
 
 // CLOSE sidebar
-closeBtn.addEventListener('click', () => {
-    adminSidebar.classList.add('sidebar-closed');
-});
-</script>
+if (closeBtn && adminSidebar) {
+    closeBtn.addEventListener('click', () => {
+        adminSidebar.classList.add('sidebar-closed');
+        syncMapLayout();
+    });
+}
 
+if (adminSidebar) {
+    adminSidebar.addEventListener('transitionend', syncMapLayout);
+}
+
+if (mainSidebar) {
+    mainSidebar.addEventListener('transitionend', (event) => {
+        if (event.propertyName === 'margin-left' || event.propertyName === 'transform') {
+            syncMapLayout();
+        }
+    });
+}
+
+if (mainSidebar && 'MutationObserver' in window) {
+    new MutationObserver(queueMapLayoutSync).observe(mainSidebar, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+}
+
+if ('ResizeObserver' in window) {
+    mapResizeObserver = new ResizeObserver(() => {
+        syncMapLayout();
+    });
+
+    if (contentContainer) {
+        mapResizeObserver.observe(contentContainer);
+    }
+
+    if (mainWrapper) {
+        mapResizeObserver.observe(mainWrapper);
+    }
+}
+
+window.addEventListener('resize', syncMapLayout);
+document.addEventListener('DOMContentLoaded', syncMapLayout);
+
+async function loadChart() {
+    const res = await fetch('/irrigated-chart-data');
+    const data = await res.json();
+}
+
+loadChart();
+function updateChart(municipality, data) {
+    const values = data[municipality];
+
+    chart.data.labels = Object.keys(values);
+    chart.data.datasets[0].data = Object.values(values);
+    chart.data.datasets[0].label = municipality;
+
+    chart.update();
+}
+function normalizeName(name) {
+    return String(name || '')
+        .toLowerCase()
+        .replace(/city of/g, '')
+        .replace(/municipality of/g, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function normalizeName(name) {
+    return String(name || '')
+        .toLowerCase()
+        .replace(/city of/g, '')
+        .replace(/municipality of/g, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function getIrrigatedStatByName(name) {
+    const target = normalizeName(name);
+
+    const key = Object.keys(irrigatedStats).find(k => {
+        return normalizeName(k) === target;
+    });
+
+    return key ? irrigatedStats[key] : null;
+}
+</script>
+<script>
+function showMapLoader(message = 'Loading map data...') {
+    const loader = document.getElementById('map-loader');
+    const loaderText = document.getElementById('loader-text');
+
+    if (loaderText) {
+        loaderText.textContent = message;
+    }
+
+    if (loader) {
+        loader.style.display = 'flex';
+    }
+}
+
+function hideMapLoader() {
+    const loader = document.getElementById('map-loader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+}
+
+
+</script>
 @endsection
