@@ -509,7 +509,8 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                 </div>
                 <div style="margin-bottom: 25px;">
                     <label class="modern-label">Category Tag</label>
-                    <select name="event_category_id" id="eventCategoryInput" required class="modern-input">
+                    <input type="hidden" name="event_category_id" id="eventCategoryValueInput">
+                    <select id="eventCategoryInput" required class="modern-input">
                         @forelse($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                         @empty
@@ -550,7 +551,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                     @foreach($categories as $cat)
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
                             <div class="legend-item"><div class="legend-dot" style="background: {{ $cat->color }};"></div>{{ $cat->name }}</div>
-                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard, #eventModal, #categoryModal" data-async-confirm="Delete this tag?">
+                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;" data-category-id="{{ $cat->id }}" data-async-target="#eventManagerCard, #eventModal, #categoryModal, #upcomingEventsKpi" data-async-confirm="Delete this tag?">
                                 @csrf @method('DELETE')
                                 <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px; font-weight: 600;">Delete</button>
                             </form>
@@ -661,6 +662,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
             const recurrenceUntilInput = document.getElementById('eventRecurrenceUntilInput');
             const startTimeInput = document.getElementById('startTime');
             const endTimeInput = document.getElementById('endTime');
+            const eventCategoryInput = document.getElementById('eventCategoryInput');
             const eventForm = document.getElementById('eventForm');
 
             if (eventDateInput && !eventDateInput._flatpickr) {
@@ -679,11 +681,19 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                 flatpickr(endTimeInput, { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "10:30" });
             }
 
+            if (eventCategoryInput && eventCategoryInput.dataset.bound !== 'true') {
+                eventCategoryInput.addEventListener('change', syncAdminEventCategoryInput);
+                eventCategoryInput.dataset.bound = 'true';
+            }
+
+            syncAdminEventCategoryInput();
+
             if (eventForm && eventForm.dataset.bound !== 'true') {
                 eventForm.addEventListener('submit', function() {
                     const start = document.getElementById('startTime').value;
                     const end = document.getElementById('endTime').value;
                     const recurrencePattern = document.getElementById('eventRecurrenceInput').value || 'none';
+                    syncAdminEventCategoryInput();
                     document.getElementById('finalTimeInput').value = start + ' - ' + end;
                     if (recurrencePattern === 'none') {
                         document.getElementById('eventRecurrenceUntilInput').value = '';
@@ -691,6 +701,17 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                 });
                 eventForm.dataset.bound = 'true';
             }
+        }
+
+        function syncAdminEventCategoryInput() {
+            const categorySelect = document.getElementById('eventCategoryInput');
+            const categoryValueInput = document.getElementById('eventCategoryValueInput');
+
+            if (!categorySelect || !categoryValueInput) {
+                return;
+            }
+
+            categoryValueInput.value = categorySelect.value || '';
         }
 
         function initializeAdminEventFilters() {
@@ -759,6 +780,51 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
             });
         }
 
+        function pruneDeletedCategoryEvents(payload = {}) {
+            const deletedCategoryId = payload.deleted_category_id;
+            const deletedEventIds = new Set((payload.deleted_event_ids || []).map((id) => String(id)));
+
+            if (!deletedCategoryId && deletedEventIds.size === 0) {
+                return;
+            }
+
+            adminEventEntries = adminEventEntries.filter((event) => {
+                if (deletedEventIds.size > 0 && deletedEventIds.has(String(event.id))) {
+                    return false;
+                }
+
+                if (deletedCategoryId && String(event.event_category_id || '') === String(deletedCategoryId)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            document.querySelectorAll('.admin-event-item').forEach((item) => {
+                const matchesDeletedEvent = deletedEventIds.has(String(item.dataset.eventId));
+                const matchesDeletedCategory = deletedCategoryId && String(item.dataset.categoryId || '') === String(deletedCategoryId);
+
+                if (matchesDeletedEvent || matchesDeletedCategory) {
+                    item.remove();
+                }
+            });
+
+            const visibleEventCount = document.querySelectorAll('.admin-event-item').length;
+            const upcomingScheduleSection = document.querySelector('#eventManagerCard div[style*="margin-top: 10px;"]');
+
+            if (upcomingScheduleSection && visibleEventCount === 0 && !upcomingScheduleSection.querySelector('.admin-event-item')) {
+                const emptyState = document.createElement('p');
+                emptyState.style.fontSize = '12px';
+                emptyState.style.color = '#a0aec0';
+                emptyState.style.textAlign = 'center';
+                emptyState.style.marginTop = '20px';
+                emptyState.textContent = 'No upcoming events.';
+                upcomingScheduleSection.appendChild(emptyState);
+            }
+
+            applyAdminEventFilters();
+        }
+
         function resetAdminEventForm() {
             const form = document.getElementById('eventForm');
             if (!form) return;
@@ -770,6 +836,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
             document.getElementById('eventFormSubmitButton').innerText = 'Save Event';
             document.getElementById('displayDate').innerText = '';
             form.reset();
+            syncAdminEventCategoryInput();
         }
 
         function openEventModal(dateStr) {
@@ -804,6 +871,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
             document.getElementById('eventRecurrenceInput').value = event.recurrence_pattern || 'none';
             document.getElementById('eventRecurrenceUntilInput').value = event.recurrence_until || '';
             document.getElementById('eventCategoryInput').value = event.event_category_id || '';
+            syncAdminEventCategoryInput();
 
             const [startTime = '', endTime = ''] = String(event.event_time || '').split(' - ');
             document.getElementById('startTime').value = startTime;
@@ -880,6 +948,21 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
         document.addEventListener('app:async-refreshed', function() {
             initializeAdminDashboard();
+        });
+
+        document.addEventListener('app:async-form-success', function(event) {
+            const form = event.detail?.form;
+            const payload = event.detail?.payload || {};
+            const fallbackCategoryId = form?.dataset?.categoryId || '';
+
+            if (!payload.deleted_category_id && !(payload.deleted_event_ids || []).length && !fallbackCategoryId) {
+                return;
+            }
+
+            pruneDeletedCategoryEvents({
+                ...payload,
+                deleted_category_id: payload.deleted_category_id || fallbackCategoryId,
+            });
         });
 
         function changeMonth(direction) {

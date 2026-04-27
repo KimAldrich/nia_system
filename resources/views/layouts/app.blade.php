@@ -965,6 +965,14 @@
                     });
                 }
 
+                document.dispatchEvent(new CustomEvent('app:async-form-success', {
+                    detail: {
+                        form,
+                        payload,
+                        targets: targetSelectors
+                    }
+                }));
+
                 if (resetForm) {
                     form.reset();
                 }

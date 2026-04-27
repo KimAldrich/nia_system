@@ -51,12 +51,15 @@ class AdminController extends Controller
         $eventTeamFilter = trim((string) $request->query('event_team', ''));
 
         $upcomingEventsQuery = Event::with('category')
-            ->where('event_date', '>', now()->format('Y-m-d'))
-            ->orWhere(function ($query) {
-                $today = now()->format('Y-m-d');
-                $currentTime = now()->format('H:i:s');
-                $query->where('event_date', $today)
-                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            ->whereHas('category')
+            ->where(function ($query) {
+                $query->where('event_date', '>', now()->format('Y-m-d'))
+                    ->orWhere(function ($query) {
+                        $today = now()->format('Y-m-d');
+                        $currentTime = now()->format('H:i:s');
+                        $query->where('event_date', $today)
+                            ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+                    });
             })
             ->when($eventTagFilter !== '', fn ($query) => $query->where('event_category_id', $eventTagFilter))
             ->when($eventTeamFilter !== '' && $eventTeamFilter !== 'all', fn ($query) => $query->where('team', $eventTeamFilter))
@@ -615,17 +618,22 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
-        $category = EventCategory::withCount('events')->findOrFail($id);
-        $deletedEvents = $category->events()->count();
+        $category = EventCategory::findOrFail($id);
+        $linkedEventsQuery = Event::query()->where('event_category_id', $category->id);
+        $deletedEventIds = $linkedEventsQuery->pluck('id')->all();
+        $deletedEvents = count($deletedEventIds);
 
-        $category->events()->delete();
+        $linkedEventsQuery->delete();
         $category->delete();
 
         $message = $deletedEvents > 0
             ? "Tag removed. {$deletedEvents} linked event(s) were also deleted."
             : 'Tag removed.';
 
-        return $this->successResponse($request, $message);
+        return $this->successResponse($request, $message, [
+            'deleted_category_id' => (int) $id,
+            'deleted_event_ids' => $deletedEventIds,
+        ]);
     }
 
     public function destroyEvent(Request $request, $id)
