@@ -11,10 +11,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(append: [
+            \App\Http\Middleware\NormalizeSessionState::class,
+            \App\Http\Middleware\PreventBackHistory::class,
+            \App\Http\Middleware\AuditActivity::class,
+        ]);
+
         $middleware->alias([
             'check.terms' => \App\Http\Middleware\CheckTerms::class,
             'check.role' => \App\Http\Middleware\CheckRole::class,
             'check.active' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'verified.except_admin' => \App\Http\Middleware\EnsureEmailIsVerifiedExceptAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

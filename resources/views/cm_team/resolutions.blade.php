@@ -333,7 +333,7 @@
     </div>
 
     <div id="available-resolutions" class="tab-pane active">
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+        <div id="resolutionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
 
             @forelse($resolutions as $resolution)
                 @php
@@ -382,23 +382,25 @@
                         </p>
                     </div>
 
-                    <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank" class="btn-dark"
-                        style="margin-bottom: 15px;">Download</a>
+                    <!-- ✅ MATCHED BUTTON STYLE -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank" class="btn-dark"
+                            style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
+                            Download
+                        </a>
 
-                    @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
-                        <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px;">
-                        <form action="{{ route('cm.resolutions.update', $resolution->id) }}" method="POST"
-                            enctype="multipart/form-data">
-                            @csrf
-                            <label
-                                style="font-size: 10px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update
-                                File</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" name="document" required class="file-input-sm">
-                                <button type="submit" class="btn-outline">Replace</button>
-                            </div>
-                        </form>
-                    @endif
+                        @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
+                            <form action="{{ route('cm.resolutions.delete', $resolution->id) }}" method="POST"
+                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?" data-async-success="silent">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline"
+                                    style="width: 100%; padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">
+                                    Delete
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <div
@@ -410,11 +412,11 @@
     </div>
 
     <div id="upload-resolution" class="tab-pane">
-        <form action="{{ route('cm.resolutions.upload') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('cm.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#resolutionsList" data-async-reset="true">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
-                    <input type="file" name="document" class="file-input-hidden" id="file-input" required
+                    <input type="file" name="documents[]" class="file-input-hidden" id="file-input" required multiple
                         accept=".pdf,.doc,.docx,.xls,.xlsx">
 
                     <svg class="upload-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -442,7 +444,6 @@
             </div>
         </form>
     </div>
-
     <script>
         function switchTab(event, tabId) {
             document.querySelectorAll('.tab-pane').forEach(function(pane) {
@@ -456,36 +457,64 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.querySelector('#upload-form form, #upload-resolution form');
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
             const submitBtn = document.getElementById('submit-btn');
 
-            dropzone.addEventListener('dragover', () => dropzone.classList.add('dragover'));
-            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-            dropzone.addEventListener('drop', () => dropzone.classList.remove('dragover'));
+            if (!uploadForm || !fileInput || !fileList || !submitBtn) {
+                return;
+            }
 
-            fileInput.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) {
-                    const file = this.files[0];
-                    let ext = file.name.split('.').pop().substring(0, 3).toUpperCase();
-                    let sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-
-                    fileList.innerHTML = `
-                                                                        <div class="file-item">
-                                                                            <div class="file-type-ring">${ext}</div>
-                                                                            <div class="file-details">
-                                                                                <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
-                                                                                <p class="file-size">${sizeMB} MB / ${sizeMB} MB</p>
-                                                                            </div>
-                                                                            <div class="file-status">✓</div>
-                                                                        </div>
-                                                                    `;
-                    submitBtn.style.display = 'block';
-                } else {
+            function renderSelectedFiles(files) {
+                if (!files || files.length === 0) {
                     fileList.innerHTML = '<div class="empty-state">No file selected.</div>';
                     submitBtn.style.display = 'none';
+                    return;
                 }
+
+                fileList.innerHTML = Array.from(files).map(function(file) {
+                    const parts = file.name.split('.');
+                    const ext = (parts.length > 1 ? parts.pop() : 'FILE').substring(0, 3).toUpperCase();
+                    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+
+                    return `
+                        <div class="file-item">
+                            <div class="file-type-ring">${ext}</div>
+                            <div class="file-details">
+                                <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
+                                <p class="file-size">${sizeMB} MB</p>
+                            </div>
+                            <div class="file-status">&#10003;</div>
+                        </div>
+                    `;
+                }).join('');
+
+                submitBtn.style.display = 'block';
+            }
+
+            if (dropzone) {
+                dropzone.addEventListener('dragover', function() {
+                    dropzone.classList.add('dragover');
+                });
+                dropzone.addEventListener('dragleave', function() {
+                    dropzone.classList.remove('dragover');
+                });
+                dropzone.addEventListener('drop', function() {
+                    dropzone.classList.remove('dragover');
+                });
+            }
+
+            fileInput.addEventListener('change', function() {
+                renderSelectedFiles(this.files);
+            });
+
+            uploadForm.addEventListener('reset', function() {
+                window.setTimeout(function() {
+                    fileInput.value = '';
+                    renderSelectedFiles([]);
+                }, 0);
             });
         });
     </script>

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/2020-nia-logo.png') }}">
     <title>@yield('title', 'System Dashboard')</title>
     <style>
        :root {
@@ -35,6 +36,14 @@
         .menu-toggle-btn { position: absolute; top: 20px; right: -16px; width: 32px; height: 32px; background-color: var(--sidebar-bg); color: #ffffff; border: 3px solid var(--bg-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1001; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: right 0.3s ease-in-out, transform 0.2s; }
         .menu-toggle-btn:hover { transform: scale(1.05); }
         .sidebar.collapsed .menu-toggle-btn { right: -50px; border-color: transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .sidebar-toggle-icon { position: relative; width: 16px; height: 12px; display: inline-flex; align-items: center; justify-content: center; }
+        .sidebar-toggle-icon span { position: absolute; left: 0; width: 100%; height: 2px; border-radius: 999px; background: currentColor; transform-origin: center; transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease; }
+        .sidebar-toggle-icon span:nth-child(1) { top: 0; }
+        .sidebar-toggle-icon span:nth-child(2) { top: 5px; }
+        .sidebar-toggle-icon span:nth-child(3) { top: 10px; }
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(1) { top: 5px; transform: rotate(45deg); }
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(3) { top: 5px; transform: rotate(-45deg); }
         .sidebar-header { padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; }
         .sidebar-logo { width: 100px; height: auto; margin-bottom: 8px; }
         .sidebar-title { font-size: 13px; font-weight: 700; color: #ffffff; letter-spacing: 1px; line-height: 1.3; }
@@ -67,6 +76,7 @@
            MAIN CONTENT AREA
            ========================================= */
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; transition: all 0.3s ease-in-out; max-width: calc(100vw - 310px); }
+        .sidebar.collapsed ~ .main-wrapper { max-width: 100vw; }
         .content { padding: 30px; overflow-y: auto; overflow-x: hidden; flex: 1; width: 100%; box-sizing: border-box; }
 
         /* 🌟 NEW SOFT UI CARD STYLES (Matches Image) 🌟 */
@@ -77,11 +87,146 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); /* Soft, blurred shadow */
             margin-bottom: 20px;
             border: none; /* Removed the hard border! */
-            max-width: 100%; box-sizing: border-box; overflow-x: auto;
+            max-width: 100%;
+            width: 100%;
+            min-width: 0;
+            display: block;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .content .ui-card,
+        .content .card {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            display: block;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .content .ui-card > *,
+        .content .card > * {
+            min-width: 0;
+            max-width: 100%;
+        }
+        .content .ui-card img,
+        .content .ui-card svg,
+        .content .ui-card canvas,
+        .content .card img,
+        .content .card svg,
+        .content .card canvas {
+            max-width: 100%;
+        }
+        .content .dashboard-grid,
+        .content .dashboard-main-grid,
+        .content .kpi-grid {
+            width: 100%;
+            min-width: 0;
+            align-items: start;
+        }
+        .content .dashboard-grid {
+            grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+        }
+        .content .main-column,
+        .content .side-column {
+            width: 100%;
+            min-width: 0;
+        }
+        .content .section-title {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .content .ui-card table,
+        .content .card table {
+            width: 100%;
+            max-width: 100%;
+        }
+        .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
+        .content .card [style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
         }
 
         .page-title { margin-top: 0; color: #1e293b; font-size: 22px; margin-bottom: 15px; font-weight: 700; }
         .section-title { font-size: 16px; color: #64748b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
+        .table-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 18px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+        .table-toolbar__search,
+        .table-toolbar__field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 180px;
+            flex: 1 1 180px;
+        }
+        .table-toolbar__label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .table-toolbar__input,
+        .table-toolbar__select {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ee;
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 13px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+        .table-toolbar__input:focus,
+        .table-toolbar__select:focus {
+            outline: none;
+            border-color: #110d9e;
+            box-shadow: 0 0 0 4px rgba(17, 13, 158, 0.08);
+        }
+        .table-toolbar__actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+        }
+        .table-toolbar__button {
+            min-height: 44px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .table-toolbar__button--primary {
+            background: #110d9e;
+            color: #ffffff;
+        }
+        .table-toolbar__button--primary:hover {
+            background: #0c0a78;
+        }
+        .table-toolbar__button--ghost {
+            background: #ffffff;
+            color: #475569;
+            border-color: #cbd5e1;
+        }
+        .table-toolbar__button--ghost:hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
 
         /* 🌟 NEW KPI METRIC CARDS 🌟 */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
@@ -114,15 +259,169 @@
         .mobile-menu-btn { background: var(--sidebar-bg); border: none; color: #ffffff; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         .mobile-title { font-weight: 700; color: var(--primary-dark); font-size: 14px; letter-spacing: 0.5px; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
-
+        .app-alert-stack { display: grid; gap: 12px; margin-bottom: 20px; }
+        .app-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 1px solid transparent; font-size: 13px; font-weight: 500; line-height: 1.5; }
+        .app-alert-success { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+        .app-alert-error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        .app-alert-info { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .app-alert-icon { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; background: currentColor; color: #ffffff; }
+        .app-alert-title { font-weight: 700; margin-bottom: 4px; }
+        .app-alert-list { margin: 0; padding-left: 18px; }
+        .app-alert-list li + li { margin-top: 4px; }
+        .app-global-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.28);
+            backdrop-filter: blur(3px);
+            z-index: 5000;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .app-global-loader.is-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .app-global-loader__card {
+            min-width: 220px;
+            max-width: min(90vw, 320px);
+            padding: 20px 22px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .app-global-loader__spinner {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 3px solid #dbeafe;
+            border-top-color: #110d9e;
+            animation: appGlobalSpin 0.85s linear infinite;
+            flex-shrink: 0;
+        }
+        .app-global-loader__text {
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .app-confirm-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.38);
+            backdrop-filter: blur(4px);
+            z-index: 5100;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .app-confirm-modal.is-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .app-confirm-modal__dialog {
+            width: min(100%, 440px);
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+            padding: 26px 24px 22px;
+        }
+        .app-confirm-modal__title {
+            margin: 0 0 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .app-confirm-modal__message {
+            margin: 0 0 24px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+        }
+        .app-confirm-modal__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .app-confirm-modal__button {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 11px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .app-confirm-modal__button--cancel {
+            background: #ffffff;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .app-confirm-modal__button--cancel:hover {
+            background: #f8fafc;
+        }
+        .app-confirm-modal__button--confirm {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+        .app-confirm-modal__button--confirm:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+        .is-loading {
+            opacity: 0.65;
+            pointer-events: none;
+        }
+        @keyframes appGlobalSpin {
+            to { transform: rotate(360deg); }
+        }
         @media (max-width: 1150px) {
             .dashboard-main-grid { grid-template-columns: 1fr; }
+            .content .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
         }
 
         @media (max-width: 900px) {
             .main-wrapper { max-width: 100vw; }
             .mobile-header { display: flex; }
             .content { padding: 20px 15px; }
+            .content .ui-card,
+            .content .card {
+                padding: 20px;
+            }
+            .table-toolbar {
+                align-items: stretch;
+            }
+            .table-toolbar__search,
+            .table-toolbar__field,
+            .table-toolbar__actions {
+                min-width: 100%;
+                flex: 1 1 100%;
+            }
+            .table-toolbar__actions {
+                margin-left: 0;
+            }
+            .table-toolbar__button {
+                flex: 1 1 0;
+            }
+            .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
+            .content .card [style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
             .menu-toggle-btn { display: none; }
             .sidebar { position: fixed; top: 0; bottom: 0; left: 0; margin-left: 0 !important; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
@@ -132,6 +431,23 @@
 </head>
 
 <body>
+    <div id="appGlobalLoader" class="app-global-loader" aria-hidden="true" role="status" aria-live="polite">
+        <div class="app-global-loader__card">
+            <div class="app-global-loader__spinner" aria-hidden="true"></div>
+            <div id="appGlobalLoaderText" class="app-global-loader__text">Loading, please wait...</div>
+        </div>
+    </div>
+
+    <div id="appConfirmModal" class="app-confirm-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="appConfirmModalTitle">
+        <div class="app-confirm-modal__dialog">
+            <h3 id="appConfirmModalTitle" class="app-confirm-modal__title">Confirm delete</h3>
+            <p id="appConfirmModalMessage" class="app-confirm-modal__message">Are you sure you want to continue?</p>
+            <div class="app-confirm-modal__actions">
+                <button type="button" id="appConfirmModalCancel" class="app-confirm-modal__button app-confirm-modal__button--cancel">Cancel</button>
+                <button type="button" id="appConfirmModalApprove" class="app-confirm-modal__button app-confirm-modal__button--confirm">Delete</button>
+            </div>
+        </div>
+    </div>
 
     @php
         if(session('is_guest')) {
@@ -141,7 +457,7 @@
             $roleLabels = [
                 'admin' => 'Administrator',
                 'fs_team' => 'FS Member',
-                'rpwsis_team' => 'RP-WSIS Team Member',
+                'rpwsis_team' => 'Social And Environmental Team Member',
                 'cm_team' => 'Contract Management Team Member',
                 'row_team' => 'Right Of Way Team Member',
                 'pcr_team' => 'Program Completion Report Team Member',
@@ -156,10 +472,12 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <div class="sidebar" id="sidebar">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
+        <button class="menu-toggle-btn sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar" aria-expanded="true">
+            <span class="sidebar-toggle-icon" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
         </button>
 
         <div class="sidebar-header">
@@ -179,6 +497,10 @@
                     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <span>User Management</span>
                 </a>
+                <a href="{{ route('admin.audit') }}" class="menu-item {{ request()->routeIs('admin.audit') ? 'active' : '' }}" style="margin-bottom: 8px;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z"></path></svg>
+                    <span>Activity Log</span>
+                </a>
             @endif
 
             @if(session('is_guest'))
@@ -194,7 +516,7 @@
             @php
                 $teams = [
                     'fs-team' => 'Feasibility Study Team',
-                    'rpwsis_team' => 'RP-WSIS Team',
+                    'rpwsis_team' => 'Social And Environmental Team',
                     'cm_team' => 'Contract Management Team',
                     'row_team' => 'Right Of Way Team',
                     'pcr_team' => 'Program Completion Report Team',
@@ -213,16 +535,17 @@
                     <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
 
-                <div class="sub-menu {{ $activeTeam == $slug ? 'open' : '' }}" id="menu-{{ $slug }}">
-                    @if(session('is_guest'))
-                        <a href="{{ route('guest.team.downloadables', $slug) }}" class="sub-item {{ request()->is('team/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
-                        <a href="{{ route('guest.team.resolutions', $slug) }}" class="sub-item {{ request()->is('team/' . $slug . '/resolutions') ? 'active' : '' }}">IA Resolutions</a>
-                    @else
-                        <a href="/{{ $slug }}/dashboard" class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
-                        <a href="/{{ $slug }}/downloadables" class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
-                        <a href="/{{ $slug }}/ia-resolutions" class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
-                    @endif
-                </div>
+<div class="sub-menu {{ $activeTeam == $slug ? 'open' : '' }}" id="menu-{{ $slug }}">
+    @if(session('is_guest'))
+        <a href="{{ route('guest.team.dashboard', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
+        <a href="{{ route('guest.team.downloadables', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+        <a href="{{ route('guest.team.resolutions', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/resolutions') ? 'active' : '' }}">IA Resolutions</a>
+    @else
+        <a href="/{{ $slug }}/dashboard" class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
+        <a href="/{{ $slug }}/downloadables" class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+        <a href="/{{ $slug }}/ia-resolutions" class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
+    @endif
+</div>
             @endforeach
 
             <div class="nav-label" style="margin-top: 15px;">Shared Hubs</div>
@@ -268,22 +591,568 @@
 
     <div class="main-wrapper">
         <div class="mobile-header">
-            <button class="mobile-menu-btn" onclick="toggleSidebar()">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <button class="mobile-menu-btn sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar" aria-expanded="false">
+                <span class="sidebar-toggle-icon" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
             </button>
             <div class="mobile-title">NIA PIMO Portal</div>
             <div style="width: 24px;"></div>
         </div>
 
         <div class="content">
+            <div id="appLiveAlerts"></div>
+            @include('partials.alerts')
             @yield('content')
         </div>
     </div>
 
     <script>
+        function setFieldValidityState(field) {
+            if (!(field instanceof HTMLElement) || typeof field.checkValidity !== 'function' || !field.willValidate) {
+                return;
+            }
+
+            const isInvalid = !field.checkValidity();
+            field.classList.toggle('is-invalid', isInvalid);
+            field.setAttribute('aria-invalid', isInvalid ? 'true' : 'false');
+        }
+
+        function validateFormBeforeSubmit(form) {
+            if (!(form instanceof HTMLFormElement) || typeof form.checkValidity !== 'function') {
+                return true;
+            }
+
+            Array.from(form.elements).forEach(setFieldValidityState);
+
+            if (form.checkValidity()) {
+                return true;
+            }
+
+            const firstInvalidField = form.querySelector(':invalid');
+            if (typeof form.reportValidity === 'function') {
+                form.reportValidity();
+            }
+
+            if (firstInvalidField instanceof HTMLElement) {
+                firstInvalidField.focus();
+                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            showLiveAlert('Please review the highlighted fields and try again.', 'error');
+            return false;
+        }
+
+        function showLiveAlert(message, type = 'success') {
+            const host = document.getElementById('appLiveAlerts');
+            if (!host || !message) return;
+
+            const alert = document.createElement('div');
+            alert.className = `app-alert-stack`;
+            alert.innerHTML = `
+                <div class="app-alert app-alert-${type}" role="status" aria-live="polite">
+                    <span class="app-alert-icon" aria-hidden="true">${type === 'error' ? '!' : type === 'info' ? 'i' : '✓'}</span>
+                    <div>
+                        <div class="app-alert-title">${type === 'error' ? 'Something went wrong' : 'Success'}</div>
+                        <div>${message}</div>
+                    </div>
+                </div>
+            `;
+
+            host.innerHTML = '';
+            host.appendChild(alert);
+
+            window.clearTimeout(showLiveAlert.timeoutId);
+            showLiveAlert.timeoutId = window.setTimeout(() => {
+                if (host.contains(alert)) {
+                    host.removeChild(alert);
+                }
+            }, 4000);
+        }
+
+        function openAsyncSuccessModal(selector, message, title = 'Success') {
+            if (!selector) {
+                return false;
+            }
+
+            const modal = document.querySelector(selector);
+            if (!modal) {
+                return false;
+            }
+
+            const titleNode = modal.querySelector('[data-success-title]');
+            const messageNode = modal.querySelector('[data-success-message]');
+
+            if (titleNode) {
+                titleNode.textContent = title || 'Success';
+            }
+
+            if (messageNode) {
+                messageNode.textContent = message || 'Saved successfully.';
+            }
+
+            modal.classList.add('active');
+            return true;
+        }
+
+        const appLoaderState = {
+            activeCount: 0,
+            hideTimer: null
+        };
+
+        function setAppLoaderMessage(message = 'Loading, please wait...') {
+            const textNode = document.getElementById('appGlobalLoaderText');
+            if (textNode) {
+                textNode.textContent = message;
+            }
+        }
+
+        function showAppLoader(message = 'Loading, please wait...') {
+            const loader = document.getElementById('appGlobalLoader');
+            if (!loader) {
+                return;
+            }
+
+            window.clearTimeout(appLoaderState.hideTimer);
+            appLoaderState.activeCount += 1;
+            setAppLoaderMessage(message);
+            loader.classList.add('is-visible');
+            loader.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideAppLoader() {
+            const loader = document.getElementById('appGlobalLoader');
+            if (!loader) {
+                return;
+            }
+
+            appLoaderState.activeCount = Math.max(0, appLoaderState.activeCount - 1);
+
+            if (appLoaderState.activeCount > 0) {
+                return;
+            }
+
+            appLoaderState.hideTimer = window.setTimeout(() => {
+                if (appLoaderState.activeCount === 0) {
+                    loader.classList.remove('is-visible');
+                    loader.setAttribute('aria-hidden', 'true');
+                    setAppLoaderMessage('Loading, please wait...');
+                }
+            }, 150);
+        }
+
+        async function withAppLoader(task, message = 'Loading, please wait...') {
+            showAppLoader(message);
+
+            try {
+                return await task();
+            } finally {
+                hideAppLoader();
+            }
+        }
+
+        const appConfirmState = {
+            resolver: null
+        };
+
+        function closeAppConfirmModal(confirmed = false) {
+            const modal = document.getElementById('appConfirmModal');
+            if (modal) {
+                modal.classList.remove('is-visible');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            if (appConfirmState.resolver) {
+                appConfirmState.resolver(confirmed);
+                appConfirmState.resolver = null;
+            }
+        }
+
+        function requestAppConfirmation(message, options = {}) {
+            const modal = document.getElementById('appConfirmModal');
+            const titleNode = document.getElementById('appConfirmModalTitle');
+            const messageNode = document.getElementById('appConfirmModalMessage');
+            const cancelButton = document.getElementById('appConfirmModalCancel');
+            const confirmButton = document.getElementById('appConfirmModalApprove');
+
+            if (!modal || !titleNode || !messageNode || !cancelButton || !confirmButton) {
+                return Promise.resolve(window.confirm(message || 'Are you sure you want to continue?'));
+            }
+
+            titleNode.textContent = options.title || 'Delete item';
+            messageNode.textContent = message || 'Are you sure you want to continue?';
+            confirmButton.textContent = options.confirmText || 'Delete';
+            cancelButton.textContent = options.cancelText || 'Cancel';
+
+            modal.classList.add('is-visible');
+            modal.setAttribute('aria-hidden', 'false');
+
+            return new Promise((resolve) => {
+                appConfirmState.resolver = resolve;
+                cancelButton.focus();
+            });
+        }
+
+        document.addEventListener('click', function(event) {
+            if (event.target?.id === 'appConfirmModalCancel') {
+                closeAppConfirmModal(false);
+            }
+
+            if (event.target?.id === 'appConfirmModalApprove') {
+                closeAppConfirmModal(true);
+            }
+
+            if (event.target?.id === 'appConfirmModal') {
+                closeAppConfirmModal(false);
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            const modal = document.getElementById('appConfirmModal');
+            if (!modal || !modal.classList.contains('is-visible')) {
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                closeAppConfirmModal(false);
+            }
+        });
+
+        window.showAppLoader = showAppLoader;
+        window.hideAppLoader = hideAppLoader;
+        window.withAppLoader = withAppLoader;
+        window.requestAppConfirmation = requestAppConfirmation;
+
+        async function refreshAsyncTargets(targets) {
+            return refreshAsyncTargetsFromUrl(window.location.href, targets, false);
+        }
+
+        function focusAsyncPaginationTarget(selector) {
+            if (!selector) return;
+
+            const section = document.querySelector(selector);
+            if (!section) return;
+
+            const focusTarget =
+                section.querySelector('.table-responsive') ||
+                section.querySelector('table') ||
+                section;
+
+            if (!focusTarget.hasAttribute('tabindex')) {
+                focusTarget.setAttribute('tabindex', '-1');
+            }
+
+            focusTarget.focus({ preventScroll: true });
+            focusTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true, options = {}) {
+            if (!targets || !targets.length) return;
+
+            return withAppLoader(async () => {
+                const preserveScroll = options.preserveScroll === true;
+                const previousWindowScrollX = window.scrollX;
+                const previousWindowScrollY = window.scrollY;
+                const refreshUrl = new URL(url, window.location.origin);
+                refreshUrl.searchParams.set('_async_refresh', Date.now().toString());
+
+                const response = await fetch(refreshUrl.toString(), {
+                    cache: 'no-store',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to refresh the updated section.');
+                }
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const nextDocument = parser.parseFromString(html, 'text/html');
+
+                targets.forEach((selector) => {
+                    const currentNode = document.querySelector(selector);
+                    const nextNode = nextDocument.querySelector(selector);
+
+                    if (currentNode && nextNode) {
+                        currentNode.replaceWith(nextNode);
+                    }
+                });
+
+                document.dispatchEvent(new CustomEvent('app:async-refreshed', {
+                    detail: {
+                        targets,
+                        url
+                    }
+                }));
+
+                if (updateHistory) {
+                    window.history.pushState({}, '', url);
+                }
+
+                if (preserveScroll) {
+                    window.scrollTo(previousWindowScrollX, previousWindowScrollY);
+                } else {
+                    focusAsyncPaginationTarget(targets[0]);
+                }
+            }, 'Loading content...');
+        }
+
+        async function submitAsyncForm(form, options = {}) {
+            const targetSelectors = (options.targets ?? form.dataset.asyncTarget ?? '')
+                .split(',')
+                .map((selector) => selector.trim())
+                .filter(Boolean);
+            const resetForm = options.resetForm ?? form.dataset.asyncReset === 'true';
+            const closeSelector = options.closeSelector ?? form.dataset.asyncClose;
+            const confirmMessage = options.confirmMessage ?? form.dataset.asyncConfirm;
+            const successModalSelector = options.successModalSelector ?? form.dataset.asyncSuccessModal;
+            const suppressSuccessFeedback = options.suppressSuccessFeedback ?? form.dataset.asyncSuccess === 'silent';
+            const successTitle = options.successTitle ?? form.dataset.asyncSuccessTitle ?? 'Success';
+
+            if (!validateFormBeforeSubmit(form)) {
+                return false;
+            }
+
+            if (confirmMessage) {
+                const confirmed = await requestAppConfirmation(confirmMessage, {
+                    title: 'Delete item',
+                    confirmText: 'Delete'
+                });
+
+                if (!confirmed) {
+                    return false;
+                }
+            }
+
+            let submitter = options.submitter ?? document.activeElement;
+
+            try {
+                const formData = new FormData(form);
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = true;
+                }
+
+                form.classList.add('is-loading');
+                showAppLoader(form.dataset.asyncLoadingText || 'Processing request...');
+
+                const response = await fetch(form.action, {
+                    method: form.method || 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type') || '';
+                const payload = contentType.includes('application/json') ? await response.json() : {};
+
+                if (!response.ok) {
+                    if (payload.errors && Object.keys(payload.errors).length > 0) {
+                        throw new Error(Object.values(payload.errors).flat().join(' '));
+                    }
+                    throw new Error(payload.message || 'Unable to save changes.');
+                }
+
+                if (targetSelectors.length > 0) {
+                    await refreshAsyncTargetsFromUrl(window.location.href, targetSelectors, false, {
+                        preserveScroll: form.dataset.asyncPreserveScroll === 'true'
+                    });
+                }
+
+                if (resetForm) {
+                    form.reset();
+                }
+
+                if (closeSelector) {
+                    const modal = document.querySelector(closeSelector);
+                    if (modal) {
+                        modal.classList.remove('active');
+                    }
+                }
+
+                if (!suppressSuccessFeedback) {
+                    const successMessage = payload.message || 'Changes saved successfully.';
+                    const openedSuccessModal = openAsyncSuccessModal(successModalSelector, successMessage, successTitle);
+
+                    if (!openedSuccessModal) {
+                        showLiveAlert(successMessage, 'success');
+                    }
+                }
+                return false;
+            } catch (error) {
+                showLiveAlert(error.message || 'Unable to save changes.', 'error');
+                return false;
+            } finally {
+                form.classList.remove('is-loading');
+                hideAppLoader();
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = false;
+                }
+            }
+        }
+
+        function handleAjaxSubmit(event, targets = '', confirmMessage = null, resetForm = false, closeSelector = null) {
+            event.preventDefault();
+            const form = event.target.closest('form');
+            if (!form) return false;
+
+            submitAsyncForm(form, {
+                targets,
+                confirmMessage,
+                resetForm,
+                closeSelector,
+                submitter: event.submitter
+            });
+
+            return false;
+        }
+
+        document.addEventListener('submit', function(event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement)) return;
+
+            if (form.dataset.asyncGet === 'true') {
+                event.preventDefault();
+
+                const targets = (form.dataset.asyncTarget || '')
+                    .split(',')
+                    .map((selector) => selector.trim())
+                    .filter(Boolean);
+
+                const formData = new FormData(form);
+                const url = new URL(form.action || window.location.href, window.location.origin);
+                url.search = '';
+
+                formData.forEach((value, key) => {
+                    if (value === null || typeof value === 'undefined') {
+                        return;
+                    }
+
+                    const stringValue = String(value).trim();
+                    if (!stringValue) {
+                        return;
+                    }
+
+                    url.searchParams.append(key, stringValue);
+                });
+
+                refreshAsyncTargetsFromUrl(url.toString(), targets, true, {
+                    preserveScroll: form.dataset.asyncPreserveScroll === 'true'
+                }).catch((error) => {
+                    showLiveAlert(error.message || 'Unable to apply filters.', 'error');
+                });
+                return;
+            }
+
+            if (!form.dataset.asyncTarget && form.dataset.async !== 'true') {
+                if (!validateFormBeforeSubmit(form)) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            event.preventDefault();
+            submitAsyncForm(form, {
+                submitter: event.submitter
+            });
+        });
+
+        document.addEventListener('change', function(event) {
+            const input = event.target;
+            if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
+                setFieldValidityState(input);
+            }
+
+            if (!(input instanceof HTMLSelectElement) || !input.hasAttribute('data-auto-submit')) {
+                return;
+            }
+
+            const form = input.closest('form');
+            if (!form) return;
+
+            submitAsyncForm(form, { submitter: input });
+        });
+
+        document.addEventListener('click', function(event) {
+            const link = event.target.closest('a[data-async-pagination]');
+            if (!link || link.classList.contains('disabled') || !link.getAttribute('href')) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const targets = (link.dataset.asyncTarget || '')
+                .split(',')
+                .map((selector) => selector.trim())
+                .filter(Boolean);
+
+            refreshAsyncTargetsFromUrl(link.href, targets, true, {
+                preserveScroll: link.dataset.asyncPreserveScroll === 'true'
+            }).catch((error) => {
+                showLiveAlert(error.message || 'Unable to change page.', 'error');
+            });
+        });
+
+        document.addEventListener('input', function(event) {
+            const input = event.target;
+            if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) {
+                return;
+            }
+
+            setFieldValidityState(input);
+        });
+
+        document.addEventListener('invalid', function(event) {
+            const input = event.target;
+            if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement)) {
+                return;
+            }
+
+            setFieldValidityState(input);
+        }, true);
+
+        document.addEventListener('reset', function(event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            const fileInput = form.querySelector('#file-input');
+            const fileList = document.getElementById('file-list');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (!fileInput || !fileList || !submitBtn) {
+                return;
+            }
+
+            window.setTimeout(() => {
+                fileList.innerHTML = '<div class="empty-state">No file selected.</div>';
+                submitBtn.style.display = 'none';
+            }, 0);
+        });
+
         function toggleMenu(menuId, element) {
             const menu = document.getElementById(menuId);
             if(menu) { menu.classList.toggle('open'); element.classList.toggle('open'); }
+        }
+
+        function syncSidebarToggleButtons() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+
+            const isDesktop = window.innerWidth > 900;
+            const isOpen = isDesktop ? !sidebar.classList.contains('collapsed') : sidebar.classList.contains('open');
+
+            document.querySelectorAll('.sidebar-toggle-btn').forEach((button) => {
+                button.classList.toggle('is-active', isOpen);
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
         }
 
         function toggleSidebar() {
@@ -300,6 +1169,8 @@
                     overlay.classList.remove('show');
                 }
             }
+
+            syncSidebarToggleButtons();
         }
 
         window.addEventListener('resize', () => {
@@ -309,7 +1180,11 @@
             } else {
                 document.getElementById('sidebar').classList.remove('collapsed');
             }
+
+            syncSidebarToggleButtons();
         });
+
+        document.addEventListener('DOMContentLoaded', syncSidebarToggleButtons);
     </script>
 </body>
 

@@ -2,16 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Downloadable;  
+use App\Models\Downloadable;
+use App\Models\AuditLog;
+use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
+    use HandlesAsyncRequests;
+
     // Security check
     private function checkAdmin()
     {
@@ -21,23 +28,246 @@ class AdminController extends Controller
     }
 
     // 1. Admin Master Dashboard (FIXED)
-    public function index()
+    public function index(Request $request)
     {
         $users = User::all();
         $this->checkAdmin();
-        $resolutions = \App\Models\IaResolution::latest()->get();
+        $validatedResolutions = IaResolution::where('status', 'validated')->count();
+        $pendingResolutions = IaResolution::whereIn('status', ['on-going', 'not-validated'])->count();
+        $resolutions = IaResolution::latest()->paginate(5, ['*'], 'active_projects_page')->withQueryString();
 
-        // Added 'with('category')' so the colored badges load efficiently
-        $events = Event::with('category')->orderBy('event_date', 'asc')->get();
+        $upcomingEventsQuery = Event::with('category')
+            ->where('event_date', '>', now()->format('Y-m-d'))
+            ->orWhere(function ($query) {
+                $today = now()->format('Y-m-d');
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', $today)
+                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            })
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         // Fetch custom tags for the legend
         $categories = EventCategory::all();
+        $downloadables = Downloadable::all();
+        $recentAuditLogs = AuditLog::with('user')->latest()->take(8)->get();
 
-        return view('admin.dashboard', compact('resolutions', 'events', 'categories'));
+        return view('admin.dashboard', compact(
+            'resolutions',
+            'events',
+            'paginatedEvents',
+            'categories',
+            'downloadables',
+            'validatedResolutions',
+            'pendingResolutions',
+            'recentAuditLogs'
+        ));
+    }
+
+    public function auditTrail(Request $request)
+    {
+        $this->checkAdmin();
+
+        $search = trim((string) $request->query('search', ''));
+        $action = trim((string) $request->query('action', ''));
+        $team = trim((string) $request->query('team', ''));
+        $user = trim((string) $request->query('user', ''));
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+
+        $logs = $this->buildAuditTrailQuery($request)
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        $actions = AuditLog::query()->select('action')->distinct()->orderBy('action')->pluck('action');
+        $actionLabels = $actions
+            ->mapWithKeys(fn ($actionValue) => [$actionValue => $this->formatAuditActionLabel($actionValue)]);
+        $users = AuditLog::query()->whereNotNull('user_name')->select('user_name')->distinct()->orderBy('user_name')->pluck('user_name');
+        $teams = AuditLog::query()
+            ->whereNotNull('metadata->team')
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.team')) as team")
+            ->distinct()
+            ->orderBy('team')
+            ->pluck('team');
+
+        return view('admin.audit-trail', compact(
+            'logs',
+            'search',
+            'action',
+            'actions',
+            'actionLabels',
+            'team',
+            'user',
+            'dateFrom',
+            'dateTo',
+            'users',
+            'teams'
+        ));
+    }
+
+    public function exportAuditTrail(Request $request): StreamedResponse
+    {
+        $this->checkAdmin();
+
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+        $logs = $this->buildAuditTrailQuery($request)
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $reportTitle = 'Activity Log as of ' . now()->format('F j, Y');
+
+        if ($dateFrom !== '' && $dateTo !== '') {
+            $reportTitle .= ' From ' . Carbon::parse($dateFrom)->format('F j, Y') . ' to ' . Carbon::parse($dateTo)->format('F j, Y');
+        } elseif ($dateFrom !== '') {
+            $reportTitle .= ' From ' . Carbon::parse($dateFrom)->format('F j, Y');
+        } elseif ($dateTo !== '') {
+            $reportTitle .= ' Until ' . Carbon::parse($dateTo)->format('F j, Y');
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Activity Log');
+        $sheet->mergeCells('A1:I1');
+        $sheet->setCellValue('A1', $reportTitle);
+
+        $headers = [
+            'A2' => 'Date',
+            'B2' => 'Time',
+            'C2' => 'User',
+            'D2' => 'Role',
+            'E2' => 'Action',
+            'F2' => 'Subject Type',
+            'G2' => 'Subject',
+            'H2' => 'Description',
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        foreach ([
+            'A' => 14,
+            'B' => 14,
+            'C' => 24,
+            'D' => 18,
+            'E' => 24,
+            'F' => 18,
+            'G' => 28,
+            'H' => 54,
+        ] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+
+        $sheet->getStyle('A1:H1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 12,
+                'color' => ['rgb' => '0F172A'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        $sheet->getStyle('A2:H2')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 10,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1D4ED8'],
+            ],
+        ]);
+
+        $sheet->getStyle('A1:H' . max(3, $logs->count() + 2))->getAlignment()->setWrapText(true);
+        $sheet->getRowDimension(1)->setRowHeight(24);
+
+        $row = 3;
+            foreach ($logs as $log) {
+                $sheet->setCellValue("A{$row}", optional($log->created_at)->format('Y-m-d'));
+                $sheet->setCellValue("B{$row}", optional($log->created_at)->format('h:i:s A'));
+                $sheet->setCellValue("C{$row}", $log->user_name);
+                $sheet->setCellValue("D{$row}", $log->user_role);
+                $sheet->setCellValue("E{$row}", $this->formatAuditActionLabel((string) $log->action));
+                $sheet->setCellValue("F{$row}", $log->subject_type);
+                $sheet->setCellValue("G{$row}", $log->subject_label);
+                $sheet->setCellValue("H{$row}", $log->description);
+                $row++;
+            }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = $reportTitle . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    private function buildAuditTrailQuery(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        $action = trim((string) $request->query('action', ''));
+        $team = trim((string) $request->query('team', ''));
+        $user = trim((string) $request->query('user', ''));
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+
+        return AuditLog::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($builder) use ($search) {
+                    $builder->where('description', 'like', "%{$search}%")
+                        ->orWhere('user_name', 'like', "%{$search}%")
+                        ->orWhere('subject_label', 'like', "%{$search}%")
+                        ->orWhere('user_role', 'like', "%{$search}%")
+                        ->orWhere('action', 'like', "%{$search}%")
+                        ->orWhere('subject_type', 'like', "%{$search}%")
+                        ->orWhere('metadata->status', 'like', "%{$search}%")
+                        ->orWhere('metadata->team', 'like', "%{$search}%");
+                });
+            })
+            ->when($action !== '', fn ($query) => $query->where('action', $action))
+            ->when($team !== '', fn ($query) => $query->where('metadata->team', $team))
+            ->when($user !== '', fn ($query) => $query->where('user_name', $user))
+            ->when($dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $dateTo));
+    }
+
+    private function formatAuditActionLabel(string $action): string
+    {
+        $parts = collect(explode('.', $action))
+            ->filter()
+            ->map(function ($part) {
+                return match ($part) {
+                    'rpwsis' => 'RP-WSIS',
+                    'fsde' => 'FSDE',
+                    'pcr' => 'PCR',
+                    'pow' => 'POW',
+                    default => str($part)->replace('_', ' ')->title()->value(),
+                };
+            })
+            ->values();
+
+        return $parts->implode(' - ');
     }
 
     //UploadDownloadables
-        public function uploadDownloadable(Request $request)
+    public function uploadDownloadable(Request $request)
     {
         $this->checkAdmin();
 
@@ -59,41 +289,76 @@ class AdminController extends Controller
             'team' => $request->team // 🔥 ADMIN CHOOSES TEAM
         ]);
 
-        return back()->with('success', 'File uploaded to selected team.');
+        return $this->successResponse($request, 'File uploaded to selected team.');
     }
 
     //Upload IA Resolutions
     public function uploadResolution(Request $request)
-{
-    $this->checkAdmin();
-
-    $request->validate([
-        'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
-        'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
-    ]);
-
-    $file = $request->file('document');
-    $path = $file->store('resolutions', 'public');
-
-    $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-    $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-    \App\Models\IaResolution::create([
-        'title' => $cleanTitle,
-        'file_path' => $path,
-        'original_name' => $file->getClientOriginalName(),
-        'team' => $request->team // 🔥 SAME LOGIC
-    ]);
-
-    return back()->with('success', 'Resolution uploaded to selected team.');
-}
-
-    // 2. Manage Users Page
-    public function manageUsers()
     {
         $this->checkAdmin();
-        $users = User::latest()->get();
-        return view('admin.users', compact('users'));
+
+        $request->validate([
+            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
+            'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
+        ]);
+
+        $file = $request->file('document');
+        $path = $file->store('resolutions', 'public');
+
+        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
+
+        \App\Models\IaResolution::create([
+            'title' => $cleanTitle,
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'team' => $request->team // 🔥 SAME LOGIC
+        ]);
+
+        return $this->successResponse($request, 'Resolution uploaded to selected team.');
+    }
+
+    // 2. Manage Users Page
+    public function manageUsers(Request $request)
+    {
+        $this->checkAdmin();
+
+        $allowedRoles = ['admin', 'fs_team', 'rpwsis_team', 'cm_team', 'row_team', 'pcr_team', 'pao_team'];
+        $allowedSorts = ['name', 'email', 'created_at', 'role', 'is_active'];
+        $allowedDirections = ['asc', 'desc'];
+
+        $role = $request->query('role');
+        $status = $request->query('status');
+        $sort = $request->query('sort', 'created_at');
+        $direction = strtolower((string) $request->query('direction', 'desc'));
+
+        $query = User::query();
+
+        if (in_array($role, $allowedRoles, true)) {
+            $query->where('role', $role);
+        }
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'created_at';
+        }
+
+        if (! in_array($direction, $allowedDirections, true)) {
+            $direction = 'desc';
+        }
+
+        $users = $query
+            ->orderBy($sort, $direction)
+            ->orderBy('id', 'desc')
+            ->paginate(5)
+            ->withQueryString();
+
+        return view('admin.users', compact('users', 'role', 'status', 'sort', 'direction'));
     }
 
     // 3. Store New User
@@ -108,15 +373,23 @@ class AdminController extends Controller
             'role' => 'required|in:admin,fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team',
         ]);
 
-        User::create([
+        $isAdmin = $validated['role'] === 'admin';
+
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => $validated['role'],
             'is_active' => true,
+            'email_verified_at' => $isAdmin ? Carbon::now() : null,
+            'agreed_to_terms' => $isAdmin,
         ]);
 
-        return back()->with('success', 'User account created successfully.');
+        if ($isAdmin) {
+            return $this->successResponse($request, 'Admin account created successfully.');
+        }
+
+        return $this->successResponse($request, 'User account created successfully.');
     }
 
     public function updateUserStatus(Request $request, User $user)
@@ -127,7 +400,7 @@ class AdminController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        if (auth()->id() === $user->id && ! (bool) $validated['is_active']) {
+        if (auth()->id() === $user->id && !(bool) $validated['is_active']) {
             $message = 'You cannot deactivate your own account while logged in.';
 
             if ($request->expectsJson() || $request->ajax()) {
@@ -137,7 +410,7 @@ class AdminController extends Controller
                 ], 422);
             }
 
-            return back()->with('error', $message);
+            return $this->errorResponse($request, $message);
         }
 
         $user->update([
@@ -158,18 +431,35 @@ class AdminController extends Controller
         return back()->with('success', $message);
     }
 
-    public function destroyUser(User $user)
+    public function updateUserPassword(Request $request, User $user)
+    {
+        $this->checkAdmin();
+
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|max:255',
+        ]);
+
+        $user->password = $validated['password'];
+        $user->save();
+
+        return $this->successResponse($request, "{$user->name}'s password was updated successfully.", [
+            'plain_password' => $validated['password'],
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function destroyUser(Request $request, User $user)
     {
         $this->checkAdmin();
 
         if (auth()->id() === $user->id) {
-            return back()->with('error', 'You cannot delete your own account while logged in.');
+            return $this->errorResponse($request, 'You cannot delete your own account while logged in.');
         }
 
         $userName = $user->name;
         $user->delete();
 
-        return back()->with('success', "{$userName}'s account was deleted successfully.");
+        return $this->successResponse($request, "{$userName}'s account was deleted successfully.");
     }
 
     public function storeEvent(Request $request)
@@ -178,7 +468,7 @@ class AdminController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'event_date' => 'required|date',
+            'event_date' => 'required|date|after_or_equal:today',
             'event_time' => 'required|string|max:255',
             'event_category_id' => 'required' // Validate the dropdown!
         ]);
@@ -190,33 +480,62 @@ class AdminController extends Controller
             'event_category_id' => $request->event_category_id, // Save the ID!
         ]);
 
-        return back()->with('success', 'Event added to the calendar!');
+        return $this->successResponse($request, 'Event added to the calendar!');
     }
 
     // Delete an Event
     public function storeCategory(Request $request)
     {
         $this->checkAdmin();
-        $request->validate(['name' => 'required|string|max:50', 'color' => 'required|string|max:10']);
-        EventCategory::create(['name' => $request->request->get('name'), 'color' => $request->request->get('color')]);
-        return back()->with('success', 'New tag added to legend!');
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:50',
+            'color' => 'required|string|max:10',
+        ]);
+
+        $normalizedName = mb_strtolower(trim($validated['name']));
+
+        $tagAlreadyExists = EventCategory::query()
+            ->get()
+            ->contains(fn($category) => mb_strtolower(trim($category->name)) === $normalizedName);
+
+        if ($tagAlreadyExists) {
+            return $this->errorResponse($request, 'Tag name already exists. Please use a different tag name.');
+        }
+
+        EventCategory::create([
+            'name' => trim($validated['name']),
+            'color' => $validated['color'],
+        ]);
+
+        return $this->successResponse($request, 'New tag added to legend!');
     }
 
     // 4. New! Delete a Custom Tag
-    public function destroyCategory($id)
+    public function destroyCategory(Request $request, $id)
     {
         $this->checkAdmin();
-        EventCategory::findOrFail($id)->delete();
-        return back()->with('success', 'Tag removed.');
+
+        $category = EventCategory::withCount('events')->findOrFail($id);
+        $deletedEvents = $category->events()->count();
+
+        $category->events()->delete();
+        $category->delete();
+
+        $message = $deletedEvents > 0
+            ? "Tag removed. {$deletedEvents} linked event(s) were also deleted."
+            : 'Tag removed.';
+
+        return $this->successResponse($request, $message);
     }
 
-    public function destroyEvent($id)
+    public function destroyEvent(Request $request, $id)
     {
         $this->checkAdmin();
 
         Event::findOrFail($id)->delete();
 
-        return back()->with('success', 'Event removed from schedule.');
+        return $this->successResponse($request, 'Event removed from schedule.');
     }
 }
 

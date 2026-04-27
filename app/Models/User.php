@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -16,6 +18,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'email_verified_at',
         'agreed_to_terms',
         'team_id',
         'is_active',
@@ -36,9 +39,24 @@ class User extends Authenticatable
         ];
     }
 
+    public function isAdmin(): bool
+    {
+        return strtolower(trim((string) $this->role)) === 'admin';
+    }
+
+    public function requiresEmailVerification(): bool
+    {
+        return ! $this->isAdmin();
+    }
+
     // A user belongs to one team
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
     }
 }

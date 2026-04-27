@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ asset('images/2020-nia-logo.png') }}">
     <title>System Login</title>
     <style>
         :root {
@@ -135,6 +136,23 @@
             text-align: center;
             border: 1px solid #fecaca;
         }
+
+        .validation-errors {
+            margin-bottom: 20px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .validation-errors ul {
+            margin: 8px 0 0;
+            padding-left: 18px;
+            text-align: left;
+        }
     </style>
 </head>
 
@@ -151,18 +169,25 @@
         @endif
 
         @if ($errors->any() && !session('deactivated_message'))
-            <div class="error">{{ $errors->first() }}</div>
+            <div class="validation-errors">
+                <strong>{{ $errors->count() === 1 ? 'Unable to sign in.' : 'Please review the following:' }}</strong>
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
 
         <form action="{{ route('login') }}" method="POST">
             @csrf
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" name="email" id="email" placeholder="Enter your email" value="{{ old('email') }}" required autofocus>
+                <input type="email" name="email" id="email" placeholder="Enter your email" value="{{ old('email') }}" required maxlength="255" autocomplete="username" autofocus>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                <input type="password" name="password" id="password" placeholder="Enter your password" required minlength="8" maxlength="255" autocomplete="current-password">
             </div>
             <button type="submit">Sign In</button>
         </form>
@@ -175,5 +200,16 @@
 </form>
     </div>
 </body>
+
+<script>
+    document.addEventListener('input', function(event) {
+        const field = event.target;
+        if (!(field instanceof HTMLInputElement) || typeof field.checkValidity !== 'function') {
+            return;
+        }
+
+        field.classList.toggle('is-invalid', !field.checkValidity());
+    });
+</script>
 
 </html>

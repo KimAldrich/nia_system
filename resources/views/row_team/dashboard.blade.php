@@ -80,6 +80,34 @@
             opacity: 0.8;
         }
 
+        .table-responsive {
+            width: 100%;
+            max-width: 100%;
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 15px;
+            scrollbar-width: thin;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         .sleek-table {
             width: 100%;
             border-collapse: collapse;
@@ -337,65 +365,12 @@
 
             <div class="ui-card">
                 <div class="section-title">Active Projects</div>
-                <table class="sleek-table">
-                    <thead>
-                        <tr>
-                            <th>Document Name</th>
-                            <th>Status</th>
-
-                            @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
-                                <th style="text-align: right;">Action</th>
-                            @endif
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($resolutions as $res)
-                            <tr>
-                                <td>
-                                    <strong>{{ $res->title }}</strong><br>
-                                    <span
-                                        style="font-size: 11px; color: #a1a1aa;">{{ $res->created_at->format('M d, Y') }}</span>
-                                </td>
-                                <td>
-                                    @if ($res->status == 'validated')
-                                        <span class="status-badge badge-dark">Validated</span>
-                                    @elseif($res->status == 'on-going')
-                                        <span class="status-badge badge-light">On-Going</span>
-                                    @else
-                                        <span class="status-badge badge-outline">Not-Validated</span>
-                                    @endif
-                                </td>
-
-                                @if (auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']))
-                                    <td style="text-align: right;">
-                                        <form action="{{ route('row.resolutions.update_status', $res->id) }}"
-                                            method="POST">
-                                            @csrf
-                                            <select name="status" class="status-select" onchange="this.form.submit()">
-                                                <option value="not-validated"
-                                                    {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                                    Not-Validated</option>
-                                                <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
-                                                    On-Going
-                                                </option>
-                                                <option value="validated"
-                                                    {{ $res->status == 'validated' ? 'selected' : '' }}>
-                                                    Validated</option>
-                                            </select>
-                                        </form>
-                                    </td>
-                                @endif
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="{{ auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']) ? '3' : '2' }}"
-                                    style="text-align:center; color:#a1a1aa; padding: 30px 0;">
-                                    No projects uploaded yet.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                @include('partials.active-projects-table', [
+                    'resolutions' => $resolutions ?? collect(),
+                    'containerId' => 'activeProjectsContainer',
+                    'editable' => auth()->check() && in_array(auth()->user()->role, ['row_team', 'admin']),
+                    'updateRouteName' => 'row.resolutions.update_status',
+                ])
             </div>
 
             <div class="ui-card">
@@ -419,134 +394,7 @@
         </div>
 
         <div class="side-column">
-            <div class="ui-card">
-                <div class="section-title" style="margin-bottom: 15px;">New Events</div>
-
-                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f4f4f5;">
-                    <p
-                        style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
-                        Event Legend
-                    </p>
-
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                        @forelse($categories as $cat)
-                            <div class="legend-item">
-                                <div class="legend-dot" style="background: {{ $cat->color }};"></div>
-                                {{ $cat->name }}
-                            </div>
-                        @empty
-                            <p style="font-size: 11px; color: #a1a1aa;">No tags available.</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                @php
-                    $today = \Carbon\Carbon::now();
-                    $daysInMonth = $today->daysInMonth;
-                    $firstDayOfWeek = $today->copy()->startOfMonth()->dayOfWeek;
-
-                    $eventDays = isset($events)
-                        ? $events
-                            ->map(function ($e) {
-                                return $e->event_date->format('j');
-                            })
-                            ->toArray()
-                        : [];
-                @endphp
-
-                <div class="calendar-carousel">
-                    <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
-                        &lt;
-                    </button>
-
-                    <div class="calendar-viewport">
-                        @php
-                            $currentYear = \Carbon\Carbon::now()->year;
-                            $today = \Carbon\Carbon::now();
-                        @endphp
-
-                        @for ($m = 1; $m <= 12; $m++)
-                            @php
-                                $monthDate = \Carbon\Carbon::createFromDate($currentYear, $m, 1);
-                                $daysInMonth = $monthDate->daysInMonth;
-                                $firstDayOfWeek = $monthDate->dayOfWeek;
-
-                                $eventsForMonth = $events
-                                    ->filter(function ($e) use ($currentYear, $m) {
-                                        return $e->event_date->year == $currentYear && $e->event_date->month == $m;
-                                    })
-                                    ->groupBy(function ($e) {
-                                        return $e->event_date->format('j');
-                                    });
-                            @endphp
-
-                            <div class="month-block" id="month-{{ $m }}">
-                                <div class="calendar-header">
-                                    <h4>{{ $monthDate->format('F Y') }}</h4>
-                                </div>
-
-                                <div class="calendar-grid">
-                                    <div class="day-name">Sun</div>
-                                    <div class="day-name">Mon</div>
-                                    <div class="day-name">Tue</div>
-                                    <div class="day-name">Wed</div>
-                                    <div class="day-name">Thu</div>
-                                    <div class="day-name">Fri</div>
-                                    <div class="day-name">Sat</div>
-
-                                    @for ($i = 0; $i < $firstDayOfWeek; $i++)
-                                        <div class="day-num empty"></div>
-                                    @endfor
-
-                                    @for ($day = 1; $day <= $daysInMonth; $day++)
-                                        @php
-                                            $dayEvents = $eventsForMonth->get($day);
-                                            $hasEvent = $dayEvents ? true : false;
-                                            $isToday = $day == $today->day && $m == $today->month;
-                                            $ringColor =
-                                                $hasEvent && $dayEvents->first()->category
-                                                    ? $dayEvents->first()->category->color
-                                                    : '#18181b';
-                                        @endphp
-
-                                        <div class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
-                                            style="{{ $hasEvent ? 'border-color:' . $ringColor . '; color:' . $ringColor : '' }}">
-                                            {{ $day }}
-                                        </div>
-                                    @endfor
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-
-                    <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
-                        &gt;
-                    </button>
-                </div>
-
-                <div style="margin-top: 10px;">
-                    <p
-                        style="font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">
-                        Upcoming Schedule</p>
-
-                    @if (isset($events) && $events->count() > 0)
-                        @foreach ($events as $event)
-                            <div class="mini-event">
-                                <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
-                                <div>
-                                    <h4 class="mini-event-title">{{ $event->title }}</h4>
-                                    <p class="mini-event-time">{{ $event->event_time }}</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 20px;">No upcoming
-                            events.
-                        </p>
-                    @endif
-                </div>
-
-            </div>
+            @include('partials.event-manager-readonly', ['events' => $events ?? collect(), 'categories' => $categories ?? collect()])
         </div>
     </div>
 

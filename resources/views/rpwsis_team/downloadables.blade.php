@@ -329,7 +329,7 @@
     </div>
 
     <div id="available-forms" class="tab-pane active">
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+        <div id="downloadablesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
             @forelse($files as $file)
                 @php $extension = pathinfo($file->file_path, PATHINFO_EXTENSION); @endphp
 
@@ -338,7 +338,8 @@
                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                         <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank"
                             style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
-                            title="Click to view document"></a>
+                            title="Click to view or download document"></a>
+
                         @if (strtolower($extension) === 'pdf')
                             <iframe src="{{ asset('storage/' . $file->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
                                 width="100%" height="100%" scrolling="no"
@@ -347,14 +348,14 @@
                             <div
                                 style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                                 @if (in_array(strtolower($extension), ['xls', 'xlsx']))
-                                    <div style="font-size: 32px; margin-bottom: 5px;">📊</div><span
-                                        style="font-size: 12px; font-weight: 600; color: #18181b;">Excel Sheet</span>
+                                    <div style="font-size: 32px; margin-bottom: 5px;">📊</div>
+                                    <span style="font-size: 12px; font-weight: 600; color: #18181b;">Excel Sheet</span>
                                 @elseif(in_array(strtolower($extension), ['doc', 'docx']))
-                                    <div style="font-size: 32px; margin-bottom: 5px;">📝</div><span
-                                        style="font-size: 12px; font-weight: 600; color: #18181b;">Word Doc</span>
+                                    <div style="font-size: 32px; margin-bottom: 5px;">📝</div>
+                                    <span style="font-size: 12px; font-weight: 600; color: #18181b;">Word Doc</span>
                                 @else
-                                    <div style="font-size: 32px; margin-bottom: 5px;">📁</div><span
-                                        style="font-size: 12px; font-weight: 600; color: #18181b;">Document</span>
+                                    <div style="font-size: 32px; margin-bottom: 5px;">📁</div>
+                                    <span style="font-size: 12px; font-weight: 600; color: #18181b;">Document</span>
                                 @endif
                             </div>
                         @endif
@@ -363,28 +364,33 @@
                     <div style="flex: 1;">
                         <h4
                             style="margin:0 0 2px 0; font-size: 14px; font-weight: 600; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->title ?? $file->original_name }}</h4>
+                            {{ $file->title ?? $file->original_name }}
+                        </h4>
                         <p
                             style="font-size: 11px; color: #a1a1aa; margin: 0 0 15px 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            {{ $file->original_name }}</p>
+                            {{ $file->original_name }}
+                        </p>
                     </div>
 
-                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark">Download</a>
+                    <!-- ✅ MATCHED FS BUTTON LOGIC -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
+                            style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
+                            Download
+                        </a>
 
-                    @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
-                        <hr style="border: 0; border-top: 1px solid #f4f4f5; margin-bottom: 12px; margin-top: 5px;">
-                        <form action="{{ route('rpwsis.downloadables.update', $file->id) }}" method="POST"
-                            enctype="multipart/form-data" style="margin:0;">
-                            @csrf
-                            <label
-                                style="font-size: 10px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update
-                                File</label>
-                            <div class="file-input-wrapper">
-                                <input type="file" name="document" required class="file-input-sm">
-                                <button type="submit" class="btn-outline">Replace</button>
-                            </div>
-                        </form>
-                    @endif
+                        @if (auth()->check() && in_array(auth()->user()->role, ['rpwsis_team', 'admin']))
+                            <form action="{{ route('rpwsis.downloadables.delete', $file->id) }}" method="POST"
+                                style="margin: 0; flex: 1;" data-async-target="#downloadablesList" data-async-confirm="Delete this file?" data-async-success="silent">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline"
+                                    style="width: 100%; padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">
+                                    Delete
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <div
@@ -396,11 +402,11 @@
     </div>
 
     <div id="upload-form" class="tab-pane">
-        <form action="{{ route('rpwsis.downloadables.upload') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('rpwsis.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#downloadablesList" data-async-reset="true">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
-                    <input type="file" name="document" class="file-input-hidden" id="file-input" required
+                    <input type="file" name="documents[]" class="file-input-hidden" id="file-input" required multiple
                         accept=".pdf,.doc,.docx,.xls,.xlsx">
                     <svg class="upload-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -426,7 +432,6 @@
             </div>
         </form>
     </div>
-
     <script>
         function switchTab(event, tabId) {
             document.querySelectorAll('.tab-pane').forEach(function(pane) {
@@ -440,27 +445,64 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.querySelector('#upload-form form, #upload-resolution form');
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
             const submitBtn = document.getElementById('submit-btn');
 
-            dropzone.addEventListener('dragover', () => dropzone.classList.add('dragover'));
-            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-            dropzone.addEventListener('drop', () => dropzone.classList.remove('dragover'));
+            if (!uploadForm || !fileInput || !fileList || !submitBtn) {
+                return;
+            }
 
-            fileInput.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) {
-                    const file = this.files[0];
-                    let ext = file.name.split('.').pop().substring(0, 3).toUpperCase();
-                    let sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                    fileList.innerHTML =
-                        `<div class="file-item"><div class="file-type-ring">${ext}</div><div class="file-details"><h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4><p class="file-size">${sizeMB} MB / ${sizeMB} MB</p></div><div class="file-status">✓</div></div>`;
-                    submitBtn.style.display = 'block';
-                } else {
+            function renderSelectedFiles(files) {
+                if (!files || files.length === 0) {
                     fileList.innerHTML = '<div class="empty-state">No file selected.</div>';
                     submitBtn.style.display = 'none';
+                    return;
                 }
+
+                fileList.innerHTML = Array.from(files).map(function(file) {
+                    const parts = file.name.split('.');
+                    const ext = (parts.length > 1 ? parts.pop() : 'FILE').substring(0, 3).toUpperCase();
+                    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+
+                    return `
+                        <div class="file-item">
+                            <div class="file-type-ring">${ext}</div>
+                            <div class="file-details">
+                                <h4 class="file-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${file.name}</h4>
+                                <p class="file-size">${sizeMB} MB</p>
+                            </div>
+                            <div class="file-status">&#10003;</div>
+                        </div>
+                    `;
+                }).join('');
+
+                submitBtn.style.display = 'block';
+            }
+
+            if (dropzone) {
+                dropzone.addEventListener('dragover', function() {
+                    dropzone.classList.add('dragover');
+                });
+                dropzone.addEventListener('dragleave', function() {
+                    dropzone.classList.remove('dragover');
+                });
+                dropzone.addEventListener('drop', function() {
+                    dropzone.classList.remove('dragover');
+                });
+            }
+
+            fileInput.addEventListener('change', function() {
+                renderSelectedFiles(this.files);
+            });
+
+            uploadForm.addEventListener('reset', function() {
+                window.setTimeout(function() {
+                    fileInput.value = '';
+                    renderSelectedFiles([]);
+                }, 0);
             });
         });
     </script>
