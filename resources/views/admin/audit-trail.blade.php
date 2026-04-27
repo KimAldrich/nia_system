@@ -16,7 +16,7 @@
         .audit-btn { min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid transparent; font-size: 13px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
         .audit-btn-primary { background: #110d9e; color: #fff; }
         .audit-btn-secondary { background: #fff; color: #475569; border-color: #cbd5e1; }
-        .audit-btn-ghost { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .audit-btn-ghost { background: #16a34a; color: #ffffff; border: none; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; gap: 8px; }
         .audit-toolbar-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
         .audit-summary { font-size: 12px; color: #64748b; }
         .audit-table-wrap { overflow-x: auto; }
@@ -110,7 +110,10 @@
                 </div>
                 <div class="audit-actions">
                     <button type="submit" class="audit-btn audit-btn-primary">Apply Filters</button>
-                    <a href="{{ route('admin.audit.export', request()->query()) }}" class="audit-btn audit-btn-ghost">Export Excel</a>
+                    <a href="{{ route('admin.audit.export', request()->query()) }}" class="audit-btn audit-btn-ghost">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Export Excel
+                    </a>
                     <a href="{{ route('admin.audit') }}" class="audit-btn audit-btn-secondary">Reset</a>
                 </div>
             </form>
@@ -179,12 +182,7 @@
                                             "action" => $log->action,
                                             "subject_type" => $log->subject_type ?? "N/A",
                                             "subject_label" => $log->subject_label ?? "N/A",
-                                            "method" => $log->method ?? "N/A",
-                                            "route_name" => $log->route_name ?? "N/A",
-                                            "ip_address" => $log->ip_address ?? "N/A",
-                                            "user_agent" => $log->user_agent ?? "N/A",
                                             "created_at" => optional($log->created_at)->format("M d, Y h:i:s A"),
-                                            "metadata" => $log->metadata ?? [],
                                         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}'
                                     >
                                         View details
@@ -246,26 +244,6 @@
                     <span class="audit-modal__label">Subject</span>
                     <div class="audit-modal__value" id="auditDetailSubjectLabel">N/A</div>
                 </div>
-                <div class="audit-modal__item">
-                    <span class="audit-modal__label">Method</span>
-                    <div class="audit-modal__value" id="auditDetailMethod">N/A</div>
-                </div>
-                <div class="audit-modal__item">
-                    <span class="audit-modal__label">Route</span>
-                    <div class="audit-modal__value" id="auditDetailRoute">N/A</div>
-                </div>
-                <div class="audit-modal__item">
-                    <span class="audit-modal__label">IP Address</span>
-                    <div class="audit-modal__value" id="auditDetailIp">N/A</div>
-                </div>
-                <div class="audit-modal__item audit-modal__item--full">
-                    <span class="audit-modal__label">User Agent</span>
-                    <div class="audit-modal__value" id="auditDetailUserAgent">N/A</div>
-                </div>
-                <div class="audit-modal__item audit-modal__item--full">
-                    <span class="audit-modal__label">Metadata</span>
-                    <pre class="audit-modal__pre" id="auditDetailMetadata">N/A</pre>
-                </div>
             </div>
         </div>
     </div>
@@ -301,11 +279,6 @@
             assign('auditDetailCreatedAt', payload.created_at);
             assign('auditDetailSubjectType', payload.subject_type);
             assign('auditDetailSubjectLabel', payload.subject_label);
-            assign('auditDetailMethod', payload.method);
-            assign('auditDetailRoute', payload.route_name);
-            assign('auditDetailIp', payload.ip_address);
-            assign('auditDetailUserAgent', payload.user_agent);
-            assign('auditDetailMetadata', JSON.stringify(payload.metadata || {}, null, 2));
 
             modal.classList.add('is-visible');
             modal.setAttribute('aria-hidden', 'false');

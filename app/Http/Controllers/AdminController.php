@@ -122,30 +122,40 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
         $logs = $this->buildAuditTrailQuery($request)
             ->with('user')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get();
 
+        $reportTitle = 'Activity Log as of ' . now()->format('F j, Y');
+
+        if ($dateFrom !== '' && $dateTo !== '') {
+            $reportTitle .= ' From ' . Carbon::parse($dateFrom)->format('F j, Y') . ' to ' . Carbon::parse($dateTo)->format('F j, Y');
+        } elseif ($dateFrom !== '') {
+            $reportTitle .= ' From ' . Carbon::parse($dateFrom)->format('F j, Y');
+        } elseif ($dateTo !== '') {
+            $reportTitle .= ' Until ' . Carbon::parse($dateTo)->format('F j, Y');
+        }
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Activity Log');
+        $sheet->mergeCells('A1:I1');
+        $sheet->setCellValue('A1', $reportTitle);
 
         $headers = [
-            'A1' => 'Date',
-            'B1' => 'Time',
-            'C1' => 'User',
-            'D1' => 'Role',
-            'E1' => 'Action',
-            'F1' => 'Subject Type',
-            'G1' => 'Subject',
-            'H1' => 'Status',
-            'I1' => 'Team',
-            'J1' => 'Description',
-            'K1' => 'Route',
-            'L1' => 'Method',
-            'M1' => 'IP Address',
+            'A2' => 'Date',
+            'B2' => 'Time',
+            'C2' => 'User',
+            'D2' => 'Role',
+            'E2' => 'Action',
+            'F2' => 'Subject Type',
+            'G2' => 'Subject',
+            'H2' => 'Status',
+            'I2' => 'Description',
         ];
 
         foreach ($headers as $cell => $value) {
@@ -161,16 +171,24 @@ class AdminController extends Controller
             'F' => 18,
             'G' => 28,
             'H' => 18,
-            'I' => 24,
-            'J' => 54,
-            'K' => 26,
-            'L' => 12,
-            'M' => 18,
+            'I' => 54,
         ] as $column => $width) {
             $sheet->getColumnDimension($column)->setWidth($width);
         }
 
-        $sheet->getStyle('A1:M1')->applyFromArray([
+        $sheet->getStyle('A1:I1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 12,
+                'color' => ['rgb' => '0F172A'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        $sheet->getStyle('A2:I2')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 10,
@@ -182,9 +200,10 @@ class AdminController extends Controller
             ],
         ]);
 
-        $sheet->getStyle('A1:M' . max(2, $logs->count() + 1))->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:I' . max(3, $logs->count() + 2))->getAlignment()->setWrapText(true);
+        $sheet->getRowDimension(1)->setRowHeight(24);
 
-        $row = 2;
+        $row = 3;
         foreach ($logs as $log) {
             $sheet->setCellValue("A{$row}", optional($log->created_at)->format('Y-m-d'));
             $sheet->setCellValue("B{$row}", optional($log->created_at)->format('h:i:s A'));
@@ -194,16 +213,12 @@ class AdminController extends Controller
             $sheet->setCellValue("F{$row}", $log->subject_type);
             $sheet->setCellValue("G{$row}", $log->subject_label);
             $sheet->setCellValue("H{$row}", data_get($log->metadata, 'status'));
-            $sheet->setCellValue("I{$row}", data_get($log->metadata, 'team'));
-            $sheet->setCellValue("J{$row}", $log->description);
-            $sheet->setCellValue("K{$row}", $log->route_name);
-            $sheet->setCellValue("L{$row}", $log->method);
-            $sheet->setCellValue("M{$row}", $log->ip_address);
+            $sheet->setCellValue("I{$row}", $log->description);
             $row++;
         }
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'activity-log-' . now()->format('Y-m-d-His') . '.xlsx';
+        $filename = $reportTitle . '.xlsx';
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
