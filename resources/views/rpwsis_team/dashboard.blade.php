@@ -1040,6 +1040,7 @@
                 </select>
             </label>
             <div class="table-toolbar__actions">
+                <button type="button" id="simpleTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('simpleTable')">Apply</button>
                 <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('simpleTable')">Reset</button>
             </div>
         </div>
@@ -1290,6 +1291,7 @@
                 </select>
             </label>
             <div class="table-toolbar__actions">
+                <button type="button" id="summaryTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('summaryTable')">Apply</button>
                 <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('summaryTable')">Reset</button>
             </div>
         </div>
@@ -1519,6 +1521,7 @@
                 </select>
             </label>
             <div class="table-toolbar__actions">
+                <button type="button" id="nurseryTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('nurseryTable')">Apply</button>
                 <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('nurseryTable')">Reset</button>
             </div>
         </div>
@@ -1665,6 +1668,7 @@
                 </select>
             </label>
             <div class="table-toolbar__actions">
+                <button type="button" id="signagesTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('signagesTable')">Apply</button>
                 <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('signagesTable')">Reset</button>
             </div>
         </div>
@@ -1807,6 +1811,7 @@
                 </select>
             </label>
             <div class="table-toolbar__actions">
+                <button type="button" id="infrastructureTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('infrastructureTable')">Apply</button>
                 <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('infrastructureTable')">Reset</button>
             </div>
         </div>
@@ -2585,22 +2590,27 @@
                 accomplishment: {
                     bodyId: 'tableBody',
                     render: renderAccomplishmentRow,
+                    tableId: 'simpleTable',
                 },
                 summary: {
                     bodyId: 'summaryTableBody',
                     render: renderSummaryRow,
+                    tableId: 'summaryTable',
                 },
                 nursery: {
                     bodyId: 'nurseryTableBody',
                     render: renderNurseryRow,
+                    tableId: 'nurseryTable',
                 },
                 signages: {
                     bodyId: 'signagesTableBody',
                     render: renderSignagesRow,
+                    tableId: 'signagesTable',
                 },
                 infrastructure: {
                     bodyId: 'infrastructureTableBody',
                     render: renderInfrastructureRow,
+                    tableId: 'infrastructureTable',
                 }
             };
 
@@ -2613,6 +2623,8 @@
             } else {
                 document.getElementById(config.bodyId).insertAdjacentHTML('beforeend', html);
             }
+
+            refreshClientTableFilters(config.tableId);
         }
 
         // ======================= SAVE ACCOMPLISHMENT (FIRST TABLE) =======================
@@ -2938,6 +2950,7 @@
                 })
                 .then(data => {
                     btn.closest('tr').remove();
+                    refreshClientTableFilters('simpleTable');
                     closeDeleteModal();
                 })
                 .catch(error => {
@@ -2979,6 +2992,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('summaryTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -3023,6 +3037,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('nurseryTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -3067,6 +3082,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('signagesTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -3111,6 +3127,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('infrastructureTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -3349,6 +3366,34 @@
             });
         }
 
+        function refreshClientTableFilters(tableId) {
+            const config = clientTableFilterConfigs[tableId];
+            if (!config) return;
+
+            const table = document.getElementById(tableId);
+            if (!table || !table.tBodies.length) return;
+
+            const rows = Array.from(table.tBodies[0].rows).filter(row => !row.dataset.emptyState);
+
+            (config.filters || []).forEach((filter) => {
+                const select = document.getElementById(filter.selectId);
+                const previousValue = select ? select.value : '';
+
+                populateClientFilterOptions(
+                    filter.selectId,
+                    rows.map(row => row.cells[filter.columnIndex]?.textContent || ''),
+                    filter.placeholder
+                );
+
+                if (select) {
+                    const hasPreviousValue = Array.from(select.options).some(option => option.value === previousValue);
+                    select.value = hasPreviousValue ? previousValue : '';
+                }
+            });
+
+            applyClientTableFilters(tableId);
+        }
+
         function applyClientTableFilters(tableId) {
             const config = clientTableFilterConfigs[tableId];
             if (!config) return;
@@ -3415,11 +3460,23 @@
             if (config.searchInputId) {
                 const searchInput = document.getElementById(config.searchInputId);
                 if (searchInput) {
-                    searchInput.addEventListener('input', () => applyClientTableFilters(config.tableId));
+                    searchInput.addEventListener('keydown', (event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            applyClientTableFilters(config.tableId);
+                        }
+                    });
                 }
             }
 
-            applyClientTableFilters(config.tableId);
+            if (config.applyButtonId) {
+                const applyButton = document.getElementById(config.applyButtonId);
+                if (applyButton) {
+                    applyButton.addEventListener('click', () => applyClientTableFilters(config.tableId));
+                }
+            }
+
+            refreshClientTableFilters(config.tableId);
         }
 
         function resetClientTableFilters(tableId) {
@@ -3442,6 +3499,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupClientTableFilters({
                 tableId: 'simpleTable',
+                applyButtonId: 'simpleTableApplyButton',
                 searchInputId: 'simpleTableSearch',
                 filters: [
                     { selectId: 'simpleTableRegionFilter', columnIndex: 0, placeholder: 'All regions' },
@@ -3451,6 +3509,7 @@
 
             setupClientTableFilters({
                 tableId: 'summaryTable',
+                applyButtonId: 'summaryTableApplyButton',
                 searchInputId: 'summaryTableSearch',
                 filters: [
                     { selectId: 'summaryTableProvinceFilter', columnIndex: 1, placeholder: 'All provinces' },
@@ -3460,6 +3519,7 @@
 
             setupClientTableFilters({
                 tableId: 'nurseryTable',
+                applyButtonId: 'nurseryTableApplyButton',
                 searchInputId: 'nurseryTableSearch',
                 filters: [
                     { selectId: 'nurseryTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
@@ -3469,6 +3529,7 @@
 
             setupClientTableFilters({
                 tableId: 'signagesTable',
+                applyButtonId: 'signagesTableApplyButton',
                 searchInputId: 'signagesTableSearch',
                 filters: [
                     { selectId: 'signagesTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
@@ -3478,6 +3539,7 @@
 
             setupClientTableFilters({
                 tableId: 'infrastructureTable',
+                applyButtonId: 'infrastructureTableApplyButton',
                 searchInputId: 'infrastructureTableSearch',
                 filters: [
                     { selectId: 'infrastructureTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },

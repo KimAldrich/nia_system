@@ -538,12 +538,12 @@
                     [
                         'name' => 'rpwsis_status_region',
                         'label' => 'Region',
-                        'options' => ['' => 'All regions'] + $records->getCollection()->pluck('region')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                        'options' => ['' => 'All regions'] + collect($rpwsisStatusRegions ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
                     ],
                     [
                         'name' => 'rpwsis_status_batch',
                         'label' => 'Batch',
-                        'options' => ['' => 'All batches'] + $records->getCollection()->pluck('batch')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                        'options' => ['' => 'All batches'] + collect($rpwsisStatusBatches ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
                     ],
                 ],
                 'resetKeys' => ['rpwsis_status_search', 'rpwsis_status_region', 'rpwsis_status_batch', 'rpwsis_status_page'],

@@ -149,6 +149,7 @@ class GuestController extends Controller
         $totalProjects = $conducted = $remaining = $feasible = 0;
         $hydroProjects = $fsdeProjects = $procurementProjects = $pcrStatusReports = null;
         $records = $summaryRecords = $nurseryRecords = $signageRecords = $infrastructureRecords = null;
+        $rpwsisStatusRegions = $rpwsisStatusBatches = [];
         $procCategories = collect();
         $procMunicipalities = collect();
         $powData = null;
@@ -290,6 +291,22 @@ class GuestController extends Controller
                 $recordsQuery->where('batch', $request->input('rpwsis_status_batch'));
             }
 
+            $rpwsisStatusRegions = (clone $recordsQuery)
+                ->whereNotNull('region')
+                ->where('region', '!=', '')
+                ->distinct()
+                ->orderBy('region')
+                ->pluck('region')
+                ->all();
+
+            $rpwsisStatusBatches = (clone $recordsQuery)
+                ->whereNotNull('batch')
+                ->where('batch', '!=', '')
+                ->distinct()
+                ->orderBy('batch')
+                ->pluck('batch')
+                ->all();
+
             $summaryQuery = RpwsisAccomplishmentSummary::query();
             if ($request->filled('rpwsis_summary_search')) {
                 $search = trim((string) $request->input('rpwsis_summary_search'));
@@ -393,6 +410,8 @@ class GuestController extends Controller
             'powData',
             'pcrStatusReports',
             'records',
+            'rpwsisStatusRegions',
+            'rpwsisStatusBatches',
             'summaryRecords',
             'nurseryRecords',
             'signageRecords',
