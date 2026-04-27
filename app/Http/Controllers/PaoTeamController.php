@@ -285,13 +285,36 @@ class PaoTeamController extends Controller
 
         abort_unless($isAuthorizedGuest || $isAuthorizedUser, 403);
 
-        $filename = 'STATUS OF POW CY ' . now()->format('Y') . ' AS OF ' . now()->format('F j, Y') . '.xlsx';
+        $filenameParts = ['STATUS OF POW CY ' . now()->format('Y') . ' as of', now()->format('F j, Y')];
+        if ($request->filled('pow_search')) {
+            $filenameParts[] = 'Search';
+            $filenameParts[] = trim((string) $request->input('pow_search'));
+        }
+        if ($request->filled('pow_district')) {
+            $filenameParts[] = 'District';
+            $filenameParts[] = $request->input('pow_district');
+        }
+        $filename = collect($filenameParts)->filter()->implode(' ') . '.xlsx';
+        $filename = preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
         $headers = [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $rows = PaoPowData::orderBy('district')->get();
+        $query = PaoPowData::query();
+        if ($request->filled('pow_search')) {
+            $search = trim((string) $request->input('pow_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('district', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('total_allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pow_district')) {
+            $query->where('district', $request->input('pow_district'));
+        }
+
+        $rows = $query->orderBy('district')->get();
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('POW Status');

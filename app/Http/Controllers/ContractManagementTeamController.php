@@ -317,17 +317,44 @@ class ContractManagementTeamController extends Controller
     {
         $query = ProcurementProject::query();
 
+        if ($request->filled('proc_search')) {
+            $search = trim((string) $request->input('proc_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('category', 'like', "%{$search}%")
+                    ->orWhere('name_of_project', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('contract_no', 'like', "%{$search}%")
+                    ->orWhere('name_of_contractor', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('project_description', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
             $query->where('category', $request->proc_category);
         }
 
+        if ($request->filled('proc_municipality')) {
+            $query->where('municipality', $request->input('proc_municipality'));
+        }
+
         $rows = $query->orderBy('category')->orderBy('proj_no')->get();
 
-        $filename = 'Procurement Status as of ' . now()->format('F j, Y');
-        if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
-            $filename .= '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $request->proc_category);
+        $filenameParts = ['Procurement Status as of', now()->format('F j, Y')];
+        if ($request->filled('proc_search')) {
+            $filenameParts[] = 'Search';
+            $filenameParts[] = trim((string) $request->input('proc_search'));
         }
-        $filename .= '.xlsx';
+        if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
+            $filenameParts[] = 'Category';
+            $filenameParts[] = $request->proc_category;
+        }
+        if ($request->filled('proc_municipality')) {
+            $filenameParts[] = 'Municipality';
+            $filenameParts[] = $request->input('proc_municipality');
+        }
+        $filename = collect($filenameParts)->filter()->implode(' ') . '.xlsx';
+        $filename = preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

@@ -148,8 +148,7 @@ class AdminController extends Controller
             'E2' => 'Action',
             'F2' => 'Subject Type',
             'G2' => 'Subject',
-            'H2' => 'Status',
-            'I2' => 'Description',
+            'H2' => 'Description',
         ];
 
         foreach ($headers as $cell => $value) {
@@ -164,13 +163,12 @@ class AdminController extends Controller
             'E' => 24,
             'F' => 18,
             'G' => 28,
-            'H' => 18,
-            'I' => 54,
+            'H' => 54,
         ] as $column => $width) {
             $sheet->getColumnDimension($column)->setWidth($width);
         }
 
-        $sheet->getStyle('A1:I1')->applyFromArray([
+        $sheet->getStyle('A1:H1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 12,
@@ -182,7 +180,7 @@ class AdminController extends Controller
             ],
         ]);
 
-        $sheet->getStyle('A2:I2')->applyFromArray([
+        $sheet->getStyle('A2:H2')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 10,
@@ -194,7 +192,7 @@ class AdminController extends Controller
             ],
         ]);
 
-        $sheet->getStyle('A1:I' . max(3, $logs->count() + 2))->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:H' . max(3, $logs->count() + 2))->getAlignment()->setWrapText(true);
         $sheet->getRowDimension(1)->setRowHeight(24);
 
         $row = 3;
@@ -206,10 +204,9 @@ class AdminController extends Controller
                 $sheet->setCellValue("E{$row}", $this->formatAuditActionLabel((string) $log->action));
                 $sheet->setCellValue("F{$row}", $log->subject_type);
                 $sheet->setCellValue("G{$row}", $log->subject_label);
-                $sheet->setCellValue("H{$row}", data_get($log->metadata, 'status'));
-                $sheet->setCellValue("I{$row}", $log->description);
+                $sheet->setCellValue("H{$row}", $log->description);
                 $row++;
-        }
+            }
 
         $writer = new Xlsx($spreadsheet);
         $filename = $reportTitle . '.xlsx';

@@ -19,6 +19,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use Illuminate\Support\Carbon;
 
 class FsTeamController extends Controller
 {
@@ -397,7 +398,8 @@ class FsTeamController extends Controller
 
     public function exportHydroExcel(Request $request): StreamedResponse
     {
-        $rows = HydroGeoProject::orderBy('year')
+        $rows = $this->buildHydroExportQuery($request)
+            ->orderBy('year')
             ->orderBy('district')
             ->orderBy('municipality')
             ->orderBy('system_name')
@@ -549,7 +551,11 @@ class FsTeamController extends Controller
             ->getStartColor()->setRGB('FFFFFF');
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'HYDRO-GEO.xlsx';
+        $filename = $this->buildExportFilename('HYDRO-GEO', $request, [
+            'hydro_search' => 'Search',
+            'hydro_district' => 'District',
+            'hydro_status' => 'Status',
+        ]);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
@@ -561,7 +567,8 @@ class FsTeamController extends Controller
 
     public function exportFsdeExcel(Request $request): StreamedResponse
     {
-        $rows = FsdeProject::orderBy('year')
+        $rows = $this->buildFsdeExportQuery($request)
+            ->orderBy('year')
             ->orderBy('project_name')
             ->get();
 
@@ -852,7 +859,11 @@ class FsTeamController extends Controller
         $this->addFsExcelLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_5.png'), 'K1', 109, 8, 8);
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'MONTHLY FSDE STATUS REPORT ' . strtoupper($currentDate->format('Fj Y')) . '.xlsx';
+        $filename = $this->buildExportFilename('MONTHLY FSDE STATUS REPORT', $request, [
+            'fsde_search' => 'Search',
+            'fsde_year' => 'Year',
+            'fsde_municipality' => 'Municipality',
+        ]);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
@@ -924,5 +935,83 @@ class FsTeamController extends Controller
         }
 
         return (float) $cleaned;
+    }
+
+    private function buildHydroExportQuery(Request $request)
+    {
+        $query = HydroGeoProject::query();
+
+        if ($request->filled('hydro_search')) {
+            $search = trim((string) $request->input('hydro_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('year', 'like', "%{$search}%")
+                    ->orWhere('district', 'like', "%{$search}%")
+                    ->orWhere('project_code', 'like', "%{$search}%")
+                    ->orWhere('system_name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('result', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('hydro_status')) {
+            $query->where('status', $request->input('hydro_status'));
+        }
+
+        if ($request->filled('hydro_district')) {
+            $query->where('district', $request->input('hydro_district'));
+        }
+
+        return $query;
+    }
+
+    private function buildFsdeExportQuery(Request $request)
+    {
+        $query = FsdeProject::query();
+
+        if ($request->filled('fsde_search')) {
+            $search = trim((string) $request->input('fsde_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('year', 'like', "%{$search}%")
+                    ->orWhere('project_name', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('type_of_study', 'like', "%{$search}%")
+                    ->orWhere('consultant', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('fsde_year')) {
+            $query->where('year', $request->input('fsde_year'));
+        }
+
+        if ($request->filled('fsde_municipality')) {
+            $query->where('municipality', $request->input('fsde_municipality'));
+        }
+
+        return $query;
+    }
+
+    private function buildExportFilename(string $baseTitle, Request $request, array $filterMap): string
+    {
+        $parts = [$baseTitle, 'as of', now()->format('F j, Y')];
+
+        foreach ($filterMap as $key => $label) {
+            $value = trim((string) $request->input($key, ''));
+            if ($value === '') {
+                continue;
+            }
+
+            $parts[] = $label;
+            $parts[] = $value;
+        }
+
+        $filename = collect($parts)
+            ->filter()
+            ->implode(' ')
+            . '.xlsx';
+
+        return preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
     }
 }

@@ -3161,7 +3161,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Accomplishment");
-            XLSX.writeFile(wb, "status_accomplishment.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Status Accomplishment', [
+                { label: 'Search', inputId: 'simpleTableSearch' },
+                { label: 'Region', selectId: 'simpleTableRegionFilter' },
+                { label: 'Batch', selectId: 'simpleTableBatchFilter' },
+            ]));
         }
 
         function exportSummaryExcel() {
@@ -3192,7 +3196,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Summary");
-            XLSX.writeFile(wb, "summary_of_accomplishment.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Summary of Accomplishment', [
+                { label: 'Search', inputId: 'summaryTableSearch' },
+                { label: 'Province', selectId: 'summaryTableProvinceFilter' },
+                { label: 'Municipality', selectId: 'summaryTableMunicipalityFilter' },
+            ]));
         }
 
         function exportNurseryExcel() {
@@ -3221,7 +3229,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Nursery");
-            XLSX.writeFile(wb, "nursery_establishment.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Nursery Establishment', [
+                { label: 'Search', inputId: 'nurseryTableSearch' },
+                { label: 'Municipality', selectId: 'nurseryTableMunicipalityFilter' },
+                { label: 'Type', selectId: 'nurseryTableTypeFilter' },
+            ]));
         }
 
         function exportSignagesExcel() {
@@ -3250,7 +3262,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Signages");
-            XLSX.writeFile(wb, "informative_signages.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Informative Signages', [
+                { label: 'Search', inputId: 'signagesTableSearch' },
+                { label: 'Municipality', selectId: 'signagesTableMunicipalityFilter' },
+                { label: 'Type', selectId: 'signagesTableTypeFilter' },
+            ]));
         }
 
         function exportInfrastructureExcel() {
@@ -3279,7 +3295,42 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Infrastructure");
-            XLSX.writeFile(wb, "other_infrastructures.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Other Infrastructures', [
+                { label: 'Search', inputId: 'infrastructureTableSearch' },
+                { label: 'Municipality', selectId: 'infrastructureTableMunicipalityFilter' },
+                { label: 'Type', selectId: 'infrastructureTableTypeFilter' },
+            ]));
+        }
+
+        function getRpwsisExportFilename(baseTitle, filters = []) {
+            const dateText = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const parts = [`${baseTitle} as of ${dateText}`];
+
+            filters.forEach((filter) => {
+                if (filter.inputId) {
+                    const input = document.getElementById(filter.inputId);
+                    const value = (input?.value || '').trim();
+                    if (value) {
+                        parts.push(`${filter.label} ${value}`);
+                    }
+                }
+
+                if (filter.selectId) {
+                    const select = document.getElementById(filter.selectId);
+                    const value = (select?.value || '').trim();
+                    const text = (select?.selectedOptions?.[0]?.textContent || '').trim();
+                    if (value && text) {
+                        parts.push(`${filter.label} ${text}`);
+                    }
+                }
+            });
+
+            return `${parts.join(' ').replace(/[\\/:*?"<>|]+/g, '-')}.xlsx`;
         }
 
         const clientTableFilterConfigs = {};

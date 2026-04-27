@@ -288,9 +288,31 @@ class PcrTeamController extends Controller
 
     public function exportPcrStatusExcel(Request $request): StreamedResponse
     {
-        $rows = PcrStatusReport::orderByDesc('fund_source')->get();
+        $query = PcrStatusReport::query();
+        if ($request->filled('pcr_search')) {
+            $search = trim((string) $request->input('pcr_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('fund_source', 'like', "%{$search}%")
+                    ->orWhere('allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pcr_fund_source')) {
+            $query->where('fund_source', $request->input('pcr_fund_source'));
+        }
+
+        $rows = $query->orderByDesc('fund_source')->get();
         $dateLabel = now()->format('F j, Y');
-        $filename = 'PCR STATUS AS OF ' . now()->format('Fj Y') . '.xlsx';
+        $filenameParts = ['PCR STATUS as of', $dateLabel];
+        if ($request->filled('pcr_search')) {
+            $filenameParts[] = 'Search';
+            $filenameParts[] = trim((string) $request->input('pcr_search'));
+        }
+        if ($request->filled('pcr_fund_source')) {
+            $filenameParts[] = 'Fund Source';
+            $filenameParts[] = $request->input('pcr_fund_source');
+        }
+        $filename = collect($filenameParts)->filter()->implode(' ') . '.xlsx';
+        $filename = preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
