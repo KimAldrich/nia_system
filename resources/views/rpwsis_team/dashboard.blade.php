@@ -3440,9 +3440,6 @@
                 );
 
                 const select = document.getElementById(filter.selectId);
-                if (select) {
-                    select.addEventListener('change', () => applyClientTableFilters(config.tableId));
-                }
             });
 
             if (config.searchInputId) {

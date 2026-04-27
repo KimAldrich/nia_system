@@ -11,6 +11,8 @@ class AuditLog extends Model
 {
     use MassPrunable;
 
+    private const MAX_ENTRIES = 100;
+
     protected $fillable = [
         'user_id',
         'user_name',
@@ -27,6 +29,13 @@ class AuditLog extends Model
         'metadata',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (): void {
+            static::pruneToLatestLimit();
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -42,5 +51,19 @@ class AuditLog extends Model
     public function prunable(): Builder
     {
         return static::where('created_at', '<', now()->subMonths(2));
+    }
+
+    public static function pruneToLatestLimit(): void
+    {
+        $staleIds = static::query()
+            ->latest('id')
+            ->skip(self::MAX_ENTRIES)
+            ->pluck('id');
+
+        if ($staleIds->isEmpty()) {
+            return;
+        }
+
+        static::query()->whereIn('id', $staleIds)->delete();
     }
 }

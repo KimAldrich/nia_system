@@ -23,6 +23,17 @@
         border-bottom: 1px solid #f1f5f9;
     }
 
+    .event-manager-card .event-manager-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .event-manager-card .event-manager-filter-field {
+        min-width: 0;
+    }
+
     .event-manager-label {
         font-size: 11px;
         font-weight: 700;
@@ -127,6 +138,7 @@
         font-weight: 700;
         color: #1e293b;
         text-align: center;
+        width: 100%;
     }
 
     .event-manager-card .calendar-grid {
@@ -184,6 +196,7 @@
         gap: 15px;
         padding: 12px 0;
         border-top: 1px solid #f1f5f9;
+        cursor: pointer;
     }
 
     .event-manager-card .mini-event-date {
@@ -198,17 +211,26 @@
         flex-shrink: 0;
     }
 
+    .event-manager-card .mini-event-body {
+        min-width: 0;
+        flex: 1;
+    }
+
     .event-manager-card .mini-event-title {
         font-size: 13px;
         font-weight: 600;
         color: #1e293b;
         margin: 0;
+        line-height: 1.4;
+        word-break: break-word;
     }
 
     .event-manager-card .mini-event-time {
         font-size: 11px;
         color: #a0aec0;
         margin: 0;
+        line-height: 1.5;
+        word-break: break-word;
     }
 
     .event-manager-card .event-tag {
@@ -220,6 +242,93 @@
         margin-top: 4px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+
+    .event-manager-card .event-manager-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        outline: none;
+        background: #ffffff;
+        color: #1e293b;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .event-manager-card .event-manager-select:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .event-manager-readonly-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        overflow-y: auto;
+    }
+
+    .event-manager-readonly-modal.active {
+        display: flex;
+        animation: eventManagerModalFadeIn 0.2s ease;
+    }
+
+    .event-manager-readonly-modal__box {
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 16px;
+        width: min(100%, 520px);
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        margin: auto;
+    }
+
+    .event-manager-readonly-btn {
+        width: 100%;
+        padding: 10px 12px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        color: #475569;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .event-manager-readonly-btn:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    .event-manager-readonly-detail-card {
+        text-align: left;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    @keyframes eventManagerModalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .event-manager-card .custom-pagination {
@@ -280,8 +389,20 @@
             padding: 20px;
         }
 
+        .event-manager-card .event-manager-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .event-manager-card .mini-event {
+            align-items: flex-start;
+        }
+
         .event-manager-card .calendar-viewport {
             min-height: auto;
+        }
+
+        .event-manager-readonly-modal__box {
+            padding: 20px;
         }
     }
 </style>
@@ -329,19 +450,19 @@
         </div>
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
-        <label>
+    <div class="event-manager-filter-grid">
+        <label class="event-manager-filter-field">
             <span class="event-manager-label" style="display:block; margin-bottom:6px;">Filter by Tag</span>
-            <select id="{{ $containerId }}TagFilter" class="table-toolbar__select">
+            <select id="{{ $containerId }}TagFilter" class="event-manager-select">
                 <option value="">All tags</option>
                 @foreach(($categories ?? []) as $cat)
                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                 @endforeach
             </select>
         </label>
-        <label>
+        <label class="event-manager-filter-field">
             <span class="event-manager-label" style="display:block; margin-bottom:6px;">Filter by Team</span>
-            <select id="{{ $containerId }}TeamFilter" class="table-toolbar__select">
+            <select id="{{ $containerId }}TeamFilter" class="event-manager-select">
                 <option value="">All teams</option>
                 @foreach($eventTeamLabels as $value => $label)
                     <option value="{{ $value }}">{{ $label }}</option>
@@ -429,10 +550,9 @@
                     data-event-id="{{ $event->id }}"
                     data-category-id="{{ $event->event_category_id }}"
                     data-team="{{ $event->team }}"
-                    onclick="openReadonlyEventDetails('{{ $containerId }}', {{ $event->id }})"
-                    style="cursor:pointer;">
+                    onclick="openReadonlyEventDetails('{{ $containerId }}', {{ $event->id }})">
                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
-                    <div>
+                    <div class="mini-event-body">
                         <h4 class="mini-event-title">{{ $event->title }}</h4>
                         <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
 
@@ -456,8 +576,8 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="{{ $containerId }}DetailsModal">
-    <div class="modal-box">
+<div class="event-manager-readonly-modal" id="{{ $containerId }}DetailsModal">
+    <div class="event-manager-readonly-modal__box">
         <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px;">
             <div>
                 <h3 style="margin:0; font-size:18px; color:#1e293b;" id="{{ $containerId }}DetailsTitle">Event Details</h3>
@@ -467,7 +587,7 @@
         </div>
         <div id="{{ $containerId }}DetailsBody" style="display:grid; gap:12px; color:#334155; font-size:14px;"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button type="button" onclick="closeReadonlyEventDetails('{{ $containerId }}')" class="modern-btn modern-btn-outline" style="flex:1;">Close</button>
+            <button type="button" onclick="closeReadonlyEventDetails('{{ $containerId }}')" class="event-manager-readonly-btn" style="flex:1;">Close</button>
         </div>
     </div>
 </div>
@@ -590,7 +710,7 @@
             document.getElementById(`${containerId}DetailsTitle`).innerText = `Events on ${dateStr}`;
             document.getElementById(`${containerId}DetailsMeta`).innerText = `${dayEvents.length} event(s) scheduled`;
             document.getElementById(`${containerId}DetailsBody`).innerHTML = dayEvents.map((event) => `
-                <button type="button" onclick="openReadonlyEventDetails('${containerId}', ${event.id})" style="text-align:left; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; cursor:pointer;">
+                <button type="button" class="event-manager-readonly-detail-card" onclick="openReadonlyEventDetails('${containerId}', ${event.id})">
                     <strong>${event.title}</strong><br>
                     <span style="font-size:12px; color:#64748b;">${event.event_time} · ${event.team_label || 'N/A'} · ${event.category_name || 'Uncategorized'}</span>
                 </button>

@@ -117,7 +117,10 @@
 
         <div class="ui-card">
             <div class="audit-toolbar-meta">
-                <div class="audit-summary">{{ number_format($logs->total()) }} log entr{{ $logs->total() === 1 ? 'y' : 'ies' }} found. Sorted newest first.</div>
+                <div class="audit-summary">
+                    {{ number_format($logs->total()) }} log entr{{ $logs->total() === 1 ? 'y' : 'ies' }} found. Sorted newest first.
+                    Only the latest 100 logs are kept automatically.
+                </div>
             </div>
             <div class="audit-table-wrap">
                 <table class="audit-table">
