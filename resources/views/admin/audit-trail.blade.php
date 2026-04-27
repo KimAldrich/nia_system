@@ -69,7 +69,9 @@
                     <select id="action" name="action" class="audit-select">
                         <option value="">All actions</option>
                         @foreach($actions as $actionOption)
-                            <option value="{{ $actionOption }}" {{ $action === $actionOption ? 'selected' : '' }}>{{ $actionOption }}</option>
+                            <option value="{{ $actionOption }}" {{ $action === $actionOption ? 'selected' : '' }}>
+                                {{ $actionLabels[$actionOption] ?? $actionOption }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -88,15 +90,6 @@
                         <option value="">All users</option>
                         @foreach($users as $userOption)
                             <option value="{{ $userOption }}" {{ $user === $userOption ? 'selected' : '' }}>{{ $userOption }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="audit-field">
-                    <label class="audit-label" for="status">Status</label>
-                    <select id="status" name="status" class="audit-select">
-                        <option value="">All statuses</option>
-                        @foreach($statuses as $statusOption)
-                            <option value="{{ $statusOption }}" {{ $status === $statusOption ? 'selected' : '' }}>{{ $statusOption }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -158,7 +151,7 @@
                                         <div class="audit-meta">{{ $log->user_role ?? 'N/A' }}</div>
                                     </div>
                                 </td>
-                                <td><span class="audit-badge">{{ $log->action }}</span></td>
+                                <td><span class="audit-badge">{{ $actionLabels[$log->action] ?? $log->action }}</span></td>
                                 <td>
                                     <div class="audit-entry">
                                         <div class="audit-desc">{{ $log->subject_label ?? 'N/A' }}</div>
@@ -179,13 +172,13 @@
                                             "description" => $log->description,
                                             "user_name" => $log->user_name ?? "Unknown user",
                                             "user_role" => $log->user_role ?? "N/A",
-                                            "action" => $log->action,
+                                            "action" => $actionLabels[$log->action] ?? $log->action,
                                             "subject_type" => $log->subject_type ?? "N/A",
                                             "subject_label" => $log->subject_label ?? "N/A",
                                             "created_at" => optional($log->created_at)->format("M d, Y h:i:s A"),
                                         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}'
                                     >
-                                        View details
+                                        View Details
                                     </button>
                                 </td>
                             </tr>

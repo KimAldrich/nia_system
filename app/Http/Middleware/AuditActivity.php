@@ -95,8 +95,9 @@ class AuditActivity
         }
 
         $user = $request->user();
+        $resolvedTeam = $this->resolveMetadataTeam($request, $snapshot, $user?->role);
         $metadata = array_filter([
-            'team' => $this->resolveTeamLabel((string) $request->input('team', '')),
+            'team' => $resolvedTeam,
             'status' => $request->input('status'),
             'event_date' => $request->input('event_date'),
             'event_time' => $request->input('event_time'),
@@ -313,6 +314,26 @@ class AuditActivity
             'event_time' => data_get($record, 'event_time'),
             'original_name' => data_get($record, 'original_name'),
         ], fn ($value) => !blank($value));
+    }
+
+    private function resolveMetadataTeam(Request $request, array $snapshot, ?string $userRole): ?string
+    {
+        $requestTeam = $this->resolveTeamLabel((string) $request->input('team', ''));
+        if ($requestTeam) {
+            return $requestTeam;
+        }
+
+        $snapshotTeam = $this->resolveTeamLabel((string) Arr::get($snapshot, 'metadata.team', ''));
+        if ($snapshotTeam) {
+            return $snapshotTeam;
+        }
+
+        $userTeam = $this->resolveTeamLabel((string) $userRole);
+        if ($userTeam && $userTeam !== 'Admin') {
+            return $userTeam;
+        }
+
+        return null;
     }
 
     private function resolveTeamLabel(string $team): ?string

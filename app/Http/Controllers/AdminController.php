@@ -76,7 +76,6 @@ class AdminController extends Controller
         $action = trim((string) $request->query('action', ''));
         $team = trim((string) $request->query('team', ''));
         $user = trim((string) $request->query('user', ''));
-        $status = trim((string) $request->query('status', ''));
         $dateFrom = trim((string) $request->query('date_from', ''));
         $dateTo = trim((string) $request->query('date_to', ''));
 
@@ -88,13 +87,9 @@ class AdminController extends Controller
             ->withQueryString();
 
         $actions = AuditLog::query()->select('action')->distinct()->orderBy('action')->pluck('action');
+        $actionLabels = $actions
+            ->mapWithKeys(fn ($actionValue) => [$actionValue => $this->formatAuditActionLabel($actionValue)]);
         $users = AuditLog::query()->whereNotNull('user_name')->select('user_name')->distinct()->orderBy('user_name')->pluck('user_name');
-        $statuses = AuditLog::query()
-            ->whereNotNull('metadata->status')
-            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.status')) as status")
-            ->distinct()
-            ->orderBy('status')
-            ->pluck('status');
         $teams = AuditLog::query()
             ->whereNotNull('metadata->team')
             ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.team')) as team")
@@ -107,13 +102,12 @@ class AdminController extends Controller
             'search',
             'action',
             'actions',
+            'actionLabels',
             'team',
             'user',
-            'status',
             'dateFrom',
             'dateTo',
             'users',
-            'statuses',
             'teams'
         ));
     }
@@ -204,17 +198,17 @@ class AdminController extends Controller
         $sheet->getRowDimension(1)->setRowHeight(24);
 
         $row = 3;
-        foreach ($logs as $log) {
-            $sheet->setCellValue("A{$row}", optional($log->created_at)->format('Y-m-d'));
-            $sheet->setCellValue("B{$row}", optional($log->created_at)->format('h:i:s A'));
-            $sheet->setCellValue("C{$row}", $log->user_name);
-            $sheet->setCellValue("D{$row}", $log->user_role);
-            $sheet->setCellValue("E{$row}", $log->action);
-            $sheet->setCellValue("F{$row}", $log->subject_type);
-            $sheet->setCellValue("G{$row}", $log->subject_label);
-            $sheet->setCellValue("H{$row}", data_get($log->metadata, 'status'));
-            $sheet->setCellValue("I{$row}", $log->description);
-            $row++;
+            foreach ($logs as $log) {
+                $sheet->setCellValue("A{$row}", optional($log->created_at)->format('Y-m-d'));
+                $sheet->setCellValue("B{$row}", optional($log->created_at)->format('h:i:s A'));
+                $sheet->setCellValue("C{$row}", $log->user_name);
+                $sheet->setCellValue("D{$row}", $log->user_role);
+                $sheet->setCellValue("E{$row}", $this->formatAuditActionLabel((string) $log->action));
+                $sheet->setCellValue("F{$row}", $log->subject_type);
+                $sheet->setCellValue("G{$row}", $log->subject_label);
+                $sheet->setCellValue("H{$row}", data_get($log->metadata, 'status'));
+                $sheet->setCellValue("I{$row}", $log->description);
+                $row++;
         }
 
         $writer = new Xlsx($spreadsheet);
@@ -234,7 +228,6 @@ class AdminController extends Controller
         $action = trim((string) $request->query('action', ''));
         $team = trim((string) $request->query('team', ''));
         $user = trim((string) $request->query('user', ''));
-        $status = trim((string) $request->query('status', ''));
         $dateFrom = trim((string) $request->query('date_from', ''));
         $dateTo = trim((string) $request->query('date_to', ''));
 
@@ -254,9 +247,26 @@ class AdminController extends Controller
             ->when($action !== '', fn ($query) => $query->where('action', $action))
             ->when($team !== '', fn ($query) => $query->where('metadata->team', $team))
             ->when($user !== '', fn ($query) => $query->where('user_name', $user))
-            ->when($status !== '', fn ($query) => $query->where('metadata->status', $status))
             ->when($dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $dateTo));
+    }
+
+    private function formatAuditActionLabel(string $action): string
+    {
+        $parts = collect(explode('.', $action))
+            ->filter()
+            ->map(function ($part) {
+                return match ($part) {
+                    'rpwsis' => 'RP-WSIS',
+                    'fsde' => 'FSDE',
+                    'pcr' => 'PCR',
+                    'pow' => 'POW',
+                    default => str($part)->replace('_', ' ')->title()->value(),
+                };
+            })
+            ->values();
+
+        return $parts->implode(' - ');
     }
 
     //UploadDownloadables
