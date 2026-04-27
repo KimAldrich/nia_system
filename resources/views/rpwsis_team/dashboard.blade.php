@@ -1027,18 +1027,6 @@
                 <span class="table-toolbar__label">Search</span>
                 <input type="search" id="simpleTableSearch" class="table-toolbar__input" placeholder="Search activity, NIS, batch, remarks...">
             </label>
-            <label class="table-toolbar__field">
-                <span class="table-toolbar__label">Region</span>
-                <select id="simpleTableRegionFilter" class="table-toolbar__select">
-                    <option value="">All regions</option>
-                </select>
-            </label>
-            <label class="table-toolbar__field">
-                <span class="table-toolbar__label">Batch</span>
-                <select id="simpleTableBatchFilter" class="table-toolbar__select">
-                    <option value="">All batches</option>
-                </select>
-            </label>
             <div class="table-toolbar__actions">
                 <button type="button" id="simpleTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('simpleTable')">Apply</button>
                 <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('simpleTable')">Reset</button>
@@ -3501,10 +3489,7 @@
                 tableId: 'simpleTable',
                 applyButtonId: 'simpleTableApplyButton',
                 searchInputId: 'simpleTableSearch',
-                filters: [
-                    { selectId: 'simpleTableRegionFilter', columnIndex: 0, placeholder: 'All regions' },
-                    { selectId: 'simpleTableBatchFilter', columnIndex: 1, placeholder: 'All batches' },
-                ],
+                filters: [],
             });
 
             setupClientTableFilters({
