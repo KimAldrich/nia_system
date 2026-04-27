@@ -24,16 +24,15 @@ class AdminController extends Controller
     }
 
     // 1. Admin Master Dashboard (FIXED)
-    public function index()
+    public function index(Request $request)
     {
         $users = User::all();
         $this->checkAdmin();
         $validatedResolutions = IaResolution::where('status', 'validated')->count();
         $pendingResolutions = IaResolution::whereIn('status', ['on-going', 'not-validated'])->count();
-        $resolutions = IaResolution::latest()->paginate(8, ['*'], 'active_projects_page')->withQueryString();
+        $resolutions = IaResolution::latest()->paginate(5, ['*'], 'active_projects_page')->withQueryString();
 
-        // Added 'with('category')' so the colored badges load efficiently
-        $events = Event::with('category')
+        $upcomingEventsQuery = Event::with('category')
             ->where('event_date', '>', now()->format('Y-m-d'))
             ->orWhere(function ($query) {
                 $today = now()->format('Y-m-d');
@@ -41,8 +40,12 @@ class AdminController extends Controller
                 $query->where('event_date', $today)
                     ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
             })
-            ->orderBy('event_date', 'asc')
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         // Fetch custom tags for the legend
         $categories = EventCategory::all();
@@ -51,6 +54,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'resolutions',
             'events',
+            'paginatedEvents',
             'categories',
             'downloadables',
             'validatedResolutions',

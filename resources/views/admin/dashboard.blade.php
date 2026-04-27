@@ -97,6 +97,12 @@
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
         
         .chart-wrapper { position: relative; height: 220px; width: 100%; }
+        .custom-pagination { display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; gap: 8px; font-family: 'Poppins', sans-serif; }
+        .custom-pagination svg { width: 16px; height: 16px; }
+        .custom-pagination .page-item { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; border-radius: 8px; background: #ffffff; color: #64748b; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: 0.2s; }
+        .custom-pagination .page-item:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+        .custom-pagination .page-item.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; }
+        .custom-pagination .page-item.disabled { background: #f8fafc; color: #cbd5e1; cursor: not-allowed; border-color: #f1f5f9; pointer-events: none; }
 
         @media (max-width: 1024px) {
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -172,6 +178,7 @@
                     'resolutions' => $resolutions ?? collect(),
                     'containerId' => 'activeProjectsContainer',
                     'editable' => false,
+                    'paginationStyle' => 'right',
                 ])
             </div>
 
@@ -315,8 +322,8 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
                 <div style="margin-top: 10px;">
                     <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">Upcoming Schedule</p>
-                    @if(isset($events) && $events->count() > 0)
-                        @foreach($events->take(5) as $event)
+                    @if(isset($paginatedEvents) && $paginatedEvents->count() > 0)
+                        @foreach($paginatedEvents as $event)
                             <div class="mini-event">
                                 <div style="display: flex; gap: 15px; align-items: center;">
                                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
@@ -336,6 +343,38 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                                 </form>
                             </div>
                         @endforeach
+
+                        @if ($paginatedEvents->hasPages())
+                            <div class="custom-pagination">
+                                @if ($paginatedEvents->onFirstPage())
+                                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
+                                @else
+                                    <a href="{{ $paginatedEvents->withQueryString()->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#eventManagerCard"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
+                                @endif
+
+                                @foreach ($paginatedEvents->withQueryString()->links()->elements as $element)
+                                    @if (is_string($element))
+                                        <span class="page-item disabled">{{ $element }}</span>
+                                    @endif
+
+                                    @if (is_array($element))
+                                        @foreach ($element as $page => $url)
+                                            @if ($page == $paginatedEvents->currentPage())
+                                                <span class="page-item active">{{ $page }}</span>
+                                            @else
+                                                <a href="{{ $url }}" class="page-item" data-async-pagination="true" data-async-target="#eventManagerCard">{{ $page }}</a>
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                @endforeach
+
+                                @if ($paginatedEvents->hasMorePages())
+                                    <a href="{{ $paginatedEvents->withQueryString()->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#eventManagerCard"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
+                                @else
+                                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
+                                @endif
+                            </div>
+                        @endif
                     @else
                         <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
                     @endif

@@ -3,6 +3,7 @@
     $containerId = $containerId ?? 'activeProjectsContainer';
     $editable = $editable ?? false;
     $updateRouteName = $updateRouteName ?? null;
+    $paginationStyle = $paginationStyle ?? 'split';
     $isPaginated = $resolutions instanceof \Illuminate\Contracts\Pagination\Paginator;
     $paginationWindow = $isPaginated ? \Illuminate\Pagination\UrlWindow::make($resolutions) : null;
 @endphp
@@ -93,6 +94,10 @@
         flex-wrap: wrap;
     }
 
+    .active-projects-pagination.right {
+        justify-content: flex-end;
+    }
+
     .active-projects-pagination-summary {
         font-size: 11px;
         color: #64748b;
@@ -140,8 +145,8 @@
 
     .active-projects-page-current {
         color: #ffffff;
-        background: #0f766e;
-        border: 1px solid #0f766e;
+        background: #4f46e5;
+        border: 1px solid #4f46e5;
     }
 
     .active-projects-page-dots {
@@ -226,10 +231,12 @@
     </div>
 
     @if ($isPaginated && $resolutions->hasPages())
-        <div class="active-projects-pagination">
-            <div class="active-projects-pagination-summary">
-                Showing {{ $resolutions->firstItem() }}-{{ $resolutions->lastItem() }} of {{ $resolutions->total() }} projects
-            </div>
+        <div class="active-projects-pagination {{ $paginationStyle === 'right' ? 'right' : '' }}">
+            @if ($paginationStyle !== 'right')
+                <div class="active-projects-pagination-summary">
+                    Showing {{ $resolutions->firstItem() }}-{{ $resolutions->lastItem() }} of {{ $resolutions->total() }} projects
+                </div>
+            @endif
 
             <div class="active-projects-pagination-links">
                 <a href="{{ $resolutions->previousPageUrl() ?: '#' }}"
