@@ -55,15 +55,17 @@ class AuditLog extends Model
 
     public static function pruneToLatestLimit(): void
     {
-        $staleIds = static::query()
+        $cutoffId = static::query()
             ->latest('id')
-            ->skip(self::MAX_ENTRIES)
-            ->pluck('id');
+            ->skip(self::MAX_ENTRIES - 1)
+            ->value('id');
 
-        if ($staleIds->isEmpty()) {
+        if (!$cutoffId) {
             return;
         }
 
-        static::query()->whereIn('id', $staleIds)->delete();
+        static::query()
+            ->where('id', '<', $cutoffId)
+            ->delete();
     }
 }

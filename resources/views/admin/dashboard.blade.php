@@ -442,10 +442,11 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
     <div class="modal-overlay" id="eventModal">
         <div class="modal-box">
+            <div id="eventModalContent">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;" id="eventModalTitle">Schedule Event</h3>
             <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">Adding event for: <strong id="displayDate" style="color: #4f46e5;"></strong></p>
             
-            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard, #eventModal, #upcomingEventsKpi" data-async-reset="true" data-async-close="#eventModal">
+            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard, #eventModalContent, #upcomingEventsKpi" data-async-reset="true" data-async-close="#eventModal" data-async-reload="true">
                 @csrf
                 <input type="hidden" name="_method" id="eventFormMethod" value="POST">
                 <input type="hidden" id="eventIdInput" value="">
@@ -523,6 +524,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                     <button type="submit" class="modern-btn" style="flex: 1;" id="eventFormSubmitButton">Save Event</button>
                 </div>
             </form>
+            </div>
         </div>
     </div>
 
@@ -545,13 +547,14 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
     <div class="modal-overlay" id="categoryModal">
         <div class="modal-box">
+            <div id="categoryModalContent">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;">Manage Event Tags</h3>
             <div style="margin-bottom: 20px; max-height: 150px; overflow-y: auto;">
                 @if($categories->count() > 0)
                     @foreach($categories as $cat)
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
                             <div class="legend-item"><div class="legend-dot" style="background: {{ $cat->color }};"></div>{{ $cat->name }}</div>
-                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;" data-category-id="{{ $cat->id }}" data-async-target="#eventManagerCard, #eventModal, #categoryModal, #upcomingEventsKpi" data-async-confirm="Delete this tag?">
+                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;" onsubmit="return handleCategoryTagSubmit(event, true)">
                                 @csrf @method('DELETE')
                                 <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px; font-weight: 600;">Delete</button>
                             </form>
@@ -561,7 +564,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                     <p style="font-size: 12px; color: #a0aec0; text-align: center;">No custom tags created yet.</p>
                 @endif
             </div>
-            <form action="{{ route('admin.categories.store') }}" method="POST" data-async-target="#eventManagerCard, #eventModal, #categoryModal" data-async-reset="true">
+            <form action="{{ route('admin.categories.store') }}" method="POST" onsubmit="return handleCategoryTagSubmit(event)">
                 @csrf
                 <p style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 10px;">Add New Tag</p>
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
@@ -580,6 +583,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                     <button type="submit" class="modern-btn" style="flex: 1;">Save Tag</button>
                 </div>
             </form>
+            </div>
         </div>
     </div>
 
@@ -942,6 +946,82 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
             openAdminEventEditor(activeEventId);
         }
 
+        function closeCategoryModal() {
+            const categoryModal = document.getElementById('categoryModal');
+            if (categoryModal) {
+                categoryModal.classList.remove('active');
+            }
+        }
+
+        async function handleCategoryTagSubmit(event, isDelete = false) {
+            event.preventDefault();
+
+            const form = event.target.closest('form');
+            if (!form) {
+                return false;
+            }
+
+            if (!validateFormBeforeSubmit(form)) {
+                return false;
+            }
+
+            if (isDelete) {
+                const confirmed = await requestAppConfirmation('Delete this tag?', {
+                    title: 'Delete tag',
+                    confirmText: 'Delete'
+                });
+
+                if (!confirmed) {
+                    return false;
+                }
+            }
+
+            const submitter = event.submitter || form.querySelector('button[type="submit"]');
+
+            try {
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = true;
+                }
+
+                form.classList.add('is-loading');
+                showAppLoader(isDelete ? 'Deleting tag...' : 'Saving tag...');
+
+                const response = await fetch(form.action, {
+                    method: form.method || 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: new FormData(form)
+                });
+
+                const contentType = response.headers.get('content-type') || '';
+                const payload = contentType.includes('application/json') ? await response.json() : {};
+
+                if (!response.ok) {
+                    if (payload.errors && Object.keys(payload.errors).length > 0) {
+                        throw new Error(Object.values(payload.errors).flat().join(' '));
+                    }
+
+                    throw new Error(payload.message || 'Unable to save tag.');
+                }
+
+                closeCategoryModal();
+                window.location.reload();
+                return false;
+            } catch (error) {
+                showLiveAlert(error.message || 'Unable to save tag.', 'error');
+                return false;
+            } finally {
+                form.classList.remove('is-loading');
+                hideAppLoader();
+
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = false;
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             initializeAdminDashboard();
         });
@@ -954,6 +1034,11 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
             const form = event.detail?.form;
             const payload = event.detail?.payload || {};
             const fallbackCategoryId = form?.dataset?.categoryId || '';
+            const action = form?.getAttribute('action') || '';
+
+            if (action.includes('/admin/event-categories')) {
+                closeCategoryModal();
+            }
 
             if (!payload.deleted_category_id && !(payload.deleted_event_ids || []).length && !fallbackCategoryId) {
                 return;

@@ -913,6 +913,7 @@
             const successModalSelector = options.successModalSelector ?? form.dataset.asyncSuccessModal;
             const suppressSuccessFeedback = options.suppressSuccessFeedback ?? form.dataset.asyncSuccess === 'silent';
             const successTitle = options.successTitle ?? form.dataset.asyncSuccessTitle ?? 'Success';
+            const reloadOnSuccess = options.reloadOnSuccess ?? form.dataset.asyncReload === 'true';
 
             if (!validateFormBeforeSubmit(form)) {
                 return false;
@@ -959,6 +960,13 @@
                     throw new Error(payload.message || 'Unable to save changes.');
                 }
 
+                if (closeSelector) {
+                    const modal = document.querySelector(closeSelector);
+                    if (modal) {
+                        modal.classList.remove('active');
+                    }
+                }
+
                 if (targetSelectors.length > 0) {
                     await refreshAsyncTargetsFromUrl(window.location.href, targetSelectors, false, {
                         preserveScroll: form.dataset.asyncPreserveScroll === 'true'
@@ -977,11 +985,9 @@
                     form.reset();
                 }
 
-                if (closeSelector) {
-                    const modal = document.querySelector(closeSelector);
-                    if (modal) {
-                        modal.classList.remove('active');
-                    }
+                if (reloadOnSuccess) {
+                    window.location.reload();
+                    return false;
                 }
 
                 if (!suppressSuccessFeedback) {
