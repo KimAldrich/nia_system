@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Downloadable;
+use App\Models\AuditLog;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -10,6 +11,9 @@ use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
 use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
@@ -50,6 +54,7 @@ class AdminController extends Controller
         // Fetch custom tags for the legend
         $categories = EventCategory::all();
         $downloadables = Downloadable::all();
+        $recentAuditLogs = AuditLog::with('user')->latest()->take(8)->get();
 
         return view('admin.dashboard', compact(
             'resolutions',
@@ -58,8 +63,185 @@ class AdminController extends Controller
             'categories',
             'downloadables',
             'validatedResolutions',
-            'pendingResolutions'
+            'pendingResolutions',
+            'recentAuditLogs'
         ));
+    }
+
+    public function auditTrail(Request $request)
+    {
+        $this->checkAdmin();
+
+        $search = trim((string) $request->query('search', ''));
+        $action = trim((string) $request->query('action', ''));
+        $team = trim((string) $request->query('team', ''));
+        $user = trim((string) $request->query('user', ''));
+        $status = trim((string) $request->query('status', ''));
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+
+        $logs = $this->buildAuditTrailQuery($request)
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        $actions = AuditLog::query()->select('action')->distinct()->orderBy('action')->pluck('action');
+        $users = AuditLog::query()->whereNotNull('user_name')->select('user_name')->distinct()->orderBy('user_name')->pluck('user_name');
+        $statuses = AuditLog::query()
+            ->whereNotNull('metadata->status')
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.status')) as status")
+            ->distinct()
+            ->orderBy('status')
+            ->pluck('status');
+        $teams = AuditLog::query()
+            ->whereNotNull('metadata->team')
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.team')) as team")
+            ->distinct()
+            ->orderBy('team')
+            ->pluck('team');
+
+        return view('admin.audit-trail', compact(
+            'logs',
+            'search',
+            'action',
+            'actions',
+            'team',
+            'user',
+            'status',
+            'dateFrom',
+            'dateTo',
+            'users',
+            'statuses',
+            'teams'
+        ));
+    }
+
+    public function exportAuditTrail(Request $request): StreamedResponse
+    {
+        $this->checkAdmin();
+
+        $logs = $this->buildAuditTrailQuery($request)
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Activity Log');
+
+        $headers = [
+            'A1' => 'Date',
+            'B1' => 'Time',
+            'C1' => 'User',
+            'D1' => 'Role',
+            'E1' => 'Action',
+            'F1' => 'Subject Type',
+            'G1' => 'Subject',
+            'H1' => 'Status',
+            'I1' => 'Team',
+            'J1' => 'Description',
+            'K1' => 'Route',
+            'L1' => 'Method',
+            'M1' => 'IP Address',
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        foreach ([
+            'A' => 14,
+            'B' => 14,
+            'C' => 24,
+            'D' => 18,
+            'E' => 24,
+            'F' => 18,
+            'G' => 28,
+            'H' => 18,
+            'I' => 24,
+            'J' => 54,
+            'K' => 26,
+            'L' => 12,
+            'M' => 18,
+        ] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+
+        $sheet->getStyle('A1:M1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 10,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1D4ED8'],
+            ],
+        ]);
+
+        $sheet->getStyle('A1:M' . max(2, $logs->count() + 1))->getAlignment()->setWrapText(true);
+
+        $row = 2;
+        foreach ($logs as $log) {
+            $sheet->setCellValue("A{$row}", optional($log->created_at)->format('Y-m-d'));
+            $sheet->setCellValue("B{$row}", optional($log->created_at)->format('h:i:s A'));
+            $sheet->setCellValue("C{$row}", $log->user_name);
+            $sheet->setCellValue("D{$row}", $log->user_role);
+            $sheet->setCellValue("E{$row}", $log->action);
+            $sheet->setCellValue("F{$row}", $log->subject_type);
+            $sheet->setCellValue("G{$row}", $log->subject_label);
+            $sheet->setCellValue("H{$row}", data_get($log->metadata, 'status'));
+            $sheet->setCellValue("I{$row}", data_get($log->metadata, 'team'));
+            $sheet->setCellValue("J{$row}", $log->description);
+            $sheet->setCellValue("K{$row}", $log->route_name);
+            $sheet->setCellValue("L{$row}", $log->method);
+            $sheet->setCellValue("M{$row}", $log->ip_address);
+            $row++;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'activity-log-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    private function buildAuditTrailQuery(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        $action = trim((string) $request->query('action', ''));
+        $team = trim((string) $request->query('team', ''));
+        $user = trim((string) $request->query('user', ''));
+        $status = trim((string) $request->query('status', ''));
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+
+        return AuditLog::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($builder) use ($search) {
+                    $builder->where('description', 'like', "%{$search}%")
+                        ->orWhere('user_name', 'like', "%{$search}%")
+                        ->orWhere('subject_label', 'like', "%{$search}%")
+                        ->orWhere('user_role', 'like', "%{$search}%")
+                        ->orWhere('action', 'like', "%{$search}%")
+                        ->orWhere('subject_type', 'like', "%{$search}%")
+                        ->orWhere('metadata->status', 'like', "%{$search}%")
+                        ->orWhere('metadata->team', 'like', "%{$search}%");
+                });
+            })
+            ->when($action !== '', fn ($query) => $query->where('action', $action))
+            ->when($team !== '', fn ($query) => $query->where('metadata->team', $team))
+            ->when($user !== '', fn ($query) => $query->where('user_name', $user))
+            ->when($status !== '', fn ($query) => $query->where('metadata->status', $status))
+            ->when($dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $dateTo));
     }
 
     //UploadDownloadables

@@ -103,6 +103,13 @@
         .custom-pagination .page-item:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
         .custom-pagination .page-item.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; }
         .custom-pagination .page-item.disabled { background: #f8fafc; color: #cbd5e1; cursor: not-allowed; border-color: #f1f5f9; pointer-events: none; }
+        .audit-preview-list { display: grid; gap: 14px; }
+        .audit-preview-item { padding: 14px 16px; border-radius: 14px; border: 1px solid #e2e8f0; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); }
+        .audit-preview-item strong { display: block; font-size: 13px; color: #0f172a; margin-bottom: 4px; }
+        .audit-preview-meta { font-size: 11px; color: #64748b; }
+        .audit-preview-empty { font-size: 12px; color: #94a3b8; text-align: center; padding: 16px 0; }
+        .section-link { font-size: 12px; font-weight: 700; color: #4f46e5; text-decoration: none; }
+        .section-link:hover { text-decoration: underline; }
 
         @media (max-width: 1024px) {
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -241,6 +248,25 @@
                         <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #475569;">Completion Rate</p>
                         <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
                     </div>
+                </div>
+            </div>
+
+            <div class="ui-card">
+                <div class="section-title">
+                    <span>Recent Activity Log</span>
+                    <a href="{{ route('admin.audit') }}" class="section-link">View full log</a>
+                </div>
+                <div class="audit-preview-list">
+                    @forelse(($recentAuditLogs ?? collect()) as $log)
+                        <div class="audit-preview-item">
+                            <strong>{{ $log->description }}</strong>
+                            <div class="audit-preview-meta">
+                                {{ $log->user_name ?? 'Unknown user' }} · {{ $log->action }} · {{ optional($log->created_at)->format('M d, Y h:i A') }}
+                            </div>
+                        </div>
+                    @empty
+                        <div class="audit-preview-empty">No audit activity has been recorded yet.</div>
+                    @endforelse
                 </div>
             </div>
         </div>

@@ -63,6 +63,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         // Admin Routes
         Route::middleware(['check.role:admin'])->prefix('admin')->group(function () {
             Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+            Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('admin.audit');
+            Route::get('/audit-trail/export', [AdminController::class, 'exportAuditTrail'])->name('admin.audit.export');
             Route::get('/users', [AdminController::class, 'manageUsers'])->name('admin.users');
             Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
             Route::patch('/users/{user}/status', [AdminController::class, 'updateUserStatus'])->name('admin.users.status');
