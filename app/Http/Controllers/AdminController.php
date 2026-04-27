@@ -307,8 +307,18 @@ class AdminController extends Controller
     public function destroyCategory(Request $request, $id)
     {
         $this->checkAdmin();
-        EventCategory::findOrFail($id)->delete();
-        return $this->successResponse($request, 'Tag removed.');
+
+        $category = EventCategory::withCount('events')->findOrFail($id);
+        $deletedEvents = $category->events()->count();
+
+        $category->events()->delete();
+        $category->delete();
+
+        $message = $deletedEvents > 0
+            ? "Tag removed. {$deletedEvents} linked event(s) were also deleted."
+            : 'Tag removed.';
+
+        return $this->successResponse($request, $message);
     }
 
     public function destroyEvent(Request $request, $id)
