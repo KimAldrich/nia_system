@@ -20,7 +20,7 @@ class RowTeamController extends Controller
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
-        $events = Event::with('category')
+        $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -33,12 +33,15 @@ class RowTeamController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
-        return view('row_team.dashboard', compact('resolutions', 'events', 'categories'));
+        return view('row_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories'));
     }
 
     public function downloadables()

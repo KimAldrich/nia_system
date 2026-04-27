@@ -83,7 +83,7 @@ class FsTeamController extends Controller
             ->withQueryString();
 
         // Fetch upcoming events set by the admin
-        $events = Event::with('category')
+        $upcomingEventsQuery = Event::with('category')
             ->where('event_date', '>', now()->format('Y-m-d'))
             ->orWhere(function ($query) {
                 $today = now()->format('Y-m-d');
@@ -91,9 +91,12 @@ class FsTeamController extends Controller
                 $query->where('event_date', $today)
                     ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
         // 2. Calculate the dynamic KPI numbers for the top cards
@@ -158,6 +161,7 @@ class FsTeamController extends Controller
             'feasible',
             'resolutions',
             'events',
+            'paginatedEvents',
             'categories',
             'hydroProjects',
             'fsdeProjects',

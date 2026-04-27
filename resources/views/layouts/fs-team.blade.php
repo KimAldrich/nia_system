@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <link rel="icon" type="image/png" href="{{ asset('images/2020-nia-logo.png') }}">
     <title>FS Team Portal</title>
     <style>
         body {

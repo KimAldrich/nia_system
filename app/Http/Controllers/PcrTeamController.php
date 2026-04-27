@@ -48,7 +48,7 @@ class PcrTeamController extends Controller
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
-        $events = Event::with('category')
+        $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -61,9 +61,12 @@ class PcrTeamController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
         $pcrQuery = PcrStatusReport::query();
@@ -80,7 +83,7 @@ class PcrTeamController extends Controller
 
         $pcrStatusReports = $pcrQuery->orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
         $pcrFundSources = PcrStatusReport::select('fund_source')->whereNotNull('fund_source')->distinct()->orderByDesc('fund_source')->pluck('fund_source');
-        return view('pcr_team.dashboard', compact('resolutions', 'events', 'categories', 'pcrStatusReports', 'pcrFundSources'));
+        return view('pcr_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'pcrStatusReports', 'pcrFundSources'));
     }
 
     public function downloadables()

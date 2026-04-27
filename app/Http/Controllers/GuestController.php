@@ -15,6 +15,9 @@ use App\Models\PaoPowData;
 use App\Models\PcrStatusReport;
 use App\Models\RpwsisAccomplishment;
 use App\Models\RpwsisAccomplishmentSummary;
+use App\Models\RpwsisNurseryEstablishment;
+use App\Models\RpwsisSignage;
+use App\Models\RpwsisInfrastructure;
 
 class GuestController extends Controller
 {
@@ -55,7 +58,7 @@ class GuestController extends Controller
     }
 
     // 4. Show the Main Guest Dashboard (Read-Only)
-    public function index()
+    public function index(Request $request)
     {
         if (!session('guest_terms_accepted')) {
             return redirect()->route('guest.terms');
@@ -68,7 +71,7 @@ class GuestController extends Controller
             ->withQueryString();
 
         // Fetch Calendar Events
-        $events = \App\Models\Event::with('category')
+        $upcomingEventsQuery = \App\Models\Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -81,12 +84,14 @@ class GuestController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
         $categories = EventCategory::all();
 
-        return view('guest.dashboard', compact('downloadables', 'resolutions', 'events', 'categories'));
+        return view('guest.dashboard', compact('downloadables', 'resolutions', 'events', 'paginatedEvents', 'categories'));
     }
 
     // 5. Secure Logout
@@ -120,15 +125,35 @@ class GuestController extends Controller
         $resolutions = IaResolution::orderBy('created_at', 'desc')
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
-        $events = Event::with('category')->get();
+        $upcomingEventsQuery = Event::with('category')
+            ->where(function ($query) {
+                $today = now()->toDateString();
+                $currentTime = now()->format('H:i:s');
+                $query->where('event_date', '>', $today)
+                    ->orWhere(function ($q) use ($today, $currentTime) {
+                        $q->where('event_date', $today)
+                            ->whereRaw(
+                                "TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(event_time), ' - ', -1), '%h:%i %p')) > ?",
+                                [$currentTime]
+                            );
+                    });
+            })
+            ->orderBy('event_date', 'asc');
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
         $categories = EventCategory::all();
 
         // 🌟 2. Set default empty variables
         $totalProjects = $conducted = $remaining = $feasible = 0;
         $hydroProjects = $fsdeProjects = $procurementProjects = $pcrStatusReports = null;
-        $records = $summaryRecords = null;
+        $records = $summaryRecords = $nurseryRecords = $signageRecords = $infrastructureRecords = null;
         $procCategories = collect();
+        $procMunicipalities = collect();
         $powData = null;
+        $hydroDistricts = $hydroStatuses = $fsdeYears = $fsdeMunicipalities = collect();
+        $powDistricts = $pcrFundSources = collect();
 
         // 🌟 3. Fetch FS TEAM specific data
         if ($db_team === 'fs_team') {
@@ -179,11 +204,16 @@ class GuestController extends Controller
 
             $hydroProjects = $hydroQuery->orderByDesc('year')->paginate(8, ['*'], 'hydro_page')->withQueryString();
             $fsdeProjects = $fsdeQuery->orderByDesc('year')->paginate(8, ['*'], 'fsde_page')->withQueryString();
+            $hydroDistricts = HydroGeoProject::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
+            $hydroStatuses = HydroGeoProject::select('status')->whereNotNull('status')->distinct()->orderBy('status')->pluck('status');
+            $fsdeYears = FsdeProject::select('year')->whereNotNull('year')->distinct()->orderByDesc('year')->pluck('year');
+            $fsdeMunicipalities = FsdeProject::select('municipality')->whereNotNull('municipality')->distinct()->orderBy('municipality')->pluck('municipality');
         }
 
         // 🌟 4. Fetch CM TEAM specific data
         if ($db_team === 'cm_team') {
             $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
+            $procMunicipalities = ProcurementProject::select('municipality')->whereNotNull('municipality')->distinct()->orderBy('municipality')->pluck('municipality');
 
             $procQuery = ProcurementProject::query();
             if ($request->filled('proc_search')) {
@@ -221,6 +251,7 @@ class GuestController extends Controller
                 $powQuery->where('district', $request->input('pow_district'));
             }
             $powData = $powQuery->orderBy('district')->paginate(8, ['*'], 'pow_page')->withQueryString();
+            $powDistricts = PaoPowData::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
         }
 
         if ($db_team === 'pcr_team') {
@@ -236,16 +267,120 @@ class GuestController extends Controller
                 $pcrQuery->where('fund_source', $request->input('pcr_fund_source'));
             }
             $pcrStatusReports = $pcrQuery->orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
+            $pcrFundSources = PcrStatusReport::select('fund_source')->whereNotNull('fund_source')->distinct()->orderByDesc('fund_source')->pluck('fund_source');
         }
 
         if ($db_team === 'rpwsis_team') {
-            $records = RpwsisAccomplishment::latest()->paginate(8, ['*'], 'rpwsis_status_page');
-            $summaryRecords = RpwsisAccomplishmentSummary::latest()->paginate(8, ['*'], 'rpwsis_summary_page');
+            $recordsQuery = RpwsisAccomplishment::query();
+            if ($request->filled('rpwsis_status_search')) {
+                $search = trim((string) $request->input('rpwsis_status_search'));
+                $recordsQuery->where(function ($query) use ($search) {
+                    $query->where('region', 'like', "%{$search}%")
+                        ->orWhere('batch', 'like', "%{$search}%")
+                        ->orWhere('allocation', 'like', "%{$search}%")
+                        ->orWhere('nis', 'like', "%{$search}%")
+                        ->orWhere('activity', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('rpwsis_status_region')) {
+                $recordsQuery->where('region', $request->input('rpwsis_status_region'));
+            }
+            if ($request->filled('rpwsis_status_batch')) {
+                $recordsQuery->where('batch', $request->input('rpwsis_status_batch'));
+            }
+
+            $summaryQuery = RpwsisAccomplishmentSummary::query();
+            if ($request->filled('rpwsis_summary_search')) {
+                $search = trim((string) $request->input('rpwsis_summary_search'));
+                $summaryQuery->where(function ($query) use ($search) {
+                    $query->where('region', 'like', "%{$search}%")
+                        ->orWhere('province', 'like', "%{$search}%")
+                        ->orWhere('municipality', 'like', "%{$search}%")
+                        ->orWhere('barangay', 'like', "%{$search}%")
+                        ->orWhere('plantation_type', 'like', "%{$search}%")
+                        ->orWhere('nis_name', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('rpwsis_summary_province')) {
+                $summaryQuery->where('province', $request->input('rpwsis_summary_province'));
+            }
+            if ($request->filled('rpwsis_summary_municipality')) {
+                $summaryQuery->where('municipality', $request->input('rpwsis_summary_municipality'));
+            }
+
+            $nurseryQuery = RpwsisNurseryEstablishment::query();
+            if ($request->filled('rpwsis_nursery_search')) {
+                $search = trim((string) $request->input('rpwsis_nursery_search'));
+                $nurseryQuery->where(function ($query) use ($search) {
+                    $query->where('region', 'like', "%{$search}%")
+                        ->orWhere('province', 'like', "%{$search}%")
+                        ->orWhere('municipality', 'like', "%{$search}%")
+                        ->orWhere('barangay', 'like', "%{$search}%")
+                        ->orWhere('nursery_type', 'like', "%{$search}%")
+                        ->orWhere('nis_name', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('rpwsis_nursery_municipality')) {
+                $nurseryQuery->where('municipality', $request->input('rpwsis_nursery_municipality'));
+            }
+            if ($request->filled('rpwsis_nursery_type')) {
+                $nurseryQuery->where('nursery_type', $request->input('rpwsis_nursery_type'));
+            }
+
+            $signageQuery = RpwsisSignage::query();
+            if ($request->filled('rpwsis_signage_search')) {
+                $search = trim((string) $request->input('rpwsis_signage_search'));
+                $signageQuery->where(function ($query) use ($search) {
+                    $query->where('region', 'like', "%{$search}%")
+                        ->orWhere('province', 'like', "%{$search}%")
+                        ->orWhere('municipality', 'like', "%{$search}%")
+                        ->orWhere('barangay', 'like', "%{$search}%")
+                        ->orWhere('signage_type', 'like', "%{$search}%")
+                        ->orWhere('nis_name', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('rpwsis_signage_municipality')) {
+                $signageQuery->where('municipality', $request->input('rpwsis_signage_municipality'));
+            }
+            if ($request->filled('rpwsis_signage_type')) {
+                $signageQuery->where('signage_type', $request->input('rpwsis_signage_type'));
+            }
+
+            $infrastructureQuery = RpwsisInfrastructure::query();
+            if ($request->filled('rpwsis_infrastructure_search')) {
+                $search = trim((string) $request->input('rpwsis_infrastructure_search'));
+                $infrastructureQuery->where(function ($query) use ($search) {
+                    $query->where('region', 'like', "%{$search}%")
+                        ->orWhere('province', 'like', "%{$search}%")
+                        ->orWhere('municipality', 'like', "%{$search}%")
+                        ->orWhere('barangay', 'like', "%{$search}%")
+                        ->orWhere('infrastructure_type', 'like', "%{$search}%")
+                        ->orWhere('nis_name', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('rpwsis_infrastructure_municipality')) {
+                $infrastructureQuery->where('municipality', $request->input('rpwsis_infrastructure_municipality'));
+            }
+            if ($request->filled('rpwsis_infrastructure_type')) {
+                $infrastructureQuery->where('infrastructure_type', $request->input('rpwsis_infrastructure_type'));
+            }
+
+            $records = $recordsQuery->latest()->paginate(8, ['*'], 'rpwsis_status_page')->withQueryString();
+            $summaryRecords = $summaryQuery->latest()->paginate(8, ['*'], 'rpwsis_summary_page')->withQueryString();
+            $nurseryRecords = $nurseryQuery->latest()->paginate(8, ['*'], 'rpwsis_nursery_page')->withQueryString();
+            $signageRecords = $signageQuery->latest()->paginate(8, ['*'], 'rpwsis_signage_page')->withQueryString();
+            $infrastructureRecords = $infrastructureQuery->latest()->paginate(8, ['*'], 'rpwsis_infrastructure_page')->withQueryString();
         }
 
         return view('guest.dashboard', compact(
             'resolutions',
             'events',
+            'paginatedEvents',
             'categories',
             'pageTitle',
             'db_team',
@@ -259,8 +394,19 @@ class GuestController extends Controller
             'pcrStatusReports',
             'records',
             'summaryRecords',
+            'nurseryRecords',
+            'signageRecords',
+            'infrastructureRecords',
             'procCategories',
+            'procMunicipalities',
             'procurementProjects'
+            ,
+            'hydroDistricts',
+            'hydroStatuses',
+            'fsdeYears',
+            'fsdeMunicipalities',
+            'powDistricts',
+            'pcrFundSources'
         ));
     }
 

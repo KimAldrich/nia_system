@@ -118,7 +118,7 @@ class RpwsisTeamController extends Controller
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
-        $events = Event::with('category')
+        $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -131,9 +131,12 @@ class RpwsisTeamController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         // ✅ ADDED THIS: Fetch records to fix the "undefined $records" error
         $records = RpwsisAccomplishment::latest()->get();
@@ -151,7 +154,7 @@ class RpwsisTeamController extends Controller
         $infrastructureRecords = RpwsisInfrastructure::latest()->get();
 
         $categories = EventCategory::all();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories','records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
     }
 
     // 2. View Downloadables Page

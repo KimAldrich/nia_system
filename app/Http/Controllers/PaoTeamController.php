@@ -52,7 +52,7 @@ class PaoTeamController extends Controller
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
-        $events = Event::with('category')
+        $upcomingEventsQuery = Event::with('category')
             ->where('event_date', '>', now()->format('Y-m-d'))
             ->orWhere(function ($query) {
                 $today = now()->format('Y-m-d');
@@ -60,9 +60,12 @@ class PaoTeamController extends Controller
                 $query->where('event_date', $today)
                     ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
         $powQuery = PaoPowData::query();
@@ -80,7 +83,7 @@ class PaoTeamController extends Controller
 
         $powData = $powQuery->orderBy('district')->paginate(8, ['*'], 'pow_page')->withQueryString();
         $powDistricts = PaoPowData::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
-        return view('pao_team.dashboard', compact('resolutions', 'events', 'categories', 'powData', 'powDistricts'));
+        return view('pao_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'powData', 'powDistricts'));
     }
 
     public function downloadables()

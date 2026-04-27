@@ -795,6 +795,26 @@
             vertical-align: top;
         }
 
+        #simpleTable thead th.impl {
+            min-width: 190px;
+            max-width: 220px;
+        }
+
+        #simpleTable thead th.impl.col-remarks {
+            min-width: 240px;
+            max-width: 280px;
+        }
+
+        #simpleTable tbody td.impl.col-standard {
+            min-width: 190px;
+            max-width: 220px;
+        }
+
+        #simpleTable tbody td.impl.col-remarks {
+            min-width: 240px;
+            max-width: 280px;
+        }
+
         .status-compact-cell {
             white-space: normal;
             text-align: left;

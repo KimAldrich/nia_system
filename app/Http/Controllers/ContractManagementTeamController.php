@@ -28,7 +28,7 @@ class ContractManagementTeamController extends Controller
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
-        $events = Event::with('category')
+        $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -41,9 +41,12 @@ class ContractManagementTeamController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $events = (clone $upcomingEventsQuery)->get();
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
         $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
@@ -80,6 +83,7 @@ class ContractManagementTeamController extends Controller
         return view('cm_team.dashboard', compact(
             'resolutions',
             'events',
+            'paginatedEvents',
             'categories',
             'procCategories',
             'procMunicipalities',
