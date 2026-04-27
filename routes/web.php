@@ -73,6 +73,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             // Add more admin routes here
 
             Route::post('/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
+            Route::patch('/events/{id}', [AdminController::class, 'updateEvent'])->name('admin.events.update');
             Route::delete('/events/{id}', [AdminController::class, 'destroyEvent'])->name('admin.events.destroy');
             // Manage Custom Categories
             Route::post('/event-categories', [AdminController::class, 'storeCategory'])->name('admin.categories.store');

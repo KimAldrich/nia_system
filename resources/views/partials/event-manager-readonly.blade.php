@@ -290,6 +290,15 @@
     $containerId = $containerId ?? 'eventManagerReadonlyCard';
     $calendarYear = \Carbon\Carbon::now()->year;
     $calendarToday = \Carbon\Carbon::now();
+    $eventTeamLabels = [
+        'all' => 'All Teams (General Event)',
+        'fs_team' => 'FS Team',
+        'rpwsis_team' => 'Social and Environmental Team',
+        'cm_team' => 'Contract Management Team',
+        'row_team' => 'Right Of Way Team',
+        'pcr_team' => 'Program Completion Report Team',
+        'pao_team' => 'Programming Team',
+    ];
 
     $upcomingEvents = collect($events ?? [])
         ->filter(function ($event) {
@@ -300,9 +309,7 @@
         ->sortBy('event_date')
         ->values();
 
-    $displayEvents = isset($paginatedEvents) && $paginatedEvents instanceof \Illuminate\Contracts\Pagination\Paginator
-        ? $paginatedEvents
-        : $upcomingEvents->take(5);
+    $displayEvents = $upcomingEvents;
 @endphp
 
 <div id="{{ $containerId }}" class="ui-card event-manager-card">
@@ -322,8 +329,29 @@
         </div>
     </div>
 
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+        <label>
+            <span class="event-manager-label" style="display:block; margin-bottom:6px;">Filter by Tag</span>
+            <select id="{{ $containerId }}TagFilter" class="table-toolbar__select">
+                <option value="">All tags</option>
+                @foreach(($categories ?? []) as $cat)
+                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label>
+            <span class="event-manager-label" style="display:block; margin-bottom:6px;">Filter by Team</span>
+            <select id="{{ $containerId }}TeamFilter" class="table-toolbar__select">
+                <option value="">All teams</option>
+                @foreach($eventTeamLabels as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
+                @endforeach
+            </select>
+        </label>
+    </div>
+
     <div class="calendar-carousel">
-        <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
+        <button class="nav-btn" id="{{ $containerId }}PrevMonthBtn" onclick="changeReadonlyMonth('{{ $containerId }}', -1)">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
             </svg>
@@ -345,7 +373,7 @@
                         });
                 @endphp
 
-                <div class="month-block {{ $m === $calendarToday->month ? 'active' : '' }}" id="month-{{ $m }}">
+                <div class="month-block {{ $m === $calendarToday->month ? 'active' : '' }}" id="{{ $containerId }}-month-{{ $m }}" style="{{ $m === $calendarToday->month ? 'display:block;' : 'display:none;' }}">
                     <div class="calendar-header">
                         <h4>{{ $monthDate->format('F Y') }}</h4>
                     </div>
@@ -373,7 +401,9 @@
 
                             <div
                                 class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
-                                style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}"
+                                data-date="{{ $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT) }}"
+                                onclick="openReadonlyEventDateDetails('{{ $containerId }}', '{{ $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT) }}')"
+                                style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}{{ $hasEvent ? '; cursor:pointer;' : '' }}"
                             >
                                 {{ $day }}
                             </div>
@@ -383,7 +413,7 @@
             @endfor
         </div>
 
-        <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
+        <button class="nav-btn" id="{{ $containerId }}NextMonthBtn" onclick="changeReadonlyMonth('{{ $containerId }}', 1)">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
             </svg>
@@ -395,12 +425,20 @@
 
         @if (count($displayEvents) > 0)
             @foreach ($displayEvents as $event)
-                <div class="mini-event">
+                <div class="mini-event readonly-event-item"
+                    data-event-id="{{ $event->id }}"
+                    data-category-id="{{ $event->event_category_id }}"
+                    data-team="{{ $event->team }}"
+                    onclick="openReadonlyEventDetails('{{ $containerId }}', {{ $event->id }})"
+                    style="cursor:pointer;">
                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
                     <div>
                         <h4 class="mini-event-title">{{ $event->title }}</h4>
                         <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
 
+                        @if (!empty($event->team))
+                            <p class="mini-event-time" style="margin-top:4px;">{{ $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', $event->team)) }}</p>
+                        @endif
                         @if (!empty($event->category))
                             <span
                                 class="event-tag"
@@ -412,40 +450,171 @@
                     </div>
                 </div>
             @endforeach
-
-            @if (isset($paginatedEvents) && $paginatedEvents instanceof \Illuminate\Contracts\Pagination\Paginator && $paginatedEvents->hasPages())
-                <div class="custom-pagination">
-                    @if ($paginatedEvents->onFirstPage())
-                        <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
-                    @else
-                        <a href="{{ $paginatedEvents->withQueryString()->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#{{ $containerId }}" data-async-preserve-scroll="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
-                    @endif
-
-                    @foreach ($paginatedEvents->withQueryString()->links()->elements as $element)
-                        @if (is_string($element))
-                            <span class="page-item disabled">{{ $element }}</span>
-                        @endif
-
-                        @if (is_array($element))
-                            @foreach ($element as $page => $url)
-                                @if ($page == $paginatedEvents->currentPage())
-                                    <span class="page-item active">{{ $page }}</span>
-                                @else
-                                    <a href="{{ $url }}" class="page-item" data-async-pagination="true" data-async-target="#{{ $containerId }}" data-async-preserve-scroll="true">{{ $page }}</a>
-                                @endif
-                            @endforeach
-                        @endif
-                    @endforeach
-
-                    @if ($paginatedEvents->hasMorePages())
-                        <a href="{{ $paginatedEvents->withQueryString()->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#{{ $containerId }}" data-async-preserve-scroll="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
-                    @else
-                        <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
-                    @endif
-                </div>
-            @endif
         @else
             <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
         @endif
     </div>
 </div>
+
+<div class="modal-overlay" id="{{ $containerId }}DetailsModal">
+    <div class="modal-box">
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px;">
+            <div>
+                <h3 style="margin:0; font-size:18px; color:#1e293b;" id="{{ $containerId }}DetailsTitle">Event Details</h3>
+                <p style="margin:6px 0 0; font-size:12px; color:#64748b;" id="{{ $containerId }}DetailsMeta"></p>
+            </div>
+            <button type="button" onclick="closeReadonlyEventDetails('{{ $containerId }}')" style="background:none; border:none; font-size:28px; line-height:1; cursor:pointer;">&times;</button>
+        </div>
+        <div id="{{ $containerId }}DetailsBody" style="display:grid; gap:12px; color:#334155; font-size:14px;"></div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button type="button" onclick="closeReadonlyEventDetails('{{ $containerId }}')" class="modern-btn modern-btn-outline" style="flex:1;">Close</button>
+        </div>
+    </div>
+</div>
+
+@php
+    $readonlyEventEntries = $displayEvents->map(function ($event) use ($eventTeamLabels) {
+        return [
+            'id' => $event->id,
+            'title' => $event->title,
+            'description' => $event->description,
+            'event_date' => optional($event->event_date)->format('Y-m-d'),
+            'event_date_label' => optional($event->event_date)->format('F d, Y'),
+            'event_time' => $event->event_time,
+            'event_category_id' => $event->event_category_id,
+            'category_name' => optional($event->category)->name,
+            'category_color' => optional($event->category)->color,
+            'team' => $event->team,
+            'team_label' => $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', (string) $event->team)),
+            'reminder_minutes' => $event->reminder_minutes,
+            'recurrence_pattern' => $event->recurrence_pattern ?? 'none',
+            'recurrence_until_label' => optional($event->recurrence_until)->format('F d, Y'),
+        ];
+    })->values();
+@endphp
+
+<script>
+    (() => {
+        const containerId = @json($containerId);
+        let activeMonth = {{ $calendarToday->month }};
+        const events = @json($readonlyEventEntries);
+
+        window.changeReadonlyMonth = function (targetId, direction) {
+            if (targetId !== containerId) return;
+            activeMonth += direction;
+            if (activeMonth < 1) activeMonth = 1;
+            if (activeMonth > 12) activeMonth = 12;
+            updateReadonlyCalendarView();
+        };
+
+        const updateReadonlyCalendarView = () => {
+            document.querySelectorAll(`#${containerId} .month-block`).forEach((block) => {
+                block.classList.remove('active');
+                block.style.display = 'none';
+            });
+
+            const activeBlock = document.getElementById(`${containerId}-month-${activeMonth}`);
+            if (activeBlock) {
+                activeBlock.classList.add('active');
+                activeBlock.style.display = 'block';
+            }
+            const prevButton = document.getElementById(`${containerId}PrevMonthBtn`);
+            const nextButton = document.getElementById(`${containerId}NextMonthBtn`);
+            if (prevButton) prevButton.disabled = activeMonth === 1;
+            if (nextButton) nextButton.disabled = activeMonth === 12;
+        };
+
+        const getFilteredEvents = () => {
+            const tagValue = document.getElementById(`${containerId}TagFilter`)?.value || '';
+            const teamValue = document.getElementById(`${containerId}TeamFilter`)?.value || '';
+            return events.filter((event) => {
+                const matchesTag = !tagValue || String(event.event_category_id || '') === String(tagValue);
+                const matchesTeam = !teamValue || String(event.team || '') === String(teamValue);
+                return matchesTag && matchesTeam;
+            });
+        };
+
+        window.applyReadonlyEventFilters = function (targetId) {
+            if (targetId !== containerId) return;
+
+            const filteredEvents = getFilteredEvents();
+            const visibleIds = new Set(filteredEvents.map((event) => String(event.id)));
+            const eventsByDate = filteredEvents.reduce((carry, event) => {
+                if (!carry[event.event_date]) carry[event.event_date] = [];
+                carry[event.event_date].push(event);
+                return carry;
+            }, {});
+
+            document.querySelectorAll(`#${containerId} .readonly-event-item`).forEach((item) => {
+                item.style.display = visibleIds.has(String(item.dataset.eventId)) ? '' : 'none';
+            });
+
+            document.querySelectorAll(`#${containerId} .day-num[data-date]`).forEach((dayNode) => {
+                const dayEvents = eventsByDate[dayNode.dataset.date] || [];
+                const firstEvent = dayEvents[0] || null;
+                const isToday = dayNode.classList.contains('today');
+                dayNode.classList.toggle('has-event', dayEvents.length > 0);
+                if (dayEvents.length > 0 && !isToday) {
+                    dayNode.style.border = `2px solid ${firstEvent.category_color || '#18181b'}`;
+                    dayNode.style.color = firstEvent.category_color || '#18181b';
+                    dayNode.style.cursor = 'pointer';
+                } else if (!isToday) {
+                    dayNode.style.border = '';
+                    dayNode.style.color = '';
+                    dayNode.style.cursor = '';
+                }
+            });
+        };
+
+        window.openReadonlyEventDetails = function (targetId, eventId) {
+            if (targetId !== containerId) return;
+            const event = events.find((entry) => String(entry.id) === String(eventId));
+            if (!event) return;
+            document.getElementById(`${containerId}DetailsTitle`).innerText = event.title || 'Event Details';
+            document.getElementById(`${containerId}DetailsMeta`).innerText = `${event.event_date_label} · ${event.event_time}`;
+            document.getElementById(`${containerId}DetailsBody`).innerHTML = `
+                <div><strong>Team:</strong> ${event.team_label || 'N/A'}</div>
+                <div><strong>Tag:</strong> ${event.category_name || 'Uncategorized'}</div>
+                <div><strong>Reminder:</strong> ${event.reminder_minutes ? `${event.reminder_minutes} minute(s) before` : 'No reminder'}</div>
+                <div><strong>Recurring:</strong> ${event.recurrence_pattern && event.recurrence_pattern !== 'none' ? `${event.recurrence_pattern} until ${event.recurrence_until_label || 'the scheduled end'}` : 'No'}</div>
+                <div><strong>Details:</strong><br>${(event.description || 'No additional details provided.').replace(/\n/g, '<br>')}</div>
+            `;
+            document.getElementById(`${containerId}DetailsModal`).classList.add('active');
+        };
+
+        window.openReadonlyEventDateDetails = function (targetId, dateStr) {
+            if (targetId !== containerId) return;
+            const dayEvents = getFilteredEvents().filter((event) => event.event_date === dateStr);
+            if (!dayEvents.length) return;
+
+            document.getElementById(`${containerId}DetailsTitle`).innerText = `Events on ${dateStr}`;
+            document.getElementById(`${containerId}DetailsMeta`).innerText = `${dayEvents.length} event(s) scheduled`;
+            document.getElementById(`${containerId}DetailsBody`).innerHTML = dayEvents.map((event) => `
+                <button type="button" onclick="openReadonlyEventDetails('${containerId}', ${event.id})" style="text-align:left; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; cursor:pointer;">
+                    <strong>${event.title}</strong><br>
+                    <span style="font-size:12px; color:#64748b;">${event.event_time} · ${event.team_label || 'N/A'} · ${event.category_name || 'Uncategorized'}</span>
+                </button>
+            `).join('');
+            document.getElementById(`${containerId}DetailsModal`).classList.add('active');
+        };
+
+        window.closeReadonlyEventDetails = function (targetId) {
+            if (targetId !== containerId) return;
+            document.getElementById(`${containerId}DetailsModal`).classList.remove('active');
+        };
+
+        let initialized = false;
+
+        const bindFilters = () => {
+            if (initialized) return;
+            initialized = true;
+
+            document.getElementById(`${containerId}TagFilter`)?.addEventListener('change', () => window.applyReadonlyEventFilters(containerId));
+            document.getElementById(`${containerId}TeamFilter`)?.addEventListener('change', () => window.applyReadonlyEventFilters(containerId));
+            updateReadonlyCalendarView();
+            window.applyReadonlyEventFilters(containerId);
+        };
+
+        bindFilters();
+    })();
+</script>

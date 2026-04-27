@@ -11,6 +11,7 @@ use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
 use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -18,6 +19,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AdminController extends Controller
 {
     use HandlesAsyncRequests;
+
+    private const EVENT_TEAM_LABELS = [
+        'all' => 'All Teams',
+        'fs_team' => 'FS Team',
+        'rpwsis_team' => 'Social and Environmental Team',
+        'cm_team' => 'Contract Management Team',
+        'row_team' => 'Right Of Way Team',
+        'pcr_team' => 'Program Completion Report Team',
+        'pao_team' => 'Programming Team',
+    ];
 
     // Security check
     private function checkAdmin()
@@ -36,6 +47,9 @@ class AdminController extends Controller
         $pendingResolutions = IaResolution::whereIn('status', ['on-going', 'not-validated'])->count();
         $resolutions = IaResolution::latest()->paginate(5, ['*'], 'active_projects_page')->withQueryString();
 
+        $eventTagFilter = trim((string) $request->query('event_tag', ''));
+        $eventTeamFilter = trim((string) $request->query('event_team', ''));
+
         $upcomingEventsQuery = Event::with('category')
             ->where('event_date', '>', now()->format('Y-m-d'))
             ->orWhere(function ($query) {
@@ -44,6 +58,8 @@ class AdminController extends Controller
                 $query->where('event_date', $today)
                     ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
             })
+            ->when($eventTagFilter !== '', fn ($query) => $query->where('event_category_id', $eventTagFilter))
+            ->when($eventTeamFilter !== '' && $eventTeamFilter !== 'all', fn ($query) => $query->where('team', $eventTeamFilter))
             ->orderBy('event_date', 'asc');
 
         $events = (clone $upcomingEventsQuery)->get();
@@ -65,6 +81,9 @@ class AdminController extends Controller
             'validatedResolutions',
             'pendingResolutions',
             'recentAuditLogs'
+            ,
+            'eventTagFilter',
+            'eventTeamFilter'
         ));
     }
 
@@ -462,25 +481,105 @@ class AdminController extends Controller
         return $this->successResponse($request, "{$userName}'s account was deleted successfully.");
     }
 
+    private function validateEvent(Request $request, bool $isUpdate = false): array
+    {
+        return $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'event_date' => [$isUpdate ? 'required' : 'required', 'date', 'after_or_equal:today'],
+            'event_time' => ['required', 'string', 'max:255'],
+            'event_category_id' => ['required', 'integer', 'exists:event_categories,id'],
+            'team' => ['required', 'string', 'in:' . implode(',', array_keys(self::EVENT_TEAM_LABELS))],
+            'reminder_minutes' => ['nullable', 'integer', 'min:0', 'max:10080'],
+            'recurrence_pattern' => ['nullable', 'string', 'in:none,daily,weekly,monthly'],
+            'recurrence_until' => ['nullable', 'date', 'after_or_equal:event_date'],
+        ]);
+    }
+
+    private function buildEventPayload(array $validated): array
+    {
+        $recurrencePattern = $validated['recurrence_pattern'] ?? 'none';
+
+        return [
+            'title' => trim($validated['title']),
+            'description' => trim((string) ($validated['description'] ?? '')) ?: null,
+            'event_date' => $validated['event_date'],
+            'event_time' => trim($validated['event_time']),
+            'event_category_id' => $validated['event_category_id'],
+            'team' => $validated['team'],
+            'reminder_minutes' => $validated['reminder_minutes'] ?? null,
+            'recurrence_pattern' => $recurrencePattern === 'none' ? null : $recurrencePattern,
+            'recurrence_until' => $recurrencePattern === 'none' ? null : ($validated['recurrence_until'] ?? null),
+        ];
+    }
+
+    private function buildRecurringEventRows(array $payload): array
+    {
+        $rows = [];
+        $pattern = $payload['recurrence_pattern'] ?? null;
+        $startDate = Carbon::parse($payload['event_date'])->startOfDay();
+        $endDate = !empty($payload['recurrence_until'])
+            ? Carbon::parse($payload['recurrence_until'])->startOfDay()
+            : $startDate->copy();
+        $group = $pattern ? (string) Str::uuid() : null;
+
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            $rows[] = array_merge($payload, [
+                'event_date' => $currentDate->toDateString(),
+                'recurrence_group' => $group,
+            ]);
+
+            if (!$pattern) {
+                break;
+            }
+
+            $nextDate = match ($pattern) {
+                'daily' => $currentDate->copy()->addDay(),
+                'weekly' => $currentDate->copy()->addWeek(),
+                'monthly' => $currentDate->copy()->addMonthNoOverflow(),
+                default => null,
+            };
+
+            if (!$nextDate || $nextDate->equalTo($currentDate)) {
+                break;
+            }
+
+            $currentDate = $nextDate;
+        }
+
+        return $rows;
+    }
+
     public function storeEvent(Request $request)
     {
         $this->checkAdmin();
 
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'event_date' => 'required|date|after_or_equal:today',
-            'event_time' => 'required|string|max:255',
-            'event_category_id' => 'required' // Validate the dropdown!
-        ]);
+        $validated = $this->validateEvent($request);
+        $payload = $this->buildEventPayload($validated);
+        $rows = $this->buildRecurringEventRows($payload);
 
-        Event::create([
-            'title' => $request->title,
-            'event_date' => $request->event_date,
-            'event_time' => $request->event_time,
-            'event_category_id' => $request->event_category_id, // Save the ID!
-        ]);
+        foreach ($rows as $row) {
+            Event::create($row);
+        }
 
-        return $this->successResponse($request, 'Event added to the calendar!');
+        $message = count($rows) > 1
+            ? count($rows) . ' recurring events added to the calendar!'
+            : 'Event added to the calendar!';
+
+        return $this->successResponse($request, $message);
+    }
+
+    public function updateEvent(Request $request, $id)
+    {
+        $this->checkAdmin();
+
+        $validated = $this->validateEvent($request, true);
+        $event = Event::findOrFail($id);
+        $event->update($this->buildEventPayload($validated));
+
+        return $this->successResponse($request, 'Event updated successfully.');
     }
 
     // Delete an Event
