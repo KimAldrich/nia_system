@@ -184,7 +184,7 @@
                         <select name="team" required class="modern-input">
                             <option value="" disabled selected>-- Choose Team --</option>
                             <option value="fs_team">FS Team</option>
-                            <option value="rpwsis_team">RP-WSIS Team</option>
+                            <option value="rpwsis_team">Social and Environmental Team</option>
                             <option value="cm_team">CM Team</option>
                             <option value="row_team">ROW Team</option>
                             <option value="pcr_team">PCR Team</option>
@@ -208,7 +208,7 @@
                         <select name="team" required class="modern-input">
                             <option value="" disabled selected>-- Choose Team --</option>
                             <option value="fs_team">FS Team</option>
-                            <option value="rpwsis_team">RP-WSIS Team</option>
+                            <option value="rpwsis_team">Social and Environmental Team</option>
                             <option value="cm_team">CM Team</option>
                             <option value="row_team">ROW Team</option>
                             <option value="pcr_team">PCR Team</option>

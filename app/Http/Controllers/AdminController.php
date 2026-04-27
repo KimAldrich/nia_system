@@ -111,11 +111,46 @@ class AdminController extends Controller
     }
 
     // 2. Manage Users Page
-    public function manageUsers()
+    public function manageUsers(Request $request)
     {
         $this->checkAdmin();
-        $users = User::latest()->get();
-        return view('admin.users', compact('users'));
+
+        $allowedRoles = ['admin', 'fs_team', 'rpwsis_team', 'cm_team', 'row_team', 'pcr_team', 'pao_team'];
+        $allowedSorts = ['name', 'email', 'created_at', 'role', 'is_active'];
+        $allowedDirections = ['asc', 'desc'];
+
+        $role = $request->query('role');
+        $status = $request->query('status');
+        $sort = $request->query('sort', 'created_at');
+        $direction = strtolower((string) $request->query('direction', 'desc'));
+
+        $query = User::query();
+
+        if (in_array($role, $allowedRoles, true)) {
+            $query->where('role', $role);
+        }
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        if (! in_array($sort, $allowedSorts, true)) {
+            $sort = 'created_at';
+        }
+
+        if (! in_array($direction, $allowedDirections, true)) {
+            $direction = 'desc';
+        }
+
+        $users = $query
+            ->orderBy($sort, $direction)
+            ->orderBy('id', 'desc')
+            ->paginate(5)
+            ->withQueryString();
+
+        return view('admin.users', compact('users', 'role', 'status', 'sort', 'direction'));
     }
 
     // 3. Store New User

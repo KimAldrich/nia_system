@@ -36,6 +36,17 @@
         .ui-card { background: #ffffff; border-radius: 20px; padding: 28px; border: 1px solid var(--border-color); box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06); overflow: hidden; }
         .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
         .section-title { font-size: 18px; font-weight: 600; color: var(--primary); margin: 0; }
+        .table-card { display: grid; gap: 18px; }
+        .table-toolbar { display: grid; gap: 16px; }
+        .filter-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto; gap: 12px; align-items: end; }
+        .filter-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .filter-select { min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid #dbe3ee; background: #f8fafc; color: var(--text-main); font-size: 13px; width: 100%; }
+        .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08); background: #ffffff; }
+        .btn-filter { min-height: 44px; padding: 0 16px; border: none; border-radius: 12px; background: #18181b; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .btn-filter:hover { background: #09090b; }
+        .btn-reset { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #dbe3ee; color: var(--text-main); text-decoration: none; font-size: 13px; font-weight: 700; background: #ffffff; }
+        .btn-reset:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .results-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--text-muted); font-size: 12px; }
 
         /* Form Styling */
         .form-card-header { margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid #eef2f7; }
@@ -103,8 +114,28 @@
         .password-reveal strong { display: block; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8;}
 
         .muted-note { color: var(--text-muted); font-size: 11px; font-weight: 600; margin-top: 6px; }
+        .empty-state { padding: 32px 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+        .pagination-bar { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+        .pagination-summary { color: var(--text-muted); font-size: 12px; }
+        .pagination-links { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .page-link, .page-current, .page-dots { min-width: 38px; height: 38px; padding: 0 12px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; text-decoration: none; }
+        .page-link { border: 1px solid #dbe3ee; color: var(--text-main); background: #ffffff; }
+        .page-link:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .page-link.disabled { pointer-events: none; opacity: 0.45; }
+        .page-current { background: #18181b; color: #ffffff; }
+        .page-dots { color: var(--text-muted); min-width: auto; padding: 0 4px; }
 
-        @media (max-width: 768px) { .content-wrapper { padding: 24px 14px; } .ui-card { padding: 20px; } .action-stack { max-width: 100%; } }
+        @media (max-width: 1100px) {
+            .filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper { padding: 24px 14px; }
+            .ui-card { padding: 20px; }
+            .action-stack { max-width: 100%; }
+            .filter-form { grid-template-columns: 1fr; }
+            .results-meta, .pagination-bar { align-items: flex-start; }
+        }
 
         .alert-box { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 12px; margin-bottom: 24px; font-size: 14px; font-weight: 500; }
         .alert-success { background: #18181b; color: #fff; }
@@ -131,10 +162,67 @@
         <div id="account-feedback" class="ajax-feedback"></div>
 
         <div class="dashboard-grid" id="userManagementGrid">
-            <div class="ui-card">
+            <div class="ui-card table-card">
                 <div class="section-header">
                     <h3 class="section-title">Team Directory</h3>
-                    <span class="role-badge">{{ count($users) }} Users Total</span>
+                    <span class="role-badge">{{ $users->total() }} Users Total</span>
+                </div>
+
+                <div class="table-toolbar">
+                    <form action="{{ route('admin.users') }}" method="GET" class="filter-form js-user-filters">
+                        <div>
+                            <label class="filter-label" for="roleFilter">Role</label>
+                            <select name="role" id="roleFilter" class="filter-select">
+                                <option value="">All Roles</option>
+                                <option value="admin" {{ ($role ?? '') === 'admin' ? 'selected' : '' }}>Administrator</option>
+                                <option value="fs_team" {{ ($role ?? '') === 'fs_team' ? 'selected' : '' }}>Feasibility Study Team</option>
+                                <option value="rpwsis_team" {{ ($role ?? '') === 'rpwsis_team' ? 'selected' : '' }}>Social and Environmental Team</option>
+                                <option value="cm_team" {{ ($role ?? '') === 'cm_team' ? 'selected' : '' }}>Contract Management Team</option>
+                                <option value="row_team" {{ ($role ?? '') === 'row_team' ? 'selected' : '' }}>Right Of Way Team</option>
+                                <option value="pcr_team" {{ ($role ?? '') === 'pcr_team' ? 'selected' : '' }}>Program Completion Report Team</option>
+                                <option value="pao_team" {{ ($role ?? '') === 'pao_team' ? 'selected' : '' }}>Programming Team</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="filter-label" for="statusFilter">Status</label>
+                            <select name="status" id="statusFilter" class="filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="active" {{ ($status ?? '') === 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ ($status ?? '') === 'inactive' ? 'selected' : '' }}>Deactivated</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="filter-label" for="sortFilter">Sort By</label>
+                            <select name="sort" id="sortFilter" class="filter-select">
+                                <option value="created_at" {{ ($sort ?? 'created_at') === 'created_at' ? 'selected' : '' }}>Joined Date</option>
+                                <option value="name" {{ ($sort ?? '') === 'name' ? 'selected' : '' }}>Name</option>
+                                <option value="email" {{ ($sort ?? '') === 'email' ? 'selected' : '' }}>Email</option>
+                                <option value="role" {{ ($sort ?? '') === 'role' ? 'selected' : '' }}>Role</option>
+                                <option value="is_active" {{ ($sort ?? '') === 'is_active' ? 'selected' : '' }}>Status</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="filter-label" for="directionFilter">Direction</label>
+                            <select name="direction" id="directionFilter" class="filter-select">
+                                <option value="asc" {{ ($direction ?? '') === 'asc' ? 'selected' : '' }}>Ascending</option>
+                                <option value="desc" {{ ($direction ?? 'desc') === 'desc' ? 'selected' : '' }}>Descending</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-filter">Apply</button>
+                        <a href="{{ route('admin.users') }}" class="btn-reset" data-async-pagination="true" data-async-target="#userManagementGrid">Reset</a>
+                    </form>
+
+                    <div class="results-meta">
+                        @if($users->count())
+                            <span>Showing {{ $users->firstItem() }}-{{ $users->lastItem() }} of {{ $users->total() }} users</span>
+                        @else
+                            <span>No users match the current filters</span>
+                        @endif
+                    </div>
                 </div>
                 
                 <div class="table-container">
@@ -149,7 +237,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($users as $user)
+                            @forelse($users as $user)
                                 @php $isCurrentUser = auth()->id() === $user->id; @endphp
                                 <tr>
                                     <td>
@@ -167,7 +255,7 @@
                                                 $roleNames = [
                                                     'admin' => 'Administrator',
                                                     'fs_team' => 'Feasibility Study',
-                                                    'rpwsis_team' => 'RP-WSIS',
+                                                    'rpwsis_team' => 'Social and Environmental Team',
                                                     'cm_team' => 'Contract Management',
                                                     'row_team' => 'Right Of Way',
                                                     'pcr_team' => 'Completion Report',
@@ -216,10 +304,88 @@
                                         @endif
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="empty-state">No user accounts were found for the selected role, status, or sort order.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
+
+                @if($users->hasPages())
+                    @php($paginationWindow = \Illuminate\Pagination\UrlWindow::make($users))
+                    <div class="pagination-bar">
+                        <div class="pagination-summary">
+                            Page {{ $users->currentPage() }} of {{ $users->lastPage() }}
+                        </div>
+
+                        <div class="pagination-links">
+                            <a href="{{ $users->previousPageUrl() ?: '#' }}"
+                                class="page-link {{ $users->onFirstPage() ? 'disabled' : '' }}"
+                                data-async-pagination="true"
+                                data-async-target="#userManagementGrid">
+                                Prev
+                            </a>
+
+                            @foreach(($paginationWindow['first'] ?? []) as $page => $url)
+                                @if($page === $users->currentPage())
+                                    <span class="page-current">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}"
+                                        class="page-link"
+                                        data-async-pagination="true"
+                                        data-async-target="#userManagementGrid">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endforeach
+
+                            @if(!empty($paginationWindow['slider']))
+                                @if(!empty($paginationWindow['first']))
+                                    <span class="page-dots">...</span>
+                                @endif
+
+                                @foreach($paginationWindow['slider'] as $page => $url)
+                                    @if($page === $users->currentPage())
+                                        <span class="page-current">{{ $page }}</span>
+                                    @else
+                                        <a href="{{ $url }}"
+                                            class="page-link"
+                                            data-async-pagination="true"
+                                            data-async-target="#userManagementGrid">
+                                            {{ $page }}
+                                        </a>
+                                    @endif
+                                @endforeach
+
+                                @if(!empty($paginationWindow['last']))
+                                    <span class="page-dots">...</span>
+                                @endif
+                            @endif
+
+                            @foreach(($paginationWindow['last'] ?? []) as $page => $url)
+                                @if($page === $users->currentPage())
+                                    <span class="page-current">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}"
+                                        class="page-link"
+                                        data-async-pagination="true"
+                                        data-async-target="#userManagementGrid">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endforeach
+
+                            <a href="{{ $users->nextPageUrl() ?: '#' }}"
+                                class="page-link {{ $users->hasMorePages() ? '' : 'disabled' }}"
+                                data-async-pagination="true"
+                                data-async-target="#userManagementGrid">
+                                Next
+                            </a>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <div class="ui-card">
@@ -255,7 +421,7 @@
                             <option value="" disabled selected>Select team access level</option>
                             <option value="admin">Admin (Full Access)</option>
                             <option value="fs_team">Feasibility Study Team</option>
-                            <option value="rpwsis_team">RP-WSIS Team</option>
+                            <option value="rpwsis_team">Social and Environmental Team</option>
                             <option value="cm_team">Contract Management Team</option>
                             <option value="row_team">Right Of Way Team</option>
                             <option value="pcr_team">Program Completion Report Team</option>
@@ -344,6 +510,26 @@
                     feedback.textContent = '';
                 }, 3000);
             }
+
+            document.addEventListener('submit', function(event) {
+                const form = event.target.closest('.js-user-filters');
+                if (!form) return;
+
+                event.preventDefault();
+
+                const url = new URL(form.action, window.location.origin);
+                const formData = new FormData(form);
+
+                formData.forEach((value, key) => {
+                    if (value !== null && String(value).trim() !== '') {
+                        url.searchParams.set(key, String(value));
+                    }
+                });
+
+                refreshAsyncTargetsFromUrl(url.toString(), ['#userManagementGrid'], true).catch((error) => {
+                    showFeedback(error.message || 'Unable to apply filters.', 'error');
+                });
+            });
 
             // AJAX Status Update
             document.addEventListener('change', async function(event) {
