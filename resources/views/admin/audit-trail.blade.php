@@ -30,9 +30,12 @@
         .audit-link-btn { background: transparent; border: none; color: #1d4ed8; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; text-align: left; }
         .audit-link-btn:hover { text-decoration: underline; }
         .audit-empty { padding: 32px 20px; text-align: center; color: #64748b; font-size: 13px; }
-        .audit-pagination { margin-top: 16px; }
-        .audit-pagination nav > div:first-child { display: none; }
+        .audit-pagination { display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; gap: 8px; font-family: 'Poppins', sans-serif; }
         .audit-pagination svg { width: 16px; height: 16px; }
+        .audit-pagination .page-item { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; border-radius: 8px; background: #ffffff; color: #64748b; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; transition: 0.2s; }
+        .audit-pagination .page-item:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+        .audit-pagination .page-item.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; }
+        .audit-pagination .page-item.disabled { background: #f8fafc; color: #cbd5e1; cursor: not-allowed; border-color: #f1f5f9; pointer-events: none; }
         .audit-modal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.2s ease, visibility 0.2s ease; z-index: 5200; }
         .audit-modal.is-visible { opacity: 1; visibility: visible; pointer-events: auto; }
         .audit-modal__dialog { width: min(100%, 760px); max-height: 88vh; overflow: auto; background: #ffffff; border-radius: 20px; box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22); padding: 24px; }
@@ -193,7 +196,41 @@
 
             @if($logs->hasPages())
                 <div class="audit-pagination">
-                    {{ $logs->links() }}
+                    @if ($logs->onFirstPage())
+                        <span class="page-item disabled">
+                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+                        </span>
+                    @else
+                        <a href="{{ $logs->withQueryString()->previousPageUrl() }}" class="page-item">
+                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+                        </a>
+                    @endif
+
+                    @foreach ($logs->withQueryString()->links()->elements as $element)
+                        @if (is_string($element))
+                            <span class="page-item disabled">{{ $element }}</span>
+                        @endif
+
+                        @if (is_array($element))
+                            @foreach ($element as $page => $url)
+                                @if ($page == $logs->currentPage())
+                                    <span class="page-item active">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}" class="page-item">{{ $page }}</a>
+                                @endif
+                            @endforeach
+                        @endif
+                    @endforeach
+
+                    @if ($logs->hasMorePages())
+                        <a href="{{ $logs->withQueryString()->nextPageUrl() }}" class="page-item">
+                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                        </a>
+                    @else
+                        <span class="page-item disabled">
+                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                        </span>
+                    @endif
                 </div>
             @endif
         </div>

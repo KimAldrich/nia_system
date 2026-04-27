@@ -1261,10 +1261,6 @@ const landData = {
                     renderChart(landData);
                     renderLegend(landData);
                     openDetail();
-                    console.log("Clicked:", name);
-console.log("Matched Stat:", stat);
-console.log("Range Data:", rangeData);
-console.log("Total:", irrigatedTotal);
                 } else {
                     document.getElementById('extraData').innerHTML = "No data available";
                 }
