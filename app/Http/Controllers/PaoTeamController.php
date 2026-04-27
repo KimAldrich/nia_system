@@ -46,7 +46,7 @@ class PaoTeamController extends Controller
         return $request->validate($rules);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $resolutions = IaResolution::where('team', 'pao_team')
             ->latest()
@@ -65,8 +65,22 @@ class PaoTeamController extends Controller
             ->get();
 
         $categories = EventCategory::all();
-        $powData = PaoPowData::paginate(8, ['*'], 'pow_page')->withQueryString();
-        return view('pao_team.dashboard', compact('resolutions', 'events', 'categories', 'powData'));
+        $powQuery = PaoPowData::query();
+        if ($request->filled('pow_search')) {
+            $search = trim((string) $request->input('pow_search'));
+            $powQuery->where(function ($query) use ($search) {
+                $query->where('district', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('total_allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pow_district')) {
+            $powQuery->where('district', $request->input('pow_district'));
+        }
+
+        $powData = $powQuery->orderBy('district')->paginate(8, ['*'], 'pow_page')->withQueryString();
+        $powDistricts = PaoPowData::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
+        return view('pao_team.dashboard', compact('resolutions', 'events', 'categories', 'powData', 'powDistricts'));
     }
 
     public function downloadables()

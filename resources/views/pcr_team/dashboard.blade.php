@@ -670,6 +670,20 @@
             </div>
         </div>
 
+        @include('partials.table-toolbar', [
+            'asyncTarget' => '#pcrStatusSection',
+            'searchName' => 'pcr_search',
+            'searchPlaceholder' => 'Search fund source or allocation...',
+            'filters' => [
+                [
+                    'name' => 'pcr_fund_source',
+                    'label' => 'Fund Source',
+                    'options' => ['' => 'All fund sources'] + collect($pcrFundSources ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                ],
+            ],
+            'resetKeys' => ['pcr_search', 'pcr_fund_source', 'pcr_page'],
+        ])
+
         <div class="table-responsive">
             <table class="sleek-table">
                 <thead>

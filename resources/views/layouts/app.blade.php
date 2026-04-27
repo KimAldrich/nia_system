@@ -146,6 +146,86 @@
 
         .page-title { margin-top: 0; color: #1e293b; font-size: 22px; margin-bottom: 15px; font-weight: 700; }
         .section-title { font-size: 16px; color: #64748b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
+        .table-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 18px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+        .table-toolbar__search,
+        .table-toolbar__field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 180px;
+            flex: 1 1 180px;
+        }
+        .table-toolbar__label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .table-toolbar__input,
+        .table-toolbar__select {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ee;
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 13px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+        .table-toolbar__input:focus,
+        .table-toolbar__select:focus {
+            outline: none;
+            border-color: #110d9e;
+            box-shadow: 0 0 0 4px rgba(17, 13, 158, 0.08);
+        }
+        .table-toolbar__actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+        }
+        .table-toolbar__button {
+            min-height: 44px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .table-toolbar__button--primary {
+            background: #110d9e;
+            color: #ffffff;
+        }
+        .table-toolbar__button--primary:hover {
+            background: #0c0a78;
+        }
+        .table-toolbar__button--ghost {
+            background: #ffffff;
+            color: #475569;
+            border-color: #cbd5e1;
+        }
+        .table-toolbar__button--ghost:hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
 
         /* 🌟 NEW KPI METRIC CARDS 🌟 */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
@@ -321,6 +401,21 @@
             .content .ui-card,
             .content .card {
                 padding: 20px;
+            }
+            .table-toolbar {
+                align-items: stretch;
+            }
+            .table-toolbar__search,
+            .table-toolbar__field,
+            .table-toolbar__actions {
+                min-width: 100%;
+                flex: 1 1 100%;
+            }
+            .table-toolbar__actions {
+                margin-left: 0;
+            }
+            .table-toolbar__button {
+                flex: 1 1 0;
             }
             .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
             .content .card [style*="grid-template-columns: 1fr 1fr"] {
@@ -748,10 +843,13 @@
             focusTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true) {
+        async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true, options = {}) {
             if (!targets || !targets.length) return;
 
             return withAppLoader(async () => {
+                const preserveScroll = options.preserveScroll === true;
+                const previousWindowScrollX = window.scrollX;
+                const previousWindowScrollY = window.scrollY;
                 const refreshUrl = new URL(url, window.location.origin);
                 refreshUrl.searchParams.set('_async_refresh', Date.now().toString());
 
@@ -791,7 +889,11 @@
                     window.history.pushState({}, '', url);
                 }
 
-                focusAsyncPaginationTarget(targets[0]);
+                if (preserveScroll) {
+                    window.scrollTo(previousWindowScrollX, previousWindowScrollY);
+                } else {
+                    focusAsyncPaginationTarget(targets[0]);
+                }
             }, 'Loading content...');
         }
 
@@ -853,7 +955,9 @@
                 }
 
                 if (targetSelectors.length > 0) {
-                    await refreshAsyncTargets(targetSelectors);
+                    await refreshAsyncTargetsFromUrl(window.location.href, targetSelectors, false, {
+                        preserveScroll: form.dataset.asyncPreserveScroll === 'true'
+                    });
                 }
 
                 if (resetForm) {
@@ -907,6 +1011,39 @@
         document.addEventListener('submit', function(event) {
             const form = event.target;
             if (!(form instanceof HTMLFormElement)) return;
+
+            if (form.dataset.asyncGet === 'true') {
+                event.preventDefault();
+
+                const targets = (form.dataset.asyncTarget || '')
+                    .split(',')
+                    .map((selector) => selector.trim())
+                    .filter(Boolean);
+
+                const formData = new FormData(form);
+                const url = new URL(form.action || window.location.href, window.location.origin);
+                url.search = '';
+
+                formData.forEach((value, key) => {
+                    if (value === null || typeof value === 'undefined') {
+                        return;
+                    }
+
+                    const stringValue = String(value).trim();
+                    if (!stringValue) {
+                        return;
+                    }
+
+                    url.searchParams.append(key, stringValue);
+                });
+
+                refreshAsyncTargetsFromUrl(url.toString(), targets, true, {
+                    preserveScroll: form.dataset.asyncPreserveScroll === 'true'
+                }).catch((error) => {
+                    showLiveAlert(error.message || 'Unable to apply filters.', 'error');
+                });
+                return;
+            }
 
             if (!form.dataset.asyncTarget && form.dataset.async !== 'true') {
                 if (!validateFormBeforeSubmit(form)) {

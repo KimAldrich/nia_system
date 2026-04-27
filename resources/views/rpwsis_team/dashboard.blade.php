@@ -1002,6 +1002,28 @@
             </div>
         </div>
 
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="simpleTableSearch" class="table-toolbar__input" placeholder="Search activity, NIS, batch, remarks...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Region</span>
+                <select id="simpleTableRegionFilter" class="table-toolbar__select">
+                    <option value="">All regions</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Batch</span>
+                <select id="simpleTableBatchFilter" class="table-toolbar__select">
+                    <option value="">All batches</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('simpleTable')">Reset</button>
+            </div>
+        </div>
+
         <div class="table-responsive-wrapper">
             <table class="custom-table" id="simpleTable">
                 <thead>
@@ -1230,6 +1252,28 @@
             </div>
         </div>
 
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="summaryTableSearch" class="table-toolbar__input" placeholder="Search municipality, plantation type, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Province</span>
+                <select id="summaryTableProvinceFilter" class="table-toolbar__select">
+                    <option value="">All provinces</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="summaryTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('summaryTable')">Reset</button>
+            </div>
+        </div>
+
         <div class="table-responsive-wrapper">
             <table class="custom-table" id="summaryTable">
                 <thead>
@@ -1437,6 +1481,28 @@
             </div>
         </div>
 
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="nurseryTableSearch" class="table-toolbar__input" placeholder="Search nursery, municipality, barangay, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="nurseryTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Type</span>
+                <select id="nurseryTableTypeFilter" class="table-toolbar__select">
+                    <option value="">All nursery types</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('nurseryTable')">Reset</button>
+            </div>
+        </div>
+
         <div class="table-responsive-wrapper">
             <table class="custom-table" id="nurseryTable">
                 <thead>
@@ -1561,6 +1627,28 @@
             </div>
         </div>
 
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="signagesTableSearch" class="table-toolbar__input" placeholder="Search signages, municipality, barangay, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="signagesTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Type</span>
+                <select id="signagesTableTypeFilter" class="table-toolbar__select">
+                    <option value="">All signage types</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('signagesTable')">Reset</button>
+            </div>
+        </div>
+
         <div class="table-responsive-wrapper">
             <table class="custom-table" id="signagesTable" style="min-width: 1600px;">
                 <thead>
@@ -1678,6 +1766,28 @@
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export Excel
                 </button>
+            </div>
+        </div>
+
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="infrastructureTableSearch" class="table-toolbar__input" placeholder="Search infrastructure, municipality, barangay, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="infrastructureTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Type</span>
+                <select id="infrastructureTableTypeFilter" class="table-toolbar__select">
+                    <option value="">All infrastructure types</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('infrastructureTable')">Reset</button>
             </div>
         </div>
 
@@ -3151,6 +3261,159 @@
             XLSX.utils.book_append_sheet(wb, ws, "Infrastructure");
             XLSX.writeFile(wb, "other_infrastructures.xlsx");
         }
+
+        const clientTableFilterConfigs = {};
+
+        function populateClientFilterOptions(selectId, values, placeholder) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            const uniqueValues = [...new Set(values.map(value => String(value || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            uniqueValues.forEach((value) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            });
+        }
+
+        function applyClientTableFilters(tableId) {
+            const config = clientTableFilterConfigs[tableId];
+            if (!config) return;
+
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const tbody = table.tBodies[0];
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.dataset.emptyState);
+            const searchValue = config.searchInputId ? String(document.getElementById(config.searchInputId)?.value || '').trim().toLowerCase() : '';
+            const filterValues = (config.filters || []).map((filter) => ({
+                columnIndex: filter.columnIndex,
+                value: String(document.getElementById(filter.selectId)?.value || '').trim().toLowerCase(),
+            }));
+
+            let visibleCount = 0;
+
+            rows.forEach((row) => {
+                const cells = Array.from(row.cells);
+                const rowText = cells.map(cell => cell.textContent.replace(/\s+/g, ' ').trim().toLowerCase()).join(' ');
+                const matchesSearch = !searchValue || rowText.includes(searchValue);
+                const matchesFilters = filterValues.every((filter) => {
+                    if (!filter.value) return true;
+                    const cell = cells[filter.columnIndex];
+                    return cell && cell.textContent.replace(/\s+/g, ' ').trim().toLowerCase() === filter.value;
+                });
+
+                const isVisible = matchesSearch && matchesFilters;
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount += 1;
+            });
+
+            let emptyStateRow = tbody.querySelector('tr[data-empty-state="true"]');
+            if (!emptyStateRow) {
+                emptyStateRow = document.createElement('tr');
+                emptyStateRow.dataset.emptyState = 'true';
+                emptyStateRow.innerHTML = `<td colspan="${table.tHead.rows[table.tHead.rows.length - 1].cells.length}" style="text-align:center; padding: 28px 16px; color: #94a3b8;">No rows match the current filters.</td>`;
+                tbody.appendChild(emptyStateRow);
+            }
+            emptyStateRow.style.display = visibleCount === 0 ? '' : 'none';
+        }
+
+        function setupClientTableFilters(config) {
+            clientTableFilterConfigs[config.tableId] = config;
+            const table = document.getElementById(config.tableId);
+            if (!table || !table.tBodies.length) return;
+
+            const rows = Array.from(table.tBodies[0].rows);
+            (config.filters || []).forEach((filter) => {
+                populateClientFilterOptions(
+                    filter.selectId,
+                    rows.map(row => row.cells[filter.columnIndex]?.textContent || ''),
+                    filter.placeholder
+                );
+
+                const select = document.getElementById(filter.selectId);
+                if (select) {
+                    select.addEventListener('change', () => applyClientTableFilters(config.tableId));
+                }
+            });
+
+            if (config.searchInputId) {
+                const searchInput = document.getElementById(config.searchInputId);
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => applyClientTableFilters(config.tableId));
+                }
+            }
+
+            applyClientTableFilters(config.tableId);
+        }
+
+        function resetClientTableFilters(tableId) {
+            const config = clientTableFilterConfigs[tableId];
+            if (!config) return;
+
+            if (config.searchInputId) {
+                const searchInput = document.getElementById(config.searchInputId);
+                if (searchInput) searchInput.value = '';
+            }
+
+            (config.filters || []).forEach((filter) => {
+                const select = document.getElementById(filter.selectId);
+                if (select) select.value = '';
+            });
+
+            applyClientTableFilters(tableId);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setupClientTableFilters({
+                tableId: 'simpleTable',
+                searchInputId: 'simpleTableSearch',
+                filters: [
+                    { selectId: 'simpleTableRegionFilter', columnIndex: 0, placeholder: 'All regions' },
+                    { selectId: 'simpleTableBatchFilter', columnIndex: 1, placeholder: 'All batches' },
+                ],
+            });
+
+            setupClientTableFilters({
+                tableId: 'summaryTable',
+                searchInputId: 'summaryTableSearch',
+                filters: [
+                    { selectId: 'summaryTableProvinceFilter', columnIndex: 1, placeholder: 'All provinces' },
+                    { selectId: 'summaryTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                ],
+            });
+
+            setupClientTableFilters({
+                tableId: 'nurseryTable',
+                searchInputId: 'nurseryTableSearch',
+                filters: [
+                    { selectId: 'nurseryTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                    { selectId: 'nurseryTableTypeFilter', columnIndex: 7, placeholder: 'All nursery types' },
+                ],
+            });
+
+            setupClientTableFilters({
+                tableId: 'signagesTable',
+                searchInputId: 'signagesTableSearch',
+                filters: [
+                    { selectId: 'signagesTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                    { selectId: 'signagesTableTypeFilter', columnIndex: 6, placeholder: 'All signage types' },
+                ],
+            });
+
+            setupClientTableFilters({
+                tableId: 'infrastructureTable',
+                searchInputId: 'infrastructureTableSearch',
+                filters: [
+                    { selectId: 'infrastructureTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                    { selectId: 'infrastructureTableTypeFilter', columnIndex: 6, placeholder: 'All infrastructure types' },
+                ],
+            });
+        });
     </script>
 
     {{-- CHART LOGIC --}}

@@ -42,7 +42,7 @@ class PcrTeamController extends Controller
         return $request->validate($rules);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $resolutions = IaResolution::where('team', 'pcr_team')
             ->latest()
@@ -66,8 +66,21 @@ class PcrTeamController extends Controller
             ->get();
 
         $categories = EventCategory::all();
-        $pcrStatusReports = PcrStatusReport::orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
-        return view('pcr_team.dashboard', compact('resolutions', 'events', 'categories', 'pcrStatusReports'));
+        $pcrQuery = PcrStatusReport::query();
+        if ($request->filled('pcr_search')) {
+            $search = trim((string) $request->input('pcr_search'));
+            $pcrQuery->where(function ($query) use ($search) {
+                $query->where('fund_source', 'like', "%{$search}%")
+                    ->orWhere('allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pcr_fund_source')) {
+            $pcrQuery->where('fund_source', $request->input('pcr_fund_source'));
+        }
+
+        $pcrStatusReports = $pcrQuery->orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
+        $pcrFundSources = PcrStatusReport::select('fund_source')->whereNotNull('fund_source')->distinct()->orderByDesc('fund_source')->pluck('fund_source');
+        return view('pcr_team.dashboard', compact('resolutions', 'events', 'categories', 'pcrStatusReports', 'pcrFundSources'));
     }
 
     public function downloadables()

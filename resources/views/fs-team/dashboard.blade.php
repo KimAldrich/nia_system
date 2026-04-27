@@ -248,8 +248,27 @@
                 </a>
             </div>
         </div>
+
+        @include('partials.table-toolbar', [
+            'asyncTarget' => '#hydroSection',
+            'searchName' => 'hydro_search',
+            'searchPlaceholder' => 'Search project code, system, municipality, status...',
+            'filters' => [
+                [
+                    'name' => 'hydro_district',
+                    'label' => 'District',
+                    'options' => ['' => 'All districts'] + collect($hydroDistricts ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                ],
+                [
+                    'name' => 'hydro_status',
+                    'label' => 'Status',
+                    'options' => ['' => 'All statuses'] + collect($hydroStatuses ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                ],
+            ],
+            'resetKeys' => ['hydro_search', 'hydro_district', 'hydro_status', 'hydro_page'],
+        ])
         
-                <div class="table-responsive" id="hydroTableContainer">
+        <div class="table-responsive" id="hydroTableContainer">
             <table class="sleek-table" style="min-width: 1200px;">
                 <thead>
                     <tr>
@@ -365,8 +384,27 @@
                 </a>
             </div>
         </div>
+
+        @include('partials.table-toolbar', [
+            'asyncTarget' => '#fsdeSection',
+            'searchName' => 'fsde_search',
+            'searchPlaceholder' => 'Search project, consultant, municipality...',
+            'filters' => [
+                [
+                    'name' => 'fsde_year',
+                    'label' => 'Year',
+                    'options' => ['' => 'All years'] + collect($fsdeYears ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                ],
+                [
+                    'name' => 'fsde_municipality',
+                    'label' => 'Municipality',
+                    'options' => ['' => 'All municipalities'] + collect($fsdeMunicipalities ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                ],
+            ],
+            'resetKeys' => ['fsde_search', 'fsde_year', 'fsde_municipality', 'fsde_page'],
+        ])
         
-                <div class="table-responsive" id="fsdeTableContainer">
+        <div class="table-responsive" id="fsdeTableContainer">
             <table class="sleek-table" style="min-width: 1700px;">
                 <thead>
                     <tr>

@@ -47,11 +47,27 @@ class ContractManagementTeamController extends Controller
 
         $categories = EventCategory::all();
         $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
+        $procMunicipalities = ProcurementProject::select('municipality')->whereNotNull('municipality')->distinct()->orderBy('municipality')->pluck('municipality');
 
         // Filter logic
         $procQuery = ProcurementProject::query();
+        if ($request->filled('proc_search')) {
+            $search = trim((string) $request->input('proc_search'));
+            $procQuery->where(function ($query) use ($search) {
+                $query->where('category', 'like', "%{$search}%")
+                    ->orWhere('name_of_project', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('contract_no', 'like', "%{$search}%")
+                    ->orWhere('name_of_contractor', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('project_description', 'like', "%{$search}%");
+            });
+        }
         if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
             $procQuery->where('category', $request->proc_category);
+        }
+        if ($request->filled('proc_municipality')) {
+            $procQuery->where('municipality', $request->input('proc_municipality'));
         }
 
         // 🌟 THE FIX: Clone the query for the Excel Export BEFORE paginating! 🌟
@@ -66,6 +82,7 @@ class ContractManagementTeamController extends Controller
             'events',
             'categories',
             'procCategories',
+            'procMunicipalities',
             'procurementProjects',
             'procExportData'
         ));

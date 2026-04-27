@@ -137,8 +137,48 @@ class GuestController extends Controller
             $remaining = HydroGeoProject::where('status', 'For Schedule')->count();
             $feasible = HydroGeoProject::where('result', 'LIKE', '%Feasible%')->count();
 
-            $hydroProjects = HydroGeoProject::paginate(8, ['*'], 'hydro_page');
-            $fsdeProjects = FsdeProject::paginate(8, ['*'], 'fsde_page');
+            $hydroQuery = HydroGeoProject::query();
+            if ($request->filled('hydro_search')) {
+                $search = trim((string) $request->input('hydro_search'));
+                $hydroQuery->where(function ($query) use ($search) {
+                    $query->where('year', 'like', "%{$search}%")
+                        ->orWhere('district', 'like', "%{$search}%")
+                        ->orWhere('project_code', 'like', "%{$search}%")
+                        ->orWhere('system_name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('municipality', 'like', "%{$search}%")
+                        ->orWhere('status', 'like', "%{$search}%")
+                        ->orWhere('result', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('hydro_status')) {
+                $hydroQuery->where('status', $request->input('hydro_status'));
+            }
+            if ($request->filled('hydro_district')) {
+                $hydroQuery->where('district', $request->input('hydro_district'));
+            }
+
+            $fsdeQuery = FsdeProject::query();
+            if ($request->filled('fsde_search')) {
+                $search = trim((string) $request->input('fsde_search'));
+                $fsdeQuery->where(function ($query) use ($search) {
+                    $query->where('year', 'like', "%{$search}%")
+                        ->orWhere('project_name', 'like', "%{$search}%")
+                        ->orWhere('municipality', 'like', "%{$search}%")
+                        ->orWhere('type_of_study', 'like', "%{$search}%")
+                        ->orWhere('consultant', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('fsde_year')) {
+                $fsdeQuery->where('year', $request->input('fsde_year'));
+            }
+            if ($request->filled('fsde_municipality')) {
+                $fsdeQuery->where('municipality', $request->input('fsde_municipality'));
+            }
+
+            $hydroProjects = $hydroQuery->orderByDesc('year')->paginate(8, ['*'], 'hydro_page')->withQueryString();
+            $fsdeProjects = $fsdeQuery->orderByDesc('year')->paginate(8, ['*'], 'fsde_page')->withQueryString();
         }
 
         // 🌟 4. Fetch CM TEAM specific data
@@ -146,18 +186,56 @@ class GuestController extends Controller
             $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
 
             $procQuery = ProcurementProject::query();
+            if ($request->filled('proc_search')) {
+                $search = trim((string) $request->input('proc_search'));
+                $procQuery->where(function ($query) use ($search) {
+                    $query->where('category', 'like', "%{$search}%")
+                        ->orWhere('name_of_project', 'like', "%{$search}%")
+                        ->orWhere('municipality', 'like', "%{$search}%")
+                        ->orWhere('contract_no', 'like', "%{$search}%")
+                        ->orWhere('name_of_contractor', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%")
+                        ->orWhere('project_description', 'like', "%{$search}%");
+                });
+            }
             if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
                 $procQuery->where('category', $request->proc_category);
+            }
+            if ($request->filled('proc_municipality')) {
+                $procQuery->where('municipality', $request->input('proc_municipality'));
             }
             $procurementProjects = $procQuery->paginate(10)->appends($request->query());
         }
 
         if ($db_team === 'pao_team') {
-            $powData = PaoPowData::paginate(8);
+            $powQuery = PaoPowData::query();
+            if ($request->filled('pow_search')) {
+                $search = trim((string) $request->input('pow_search'));
+                $powQuery->where(function ($query) use ($search) {
+                    $query->where('district', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%")
+                        ->orWhere('total_allocation', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('pow_district')) {
+                $powQuery->where('district', $request->input('pow_district'));
+            }
+            $powData = $powQuery->orderBy('district')->paginate(8, ['*'], 'pow_page')->withQueryString();
         }
 
         if ($db_team === 'pcr_team') {
-            $pcrStatusReports = PcrStatusReport::orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page');
+            $pcrQuery = PcrStatusReport::query();
+            if ($request->filled('pcr_search')) {
+                $search = trim((string) $request->input('pcr_search'));
+                $pcrQuery->where(function ($query) use ($search) {
+                    $query->where('fund_source', 'like', "%{$search}%")
+                        ->orWhere('allocation', 'like', "%{$search}%");
+                });
+            }
+            if ($request->filled('pcr_fund_source')) {
+                $pcrQuery->where('fund_source', $request->input('pcr_fund_source'));
+            }
+            $pcrStatusReports = $pcrQuery->orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
         }
 
         if ($db_team === 'rpwsis_team') {

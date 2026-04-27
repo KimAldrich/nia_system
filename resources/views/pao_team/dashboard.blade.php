@@ -645,6 +645,20 @@
                 </a>
             </div>
         </div>
+
+        @include('partials.table-toolbar', [
+            'asyncTarget' => '#powSection',
+            'searchName' => 'pow_search',
+            'searchPlaceholder' => 'Search district, allocation, remarks...',
+            'filters' => [
+                [
+                    'name' => 'pow_district',
+                    'label' => 'District',
+                    'options' => ['' => 'All districts'] + collect($powDistricts ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                ],
+            ],
+            'resetKeys' => ['pow_search', 'pow_district', 'pow_page'],
+        ])
         
         <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; -webkit-overflow-scrolling: touch;">
             <div class="table-responsive" id="powTableContainer">

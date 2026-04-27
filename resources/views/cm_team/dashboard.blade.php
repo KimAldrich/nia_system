@@ -158,18 +158,6 @@
         Procurement Status Monitoring
         
         <div style="display: flex; gap: 15px; align-items: center;">
-            <form action="{{ url()->current() }}" method="GET" style="margin: 0;">
-                @foreach(request()->except(['proc_category', 'page']) as $key => $value)
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endforeach
-                <select name="proc_category" onchange="this.form.submit()" class="modern-input" style="margin-bottom: 0; padding: 8px 12px; width: 280px; font-weight: 600; cursor: pointer; border-color: #0c4d05;">
-                    <option value="All Projects">-- Show All Categories --</option>
-                    @foreach($procCategories ?? [] as $cat)
-                        <option value="{{ $cat }}" {{ request('proc_category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                    @endforeach
-                </select>
-            </form>
-
             @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
                 <button onclick="openProcAddModal()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                     + Add Data
@@ -181,6 +169,25 @@
 </a>
         </div>
     </div>
+
+    @include('partials.table-toolbar', [
+        'asyncTarget' => '#procurementSection',
+        'searchName' => 'proc_search',
+        'searchPlaceholder' => 'Search category, project, municipality, contractor...',
+        'filters' => [
+            [
+                'name' => 'proc_category',
+                'label' => 'Category',
+                'options' => ['All Projects' => 'All categories'] + collect($procCategories ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+            ],
+            [
+                'name' => 'proc_municipality',
+                'label' => 'Municipality',
+                'options' => ['' => 'All municipalities'] + collect($procMunicipalities ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+            ],
+        ],
+        'resetKeys' => ['proc_search', 'proc_category', 'proc_municipality', 'page'],
+    ])
     
     <div class="table-responsive" id="procurementTableContainer">
         <table class="sleek-table" id="procTable" style="min-width: 1700px;">

@@ -74,7 +74,7 @@ class FsTeamController extends Controller
     }
 
     // 1. Dashboard
-    public function index()
+    public function index(Request $request)
     {
         // Fetch resolutions for the project table
         $resolutions = IaResolution::where('team', 'fs_team')
@@ -104,9 +104,53 @@ class FsTeamController extends Controller
         $hydroExportData = HydroGeoProject::all();
         $fsdeExportData = FsdeProject::all();
 
-        // 3. Fetch the table data with pagination (8 rows per page)
-        $hydroProjects = HydroGeoProject::paginate(8, ['*'], 'hydro_page');
-        $fsdeProjects = FsdeProject::paginate(8, ['*'], 'fsde_page');
+        // 3. Fetch the table data with filtering and pagination
+        $hydroQuery = HydroGeoProject::query();
+        if ($request->filled('hydro_search')) {
+            $search = trim((string) $request->input('hydro_search'));
+            $hydroQuery->where(function ($query) use ($search) {
+                $query->where('year', 'like', "%{$search}%")
+                    ->orWhere('district', 'like', "%{$search}%")
+                    ->orWhere('project_code', 'like', "%{$search}%")
+                    ->orWhere('system_name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('result', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('hydro_status')) {
+            $hydroQuery->where('status', $request->input('hydro_status'));
+        }
+        if ($request->filled('hydro_district')) {
+            $hydroQuery->where('district', $request->input('hydro_district'));
+        }
+
+        $fsdeQuery = FsdeProject::query();
+        if ($request->filled('fsde_search')) {
+            $search = trim((string) $request->input('fsde_search'));
+            $fsdeQuery->where(function ($query) use ($search) {
+                $query->where('year', 'like', "%{$search}%")
+                    ->orWhere('project_name', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('type_of_study', 'like', "%{$search}%")
+                    ->orWhere('consultant', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('fsde_year')) {
+            $fsdeQuery->where('year', $request->input('fsde_year'));
+        }
+        if ($request->filled('fsde_municipality')) {
+            $fsdeQuery->where('municipality', $request->input('fsde_municipality'));
+        }
+
+        $hydroProjects = $hydroQuery->orderByDesc('year')->paginate(8, ['*'], 'hydro_page')->withQueryString();
+        $fsdeProjects = $fsdeQuery->orderByDesc('year')->paginate(8, ['*'], 'fsde_page')->withQueryString();
+        $hydroDistricts = HydroGeoProject::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
+        $hydroStatuses = HydroGeoProject::select('status')->whereNotNull('status')->distinct()->orderBy('status')->pluck('status');
+        $fsdeYears = FsdeProject::select('year')->whereNotNull('year')->distinct()->orderByDesc('year')->pluck('year');
+        $fsdeMunicipalities = FsdeProject::select('municipality')->whereNotNull('municipality')->distinct()->orderBy('municipality')->pluck('municipality');
         return view('fs-team.dashboard', compact(
             'totalProjects',
             'conducted',
@@ -117,6 +161,10 @@ class FsTeamController extends Controller
             'categories',
             'hydroProjects',
             'fsdeProjects',
+            'hydroDistricts',
+            'hydroStatuses',
+            'fsdeYears',
+            'fsdeMunicipalities',
             'hydroExportData',
             'fsdeExportData'
         ));
