@@ -30,6 +30,9 @@ Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.d
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 Route::get('/guest/pao-team/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('guest.pao.pow.export');
 
+Route::get('/map', [MapController::class, 'Showmap'])->name('map');
+Route::get('/map/notifications-feed', [MapController::class, 'mapNotifications'])->name('map.notifications.feed');
+
 Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/guest/{team_slug}/dashboard', [GuestController::class, 'teamDashboard'])->name('guest.team.dashboard');
 Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
@@ -47,7 +50,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
         Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
         Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
-        Route::get('/map', [MapController::class, 'Showmap'])->name('map');
+
 
     //guest
     // Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
@@ -56,6 +59,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
         Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
         Route::delete('/map/delete', [MapController::class, 'deleteFile']);
+        Route::get('/map/notifications', [MapController::class, 'mapNotifications'])->name('map.notifications');
+        Route::post('/map/notifications/clear-old', [MapController::class, 'clearOldMapNotifications'])->name('map.notifications.clear_old');
 
         // Protected Routes (Must have agreed to terms)
         Route::middleware(['check.terms'])->group(function () {
@@ -162,7 +167,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                     Route::post('/nursery/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeNursery'])->name('rpwsis.nursery.store');
                     Route::put('/nursery/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateNursery'])->name('rpwsis.nursery.update');
                     Route::delete('/nursery/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteNursery'])->name('rpwsis.nursery.delete');
-                
+
                     // Signages table routes
                 Route::post('/signages/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeSignages'])->name('rpwsis.signages.store');
                 Route::put('/signages/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateSignages'])->name('rpwsis.signages.update');

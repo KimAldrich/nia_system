@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Shapefile\Shapefile;
@@ -35,6 +37,8 @@ class MapController extends Controller
     ];
 
     private const SHAPEFILE_COMPANION_EXTENSIONS = ['shp', 'shx', 'dbf', 'prj', 'cpg'];
+    private const MAP_NOTIFICATION_FILE = 'map_notifications.json';
+    private const MAP_NOTIFICATION_LIMIT = 200;
 
     public function Showmap()
     {
@@ -218,11 +222,17 @@ class MapController extends Controller
             }
 
             $this->clearMapDataCache();
+            $notificationResult = $this->notifyMapFileChange(
+                'upload',
+                $category,
+                $uploadedFiles
+            );
 
             return response()->json([
-                'message' => 'Upload successful',
+                'message' => 'Upload successful. ' . $notificationResult['admin_message'],
                 'files' => $uploadedFiles,
                 'target_folder' => $targetFolder,
+                'notified_users_count' => $notificationResult['notified_users_count'],
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -264,17 +274,73 @@ class MapController extends Controller
 
         if (Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
+            $category = $this->resolveCategoryFromStoragePath((string) $path);
+            $notificationResult = $this->notifyMapFileChange('delete', $category, [[
+                'name' => basename((string) $path),
+                'path' => (string) $path,
+                'url' => Storage::url((string) $path),
+            ]]);
 
             $this->clearMapDataCache();
 
             return response()->json([
-                'message' => 'Deleted',
+                'message' => 'Deleted. ' . $notificationResult['admin_message'],
+                'notified_users_count' => $notificationResult['notified_users_count'],
             ]);
         }
 
         return response()->json([
             'message' => 'File not found',
         ], 404);
+    }
+
+    public function mapNotifications(Request $request)
+    {
+        $user = $request->user();
+        $isGuest = (bool) $request->session()->get('guest_terms_accepted');
+
+        if (!$user && !$isGuest) {
+            return response()->json([
+                'notifications' => [],
+            ]);
+        }
+
+        $notifications = $this->readMapNotifications();
+
+        return response()->json([
+            'notifications' => $notifications,
+        ]);
+    }
+
+    public function clearOldMapNotifications(Request $request)
+    {
+        $days = (int) $request->input('days', 30);
+        $days = max(1, min(365, $days));
+        $cutoff = now()->subDays($days);
+
+        $notifications = $this->readMapNotifications();
+        $filtered = array_values(array_filter($notifications, function ($item) use ($cutoff) {
+            $createdAt = $item['created_at'] ?? null;
+
+            if (!$createdAt) {
+                return false;
+            }
+
+            try {
+                return \Carbon\Carbon::parse($createdAt)->greaterThanOrEqualTo($cutoff);
+            } catch (\Throwable $exception) {
+                return false;
+            }
+        }));
+
+        $removed = count($notifications) - count($filtered);
+        $this->writeMapNotifications($filtered);
+
+        return response()->json([
+            'message' => "Cleared {$removed} old notification(s).",
+            'removed_count' => $removed,
+            'remaining_count' => count($filtered),
+        ]);
     }
 
     private function readShapefileZip($zipPath)
@@ -808,6 +874,94 @@ class MapController extends Controller
     private function clearMapDataCache(): void
     {
         Cache::store('file')->forget(self::IRRIGATED_CHART_CACHE_KEY);
+    }
+
+    private function notifyMapFileChange(string $action, string $category, array $files): array
+    {
+        $files = array_values(array_filter($files, function ($file) {
+            return !empty($file['path']);
+        }));
+
+        if (empty($files)) {
+            return [
+                'notified_users_count' => 0,
+                'admin_message' => 'No users were notified.',
+            ];
+        }
+
+        $actor = Auth::check() ? (Auth::user()->name ?? 'Admin') : 'Admin';
+        $locations = array_values(array_unique(array_map(function ($file) {
+            return trim(dirname((string) ($file['path'] ?? '')), '.');
+        }, $files)));
+
+        $entry = [
+            'id' => uniqid('map_', true),
+            'action' => $action,
+            'category' => $category,
+            'actor' => $actor,
+            'files' => array_map(function ($file) {
+                return [
+                    'name' => (string) ($file['name'] ?? basename((string) ($file['path'] ?? ''))),
+                    'path' => (string) ($file['path'] ?? ''),
+                ];
+            }, $files),
+            'locations' => $locations,
+            'created_at' => now()->toIso8601String(),
+        ];
+
+        $existing = $this->readMapNotifications();
+        array_unshift($existing, $entry);
+        $existing = array_slice($existing, 0, self::MAP_NOTIFICATION_LIMIT);
+        $this->writeMapNotifications($existing);
+
+        $notifiedUsers = User::query()
+            ->where('role', '!=', 'admin')
+            ->count();
+
+        $adminMessage = 'Other users have been notified.';
+
+        return [
+            'notified_users_count' => $notifiedUsers,
+            'admin_message' => $adminMessage,
+        ];
+    }
+
+    private function resolveCategoryFromStoragePath(string $path): string
+    {
+        $normalizedPath = strtolower(str_replace('\\', '/', $path));
+
+        if (str_contains($normalizedPath, '/maps/irrigated/')) {
+            return 'Irrigated Area';
+        }
+
+        if (str_contains($normalizedPath, '/maps/potential/')) {
+            return 'Potential Irrigable Area';
+        }
+
+        if (str_contains($normalizedPath, '/maps/land_boundary/')) {
+            return 'Pangasinan Land Boundary';
+        }
+
+        return 'Map Files';
+    }
+
+    private function readMapNotifications(): array
+    {
+        $filePath = storage_path('app/' . self::MAP_NOTIFICATION_FILE);
+
+        if (!file_exists($filePath)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) file_get_contents($filePath), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function writeMapNotifications(array $notifications): void
+    {
+        $filePath = storage_path('app/' . self::MAP_NOTIFICATION_FILE);
+        file_put_contents($filePath, json_encode($notifications, JSON_PRETTY_PRINT));
     }
 
     private function sanitizeRelativeFolder(?string $folder): string
