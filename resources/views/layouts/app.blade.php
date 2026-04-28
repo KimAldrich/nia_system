@@ -383,6 +383,65 @@
             background: #dc2626;
             border-color: #dc2626;
         }
+        .app-feedback-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.38);
+            backdrop-filter: blur(4px);
+            z-index: 5100;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .app-feedback-modal.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .app-feedback-modal__dialog {
+            width: min(100%, 440px);
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+            padding: 26px 24px 22px;
+        }
+        .app-feedback-modal__title {
+            margin: 0 0 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .app-feedback-modal__message {
+            margin: 0 0 24px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+        }
+        .app-feedback-modal__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .app-feedback-modal__button {
+            border: 1px solid #110d9e;
+            border-radius: 10px;
+            padding: 11px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #110d9e;
+            color: #ffffff;
+        }
+        .app-feedback-modal__button:hover {
+            background: #0b0a75;
+            border-color: #0b0a75;
+        }
         .is-loading {
             opacity: 0.65;
             pointer-events: none;
@@ -445,6 +504,16 @@
             <div class="app-confirm-modal__actions">
                 <button type="button" id="appConfirmModalCancel" class="app-confirm-modal__button app-confirm-modal__button--cancel">Cancel</button>
                 <button type="button" id="appConfirmModalApprove" class="app-confirm-modal__button app-confirm-modal__button--confirm">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="appFeedbackModal" class="app-feedback-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="appFeedbackModalTitle">
+        <div class="app-feedback-modal__dialog">
+            <h3 id="appFeedbackModalTitle" class="app-feedback-modal__title" data-success-title>Success</h3>
+            <p class="app-feedback-modal__message" data-success-message>Saved successfully.</p>
+            <div class="app-feedback-modal__actions">
+                <button type="button" id="appFeedbackModalClose" class="app-feedback-modal__button">OK</button>
             </div>
         </div>
     </div>
@@ -694,7 +763,18 @@
             }
 
             modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
             return true;
+        }
+
+        function closeAsyncFeedbackModal(selector = '#appFeedbackModal') {
+            const modal = document.querySelector(selector);
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
         }
 
         const appLoaderState = {
@@ -807,6 +887,14 @@
             if (event.target?.id === 'appConfirmModal') {
                 closeAppConfirmModal(false);
             }
+
+            if (event.target?.id === 'appFeedbackModalClose') {
+                closeAsyncFeedbackModal();
+            }
+
+            if (event.target?.id === 'appFeedbackModal') {
+                closeAsyncFeedbackModal();
+            }
         });
 
         document.addEventListener('keydown', function(event) {
@@ -817,6 +905,7 @@
 
             if (event.key === 'Escape') {
                 closeAppConfirmModal(false);
+                closeAsyncFeedbackModal();
             }
         });
 
@@ -824,6 +913,7 @@
         window.hideAppLoader = hideAppLoader;
         window.withAppLoader = withAppLoader;
         window.requestAppConfirmation = requestAppConfirmation;
+        window.closeAsyncFeedbackModal = closeAsyncFeedbackModal;
 
         async function refreshAsyncTargets(targets) {
             return refreshAsyncTargetsFromUrl(window.location.href, targets, false);
@@ -911,8 +1001,10 @@
             const closeSelector = options.closeSelector ?? form.dataset.asyncClose;
             const confirmMessage = options.confirmMessage ?? form.dataset.asyncConfirm;
             const successModalSelector = options.successModalSelector ?? form.dataset.asyncSuccessModal;
+            const errorModalSelector = options.errorModalSelector ?? form.dataset.asyncErrorModal;
             const suppressSuccessFeedback = options.suppressSuccessFeedback ?? form.dataset.asyncSuccess === 'silent';
             const successTitle = options.successTitle ?? form.dataset.asyncSuccessTitle ?? 'Success';
+            const errorTitle = options.errorTitle ?? form.dataset.asyncErrorTitle ?? 'Unable to Save';
             const reloadOnSuccess = options.reloadOnSuccess ?? form.dataset.asyncReload === 'true';
 
             if (!validateFormBeforeSubmit(form)) {
@@ -1000,7 +1092,12 @@
                 }
                 return false;
             } catch (error) {
-                showLiveAlert(error.message || 'Unable to save changes.', 'error');
+                const errorMessage = error.message || 'Unable to save changes.';
+                const openedErrorModal = openAsyncSuccessModal(errorModalSelector, errorMessage, errorTitle);
+
+                if (!openedErrorModal) {
+                    showLiveAlert(errorMessage, 'error');
+                }
                 return false;
             } finally {
                 form.classList.remove('is-loading');
@@ -1083,6 +1180,15 @@
                 setFieldValidityState(input);
             }
 
+            if (input instanceof HTMLInputElement && input.type === 'file') {
+                const uploadForm = input.closest('form[data-file-upload-feedback="true"]');
+                if (uploadForm && hasInvalidUploadFiles([input])) {
+                    input.value = '';
+                    showUploadFileFeedback();
+                    return;
+                }
+            }
+
             if (!(input instanceof HTMLSelectElement) || !input.hasAttribute('data-auto-submit')) {
                 return;
             }
@@ -1150,6 +1256,53 @@
                 submitBtn.style.display = 'none';
             }, 0);
         });
+
+        const allowedUploadExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
+
+        function getInvalidUploadFilesFromInput(input) {
+            if (!(input instanceof HTMLInputElement) || input.type !== 'file') {
+                return [];
+            }
+
+            return Array.from(input.files || []).filter((file) => {
+                const parts = String(file.name || '').split('.');
+                const extension = parts.length > 1 ? parts.pop().toLowerCase() : '';
+                return !allowedUploadExtensions.includes(extension);
+            });
+        }
+
+        function hasInvalidUploadFiles(fileInputs) {
+            return fileInputs.some((input) => getInvalidUploadFilesFromInput(input).length > 0);
+        }
+
+        function showUploadFileFeedback() {
+            const message = 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.';
+            const openedModal = openAsyncSuccessModal('#appFeedbackModal', message, 'Upload Failed');
+
+            if (!openedModal) {
+                showLiveAlert(message, 'error');
+            }
+        }
+
+        document.addEventListener('submit', function(event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement) || form.dataset.fileUploadFeedback !== 'true') {
+                return;
+            }
+
+            const fileInputs = Array.from(form.querySelectorAll('input[type="file"]'));
+            if (!hasInvalidUploadFiles(fileInputs)) {
+                return;
+            }
+
+            event.preventDefault();
+            fileInputs.forEach((input) => {
+                if (getInvalidUploadFilesFromInput(input).length > 0) {
+                    input.value = '';
+                }
+            });
+            showUploadFileFeedback();
+        }, true);
 
         function toggleMenu(menuId, element) {
             const menu = document.getElementById(menuId);

@@ -137,7 +137,10 @@
             'pcr_team' => 'Program Completion Report Team',
             'pao_team' => 'Programming Team',
         ];
-        $adminEventEntries = collect($events ?? [])->map(function ($event) use ($eventTeamLabels) {
+        $adminPastEvents = collect($pastEvents ?? [])->values();
+        $adminAllEvents = collect($events ?? [])->concat($adminPastEvents)->values();
+
+        $adminEventEntries = $adminAllEvents->map(function ($event) use ($eventTeamLabels) {
             return [
                 'id' => $event->id,
                 'title' => $event->title,
@@ -154,6 +157,7 @@
                 'recurrence_pattern' => $event->recurrence_pattern ?? 'none',
                 'recurrence_until' => optional($event->recurrence_until)->format('Y-m-d'),
                 'recurrence_until_label' => optional($event->recurrence_until)->format('F d, Y'),
+                'is_upcoming' => method_exists($event, 'isUpcoming') ? $event->isUpcoming() : optional($event->event_date)->isFuture(),
             ];
         })->values();
     @endphp
@@ -219,12 +223,12 @@
 
             <div class="ui-card">
                 <div class="section-title">Upload Downloadable File to Team</div>
-                <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true">
+                <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true" data-file-upload-feedback="true" data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed">
                     @csrf
                     <div style="margin-bottom: 15px;">
                         <label class="modern-label">Select Team</label>
                         <select name="team" required class="modern-input">
-                            <option value="" disabled selected>-- Choose Team --</option>
+                            <option value="" disabled selected>Choose Team</option>
                             <option value="fs_team">FS Team</option>
                             <option value="rpwsis_team">Social and Environmental Team</option>
                             <option value="cm_team">CM Team</option>
@@ -235,7 +239,7 @@
                     </div>
                     <div style="margin-bottom: 20px;">
                         <label class="modern-label">Upload File</label>
-                        <input type="file" name="document" required class="modern-input" style="padding: 7px 12px;">
+                        <input type="file" name="document" required accept=".pdf,.doc,.docx,.xls,.xlsx" class="modern-input" style="padding: 7px 12px;">
                     </div>
                     <button type="submit" class="modern-btn">Upload File</button>
                 </form>
@@ -243,12 +247,12 @@
 
             <div class="ui-card">
                 <div class="section-title">Upload IA Resolution File to Team</div>
-                <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true">
+                <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true" data-file-upload-feedback="true" data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed">
                     @csrf
                     <div style="margin-bottom: 15px;">
                         <label class="modern-label">Select Team</label>
                         <select name="team" required class="modern-input">
-                            <option value="" disabled selected>-- Choose Team --</option>
+                            <option value="" disabled selected>Choose Team</option>
                             <option value="fs_team">FS Team</option>
                             <option value="rpwsis_team">Social and Environmental Team</option>
                             <option value="cm_team">CM Team</option>
@@ -259,7 +263,7 @@
                     </div>
                     <div style="margin-bottom: 20px;">
                         <label class="modern-label">Upload File</label>
-                        <input type="file" name="document" required class="modern-input" style="padding: 7px 12px;">
+                        <input type="file" name="document" required accept=".pdf,.doc,.docx,.xls,.xlsx" class="modern-input" style="padding: 7px 12px;">
                     </div>
                     <button type="submit" class="modern-btn">Upload Resolution</button>
                 </form>
@@ -402,7 +406,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                     <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">Upcoming Schedule</p>
                     @if(isset($events) && $events->count() > 0)
                         @foreach($events as $event)
-                            <div class="mini-event admin-event-item"
+                            <div class="mini-event admin-event-item admin-upcoming-event-item admin-filter-item"
                                 data-event-id="{{ $event->id }}"
                                 data-category-id="{{ $event->event_category_id }}"
                                 data-team="{{ $event->team }}"
@@ -434,6 +438,45 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                         @endforeach
                     @else
                         <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
+                    @endif
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">Past Events</p>
+                    @if(isset($pastEvents) && $pastEvents->count() > 0)
+                        @foreach($pastEvents as $event)
+                            <div class="mini-event admin-event-item admin-past-event-item admin-filter-item"
+                                data-event-id="{{ $event->id }}"
+                                data-category-id="{{ $event->event_category_id }}"
+                                data-team="{{ $event->team }}"
+                                onclick="openAdminEventDetailsById({{ $event->id }})"
+                                style="justify-content: space-between; cursor: pointer;">
+                                <div style="display: flex; gap: 15px; align-items: center;">
+                                    <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
+                                    <div>
+                                        <h4 class="mini-event-title">{{ $event->title }}</h4>
+                                        <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
+                                        @if(!empty($event->team))
+                                            <p class="mini-event-time" style="margin-top: 4px;">{{ $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', $event->team)) }}</p>
+                                        @endif
+                                        @if($event->category)
+                                            <span class="event-tag" style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;">
+                                                {{ $event->category->name }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation()">
+                                    <button type="button" class="modern-btn modern-btn-outline" style="padding: 8px 10px; font-size: 12px;" onclick="openAdminEventEditor({{ $event->id }})">Edit</button>
+                                    <form action="{{ route('admin.events.destroy', $event->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard, #upcomingEventsKpi" data-async-confirm="Delete this event?">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 18px; padding: 0 5px; transition: 0.2s;" title="Delete Event" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#f87171'">×</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No past events yet.</p>
                     @endif
                 </div>
             </div>
@@ -747,7 +790,9 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
         function applyAdminEventFilters() {
             const filteredEvents = getFilteredAdminEvents();
             const visibleIds = new Set(filteredEvents.map(event => String(event.id)));
-            const eventsByDate = filteredEvents.reduce((carry, event) => {
+            const eventsByDate = filteredEvents
+                .filter((event) => event.is_upcoming)
+                .reduce((carry, event) => {
                 if (!carry[event.event_date]) {
                     carry[event.event_date] = [];
                 }
@@ -755,7 +800,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                 return carry;
             }, {});
 
-            document.querySelectorAll('.admin-event-item').forEach((item) => {
+            document.querySelectorAll('.admin-filter-item').forEach((item) => {
                 item.style.display = visibleIds.has(String(item.dataset.eventId)) ? '' : 'none';
             });
 
@@ -813,10 +858,10 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                 }
             });
 
-            const visibleEventCount = document.querySelectorAll('.admin-event-item').length;
+            const visibleEventCount = document.querySelectorAll('.admin-upcoming-event-item').length;
             const upcomingScheduleSection = document.querySelector('#eventManagerCard div[style*="margin-top: 10px;"]');
 
-            if (upcomingScheduleSection && visibleEventCount === 0 && !upcomingScheduleSection.querySelector('.admin-event-item')) {
+            if (upcomingScheduleSection && visibleEventCount === 0 && !upcomingScheduleSection.querySelector('.admin-upcoming-event-item')) {
                 const emptyState = document.createElement('p');
                 emptyState.style.fontSize = '12px';
                 emptyState.style.color = '#a0aec0';

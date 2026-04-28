@@ -20,6 +20,10 @@ class RowTeamController extends Controller
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
+        $events = Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
         $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
@@ -35,7 +39,6 @@ class RowTeamController extends Controller
             })
             ->orderBy('event_date', 'asc');
 
-        $events = (clone $upcomingEventsQuery)->get();
         $paginatedEvents = (clone $upcomingEventsQuery)
             ->paginate(5, ['*'], 'events_page')
             ->withQueryString();
@@ -58,6 +61,16 @@ class RowTeamController extends Controller
 
     public function uploadForm(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -67,13 +80,13 @@ class RowTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -125,6 +138,16 @@ class RowTeamController extends Controller
 
     public function uploadResolution(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -134,13 +157,13 @@ class RowTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('resolutions', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);

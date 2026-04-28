@@ -421,7 +421,9 @@
         'pao_team' => 'Programming Team',
     ];
 
-    $upcomingEvents = collect($events ?? [])
+    $allEvents = collect($events ?? [])->values();
+
+    $upcomingEvents = $allEvents
         ->filter(function ($event) {
             return method_exists($event, 'isUpcoming')
                 ? $event->isUpcoming()
@@ -430,7 +432,21 @@
         ->sortBy('event_date')
         ->values();
 
+    $pastEvents = $allEvents
+        ->reject(function ($event) {
+            return method_exists($event, 'isUpcoming')
+                ? $event->isUpcoming()
+                : $event->event_date->isFuture();
+        })
+        ->sortByDesc(function ($event) {
+            return method_exists($event, 'getEndDateTime')
+                ? $event->getEndDateTime()->timestamp
+                : optional($event->event_date)->timestamp;
+        })
+        ->values();
+
     $displayEvents = $upcomingEvents;
+    $displayPastEvents = $pastEvents;
 @endphp
 
 <div id="{{ $containerId }}" class="ui-card event-manager-card">
@@ -546,7 +562,7 @@
 
         @if (count($displayEvents) > 0)
             @foreach ($displayEvents as $event)
-                <div class="mini-event readonly-event-item"
+                <div class="mini-event readonly-filter-item"
                     data-event-id="{{ $event->id }}"
                     data-category-id="{{ $event->event_category_id }}"
                     data-team="{{ $event->team }}"
@@ -574,6 +590,40 @@
             <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
         @endif
     </div>
+
+    <div class="event-manager-upcoming">
+        <p class="event-manager-label">Past Events</p>
+
+        @if (count($displayPastEvents) > 0)
+            @foreach ($displayPastEvents as $event)
+                <div class="mini-event readonly-filter-item"
+                    data-event-id="{{ $event->id }}"
+                    data-category-id="{{ $event->event_category_id }}"
+                    data-team="{{ $event->team }}"
+                    onclick="openReadonlyEventDetails('{{ $containerId }}', {{ $event->id }})">
+                    <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
+                    <div class="mini-event-body">
+                        <h4 class="mini-event-title">{{ $event->title }}</h4>
+                        <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
+
+                        @if (!empty($event->team))
+                            <p class="mini-event-time" style="margin-top:4px;">{{ $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', $event->team)) }}</p>
+                        @endif
+                        @if (!empty($event->category))
+                            <span
+                                class="event-tag"
+                                style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;"
+                            >
+                                {{ $event->category->name }}
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        @else
+            <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No past events yet.</p>
+        @endif
+    </div>
 </div>
 
 <div class="event-manager-readonly-modal" id="{{ $containerId }}DetailsModal">
@@ -593,7 +643,7 @@
 </div>
 
 @php
-    $readonlyEventEntries = $displayEvents->map(function ($event) use ($eventTeamLabels) {
+    $readonlyEventEntries = $allEvents->map(function ($event) use ($eventTeamLabels) {
         return [
             'id' => $event->id,
             'title' => $event->title,
@@ -609,6 +659,7 @@
             'reminder_minutes' => $event->reminder_minutes,
             'recurrence_pattern' => $event->recurrence_pattern ?? 'none',
             'recurrence_until_label' => optional($event->recurrence_until)->format('F d, Y'),
+            'is_upcoming' => method_exists($event, 'isUpcoming') ? $event->isUpcoming() : optional($event->event_date)->isFuture(),
         ];
     })->values();
 @endphp
@@ -659,18 +710,21 @@
 
             const filteredEvents = getFilteredEvents();
             const visibleIds = new Set(filteredEvents.map((event) => String(event.id)));
-            const eventsByDate = filteredEvents.reduce((carry, event) => {
-                if (!carry[event.event_date]) carry[event.event_date] = [];
-                carry[event.event_date].push(event);
-                return carry;
-            }, {});
 
-            document.querySelectorAll(`#${containerId} .readonly-event-item`).forEach((item) => {
+            document.querySelectorAll(`#${containerId} .readonly-filter-item`).forEach((item) => {
                 item.style.display = visibleIds.has(String(item.dataset.eventId)) ? '' : 'none';
             });
 
+            const upcomingEventsByDate = filteredEvents
+                .filter((event) => event.is_upcoming)
+                .reduce((carry, event) => {
+                    if (!carry[event.event_date]) carry[event.event_date] = [];
+                    carry[event.event_date].push(event);
+                    return carry;
+                }, {});
+
             document.querySelectorAll(`#${containerId} .day-num[data-date]`).forEach((dayNode) => {
-                const dayEvents = eventsByDate[dayNode.dataset.date] || [];
+                const dayEvents = upcomingEventsByDate[dayNode.dataset.date] || [];
                 const firstEvent = dayEvents[0] || null;
                 const isToday = dayNode.classList.contains('today');
                 dayNode.classList.toggle('has-event', dayEvents.length > 0);
@@ -704,7 +758,7 @@
 
         window.openReadonlyEventDateDetails = function (targetId, dateStr) {
             if (targetId !== containerId) return;
-            const dayEvents = getFilteredEvents().filter((event) => event.event_date === dateStr);
+            const dayEvents = getFilteredEvents().filter((event) => event.event_date === dateStr && event.is_upcoming);
             if (!dayEvents.length) return;
 
             document.getElementById(`${containerId}DetailsTitle`).innerText = `Events on ${dateStr}`;

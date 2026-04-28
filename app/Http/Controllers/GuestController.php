@@ -70,7 +70,11 @@ class GuestController extends Controller
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
 
-        // Fetch Calendar Events
+        // Fetch all events so the dashboard can show upcoming and past entries.
+        $events = \App\Models\Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
         $upcomingEventsQuery = \App\Models\Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
@@ -85,7 +89,6 @@ class GuestController extends Controller
                     });
             })
             ->orderBy('event_date', 'asc');
-        $events = (clone $upcomingEventsQuery)->get();
         $paginatedEvents = (clone $upcomingEventsQuery)
             ->paginate(5, ['*'], 'events_page')
             ->withQueryString();
@@ -125,6 +128,10 @@ class GuestController extends Controller
         $resolutions = IaResolution::orderBy('created_at', 'desc')
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
+        $events = Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
         $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
@@ -139,7 +146,6 @@ class GuestController extends Controller
                     });
             })
             ->orderBy('event_date', 'asc');
-        $events = (clone $upcomingEventsQuery)->get();
         $paginatedEvents = (clone $upcomingEventsQuery)
             ->paginate(5, ['*'], 'events_page')
             ->withQueryString();

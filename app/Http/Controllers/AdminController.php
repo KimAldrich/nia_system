@@ -66,6 +66,19 @@ class AdminController extends Controller
             ->orderBy('event_date', 'asc');
 
         $events = (clone $upcomingEventsQuery)->get();
+        $pastEvents = Event::with('category')
+            ->whereHas('category')
+            ->where(function ($query) {
+                $query->where('event_date', '<', now()->format('Y-m-d'))
+                    ->orWhere(function ($query) {
+                        $today = now()->format('Y-m-d');
+                        $currentTime = now()->format('H:i:s');
+                        $query->where('event_date', $today)
+                            ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) <= '{$currentTime}'");
+                    });
+            })
+            ->orderBy('event_date', 'desc')
+            ->get();
         $paginatedEvents = (clone $upcomingEventsQuery)
             ->paginate(5, ['*'], 'events_page')
             ->withQueryString();
@@ -78,6 +91,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'resolutions',
             'events',
+            'pastEvents',
             'paginatedEvents',
             'categories',
             'downloadables',
@@ -293,10 +307,19 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
+        $fileValidationMessages = [
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+            'team.required' => 'Please select a team.',
+            'team.in' => 'Please select a valid team.',
+        ];
+
         $request->validate([
             'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
             'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
-        ]);
+        ], $fileValidationMessages);
 
         $file = $request->file('document');
         $path = $file->store('forms', 'public');
@@ -319,10 +342,19 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
+        $fileValidationMessages = [
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+            'team.required' => 'Please select a team.',
+            'team.in' => 'Please select a valid team.',
+        ];
+
         $request->validate([
             'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
             'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
-        ]);
+        ], $fileValidationMessages);
 
         $file = $request->file('document');
         $path = $file->store('resolutions', 'public');
