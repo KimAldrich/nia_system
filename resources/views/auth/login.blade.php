@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="{{ asset('images/2020-nia-logo.png') }}">
-    <title>System Login</title>
+    <title>Planning Login</title>
     <style>
         :root {
             --primary: #0b5e2c;
