@@ -25,11 +25,22 @@ class AdministrativeController extends Controller
     // 2. Upload a Document
     public function store(Request $request)
     {
+        $fileValidationMessages = [
+            'title.required' => 'Please enter a document title.',
+            'title.max' => 'The document title must not exceed 255 characters.',
+            'document_type.required' => 'Please select a document type.',
+            'document_type.in' => 'Please select a valid document type.',
+            'file.required' => 'Please select a file to upload.',
+            'file.file' => 'Only document files are allowed.',
+            'file.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'file.max' => 'Each file must not be larger than 10 MB.',
+        ];
+
         $request->validate([
             'title' => 'required|string|max:255',
             'document_type' => 'required|in:memorandum,minutes',
             'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:10240', // 10MB max
-        ]);
+        ], $fileValidationMessages);
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
