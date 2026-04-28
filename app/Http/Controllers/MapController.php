@@ -11,7 +11,7 @@ use ZipArchive;
 
 class MapController extends Controller
 {
-    private const IRRIGATED_CHART_CACHE_KEY = 'map.irrigated_chart_data.v2';
+    private const IRRIGATED_CHART_CACHE_KEY = 'map.irrigated_chart_data.v5';
     private const MUNICIPALITY_DETAILS_PATH = 'maps/details.json';
     private const IRRIGATED_DIRECTORY = 'maps/irrigated';
     private const POTENTIAL_DIRECTORY = 'maps/potential';
@@ -363,10 +363,10 @@ class MapController extends Controller
 
             foreach ($municipalityDetails as $normalizedName => $detail) {
                 $name = $detail['name'];
-                $totalLand = (float) ($detail['total_land_area_ha'] ?? 0);
-                $piaArea = round((float) ($piaStats[$normalizedName]['pia_area'] ?? 0), 2);
-                $computedIrrigatedArea = round((float) ($irrigatedStats[$normalizedName]['irrigated_area'] ?? 0), 2);
-                $fallbackIrrigatedArea = round((float) ($detail['area_developed_ha'] ?? 0), 2);
+                $totalLand = max(0, (float) ($detail['total_land_area_ha'] ?? 0));
+                $piaArea = round(max(0, (float) ($piaStats[$normalizedName]['pia_area'] ?? 0)), 2);
+                $computedIrrigatedArea = round(max(0, (float) ($irrigatedStats[$normalizedName]['irrigated_area'] ?? 0)), 2);
+                $fallbackIrrigatedArea = round(max(0, (float) ($detail['area_developed_ha'] ?? 0)), 2);
                 $irrigatedArea = $computedIrrigatedArea;
                 $irrigatedAreaSource = 'dbf';
 
@@ -378,7 +378,16 @@ class MapController extends Controller
                     $irrigatedAreaSource = 'details_json';
                 }
 
-                $remainingArea = round($piaArea - $irrigatedArea, 2);
+                if ($piaArea > 0 && $irrigatedArea > $piaArea) {
+                    if ($fallbackIrrigatedArea > 0 && ($totalLand <= 0 || $fallbackIrrigatedArea <= $totalLand)) {
+                        $irrigatedArea = $fallbackIrrigatedArea;
+                        $irrigatedAreaSource = 'details_json';
+                    } else {
+                        $irrigatedArea = $piaArea;
+                    }
+                }
+
+                $remainingArea = round(max(0, $piaArea - $irrigatedArea), 2);
 
                 $chartData[$name] = [
                     'name' => $name,
@@ -431,10 +440,10 @@ class MapController extends Controller
     private function collectIrrigatedAreas(array $municipalityDetails): array
     {
         return $this->collectAreasFromDbfDirectory(
-            public_path('storage/' . self::IRRIGATED_DIRECTORY),
+            $this->resolveMapDataDirectory(self::IRRIGATED_DIRECTORY),
             $municipalityDetails,
             function (string $path, array $record) use ($municipalityDetails): ?string {
-                if (str_contains(strtolower($path), 'potential ia')) {
+                if ($this->shouldSkipIrrigatedPath($path)) {
                     return null;
                 }
 
@@ -449,7 +458,7 @@ class MapController extends Controller
     private function collectPotentialAreas(array $municipalityDetails): array
     {
         return $this->collectAreasFromDbfDirectory(
-            public_path('storage/' . self::POTENTIAL_DIRECTORY),
+            $this->resolveMapDataDirectory(self::POTENTIAL_DIRECTORY),
             $municipalityDetails,
             function (string $path, array $record) use ($municipalityDetails): ?string {
                 $layerName = (string) ($record['layer'] ?? $record['name'] ?? '');
@@ -512,6 +521,10 @@ class MapController extends Controller
             $fileRegistered = false;
 
             while ($record = $reader->nextRecord()) {
+                if (method_exists($record, 'isDeleted') && $record->isDeleted()) {
+                    continue;
+                }
+
                 $recordData = [];
 
                 foreach (array_keys($reader->getColumns()) as $column) {
@@ -552,7 +565,7 @@ class MapController extends Controller
                     $resolvedArea = $this->extractAreaFromGeometryRecord($shapeRecord);
                 }
 
-                $aggregated[$normalizedMunicipality][$areaKey] += $resolvedArea;
+                $aggregated[$normalizedMunicipality][$areaKey] += max(0, (float) $resolvedArea);
             }
 
             $reader->close();
@@ -564,6 +577,18 @@ class MapController extends Controller
         }
 
         return $aggregated;
+    }
+
+    private function resolveMapDataDirectory(string $relativeDirectory): string
+    {
+        $relativeDirectory = trim(str_replace('\\', '/', $relativeDirectory), '/');
+        $primaryPath = storage_path('app/public/' . $relativeDirectory);
+
+        if (is_dir($primaryPath)) {
+            return $primaryPath;
+        }
+
+        return public_path('storage/' . $relativeDirectory);
     }
 
     private function extractIrrigatedAreaValue(array $record): float
@@ -634,6 +659,15 @@ class MapController extends Controller
         }
 
         return round($this->calculateGeoJsonArea($geometry), 2);
+    }
+
+    private function shouldSkipIrrigatedPath(string $path): bool
+    {
+        $normalizedPath = strtolower($path);
+
+        return str_contains($normalizedPath, 'potential ia')
+            || str_contains($normalizedPath, 'non-operational')
+            || str_contains($normalizedPath, 'non operational');
     }
 
     private function fetchShapeRecordSafely(?ShapefileReader &$shapeReader)
