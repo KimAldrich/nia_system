@@ -31,7 +31,6 @@ Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.lo
 Route::get('/guest/pao-team/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('guest.pao.pow.export');
 
 Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
-Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 Route::get('/guest/{team_slug}/dashboard', [GuestController::class, 'teamDashboard'])->name('guest.team.dashboard');
 Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
 Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'teamResolutions'])->name('guest.team.resolutions');
@@ -48,6 +47,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
         Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
         Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
+        Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 
     //guest
     // Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
