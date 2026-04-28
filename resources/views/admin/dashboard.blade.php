@@ -37,9 +37,9 @@
         .section-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         
         /* Soft Modals */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
-        .modal-box { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .modal-box { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 400px; max-height: calc(100vh - 48px); overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin: auto; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Soft UI Tables */
@@ -128,6 +128,38 @@
 
     @php
         $totalDownloads = isset($downloadables) ? $downloadables->count() : 0;
+        $eventTeamLabels = [
+            'all' => 'All Teams (General Event)',
+            'fs_team' => 'FS Team',
+            'rpwsis_team' => 'Social and Environmental Team',
+            'cm_team' => 'Contract Management Team',
+            'row_team' => 'Right Of Way Team',
+            'pcr_team' => 'Program Completion Report Team',
+            'pao_team' => 'Programming Team',
+        ];
+        $adminPastEvents = collect($pastEvents ?? [])->values();
+        $adminAllEvents = collect($events ?? [])->concat($adminPastEvents)->values();
+
+        $adminEventEntries = $adminAllEvents->map(function ($event) use ($eventTeamLabels) {
+            return [
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'event_date' => optional($event->event_date)->format('Y-m-d'),
+                'event_date_label' => optional($event->event_date)->format('F d, Y'),
+                'event_time' => $event->event_time,
+                'event_category_id' => $event->event_category_id,
+                'category_name' => optional($event->category)->name,
+                'category_color' => optional($event->category)->color,
+                'team' => $event->team,
+                'team_label' => $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', (string) $event->team)),
+                'reminder_minutes' => $event->reminder_minutes,
+                'recurrence_pattern' => $event->recurrence_pattern ?? 'none',
+                'recurrence_until' => optional($event->recurrence_until)->format('Y-m-d'),
+                'recurrence_until_label' => optional($event->recurrence_until)->format('F d, Y'),
+                'is_upcoming' => method_exists($event, 'isUpcoming') ? $event->isUpcoming() : optional($event->event_date)->isFuture(),
+            ];
+        })->values();
     @endphp
 
     <div class="kpi-grid">
@@ -166,7 +198,7 @@
             </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card" id="upcomingEventsKpi">
             <div class="kpi-title">Upcoming Events</div>
             <div class="kpi-value">{{ isset($events) ? $events->count() : '0' }}</div>
             <div class="kpi-icon purple">
@@ -191,12 +223,12 @@
 
             <div class="ui-card">
                 <div class="section-title">Upload Downloadable File to Team</div>
-                <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true">
+                <form action="{{ route('admin.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true" data-file-upload-feedback="true" data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed">
                     @csrf
                     <div style="margin-bottom: 15px;">
                         <label class="modern-label">Select Team</label>
                         <select name="team" required class="modern-input">
-                            <option value="" disabled selected>-- Choose Team --</option>
+                            <option value="" disabled selected>Choose Team</option>
                             <option value="fs_team">FS Team</option>
                             <option value="rpwsis_team">Social and Environmental Team</option>
                             <option value="cm_team">CM Team</option>
@@ -207,7 +239,7 @@
                     </div>
                     <div style="margin-bottom: 20px;">
                         <label class="modern-label">Upload File</label>
-                        <input type="file" name="document" required class="modern-input" style="padding: 7px 12px;">
+                        <input type="file" name="document" required accept=".pdf,.doc,.docx,.xls,.xlsx" class="modern-input" style="padding: 7px 12px;">
                     </div>
                     <button type="submit" class="modern-btn">Upload File</button>
                 </form>
@@ -215,12 +247,12 @@
 
             <div class="ui-card">
                 <div class="section-title">Upload IA Resolution File to Team</div>
-                <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true">
+                <form action="{{ route('admin.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async="true" data-async-reset="true" data-file-upload-feedback="true" data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed">
                     @csrf
                     <div style="margin-bottom: 15px;">
                         <label class="modern-label">Select Team</label>
                         <select name="team" required class="modern-input">
-                            <option value="" disabled selected>-- Choose Team --</option>
+                            <option value="" disabled selected>Choose Team</option>
                             <option value="fs_team">FS Team</option>
                             <option value="rpwsis_team">Social and Environmental Team</option>
                             <option value="cm_team">CM Team</option>
@@ -231,7 +263,7 @@
                     </div>
                     <div style="margin-bottom: 20px;">
                         <label class="modern-label">Upload File</label>
-                        <input type="file" name="document" required class="modern-input" style="padding: 7px 12px;">
+                        <input type="file" name="document" required accept=".pdf,.doc,.docx,.xls,.xlsx" class="modern-input" style="padding: 7px 12px;">
                     </div>
                     <button type="submit" class="modern-btn">Upload Resolution</button>
                 </form>
@@ -275,6 +307,8 @@
             <div class="ui-card" id="eventManagerCard">
                 <div class="section-title" style="margin-bottom: 15px;">Event Manager</div>
 
+                <script type="application/json" id="adminEventEntriesData">@json($adminEventEntries)</script>
+
                 <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin: 0;">Event Legend</p>
@@ -287,6 +321,27 @@
                             <p style="font-size: 11px; color: #a0aec0; margin: 0;">No custom tags created yet.</p>
                         @endforelse
                     </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+                    <label>
+                        <span style="display:block; font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 6px;">Filter by Tag</span>
+                        <select id="adminEventTagFilter" class="modern-input">
+                            <option value="">All tags</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label>
+                        <span style="display:block; font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 6px;">Filter by Team</span>
+                        <select id="adminEventTeamFilter" class="modern-input">
+                            <option value="">All teams</option>
+                            @foreach($eventTeamLabels as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
                 </div>
 
                 <div class="calendar-carousel">
@@ -330,9 +385,10 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                                             $dateString = $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT);
                                             $ringColor = ($hasEvent && $dayEvents->first()->category) ? $dayEvents->first()->category->color : '#18181b';
                                         @endphp
-<div class="day-num clickable {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }} {{ ($dateString < $today->format('Y-m-d')) ? 'past' : '' }}" 
+<div class="day-num clickable {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }} {{ ($dateString < $today->format('Y-m-d')) ? 'past' : '' }}"
+                                             data-date="{{ $dateString }}"
                                              style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}{{ ($dateString < $today->format('Y-m-d')) ? '; opacity: 0.4; cursor: not-allowed;' : '' }}"
-                                             onclick="openEventModal('{{ $dateString }}')" title="{{ ($dateString < $today->format('Y-m-d')) ? 'Past dates cannot be scheduled' : 'Click to schedule event' }}">
+                                             onclick="handleAdminCalendarDayClick('{{ $dateString }}')" title="{{ ($dateString < $today->format('Y-m-d')) ? 'Past dates cannot be scheduled' : 'Click to view or schedule events' }}">
                                             {{ $day }}
                                         </div>
                                     @endfor
@@ -348,14 +404,22 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
                 <div style="margin-top: 10px;">
                     <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">Upcoming Schedule</p>
-                    @if(isset($paginatedEvents) && $paginatedEvents->count() > 0)
-                        @foreach($paginatedEvents as $event)
-                            <div class="mini-event">
+                    @if(isset($events) && $events->count() > 0)
+                        @foreach($events as $event)
+                            <div class="mini-event admin-event-item admin-upcoming-event-item admin-filter-item"
+                                data-event-id="{{ $event->id }}"
+                                data-category-id="{{ $event->event_category_id }}"
+                                data-team="{{ $event->team }}"
+                                onclick="openAdminEventDetailsById({{ $event->id }})"
+                                style="justify-content: space-between; cursor: pointer;">
                                 <div style="display: flex; gap: 15px; align-items: center;">
                                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
                                     <div>
                                         <h4 class="mini-event-title">{{ $event->title }}</h4>
                                         <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
+                                        @if(!empty($event->team))
+                                            <p class="mini-event-time" style="margin-top: 4px;">{{ $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', $event->team)) }}</p>
+                                        @endif
                                         @if($event->category)
                                             <span class="event-tag" style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;">
                                                 {{ $event->category->name }}
@@ -363,46 +427,56 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                                         @endif
                                     </div>
                                 </div>
-                                <form action="{{ route('admin.events.destroy', $event->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard" data-async-confirm="Delete this event?">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 18px; padding: 0 5px; transition: 0.2s;" title="Delete Event" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#f87171'">×</button>
-                                </form>
+                                <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation()">
+                                    <button type="button" class="modern-btn modern-btn-outline" style="padding: 8px 10px; font-size: 12px;" onclick="openAdminEventEditor({{ $event->id }})">Edit</button>
+                                    <form action="{{ route('admin.events.destroy', $event->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard, #upcomingEventsKpi" data-async-confirm="Delete this event?">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 18px; padding: 0 5px; transition: 0.2s;" title="Delete Event" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#f87171'">×</button>
+                                    </form>
+                                </div>
                             </div>
                         @endforeach
-
-                        @if ($paginatedEvents->hasPages())
-                            <div class="custom-pagination">
-                                @if ($paginatedEvents->onFirstPage())
-                                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></span>
-                                @else
-                                    <a href="{{ $paginatedEvents->withQueryString()->previousPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#eventManagerCard"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></a>
-                                @endif
-
-                                @foreach ($paginatedEvents->withQueryString()->links()->elements as $element)
-                                    @if (is_string($element))
-                                        <span class="page-item disabled">{{ $element }}</span>
-                                    @endif
-
-                                    @if (is_array($element))
-                                        @foreach ($element as $page => $url)
-                                            @if ($page == $paginatedEvents->currentPage())
-                                                <span class="page-item active">{{ $page }}</span>
-                                            @else
-                                                <a href="{{ $url }}" class="page-item" data-async-pagination="true" data-async-target="#eventManagerCard">{{ $page }}</a>
-                                            @endif
-                                        @endforeach
-                                    @endif
-                                @endforeach
-
-                                @if ($paginatedEvents->hasMorePages())
-                                    <a href="{{ $paginatedEvents->withQueryString()->nextPageUrl() }}" class="page-item" data-async-pagination="true" data-async-target="#eventManagerCard"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></a>
-                                @else
-                                    <span class="page-item disabled"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></span>
-                                @endif
-                            </div>
-                        @endif
                     @else
                         <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
+                    @endif
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <p style="font-size: 11px; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px;">Past Events</p>
+                    @if(isset($pastEvents) && $pastEvents->count() > 0)
+                        @foreach($pastEvents as $event)
+                            <div class="mini-event admin-event-item admin-past-event-item admin-filter-item"
+                                data-event-id="{{ $event->id }}"
+                                data-category-id="{{ $event->event_category_id }}"
+                                data-team="{{ $event->team }}"
+                                onclick="openAdminEventDetailsById({{ $event->id }})"
+                                style="justify-content: space-between; cursor: pointer;">
+                                <div style="display: flex; gap: 15px; align-items: center;">
+                                    <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
+                                    <div>
+                                        <h4 class="mini-event-title">{{ $event->title }}</h4>
+                                        <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
+                                        @if(!empty($event->team))
+                                            <p class="mini-event-time" style="margin-top: 4px;">{{ $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', $event->team)) }}</p>
+                                        @endif
+                                        @if($event->category)
+                                            <span class="event-tag" style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;">
+                                                {{ $event->category->name }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation()">
+                                    <button type="button" class="modern-btn modern-btn-outline" style="padding: 8px 10px; font-size: 12px;" onclick="openAdminEventEditor({{ $event->id }})">Edit</button>
+                                    <form action="{{ route('admin.events.destroy', $event->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard, #upcomingEventsKpi" data-async-confirm="Delete this event?">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 18px; padding: 0 5px; transition: 0.2s;" title="Delete Event" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#f87171'">×</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No past events yet.</p>
                     @endif
                 </div>
             </div>
@@ -411,18 +485,25 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
     <div class="modal-overlay" id="eventModal">
         <div class="modal-box">
-            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;">Schedule Event</h3>
+            <div id="eventModalContent">
+            <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;" id="eventModalTitle">Schedule Event</h3>
             <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">Adding event for: <strong id="displayDate" style="color: #4f46e5;"></strong></p>
             
-            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard, #eventModal" data-async-reset="true" data-async-close="#eventModal">
+            <form action="{{ route('admin.events.store') }}" method="POST" id="eventForm" data-async-target="#eventManagerCard, #eventModalContent, #upcomingEventsKpi" data-async-reset="true" data-async-close="#eventModal" data-async-reload="true">
                 @csrf
+                <input type="hidden" name="_method" id="eventFormMethod" value="POST">
+                <input type="hidden" id="eventIdInput" value="">
                 <div style="margin-bottom: 15px;">
                     <label class="modern-label">Event Date</label>
                     <input type="text" name="event_date" id="eventDateInput" required class="modern-input" style="cursor: pointer;">
                 </div>
                 <div style="margin-bottom: 15px;">
                     <label class="modern-label">Event Title</label>
-                    <input type="text" name="title" required placeholder="e.g. System Maintenance" class="modern-input">
+                    <input type="text" name="title" id="eventTitleInput" required placeholder="e.g. System Maintenance" class="modern-input">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label class="modern-label">Full Details</label>
+                    <textarea name="description" id="eventDescriptionInput" placeholder="Event agenda, venue, contact person, or notes" class="modern-input" rows="4"></textarea>
                 </div>
                 <input type="hidden" name="event_time" id="finalTimeInput">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -435,9 +516,45 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                         <input type="text" id="endTime" required class="modern-input" style="cursor: pointer;">
                     </div>
                 </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label class="modern-label">Team</label>
+                        <select name="team" id="eventTeamInput" required class="modern-input">
+                            @foreach($eventTeamLabels as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="modern-label">Reminder</label>
+                        <select name="reminder_minutes" id="eventReminderInput" class="modern-input">
+                            <option value="">No reminder</option>
+                            <option value="15">15 minutes before</option>
+                            <option value="30">30 minutes before</option>
+                            <option value="60">1 hour before</option>
+                            <option value="1440">1 day before</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label class="modern-label">Recurring Event</label>
+                        <select name="recurrence_pattern" id="eventRecurrenceInput" class="modern-input">
+                            <option value="none">Does not repeat</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="modern-label">Repeat Until</label>
+                        <input type="text" name="recurrence_until" id="eventRecurrenceUntilInput" class="modern-input" placeholder="Optional">
+                    </div>
+                </div>
                 <div style="margin-bottom: 25px;">
                     <label class="modern-label">Category Tag</label>
-                    <select name="event_category_id" required class="modern-input">
+                    <input type="hidden" name="event_category_id" id="eventCategoryValueInput">
+                    <select id="eventCategoryInput" required class="modern-input">
                         @forelse($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                         @empty
@@ -447,21 +564,40 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" onclick="closeEventModal()" class="modern-btn modern-btn-outline" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="modern-btn" style="flex: 1;">Save Event</button>
+                    <button type="submit" class="modern-btn" style="flex: 1;" id="eventFormSubmitButton">Save Event</button>
                 </div>
             </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="eventDetailsModal">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom: 18px;">
+                <div>
+                    <h3 style="margin:0; font-size:18px; color:#1e293b;" id="eventDetailsTitle">Event Details</h3>
+                    <p style="margin:6px 0 0; font-size:12px; color:#64748b;" id="eventDetailsMeta"></p>
+                </div>
+                <button type="button" onclick="closeEventDetailsModal()" style="background:none; border:none; font-size:28px; line-height:1; cursor:pointer;">&times;</button>
+            </div>
+            <div id="eventDetailsBody" style="display:grid; gap:12px; color:#334155; font-size:14px;"></div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button type="button" onclick="closeEventDetailsModal()" class="modern-btn modern-btn-outline" style="flex:1;">Close</button>
+                <button type="button" onclick="editActiveEventFromDetails()" class="modern-btn" style="flex:1;">Edit Event</button>
+            </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="categoryModal">
         <div class="modal-box">
+            <div id="categoryModalContent">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b;">Manage Event Tags</h3>
             <div style="margin-bottom: 20px; max-height: 150px; overflow-y: auto;">
                 @if($categories->count() > 0)
                     @foreach($categories as $cat)
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
                             <div class="legend-item"><div class="legend-dot" style="background: {{ $cat->color }};"></div>{{ $cat->name }}</div>
-                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;" data-async-target="#eventManagerCard, #eventModal, #categoryModal" data-async-confirm="Delete this tag?">
+                            <form action="{{ route('admin.categories.destroy', $cat->id ?? 0) }}" method="POST" style="margin: 0;" onsubmit="return handleCategoryTagSubmit(event, true)">
                                 @csrf @method('DELETE')
                                 <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px; font-weight: 600;">Delete</button>
                             </form>
@@ -471,7 +607,7 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                     <p style="font-size: 12px; color: #a0aec0; text-align: center;">No custom tags created yet.</p>
                 @endif
             </div>
-            <form action="{{ route('admin.categories.store') }}" method="POST" data-async-target="#eventManagerCard, #eventModal, #categoryModal" data-async-reset="true">
+            <form action="{{ route('admin.categories.store') }}" method="POST" onsubmit="return handleCategoryTagSubmit(event)">
                 @csrf
                 <p style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 10px;">Add New Tag</p>
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
@@ -490,16 +626,37 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                     <button type="submit" class="modern-btn" style="flex: 1;">Save Tag</button>
                 </div>
             </form>
+            </div>
         </div>
     </div>
 
     <script>
         let activeMonth = {{ \Carbon\Carbon::now()->month }};
+        let adminEventEntries = [];
+        let activeEventId = null;
+
+        function syncAdminEventEntries() {
+            const entriesNode = document.getElementById('adminEventEntriesData');
+
+            if (!entriesNode) {
+                adminEventEntries = [];
+                return;
+            }
+
+            try {
+                adminEventEntries = JSON.parse(entriesNode.textContent || '[]');
+            } catch (error) {
+                adminEventEntries = [];
+            }
+        }
 
         function initializeAdminDashboard() {
+            syncAdminEventEntries();
             initializeAdminCharts();
             initializeAdminEventForm();
+            initializeAdminEventFilters();
             updateCalendarView();
+            applyAdminEventFilters();
         }
 
         function initializeAdminCharts() {
@@ -549,12 +706,18 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
         function initializeAdminEventForm() {
             const eventDateInput = document.getElementById('eventDateInput');
+            const recurrenceUntilInput = document.getElementById('eventRecurrenceUntilInput');
             const startTimeInput = document.getElementById('startTime');
             const endTimeInput = document.getElementById('endTime');
+            const eventCategoryInput = document.getElementById('eventCategoryInput');
             const eventForm = document.getElementById('eventForm');
 
             if (eventDateInput && !eventDateInput._flatpickr) {
                 flatpickr(eventDateInput, { dateFormat: "Y-m-d", minDate: "today" });
+            }
+
+            if (recurrenceUntilInput && !recurrenceUntilInput._flatpickr) {
+                flatpickr(recurrenceUntilInput, { dateFormat: "Y-m-d", minDate: "today" });
             }
 
             if (startTimeInput && !startTimeInput._flatpickr) {
@@ -565,13 +728,342 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
                 flatpickr(endTimeInput, { enableTime: true, noCalendar: true, dateFormat: "h:i K", defaultDate: "10:30" });
             }
 
+            if (eventCategoryInput && eventCategoryInput.dataset.bound !== 'true') {
+                eventCategoryInput.addEventListener('change', syncAdminEventCategoryInput);
+                eventCategoryInput.dataset.bound = 'true';
+            }
+
+            syncAdminEventCategoryInput();
+
             if (eventForm && eventForm.dataset.bound !== 'true') {
                 eventForm.addEventListener('submit', function() {
-                    let start = document.getElementById('startTime').value;
-                    let end = document.getElementById('endTime').value;
+                    const start = document.getElementById('startTime').value;
+                    const end = document.getElementById('endTime').value;
+                    const recurrencePattern = document.getElementById('eventRecurrenceInput').value || 'none';
+                    syncAdminEventCategoryInput();
                     document.getElementById('finalTimeInput').value = start + ' - ' + end;
+                    if (recurrencePattern === 'none') {
+                        document.getElementById('eventRecurrenceUntilInput').value = '';
+                    }
                 });
                 eventForm.dataset.bound = 'true';
+            }
+        }
+
+        function syncAdminEventCategoryInput() {
+            const categorySelect = document.getElementById('eventCategoryInput');
+            const categoryValueInput = document.getElementById('eventCategoryValueInput');
+
+            if (!categorySelect || !categoryValueInput) {
+                return;
+            }
+
+            categoryValueInput.value = categorySelect.value || '';
+        }
+
+        function initializeAdminEventFilters() {
+            const tagFilter = document.getElementById('adminEventTagFilter');
+            const teamFilter = document.getElementById('adminEventTeamFilter');
+
+            if (tagFilter && tagFilter.dataset.bound !== 'true') {
+                tagFilter.addEventListener('change', applyAdminEventFilters);
+                tagFilter.dataset.bound = 'true';
+            }
+
+            if (teamFilter && teamFilter.dataset.bound !== 'true') {
+                teamFilter.addEventListener('change', applyAdminEventFilters);
+                teamFilter.dataset.bound = 'true';
+            }
+        }
+
+        function getFilteredAdminEvents() {
+            const selectedTag = document.getElementById('adminEventTagFilter')?.value || '';
+            const selectedTeam = document.getElementById('adminEventTeamFilter')?.value || '';
+
+            return adminEventEntries.filter((event) => {
+                const matchesTag = !selectedTag || String(event.event_category_id || '') === String(selectedTag);
+                const matchesTeam = !selectedTeam || String(event.team || '') === String(selectedTeam);
+                return matchesTag && matchesTeam;
+            });
+        }
+
+        function applyAdminEventFilters() {
+            const filteredEvents = getFilteredAdminEvents();
+            const visibleIds = new Set(filteredEvents.map(event => String(event.id)));
+            const eventsByDate = filteredEvents
+                .filter((event) => event.is_upcoming)
+                .reduce((carry, event) => {
+                if (!carry[event.event_date]) {
+                    carry[event.event_date] = [];
+                }
+                carry[event.event_date].push(event);
+                return carry;
+            }, {});
+
+            document.querySelectorAll('.admin-filter-item').forEach((item) => {
+                item.style.display = visibleIds.has(String(item.dataset.eventId)) ? '' : 'none';
+            });
+
+            document.querySelectorAll('.day-num.clickable[data-date]').forEach((dayNode) => {
+                const dayEvents = eventsByDate[dayNode.dataset.date] || [];
+                const firstEvent = dayEvents[0] || null;
+                const isToday = dayNode.classList.contains('today');
+                const isPast = dayNode.classList.contains('past');
+
+                dayNode.classList.toggle('has-event', dayEvents.length > 0);
+                if (dayEvents.length > 0 && !isToday) {
+                    dayNode.style.border = `2px solid ${firstEvent.category_color || '#18181b'}`;
+                    dayNode.style.color = firstEvent.category_color || '#18181b';
+                } else if (!isToday) {
+                    dayNode.style.border = '';
+                    dayNode.style.color = '';
+                }
+
+                if (isPast) {
+                    dayNode.style.opacity = '0.4';
+                    dayNode.style.cursor = 'not-allowed';
+                } else {
+                    dayNode.style.opacity = '';
+                    dayNode.style.cursor = 'pointer';
+                }
+            });
+        }
+
+        function pruneDeletedCategoryEvents(payload = {}) {
+            const deletedCategoryId = payload.deleted_category_id;
+            const deletedEventIds = new Set((payload.deleted_event_ids || []).map((id) => String(id)));
+
+            if (!deletedCategoryId && deletedEventIds.size === 0) {
+                return;
+            }
+
+            adminEventEntries = adminEventEntries.filter((event) => {
+                if (deletedEventIds.size > 0 && deletedEventIds.has(String(event.id))) {
+                    return false;
+                }
+
+                if (deletedCategoryId && String(event.event_category_id || '') === String(deletedCategoryId)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            document.querySelectorAll('.admin-event-item').forEach((item) => {
+                const matchesDeletedEvent = deletedEventIds.has(String(item.dataset.eventId));
+                const matchesDeletedCategory = deletedCategoryId && String(item.dataset.categoryId || '') === String(deletedCategoryId);
+
+                if (matchesDeletedEvent || matchesDeletedCategory) {
+                    item.remove();
+                }
+            });
+
+            const visibleEventCount = document.querySelectorAll('.admin-upcoming-event-item').length;
+            const upcomingScheduleSection = document.querySelector('#eventManagerCard div[style*="margin-top: 10px;"]');
+
+            if (upcomingScheduleSection && visibleEventCount === 0 && !upcomingScheduleSection.querySelector('.admin-upcoming-event-item')) {
+                const emptyState = document.createElement('p');
+                emptyState.style.fontSize = '12px';
+                emptyState.style.color = '#a0aec0';
+                emptyState.style.textAlign = 'center';
+                emptyState.style.marginTop = '20px';
+                emptyState.textContent = 'No upcoming events.';
+                upcomingScheduleSection.appendChild(emptyState);
+            }
+
+            applyAdminEventFilters();
+        }
+
+        function resetAdminEventForm() {
+            const form = document.getElementById('eventForm');
+            if (!form) return;
+
+            form.action = "{{ route('admin.events.store') }}";
+            document.getElementById('eventFormMethod').value = 'POST';
+            document.getElementById('eventIdInput').value = '';
+            document.getElementById('eventModalTitle').innerText = 'Schedule Event';
+            document.getElementById('eventFormSubmitButton').innerText = 'Save Event';
+            document.getElementById('displayDate').innerText = '';
+            form.reset();
+            syncAdminEventCategoryInput();
+        }
+
+        function openEventModal(dateStr) {
+            resetAdminEventForm();
+            const today = new Date().toISOString().split('T')[0];
+            if (dateStr < today) {
+                alert('Cannot schedule events in the past. Please select today or a future date.');
+                return;
+            }
+
+            document.getElementById('eventDateInput').value = dateStr;
+            document.getElementById('displayDate').innerText = dateStr;
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        function openAdminEventEditor(id) {
+            const event = adminEventEntries.find(entry => String(entry.id) === String(id));
+            if (!event) return;
+
+            resetAdminEventForm();
+            document.getElementById('eventForm').action = `/admin/events/${event.id}`;
+            document.getElementById('eventFormMethod').value = 'PATCH';
+            document.getElementById('eventIdInput').value = event.id;
+            document.getElementById('eventModalTitle').innerText = 'Edit Event';
+            document.getElementById('eventFormSubmitButton').innerText = 'Update Event';
+            document.getElementById('displayDate').innerText = event.event_date;
+            document.getElementById('eventDateInput').value = event.event_date;
+            document.getElementById('eventTitleInput').value = event.title || '';
+            document.getElementById('eventDescriptionInput').value = event.description || '';
+            document.getElementById('eventTeamInput').value = event.team || 'fs_team';
+            document.getElementById('eventReminderInput').value = event.reminder_minutes ?? '';
+            document.getElementById('eventRecurrenceInput').value = event.recurrence_pattern || 'none';
+            document.getElementById('eventRecurrenceUntilInput').value = event.recurrence_until || '';
+            document.getElementById('eventCategoryInput').value = event.event_category_id || '';
+            syncAdminEventCategoryInput();
+
+            const [startTime = '', endTime = ''] = String(event.event_time || '').split(' - ');
+            document.getElementById('startTime').value = startTime;
+            document.getElementById('endTime').value = endTime;
+
+            activeEventId = event.id;
+            closeEventDetailsModal();
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.remove('active');
+            resetAdminEventForm();
+        }
+
+        function handleAdminCalendarDayClick(dateStr) {
+            const today = new Date().toISOString().split('T')[0];
+            if (dateStr < today) {
+                alert('Cannot schedule events in the past. Please select today or a future date.');
+                return;
+            }
+
+            const dayEvents = getFilteredAdminEvents().filter(event => event.event_date === dateStr);
+            if (dayEvents.length > 0) {
+                openAdminEventDetailsList(dateStr, dayEvents);
+                return;
+            }
+
+            openEventModal(dateStr);
+        }
+
+        function openAdminEventDetailsById(id) {
+            const event = adminEventEntries.find(entry => String(entry.id) === String(id));
+            if (!event) return;
+
+            activeEventId = event.id;
+            document.getElementById('eventDetailsTitle').innerText = event.title || 'Event Details';
+            document.getElementById('eventDetailsMeta').innerText = `${event.event_date_label} · ${event.event_time}`;
+            document.getElementById('eventDetailsBody').innerHTML = `
+                <div><strong>Team:</strong> ${event.team_label || 'N/A'}</div>
+                <div><strong>Tag:</strong> ${event.category_name || 'Uncategorized'}</div>
+                <div><strong>Reminder:</strong> ${event.reminder_minutes ? `${event.reminder_minutes} minute(s) before` : 'No reminder'}</div>
+                <div><strong>Recurring:</strong> ${event.recurrence_pattern && event.recurrence_pattern !== 'none' ? `${event.recurrence_pattern} until ${event.recurrence_until_label || event.recurrence_until}` : 'No'}</div>
+                <div><strong>Details:</strong><br>${(event.description || 'No additional details provided.').replace(/\n/g, '<br>')}</div>
+            `;
+            document.getElementById('eventDetailsModal').classList.add('active');
+        }
+
+        function openAdminEventDetailsList(dateStr, eventsForDate) {
+            activeEventId = eventsForDate[0]?.id || null;
+            document.getElementById('eventDetailsTitle').innerText = `Events on ${dateStr}`;
+            document.getElementById('eventDetailsMeta').innerText = `${eventsForDate.length} event(s) scheduled`;
+            document.getElementById('eventDetailsBody').innerHTML = eventsForDate.map((event) => `
+                <button type="button" onclick="openAdminEventDetailsById(${event.id})" style="text-align:left; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; cursor:pointer;">
+                    <strong>${event.title}</strong><br>
+                    <span style="font-size:12px; color:#64748b;">${event.event_time} · ${event.team_label || 'N/A'} · ${event.category_name || 'Uncategorized'}</span>
+                </button>
+            `).join('');
+            document.getElementById('eventDetailsModal').classList.add('active');
+        }
+
+        function closeEventDetailsModal() {
+            document.getElementById('eventDetailsModal').classList.remove('active');
+        }
+
+        function editActiveEventFromDetails() {
+            if (!activeEventId) return;
+            openAdminEventEditor(activeEventId);
+        }
+
+        function closeCategoryModal() {
+            const categoryModal = document.getElementById('categoryModal');
+            if (categoryModal) {
+                categoryModal.classList.remove('active');
+            }
+        }
+
+        async function handleCategoryTagSubmit(event, isDelete = false) {
+            event.preventDefault();
+
+            const form = event.target.closest('form');
+            if (!form) {
+                return false;
+            }
+
+            if (!validateFormBeforeSubmit(form)) {
+                return false;
+            }
+
+            if (isDelete) {
+                const confirmed = await requestAppConfirmation('Delete this tag?', {
+                    title: 'Delete tag',
+                    confirmText: 'Delete'
+                });
+
+                if (!confirmed) {
+                    return false;
+                }
+            }
+
+            const submitter = event.submitter || form.querySelector('button[type="submit"]');
+
+            try {
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = true;
+                }
+
+                form.classList.add('is-loading');
+                showAppLoader(isDelete ? 'Deleting tag...' : 'Saving tag...');
+
+                const response = await fetch(form.action, {
+                    method: form.method || 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: new FormData(form)
+                });
+
+                const contentType = response.headers.get('content-type') || '';
+                const payload = contentType.includes('application/json') ? await response.json() : {};
+
+                if (!response.ok) {
+                    if (payload.errors && Object.keys(payload.errors).length > 0) {
+                        throw new Error(Object.values(payload.errors).flat().join(' '));
+                    }
+
+                    throw new Error(payload.message || 'Unable to save tag.');
+                }
+
+                closeCategoryModal();
+                window.location.reload();
+                return false;
+            } catch (error) {
+                showLiveAlert(error.message || 'Unable to save tag.', 'error');
+                return false;
+            } finally {
+                form.classList.remove('is-loading');
+                hideAppLoader();
+
+                if (submitter && typeof submitter.disabled !== 'undefined') {
+                    submitter.disabled = false;
+                }
             }
         }
 
@@ -581,6 +1073,26 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
 
         document.addEventListener('app:async-refreshed', function() {
             initializeAdminDashboard();
+        });
+
+        document.addEventListener('app:async-form-success', function(event) {
+            const form = event.detail?.form;
+            const payload = event.detail?.payload || {};
+            const fallbackCategoryId = form?.dataset?.categoryId || '';
+            const action = form?.getAttribute('action') || '';
+
+            if (action.includes('/admin/event-categories')) {
+                closeCategoryModal();
+            }
+
+            if (!payload.deleted_category_id && !(payload.deleted_event_ids || []).length && !fallbackCategoryId) {
+                return;
+            }
+
+            pruneDeletedCategoryEvents({
+                ...payload,
+                deleted_category_id: payload.deleted_category_id || fallbackCategoryId,
+            });
         });
 
         function changeMonth(direction) {
@@ -600,19 +1112,5 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
             document.getElementById('nextMonthBtn').disabled = (activeMonth === 12);
         }
 
-function openEventModal(dateStr) {
-            const today = new Date().toISOString().split('T')[0];
-            if (dateStr < today) {
-                alert('Cannot schedule events in the past. Please select today or a future date.');
-                return;
-            }
-            document.getElementById('eventDateInput').value = dateStr;
-            document.getElementById('displayDate').innerText = dateStr;
-            document.getElementById('eventModal').classList.add('active');
-        }
-
-        function closeEventModal() {
-            document.getElementById('eventModal').classList.remove('active');
-        }
     </script>
 @endsection

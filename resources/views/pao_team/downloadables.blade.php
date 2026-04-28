@@ -419,7 +419,7 @@
     </div>
 
     <div id="upload-form" class="tab-pane">
-        <form action="{{ route('pao.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#downloadablesList" data-async-reset="true">
+        <form action="{{ route('pao.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#downloadablesList" data-async-reset="true" data-file-upload-feedback="true" data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">

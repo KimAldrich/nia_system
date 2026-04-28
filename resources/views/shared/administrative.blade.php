@@ -209,7 +209,7 @@
                         <p class="form-card-subtitle">Upload official files to the central repository. Files are accessible to all departments.</p>
                     </div>
 
-                    <form action="{{ route('administrative.store') }}" method="POST" enctype="multipart/form-data" data-async-target="#tab-memorandums, #tab-minutes" data-async-reset="true" class="register-form">
+                    <form action="{{ route('administrative.store') }}" method="POST" enctype="multipart/form-data" data-async-target="#tab-memorandums, #tab-minutes" data-async-reset="true" data-file-upload-feedback="true" data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed" class="register-form">
                         @csrf
                         
                         <div class="form-group">
@@ -227,7 +227,7 @@
 
                         <div class="form-group" style="margin-bottom: 10px;">
                             <label class="form-label">Select File (PDF, Word, Excel)</label>
-                            <input type="file" name="file" required class="form-input file-input">
+                            <input type="file" name="file" required accept=".pdf,.doc,.docx,.xls,.xlsx" class="form-input file-input">
                         </div>
 
                         <button type="submit" class="btn-dark">

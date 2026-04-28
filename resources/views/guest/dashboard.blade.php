@@ -530,26 +530,18 @@
             <div class="section-title">
                 A. ACCOMPLISHMENT OF SOCIAL AND ENVIRONMENTAL
             </div>
-            @include('partials.table-toolbar', [
-                'asyncTarget' => '#guestRpwsisStatusSection',
-                'searchName' => 'rpwsis_status_search',
-                'searchPlaceholder' => 'Search region, batch, NIS, activity...',
-                'filters' => [
-                    [
-                        'name' => 'rpwsis_status_region',
-                        'label' => 'Region',
-                        'options' => ['' => 'All regions'] + collect($rpwsisStatusRegions ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
-                    ],
-                    [
-                        'name' => 'rpwsis_status_batch',
-                        'label' => 'Batch',
-                        'options' => ['' => 'All batches'] + collect($rpwsisStatusBatches ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
-                    ],
-                ],
-                'resetKeys' => ['rpwsis_status_search', 'rpwsis_status_region', 'rpwsis_status_batch', 'rpwsis_status_page'],
-            ])
+            <div class="table-toolbar" data-client-table-toolbar>
+                <label class="table-toolbar__search">
+                    <span class="table-toolbar__label">Search</span>
+                    <input type="search" id="guestRpwsisStatusSearch" class="table-toolbar__input" placeholder="Search activity, NIS, batch, remarks...">
+                </label>
+                <div class="table-toolbar__actions">
+                    <button type="button" id="guestRpwsisStatusApplyButton" class="table-toolbar__button table-toolbar__button--primary">Apply</button>
+                    <button type="button" id="guestRpwsisStatusResetButton" class="table-toolbar__button table-toolbar__button--ghost">Reset</button>
+                </div>
+            </div>
             <div class="table-responsive">
-                <table class="sleek-table" style="min-width: 2200px;">
+                <table class="sleek-table" id="guestRpwsisStatusTable" style="min-width: 2200px;">
                     <thead>
                         <tr>
                             <th rowspan="2">Region</th>
@@ -1085,5 +1077,60 @@
                 document.querySelectorAll('.acc-data-' + m).forEach(el => { el.style.display = (m === val) ? 'block' : 'none'; });
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('guestRpwsisStatusTable');
+            const searchInput = document.getElementById('guestRpwsisStatusSearch');
+            const applyButton = document.getElementById('guestRpwsisStatusApplyButton');
+            const resetButton = document.getElementById('guestRpwsisStatusResetButton');
+
+            if (!table || !searchInput || !applyButton || !resetButton || !table.tBodies.length) {
+                return;
+            }
+
+            const tbody = table.tBodies[0];
+
+            const applyGuestRpwsisStatusFilters = () => {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter((row) => !row.dataset.emptyState);
+                const searchValue = searchInput.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                rows.forEach((row) => {
+                    const rowText = Array.from(row.cells)
+                        .map((cell) => cell.textContent.replace(/\s+/g, ' ').trim().toLowerCase())
+                        .join(' ');
+
+                    const isVisible = !searchValue || rowText.includes(searchValue);
+                    row.style.display = isVisible ? '' : 'none';
+
+                    if (isVisible) {
+                        visibleCount += 1;
+                    }
+                });
+
+                let emptyStateRow = tbody.querySelector('tr[data-empty-state="true"]');
+                if (!emptyStateRow) {
+                    emptyStateRow = document.createElement('tr');
+                    emptyStateRow.dataset.emptyState = 'true';
+                    emptyStateRow.innerHTML = '<td colspan="22" style="text-align:center; padding: 28px 16px; color: #94a3b8;">No rows match the current filters.</td>';
+                    tbody.appendChild(emptyStateRow);
+                }
+
+                emptyStateRow.style.display = visibleCount === 0 ? '' : 'none';
+            };
+
+            applyButton.addEventListener('click', applyGuestRpwsisStatusFilters);
+            resetButton.addEventListener('click', () => {
+                searchInput.value = '';
+                applyGuestRpwsisStatusFilters();
+            });
+
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    applyGuestRpwsisStatusFilters();
+                }
+            });
+        });
     </script>
 @endsection

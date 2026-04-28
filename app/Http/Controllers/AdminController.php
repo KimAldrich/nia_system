@@ -11,6 +11,7 @@ use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
 use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -18,6 +19,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AdminController extends Controller
 {
     use HandlesAsyncRequests;
+
+    private const EVENT_TEAM_LABELS = [
+        'all' => 'All Teams',
+        'fs_team' => 'FS Team',
+        'rpwsis_team' => 'Social and Environmental Team',
+        'cm_team' => 'Contract Management Team',
+        'row_team' => 'Right Of Way Team',
+        'pcr_team' => 'Program Completion Report Team',
+        'pao_team' => 'Programming Team',
+    ];
 
     // Security check
     private function checkAdmin()
@@ -36,17 +47,38 @@ class AdminController extends Controller
         $pendingResolutions = IaResolution::whereIn('status', ['on-going', 'not-validated'])->count();
         $resolutions = IaResolution::latest()->paginate(5, ['*'], 'active_projects_page')->withQueryString();
 
+        $eventTagFilter = trim((string) $request->query('event_tag', ''));
+        $eventTeamFilter = trim((string) $request->query('event_team', ''));
+
         $upcomingEventsQuery = Event::with('category')
-            ->where('event_date', '>', now()->format('Y-m-d'))
-            ->orWhere(function ($query) {
-                $today = now()->format('Y-m-d');
-                $currentTime = now()->format('H:i:s');
-                $query->where('event_date', $today)
-                    ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+            ->whereHas('category')
+            ->where(function ($query) {
+                $query->where('event_date', '>', now()->format('Y-m-d'))
+                    ->orWhere(function ($query) {
+                        $today = now()->format('Y-m-d');
+                        $currentTime = now()->format('H:i:s');
+                        $query->where('event_date', $today)
+                            ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
+                    });
             })
+            ->when($eventTagFilter !== '', fn ($query) => $query->where('event_category_id', $eventTagFilter))
+            ->when($eventTeamFilter !== '' && $eventTeamFilter !== 'all', fn ($query) => $query->where('team', $eventTeamFilter))
             ->orderBy('event_date', 'asc');
 
         $events = (clone $upcomingEventsQuery)->get();
+        $pastEvents = Event::with('category')
+            ->whereHas('category')
+            ->where(function ($query) {
+                $query->where('event_date', '<', now()->format('Y-m-d'))
+                    ->orWhere(function ($query) {
+                        $today = now()->format('Y-m-d');
+                        $currentTime = now()->format('H:i:s');
+                        $query->where('event_date', $today)
+                            ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) <= '{$currentTime}'");
+                    });
+            })
+            ->orderBy('event_date', 'desc')
+            ->get();
         $paginatedEvents = (clone $upcomingEventsQuery)
             ->paginate(5, ['*'], 'events_page')
             ->withQueryString();
@@ -59,12 +91,16 @@ class AdminController extends Controller
         return view('admin.dashboard', compact(
             'resolutions',
             'events',
+            'pastEvents',
             'paginatedEvents',
             'categories',
             'downloadables',
             'validatedResolutions',
             'pendingResolutions',
             'recentAuditLogs'
+            ,
+            'eventTagFilter',
+            'eventTeamFilter'
         ));
     }
 
@@ -271,10 +307,19 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
+        $fileValidationMessages = [
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+            'team.required' => 'Please select a team.',
+            'team.in' => 'Please select a valid team.',
+        ];
+
         $request->validate([
             'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
             'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
-        ]);
+        ], $fileValidationMessages);
 
         $file = $request->file('document');
         $path = $file->store('forms', 'public');
@@ -297,10 +342,19 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
+        $fileValidationMessages = [
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+            'team.required' => 'Please select a team.',
+            'team.in' => 'Please select a valid team.',
+        ];
+
         $request->validate([
             'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
             'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
-        ]);
+        ], $fileValidationMessages);
 
         $file = $request->file('document');
         $path = $file->store('resolutions', 'public');
@@ -462,25 +516,105 @@ class AdminController extends Controller
         return $this->successResponse($request, "{$userName}'s account was deleted successfully.");
     }
 
+    private function validateEvent(Request $request, bool $isUpdate = false): array
+    {
+        return $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'event_date' => [$isUpdate ? 'required' : 'required', 'date', 'after_or_equal:today'],
+            'event_time' => ['required', 'string', 'max:255'],
+            'event_category_id' => ['required', 'integer', 'exists:event_categories,id'],
+            'team' => ['required', 'string', 'in:' . implode(',', array_keys(self::EVENT_TEAM_LABELS))],
+            'reminder_minutes' => ['nullable', 'integer', 'min:0', 'max:10080'],
+            'recurrence_pattern' => ['nullable', 'string', 'in:none,daily,weekly,monthly'],
+            'recurrence_until' => ['nullable', 'date', 'after_or_equal:event_date'],
+        ]);
+    }
+
+    private function buildEventPayload(array $validated): array
+    {
+        $recurrencePattern = $validated['recurrence_pattern'] ?? 'none';
+
+        return [
+            'title' => trim($validated['title']),
+            'description' => trim((string) ($validated['description'] ?? '')) ?: null,
+            'event_date' => $validated['event_date'],
+            'event_time' => trim($validated['event_time']),
+            'event_category_id' => $validated['event_category_id'],
+            'team' => $validated['team'],
+            'reminder_minutes' => $validated['reminder_minutes'] ?? null,
+            'recurrence_pattern' => $recurrencePattern === 'none' ? null : $recurrencePattern,
+            'recurrence_until' => $recurrencePattern === 'none' ? null : ($validated['recurrence_until'] ?? null),
+        ];
+    }
+
+    private function buildRecurringEventRows(array $payload): array
+    {
+        $rows = [];
+        $pattern = $payload['recurrence_pattern'] ?? null;
+        $startDate = Carbon::parse($payload['event_date'])->startOfDay();
+        $endDate = !empty($payload['recurrence_until'])
+            ? Carbon::parse($payload['recurrence_until'])->startOfDay()
+            : $startDate->copy();
+        $group = $pattern ? (string) Str::uuid() : null;
+
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            $rows[] = array_merge($payload, [
+                'event_date' => $currentDate->toDateString(),
+                'recurrence_group' => $group,
+            ]);
+
+            if (!$pattern) {
+                break;
+            }
+
+            $nextDate = match ($pattern) {
+                'daily' => $currentDate->copy()->addDay(),
+                'weekly' => $currentDate->copy()->addWeek(),
+                'monthly' => $currentDate->copy()->addMonthNoOverflow(),
+                default => null,
+            };
+
+            if (!$nextDate || $nextDate->equalTo($currentDate)) {
+                break;
+            }
+
+            $currentDate = $nextDate;
+        }
+
+        return $rows;
+    }
+
     public function storeEvent(Request $request)
     {
         $this->checkAdmin();
 
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'event_date' => 'required|date|after_or_equal:today',
-            'event_time' => 'required|string|max:255',
-            'event_category_id' => 'required' // Validate the dropdown!
-        ]);
+        $validated = $this->validateEvent($request);
+        $payload = $this->buildEventPayload($validated);
+        $rows = $this->buildRecurringEventRows($payload);
 
-        Event::create([
-            'title' => $request->title,
-            'event_date' => $request->event_date,
-            'event_time' => $request->event_time,
-            'event_category_id' => $request->event_category_id, // Save the ID!
-        ]);
+        foreach ($rows as $row) {
+            Event::create($row);
+        }
 
-        return $this->successResponse($request, 'Event added to the calendar!');
+        $message = count($rows) > 1
+            ? count($rows) . ' recurring events added to the calendar!'
+            : 'Event added to the calendar!';
+
+        return $this->successResponse($request, $message);
+    }
+
+    public function updateEvent(Request $request, $id)
+    {
+        $this->checkAdmin();
+
+        $validated = $this->validateEvent($request, true);
+        $event = Event::findOrFail($id);
+        $event->update($this->buildEventPayload($validated));
+
+        return $this->successResponse($request, 'Event updated successfully.');
     }
 
     // Delete an Event
@@ -516,17 +650,22 @@ class AdminController extends Controller
     {
         $this->checkAdmin();
 
-        $category = EventCategory::withCount('events')->findOrFail($id);
-        $deletedEvents = $category->events()->count();
+        $category = EventCategory::findOrFail($id);
+        $linkedEventsQuery = Event::query()->where('event_category_id', $category->id);
+        $deletedEventIds = $linkedEventsQuery->pluck('id')->all();
+        $deletedEvents = count($deletedEventIds);
 
-        $category->events()->delete();
+        $linkedEventsQuery->delete();
         $category->delete();
 
         $message = $deletedEvents > 0
             ? "Tag removed. {$deletedEvents} linked event(s) were also deleted."
             : 'Tag removed.';
 
-        return $this->successResponse($request, $message);
+        return $this->successResponse($request, $message, [
+            'deleted_category_id' => (int) $id,
+            'deleted_event_ids' => $deletedEventIds,
+        ]);
     }
 
     public function destroyEvent(Request $request, $id)

@@ -315,6 +315,32 @@
             font-size: 14px;
             margin-left: 12px;
         }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
     </style>
 
     <h1 class="header-title">Downloadable Forms</h1>
@@ -412,7 +438,7 @@
     </div>
 
     <div id="upload-form" class="tab-pane">
-        <form action="{{ route('fs.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#downloadablesList" data-async-reset="true">
+        <form action="{{ route('fs.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#downloadablesList" data-async-reset="true" data-async-success-modal="#fsFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#fsFeedbackModal" data-async-error-title="Upload Failed">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
@@ -444,7 +470,25 @@
             </div>
         </form>
     </div>
+
+    <div class="modal-overlay" id="fsFeedbackModal">
+        <div class="modal-box">
+            <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+            <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">Saved successfully.</p>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeFsFeedbackModal()" class="btn-dark" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function closeFsFeedbackModal() {
+            const modal = document.getElementById('fsFeedbackModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
         function switchTab(event, tabId) {
             document.querySelectorAll('.tab-pane').forEach(function(pane) {
                 pane.classList.remove('active');
@@ -462,9 +506,31 @@
             const fileInput = document.getElementById('file-input');
             const fileList = document.getElementById('file-list');
             const submitBtn = document.getElementById('submit-btn');
+            const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
 
             if (!uploadForm || !fileInput || !fileList || !submitBtn) {
                 return;
+            }
+
+            function showInvalidFileMessage() {
+                if (typeof openAsyncSuccessModal === 'function') {
+                    openAsyncSuccessModal(
+                        '#fsFeedbackModal',
+                        'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+                        'Upload Failed'
+                    );
+                    return;
+                }
+
+                alert('Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.');
+            }
+
+            function hasInvalidFiles(files) {
+                return Array.from(files || []).some(function(file) {
+                    const parts = String(file.name || '').split('.');
+                    const extension = parts.length > 1 ? parts.pop().toLowerCase() : '';
+                    return !allowedExtensions.includes(extension);
+                });
             }
 
             function renderSelectedFiles(files) {
@@ -507,7 +573,24 @@
             }
 
             fileInput.addEventListener('change', function() {
+                if (hasInvalidFiles(this.files)) {
+                    this.value = '';
+                    renderSelectedFiles([]);
+                    showInvalidFileMessage();
+                    return;
+                }
+
                 renderSelectedFiles(this.files);
+            });
+
+            uploadForm.addEventListener('submit', function(event) {
+                if (hasInvalidFiles(fileInput.files)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    fileInput.value = '';
+                    renderSelectedFiles([]);
+                    showInvalidFileMessage();
+                }
             });
 
             uploadForm.addEventListener('reset', function() {
