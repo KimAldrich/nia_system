@@ -1261,10 +1261,6 @@ const landData = {
                     renderChart(landData);
                     renderLegend(landData);
                     openDetail();
-                    console.log("Clicked:", name);
-console.log("Matched Stat:", stat);
-console.log("Range Data:", rangeData);
-console.log("Total:", irrigatedTotal);
                 } else {
                     document.getElementById('extraData').innerHTML = "No data available";
                 }
@@ -1650,13 +1646,6 @@ function showMiniMap(feature) {
 
 //         miniMap.fitBounds(miniGeoLayer.getBounds());
 //     }
-
-fetch(buildAppUrl('maps/municipalities.json'))
-    .then(res => res.json())
-    .then(data => {
-        municipalityData = data;
-        console.log("Municipality data loaded:", municipalityData);
-    });
 
 (async function initializeMap() {
     try {
