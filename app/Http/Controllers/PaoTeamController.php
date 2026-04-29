@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
@@ -22,6 +23,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 class PaoTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
 
     private function validatePowData(Request $request, bool $requireId = false): array
     {
@@ -71,6 +73,7 @@ class PaoTeamController extends Controller
             ->withQueryString();
 
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics('pao_team');
         $powQuery = PaoPowData::query();
         if ($request->filled('pow_search')) {
             $search = trim((string) $request->input('pow_search'));
@@ -86,7 +89,7 @@ class PaoTeamController extends Controller
 
         $powData = $powQuery->orderBy('district')->paginate(8, ['*'], 'pow_page')->withQueryString();
         $powDistricts = PaoPowData::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
-        return view('pao_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'powData', 'powDistricts'));
+        return view('pao_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'analytics', 'powData', 'powDistricts'));
     }
 
     public function downloadables()

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Downloadable;
 use App\Models\AuditLog;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AdminController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
 
     private const EVENT_TEAM_LABELS = [
         'all' => 'All Teams',
@@ -87,6 +89,7 @@ class AdminController extends Controller
         $categories = EventCategory::all();
         $downloadables = Downloadable::all();
         $recentAuditLogs = AuditLog::with('user')->latest()->take(8)->get();
+        $analytics = $this->buildResolutionAnalytics();
 
         return view('admin.dashboard', compact(
             'resolutions',
@@ -97,8 +100,8 @@ class AdminController extends Controller
             'downloadables',
             'validatedResolutions',
             'pendingResolutions',
-            'recentAuditLogs'
-            ,
+            'recentAuditLogs',
+            'analytics',
             'eventTagFilter',
             'eventTeamFilter'
         ));

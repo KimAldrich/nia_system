@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
@@ -13,6 +14,7 @@ use App\Models\EventCategory;
 class RowTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
 
     public function index()
     {
@@ -44,7 +46,8 @@ class RowTeamController extends Controller
             ->withQueryString();
 
         $categories = EventCategory::all();
-        return view('row_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories'));
+        $analytics = $this->buildResolutionAnalytics('row_team');
+        return view('row_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'analytics'));
     }
 
     public function downloadables()

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
@@ -20,6 +21,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class PcrTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
 
     private function validatePcrStatus(Request $request, bool $requireId = false): array
     {
@@ -72,6 +74,7 @@ class PcrTeamController extends Controller
             ->withQueryString();
 
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics('pcr_team');
         $pcrQuery = PcrStatusReport::query();
         if ($request->filled('pcr_search')) {
             $search = trim((string) $request->input('pcr_search'));
@@ -86,7 +89,7 @@ class PcrTeamController extends Controller
 
         $pcrStatusReports = $pcrQuery->orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
         $pcrFundSources = PcrStatusReport::select('fund_source')->whereNotNull('fund_source')->distinct()->orderByDesc('fund_source')->pluck('fund_source');
-        return view('pcr_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'pcrStatusReports', 'pcrFundSources'));
+        return view('pcr_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'analytics', 'pcrStatusReports', 'pcrFundSources'));
     }
 
     public function downloadables()

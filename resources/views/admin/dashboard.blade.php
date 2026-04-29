@@ -269,19 +269,7 @@
                 </form>
             </div>
 
-            <div class="ui-card" id="analyticsCard">
-                <div class="section-title">Analytics</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #475569;">Upload Activity</p>
-                        <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
-                    </div>
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #475569;">Completion Rate</p>
-                        <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+            @include('partials.team-analytics-card', ['analytics' => $analytics ?? []])
 
             <div class="ui-card">
                 <div class="section-title">
@@ -660,48 +648,15 @@ $eventsForMonth = isset($events) ? $events->filter(function($e) use ($currentYea
         }
 
         function initializeAdminCharts() {
-            const barCanvas = document.getElementById('barChart');
-            const doughnutCanvas = document.getElementById('doughnutChart');
+            const monthlyCanvas = document.getElementById('monthlyChart');
+            const weeklyCanvas = document.getElementById('weeklyChart');
 
-            if (!barCanvas || !doughnutCanvas) {
-                return;
-            }
-
-            if (barCanvas.dataset.chartInitialized === 'true' && doughnutCanvas.dataset.chartInitialized === 'true') {
+            if (!monthlyCanvas || !weeklyCanvas) {
                 return;
             }
 
             updateCalendarView();
-
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-            Chart.defaults.color = '#a0aec0';
-
-            const existingBarChart = Chart.getChart(barCanvas);
-            if (existingBarChart) {
-                existingBarChart.destroy();
-            }
-
-            const existingDoughnutChart = Chart.getChart(doughnutCanvas);
-            if (existingDoughnutChart) {
-                existingDoughnutChart.destroy();
-            }
-
-            const ctxBar = barCanvas.getContext('2d');
-            new Chart(ctxBar, { 
-                type: 'bar', 
-                data: { labels: ['W1', 'W2', 'W3', 'W4'], datasets: [{ data: [12, 19, 15, 22], backgroundColor: '#4f46e5', borderRadius: 6 }] }, 
-                options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f1f5f9' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } } 
-            });
-
-            const ctxPie = doughnutCanvas.getContext('2d');
-            new Chart(ctxPie, { 
-                type: 'doughnut', 
-                data: { labels: ['Done', 'Pending'], datasets: [{ data: [70, 30], backgroundColor: ['#10b981', '#f1f5f9'], borderWidth: 0 }] }, 
-                options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: '#475569', usePointStyle: true, boxWidth: 10 } } } } 
-            });
-
-            barCanvas.dataset.chartInitialized = 'true';
-            doughnutCanvas.dataset.chartInitialized = 'true';
+            @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
         }
 
         function initializeAdminEventForm() {

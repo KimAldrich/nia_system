@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
@@ -21,6 +22,7 @@ use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 class ContractManagementTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
 
     public function index(Request $request)
     {
@@ -52,6 +54,7 @@ class ContractManagementTeamController extends Controller
             ->withQueryString();
 
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics('cm_team');
         $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
         $procMunicipalities = ProcurementProject::select('municipality')->whereNotNull('municipality')->distinct()->orderBy('municipality')->pluck('municipality');
 
@@ -88,6 +91,7 @@ class ContractManagementTeamController extends Controller
             'events',
             'paginatedEvents',
             'categories',
+            'analytics',
             'procCategories',
             'procMunicipalities',
             'procurementProjects',

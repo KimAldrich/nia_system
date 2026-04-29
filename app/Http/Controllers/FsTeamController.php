@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
@@ -24,6 +25,7 @@ use Illuminate\Support\Carbon;
 class FsTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
 
     private function validateHydroGeo(Request $request): array
     {
@@ -103,6 +105,7 @@ class FsTeamController extends Controller
             ->withQueryString();
 
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics('fs_team');
         // 2. Calculate the dynamic KPI numbers for the top cards
         $totalProjects = HydroGeoProject::count();
         $conducted = HydroGeoProject::whereIn('status', ['For Interpretation', 'Interpreted', 'For Submission of Raw data'])->count();
@@ -167,6 +170,7 @@ class FsTeamController extends Controller
             'events',
             'paginatedEvents',
             'categories',
+            'analytics',
             'hydroProjects',
             'fsdeProjects',
             'hydroDistricts',

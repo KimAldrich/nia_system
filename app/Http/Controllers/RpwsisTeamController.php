@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
@@ -23,6 +24,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class RpwsisTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
 
     private function validateAccomplishment(Request $request): array
     {
@@ -157,7 +159,8 @@ class RpwsisTeamController extends Controller
         $infrastructureRecords = RpwsisInfrastructure::latest()->get();
 
         $categories = EventCategory::all();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories','records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
+        $analytics = $this->buildResolutionAnalytics('rpwsis_team');
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'analytics', 'records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
     }
 
     // 2. View Downloadables Page
