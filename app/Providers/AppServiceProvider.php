@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +20,36 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        View::composer('layouts.app', function ($view) {
+            $summary = [
+                'enabled' => false,
+                'notifications' => [],
+                'unread_count' => 0,
+            ];
+
+            if (auth()->check() && !session('is_guest')) {
+                $user = auth()->user();
+                $summary = [
+                    'enabled' => true,
+                    'notifications' => $user->notifications()
+                        ->latest()
+                        ->limit(8)
+                        ->get()
+                        ->map(function ($notification) {
+                            return [
+                                'id' => $notification->id,
+                                'title' => $notification->data['title'] ?? 'Notification',
+                                'message' => $notification->data['message'] ?? '',
+                                'created_at' => optional($notification->created_at)->toIso8601String(),
+                                'read_at' => optional($notification->read_at)->toIso8601String(),
+                            ];
+                        })
+                        ->values(),
+                    'unread_count' => $user->unreadNotifications()->count(),
+                ];
+            }
+
+            $view->with('appNotificationSummary', $summary);
+        });
     }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\PaoTeamController;
 use App\Http\Controllers\AdministrativeController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RpwsisAccomplishmentController;
 
 
@@ -51,6 +52,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
         Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
         Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.read_all');
 
 
     //guest

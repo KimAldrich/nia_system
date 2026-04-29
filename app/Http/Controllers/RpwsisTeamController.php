@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Facades\Storage;
 use App\Models\RpwsisAccomplishment;
 use App\Models\EventCategory;
@@ -25,6 +26,11 @@ class RpwsisTeamController extends Controller
 {
     use HandlesAsyncRequests;
     use BuildsResolutionAnalytics;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     private function validateAccomplishment(Request $request): array
     {
@@ -223,6 +229,13 @@ class RpwsisTeamController extends Controller
             ? 'File uploaded successfully.'
             : "{$files->count()} files uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $fileMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'Downloadables updated', $fileMessage, ['type' => 'downloadable', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -232,11 +245,16 @@ class RpwsisTeamController extends Controller
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'Downloadable updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File updated successfully.');
     }
@@ -246,11 +264,16 @@ class RpwsisTeamController extends Controller
     {
         $downloadable = Downloadable::findOrFail($id);
 
+        $deletedName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $downloadable->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'Downloadable removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File deleted successfully.');
     }
@@ -301,6 +324,13 @@ class RpwsisTeamController extends Controller
             ? 'Resolution uploaded successfully.'
             : "{$files->count()} resolutions uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $resolutionMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'IA resolutions updated', $resolutionMessage, ['type' => 'ia_resolution', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -310,11 +340,16 @@ class RpwsisTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'IA resolution updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution updated successfully.');
     }
@@ -324,7 +359,12 @@ class RpwsisTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
+        $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'rpwsis_team', 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -335,6 +375,7 @@ class RpwsisTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
 
         // Delete file from storage
+        $deletedName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
@@ -346,6 +387,10 @@ class RpwsisTeamController extends Controller
 
         // Delete record from database
         $resolution->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }

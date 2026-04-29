@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\IaResolution; // <-- Added this
 use App\Models\Event;        // <-- Added this
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Carbon;
 use App\Models\EventCategory;
 use Illuminate\Support\Str;
@@ -38,6 +39,16 @@ class AdminController extends Controller
         if (strtolower(trim(auth()->user()->role)) !== 'admin') {
             abort(403, 'Unauthorized Access. Admins only.');
         }
+    }
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
+
+    private function formatEventSchedule(Event $event): string
+    {
+        return $event->event_date->format('F j, Y') . ' at ' . trim((string) $event->event_time);
     }
 
     // 1. Admin Master Dashboard (FIXED)
@@ -337,6 +348,19 @@ class AdminController extends Controller
             'team' => $request->team // 🔥 ADMIN CHOOSES TEAM
         ]);
 
+        $teamLabel = $this->notifications()->teamLabel($request->team);
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency(
+            $request->user(),
+            'New downloadable uploaded',
+            "{$actorLabel} uploaded {$file->getClientOriginalName()} to {$teamLabel} downloadables.",
+            [
+                'type' => 'downloadable',
+                'team' => $request->team,
+                'team_label' => $teamLabel,
+            ]
+        );
+
         return $this->successResponse($request, 'File uploaded to selected team.');
     }
 
@@ -371,6 +395,19 @@ class AdminController extends Controller
             'original_name' => $file->getClientOriginalName(),
             'team' => $request->team // 🔥 SAME LOGIC
         ]);
+
+        $teamLabel = $this->notifications()->teamLabel($request->team);
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency(
+            $request->user(),
+            'New IA resolution uploaded',
+            "{$actorLabel} uploaded {$file->getClientOriginalName()} to {$teamLabel} IA resolutions.",
+            [
+                'type' => 'ia_resolution',
+                'team' => $request->team,
+                'team_label' => $teamLabel,
+            ]
+        );
 
         return $this->successResponse($request, 'Resolution uploaded to selected team.');
     }
@@ -598,13 +635,34 @@ class AdminController extends Controller
         $payload = $this->buildEventPayload($validated);
         $rows = $this->buildRecurringEventRows($payload);
 
+        $createdEvents = collect();
         foreach ($rows as $row) {
-            Event::create($row);
+            $createdEvents->push(Event::create($row));
         }
 
         $message = count($rows) > 1
             ? count($rows) . ' recurring events added to the calendar!'
             : 'Event added to the calendar!';
+
+        $firstEvent = $createdEvents->first();
+        if ($firstEvent) {
+            $teamLabel = $this->notifications()->teamLabel($firstEvent->team);
+            $actorLabel = $this->notifications()->actorLabel($request->user());
+            $eventMessage = count($rows) > 1
+                ? "{$actorLabel} added {$createdEvents->count()} calendar entries for {$firstEvent->title} starting {$this->formatEventSchedule($firstEvent)} for {$teamLabel}."
+                : "{$actorLabel} added a new event for {$teamLabel}: {$firstEvent->title} on {$this->formatEventSchedule($firstEvent)}.";
+
+            $this->notifications()->notifyAgency(
+                $request->user(),
+                count($rows) > 1 ? 'New recurring events added' : 'New event added',
+                $eventMessage,
+                [
+                    'type' => 'event',
+                    'team' => $firstEvent->team,
+                    'team_label' => $teamLabel,
+                ]
+            );
+        }
 
         return $this->successResponse($request, $message);
     }
@@ -616,6 +674,19 @@ class AdminController extends Controller
         $validated = $this->validateEvent($request, true);
         $event = Event::findOrFail($id);
         $event->update($this->buildEventPayload($validated));
+
+        $teamLabel = $this->notifications()->teamLabel($event->team);
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency(
+            $request->user(),
+            'Event updated',
+            "{$actorLabel} updated the event {$event->title} for {$teamLabel}. It is scheduled on {$this->formatEventSchedule($event)}.",
+            [
+                'type' => 'event',
+                'team' => $event->team,
+                'team_label' => $teamLabel,
+            ]
+        );
 
         return $this->successResponse($request, 'Event updated successfully.');
     }

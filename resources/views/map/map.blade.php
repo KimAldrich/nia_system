@@ -138,92 +138,6 @@
     gap: 8px;
     font-size: 13px;
 }
-#map-notification {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-}
-.notification-btn {
-    border: none;
-    border-radius: 50%;
-    width: 42px;
-    height: 42px;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 3px 12px rgba(0,0,0,0.25);
-    font-size: 18px;
-    position: relative;
-}
-.notification-badge {
-    position: absolute;
-    top: -5px;
-    right: -4px;
-    min-width: 18px;
-    height: 18px;
-    border-radius: 9px;
-    padding: 0 5px;
-    background: #d32f2f;
-    color: #fff;
-    font-size: 11px;
-    line-height: 18px;
-    text-align: center;
-    display: none;
-}
-.notification-panel {
-    position: absolute;
-    top: 48px;
-    right: 0;
-    width: 360px;
-    max-height: 320px;
-    overflow-y: auto;
-    background: rgba(255,255,255,0.96);
-    border-radius: 10px;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.22);
-    padding: 10px;
-    display: none;
-}
-.notification-actions {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #e7e7e7;
-}
-.notification-action-btn {
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #1f2937;
-    border-radius: 6px;
-    font-size: 11px;
-    padding: 5px 8px;
-    cursor: pointer;
-}
-.notification-action-btn:hover {
-    background: #f3f4f6;
-}
-.notification-panel.active {
-    display: block;
-}
-.notification-item {
-    border-bottom: 1px solid #e7e7e7;
-    padding: 10px 6px;
-    font-size: 12px;
-    color: #1f2937;
-}
-.notification-item:last-child {
-    border-bottom: none;
-}
-.notification-item-title {
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-.notification-item-time {
-    color: #6b7280;
-    margin-top: 4px;
-    font-size: 11px;
-}
-
 #resetMapBtn {
     background: none;
     color: #ebeef2;
@@ -937,24 +851,6 @@ select[name="category"]:focus {
     <button id="resetMapBtn" title="Reset to default position">🔄 Reset</button>
 </div>
 
-@if((auth()->check() && auth()->user()->role !== 'admin') || session('guest_terms_accepted'))
-<div id="map-notification">
-    <button id="notificationBtn" class="notification-btn" title="Map Notifications">
-        <span>🔔</span>
-        <span id="notificationBadge" class="notification-badge">0</span>
-    </button>
-    <div id="notificationPanel" class="notification-panel">
-        <div class="notification-actions">
-            <button id="markAllReadBtn" class="notification-action-btn" type="button">Mark all as read</button>
-            @if(auth()->check() && auth()->user()->role === 'admin')
-            <button id="clearOldBtn" class="notification-action-btn" type="button">Clear old notifications</button>
-            @endif
-        </div>
-        <div id="notificationList"></div>
-    </div>
-</div>
-@endif
-
     <div id="layer-controls">
         <label class="layer-check">
             <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['files']) ? 'disabled' : '' }}>
@@ -1051,23 +947,6 @@ select[name="category"]:focus {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@6.2.0/dist/shp.min.js" crossorigin="anonymous"></script>
-@php
-    $notificationUserKey = null;
-    $currentUserRole = null;
-    $notificationsEndpoint = route('map.notifications.feed');
-
-    if (auth()->check()) {
-        $currentUserRole = auth()->user()->role ?? null;
-
-        if (($currentUserRole ?? '') !== 'admin') {
-            $notificationUserKey = 'user_' . auth()->id();
-        }
-
-        $notificationsEndpoint = route('map.notifications');
-    } elseif (session('guest_terms_accepted')) {
-        $notificationUserKey = 'guest_' . session()->getId();
-    }
-@endphp
 <script>
 function toTitleCase(str) {
     if (!str) return '';
@@ -1079,9 +958,7 @@ function toTitleCase(str) {
 const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
 const uploadTargets = JSON.parse('{!! json_encode($uploadTargets ?? []) !!}');
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
-const notificationUserKey = "{{ $notificationUserKey ?? '' }}" || null;
-const currentUserRole = "{{ $currentUserRole ?? '' }}" || null;
-const notificationsEndpoint = "{{ $notificationsEndpoint }}";
+const currentUserRole = "{{ auth()->check() ? (auth()->user()->role ?? '') : '' }}" || null;
 let landChart = null;
 let selectedMunicipality = null;
 let activeSliceIndex = null;
@@ -1924,126 +1801,6 @@ if (form) {
     });
 }
 
-if (notificationUserKey) {
-    const notificationBtn = document.getElementById('notificationBtn');
-    const notificationBadge = document.getElementById('notificationBadge');
-    const notificationPanel = document.getElementById('notificationPanel');
-    const notificationList = document.getElementById('notificationList');
-    const markAllReadBtn = document.getElementById('markAllReadBtn');
-    const clearOldBtn = document.getElementById('clearOldBtn');
-    const seenKey = `map_notifications_seen_${notificationUserKey}`;
-    let latestNotifications = [];
-
-    function formatNotificationTime(isoString) {
-        const date = new Date(isoString);
-        if (Number.isNaN(date.getTime())) return '';
-        return date.toLocaleString();
-    }
-
-    function renderNotificationPanel(notifications) {
-        if (!notificationList) return;
-
-        if (!Array.isArray(notifications) || notifications.length === 0) {
-            notificationList.innerHTML = '<div class="notification-item">No notifications yet.</div>';
-            return;
-        }
-
-        notificationList.innerHTML = notifications.map((item) => {
-            const actionText = item.action === 'delete' ? 'deleted' : 'uploaded';
-            const locationText = Array.isArray(item.locations) && item.locations.length
-                ? item.locations.join(', ')
-                : 'Unknown location';
-            const fileCount = Array.isArray(item.files) ? item.files.length : 0;
-
-            return `
-                <div class="notification-item">
-                    <div class="notification-item-title">${item.actor || 'Admin'} ${actionText} ${fileCount} file(s)</div>
-                    <div>Category: ${item.category || 'Map Files'}</div>
-                    <div>Location: ${locationText}</div>
-                    <div class="notification-item-time">${formatNotificationTime(item.created_at)}</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function updateNotificationBadge(notifications) {
-        if (!notificationBadge) return;
-        const lastSeen = localStorage.getItem(seenKey);
-        const unseen = (notifications || []).filter((item) => {
-            if (!lastSeen) return true;
-            return (item.created_at || '') > lastSeen;
-        }).length;
-
-        if (unseen > 0) {
-            notificationBadge.style.display = 'inline-block';
-            notificationBadge.textContent = unseen > 99 ? '99+' : String(unseen);
-        } else {
-            notificationBadge.style.display = 'none';
-        }
-    }
-
-    async function fetchMapNotifications() {
-        try {
-            const response = await fetch(notificationsEndpoint);
-            if (!response.ok) return;
-            const result = await response.json();
-            const notifications = Array.isArray(result.notifications) ? result.notifications : [];
-            latestNotifications = notifications;
-            renderNotificationPanel(notifications);
-            updateNotificationBadge(notifications);
-        } catch (error) {
-            console.error('Failed to fetch notifications', error);
-        }
-    }
-
-    if (notificationBtn && notificationPanel) {
-        notificationBtn.addEventListener('click', async () => {
-            notificationPanel.classList.toggle('active');
-            if (notificationPanel.classList.contains('active')) {
-                await fetchMapNotifications();
-                const latestTimestamp = latestNotifications[0]?.created_at || new Date().toISOString();
-                localStorage.setItem(seenKey, latestTimestamp);
-                notificationBadge.style.display = 'none';
-            }
-        });
-    }
-
-    if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', () => {
-            const latestTimestamp = latestNotifications[0]?.created_at || new Date().toISOString();
-            localStorage.setItem(seenKey, latestTimestamp);
-            notificationBadge.style.display = 'none';
-        });
-    }
-
-    if (clearOldBtn) {
-        clearOldBtn.addEventListener('click', async () => {
-            try {
-                const response = await fetch("{{ route('map.notifications.clear_old') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ days: 30 })
-                });
-
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to clear old notifications.');
-                }
-
-                await fetchMapNotifications();
-                alert(result.message || 'Old notifications cleared.');
-            } catch (error) {
-                alert(error.message || 'Failed to clear old notifications.');
-            }
-        });
-    }
-
-    fetchMapNotifications();
-    setInterval(fetchMapNotifications, 30000);
-}
 const overlayPriority = {
     irrigated: 3,
     potential: 2,

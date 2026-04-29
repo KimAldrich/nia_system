@@ -258,6 +258,87 @@
         .mobile-header { display: none; align-items: center; justify-content: space-between; padding: 12px 15px; background: #ffffff; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); z-index: 900; }
         .mobile-menu-btn { background: var(--sidebar-bg); border: none; color: #ffffff; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         .mobile-title { font-weight: 700; color: var(--primary-dark); font-size: 14px; letter-spacing: 0.5px; }
+        .app-notification-shell { position: sticky; top: 0; z-index: 910; display: flex; justify-content: flex-end; padding: 18px 24px 0; pointer-events: none; }
+        .app-notification-shell > * { pointer-events: auto; }
+        .app-notification-panel { position: relative; }
+        .app-notification-btn {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border: 1px solid #dbe3ee;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.96);
+            color: #0f172a;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        }
+        .app-notification-btn svg { width: 20px; height: 20px; }
+        .app-notification-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+        }
+        .app-notification-badge.is-hidden { display: none; }
+        .app-notification-dropdown {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: min(92vw, 380px);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 28px 70px rgba(15, 23, 42, 0.16);
+            overflow: hidden;
+            display: none;
+        }
+        .app-notification-dropdown.is-open { display: block; }
+        .app-notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .app-notification-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+        .app-notification-action {
+            border: none;
+            background: transparent;
+            color: #110d9e;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .app-notification-list { max-height: 420px; overflow-y: auto; padding: 8px; display: grid; gap: 8px; }
+        .app-notification-item {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #f8fafc;
+            border: 1px solid #eef2f7;
+        }
+        .app-notification-item.is-unread {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+        .app-notification-item-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .app-notification-item-message { font-size: 12px; line-height: 1.5; color: #475569; }
+        .app-notification-item-time { margin-top: 8px; font-size: 11px; color: #94a3b8; }
+        .app-notification-empty { padding: 18px; text-align: center; font-size: 13px; color: #64748b; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .app-alert-stack { display: grid; gap: 12px; margin-bottom: 20px; }
         .app-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 1px solid transparent; font-size: 13px; font-weight: 500; line-height: 1.5; }
@@ -457,6 +538,17 @@
         @media (max-width: 900px) {
             .main-wrapper { max-width: 100vw; }
             .mobile-header { display: flex; }
+            .app-notification-shell { display: none; }
+            .mobile-header .app-notification-btn {
+                width: 38px;
+                height: 38px;
+                border-radius: 12px;
+                box-shadow: none;
+            }
+            .mobile-header .app-notification-dropdown {
+                right: -8px;
+                width: min(92vw, 340px);
+            }
             .content { padding: 20px 15px; }
             .content .ui-card,
             .content .card {
@@ -668,8 +760,18 @@
                 </span>
             </button>
             <div class="mobile-title">NIA PIMO Portal</div>
-            <div style="width: 24px;"></div>
+            @if(($appNotificationSummary['enabled'] ?? false) === true)
+                <div id="appNotificationMountMobile"></div>
+            @else
+                <div style="width: 24px;"></div>
+            @endif
         </div>
+
+        @if(($appNotificationSummary['enabled'] ?? false) === true)
+            <div class="app-notification-shell">
+                <div id="appNotificationMountDesktop"></div>
+            </div>
+        @endif
 
         <div class="content">
             <div id="appLiveAlerts"></div>
@@ -679,6 +781,168 @@
     </div>
 
     <script>
+        const appNotificationsEnabled = @json(($appNotificationSummary['enabled'] ?? false) === true);
+        const appNotificationsInitial = @json($appNotificationSummary['notifications'] ?? []);
+        const appNotificationsUnread = @json($appNotificationSummary['unread_count'] ?? 0);
+        const appNotificationsUrl = @json(($appNotificationSummary['enabled'] ?? false) === true ? route('notifications.index') : null);
+        const appNotificationsReadAllUrl = @json(($appNotificationSummary['enabled'] ?? false) === true ? route('notifications.read_all') : null);
+        const appNotificationUserKey = @json(auth()->check() && !session('is_guest') ? 'user_' . auth()->id() : null);
+        const appNotificationSeenKey = appNotificationUserKey ? `system_notifications_seen_${appNotificationUserKey}` : null;
+        let appNotificationsState = {
+            items: Array.isArray(appNotificationsInitial) ? appNotificationsInitial : [],
+            unreadCount: Number(appNotificationsUnread || 0),
+            isOpen: false,
+        };
+
+        function formatAppNotificationTime(isoString) {
+            if (!isoString) {
+                return '';
+            }
+
+            const date = new Date(isoString);
+            if (Number.isNaN(date.getTime())) {
+                return '';
+            }
+
+            return new Intl.DateTimeFormat(undefined, {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            }).format(date);
+        }
+
+        function buildNotificationPanelMarkup() {
+            return `
+                <div class="app-notification-panel">
+                    <button class="app-notification-btn" data-notification-toggle type="button" aria-label="Open notifications" aria-expanded="false">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.389 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span class="app-notification-badge is-hidden" data-notification-badge>0</span>
+                    </button>
+                    <div class="app-notification-dropdown" data-notification-dropdown aria-hidden="true">
+                        <div class="app-notification-header">
+                            <div class="app-notification-title">Notifications</div>
+                            <button class="app-notification-action" data-notification-read-all type="button">Mark all as read</button>
+                        </div>
+                        <div class="app-notification-list" data-notification-list></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNotificationPanel() {
+            if (!appNotificationsEnabled) {
+                return;
+            }
+
+            const desktopMount = document.getElementById('appNotificationMountDesktop');
+            const mobileMount = document.getElementById('appNotificationMountMobile');
+
+            if (desktopMount && !desktopMount.innerHTML.trim()) {
+                desktopMount.innerHTML = buildNotificationPanelMarkup();
+            }
+
+            if (mobileMount && !mobileMount.innerHTML.trim()) {
+                mobileMount.innerHTML = buildNotificationPanelMarkup();
+            }
+
+            const lastSeen = appNotificationSeenKey ? localStorage.getItem(appNotificationSeenKey) : null;
+            const unseenCount = (appNotificationsState.items || []).filter((item) => {
+                if (!lastSeen) {
+                    return true;
+                }
+
+                return String(item.created_at || '') > lastSeen;
+            }).length;
+
+            document.querySelectorAll('[data-notification-badge]').forEach((badge) => {
+                badge.textContent = unseenCount > 99 ? '99+' : String(unseenCount);
+                badge.classList.toggle('is-hidden', unseenCount < 1);
+            });
+
+            document.querySelectorAll('[data-notification-dropdown]').forEach((dropdown) => {
+                dropdown.classList.toggle('is-open', appNotificationsState.isOpen);
+                dropdown.setAttribute('aria-hidden', appNotificationsState.isOpen ? 'false' : 'true');
+            });
+
+            document.querySelectorAll('[data-notification-toggle]').forEach((button) => {
+                button.setAttribute('aria-expanded', appNotificationsState.isOpen ? 'true' : 'false');
+            });
+
+            document.querySelectorAll('[data-notification-list]').forEach((list) => {
+                if (!Array.isArray(appNotificationsState.items) || appNotificationsState.items.length === 0) {
+                    list.innerHTML = '<div class="app-notification-empty">No notifications yet.</div>';
+                    return;
+                }
+
+                list.innerHTML = appNotificationsState.items.map((item) => `
+                    <div class="app-notification-item ${item.read_at ? '' : 'is-unread'}">
+                        <div class="app-notification-item-title">${item.title || 'Notification'}</div>
+                        <div class="app-notification-item-message">${item.message || ''}</div>
+                        <div class="app-notification-item-time">${formatAppNotificationTime(item.created_at)}</div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        async function fetchAppNotifications() {
+            if (!appNotificationsEnabled || !appNotificationsUrl) {
+                return;
+            }
+
+            try {
+                const response = await fetch(appNotificationsUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to load notifications.');
+                }
+
+                const payload = await response.json();
+                appNotificationsState.items = Array.isArray(payload.notifications) ? payload.notifications : [];
+                appNotificationsState.unreadCount = Number(payload.unread_count || 0);
+                renderNotificationPanel();
+            } catch (error) {
+                console.error('Failed to fetch notifications', error);
+            }
+        }
+
+        async function markAllNotificationsRead() {
+            if (!appNotificationsEnabled || !appNotificationsReadAllUrl || appNotificationsState.unreadCount < 1) {
+                if (appNotificationSeenKey) {
+                    const latestTimestamp = appNotificationsState.items[0]?.created_at || new Date().toISOString();
+                    localStorage.setItem(appNotificationSeenKey, latestTimestamp);
+                    renderNotificationPanel();
+                }
+                return;
+            }
+
+            try {
+                const latestTimestamp = appNotificationsState.items[0]?.created_at || new Date().toISOString();
+                await fetch(appNotificationsReadAllUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (appNotificationSeenKey) {
+                    localStorage.setItem(appNotificationSeenKey, latestTimestamp);
+                }
+                appNotificationsState.unreadCount = 0;
+                appNotificationsState.items = appNotificationsState.items.map((item) => ({ ...item, read_at: item.read_at || new Date().toISOString() }));
+                renderNotificationPanel();
+            } catch (error) {
+                console.error('Failed to mark notifications as read', error);
+            }
+        }
+
         function setFieldValidityState(field) {
             if (!(field instanceof HTMLElement) || typeof field.checkValidity !== 'function' || !field.willValidate) {
                 return;
@@ -876,6 +1140,33 @@
         }
 
         document.addEventListener('click', function(event) {
+            const notificationToggle = event.target.closest('[data-notification-toggle]');
+            const notificationReadAll = event.target.closest('[data-notification-read-all]');
+            const notificationPanel = event.target.closest('.app-notification-panel');
+
+            if (notificationToggle) {
+                appNotificationsState.isOpen = !appNotificationsState.isOpen;
+                renderNotificationPanel();
+
+                if (appNotificationsState.isOpen) {
+                    fetchAppNotifications().finally(() => {
+                        markAllNotificationsRead();
+                    });
+                }
+
+                return;
+            }
+
+            if (notificationReadAll) {
+                markAllNotificationsRead();
+                return;
+            }
+
+            if (!notificationPanel && appNotificationsState.isOpen) {
+                appNotificationsState.isOpen = false;
+                renderNotificationPanel();
+            }
+
             if (event.target?.id === 'appConfirmModalCancel') {
                 closeAppConfirmModal(false);
             }
@@ -1351,7 +1642,15 @@
             syncSidebarToggleButtons();
         });
 
-        document.addEventListener('DOMContentLoaded', syncSidebarToggleButtons);
+        document.addEventListener('DOMContentLoaded', function() {
+            syncSidebarToggleButtons();
+            renderNotificationPanel();
+
+            if (appNotificationsEnabled) {
+                fetchAppNotifications();
+                window.setInterval(fetchAppNotifications, 30000);
+            }
+        });
     </script>
 </body>
 

@@ -5,12 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\AdministrativeDocument;
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class AdministrativeController extends Controller
 {
     use HandlesAsyncRequests;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     // 1. Load the Shared Page
     public function index()
@@ -56,6 +62,18 @@ class AdministrativeController extends Controller
                 'user_id' => Auth::id(), // Logs the exact user!
                 'team_role' => Auth::user()->role,
             ]);
+
+            $documentTypeLabel = $request->document_type === 'minutes' ? 'meeting minutes' : 'memorandum';
+            $actorLabel = $this->notifications()->actorLabel($request->user());
+            $this->notifications()->notifyByActorScope(
+                $request->user(),
+                $request->user()->role,
+                ucfirst($documentTypeLabel) . ' uploaded',
+                "{$actorLabel} uploaded {$request->title} to the {$documentTypeLabel} hub.",
+                [
+                    'type' => $request->document_type,
+                ]
+            );
 
             return $this->successResponse($request, 'Document uploaded successfully to ' . ucfirst($request->document_type) . '.');
         }
