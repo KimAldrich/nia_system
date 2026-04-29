@@ -194,28 +194,6 @@ tbody tr:hover {
         </select>
     </div>
 
-    @if(isset($foldersData) && count($foldersData))
-    <div class="folders-panel">
-        <h3>Folders</h3>
-        <div class="folder-list">
-            @foreach($foldersData as $folderIndex => $folder)
-            <div class="folder-item" id="folder-{{ $folderIndex }}">
-                <div>
-                    <div class="folder-name">{{ $folder['name'] }}</div>
-                    <div class="folder-meta">{{ $folder['category'] }} - {{ $folder['file_count'] }} file(s)</div>
-                </div>
-                <button class="btn-delete"
-                    data-folder="{{ $folder['path'] }}"
-                    data-id="{{ $folderIndex }}"
-                    onclick="deleteFolder(this)">
-                    Delete Folder
-                </button>
-            </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
-
     <!-- TABLE -->
     <div class="table-container">
         <table>
@@ -280,20 +258,55 @@ tbody tr:hover {
             </tbody>
         </table>
     </div>
-
+<br>
     <!-- PAGINATION -->
     <div class="pagination">
         <button onclick="prevPage()">⬅ Prev</button>
         <span id="pageInfo"></span>
         <button onclick="nextPage()">Next ➡</button>
     </div>
+<br>
+<br>
+     @if(isset($foldersData) && count($foldersData))
+    <div class="folders-panel">
+        <h3>Folders</h3>
+        <div class="folder-list">
+            @foreach($foldersData as $folderIndex => $folder)
+            <div class="folder-item" id="folder-{{ $folderIndex }}">
+                <div>
+                    <div class="folder-name">{{ $folder['name'] }}</div>
+                    <div class="folder-meta">{{ $folder['category'] }} - {{ $folder['file_count'] }} file(s)</div>
+                </div>
+                <button class="btn-delete"
+                    data-folder="{{ $folder['path'] }}"
+                    data-id="{{ $folderIndex }}"
+                    onclick="deleteFolder(this)">
+                    Delete Folder
+                </button>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+
+
 
 </div>
 <script>
 let currentPage = 1;
 const rowsPerPage = 10;
 
-const rows = Array.from(document.querySelectorAll('.data-row'));
+let rows = Array.from(document.querySelectorAll('tbody .data-row'));
+function normalizeFilterValue(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function addFilterOption(select, value, label = value) {
+    if (!select) return;
+
+    select.add(new Option(label, value));
+}
 let filteredRows = [...rows]; // ✅ IMPORTANT FIX
 
 // 🔽 POPULATE FILTERS
@@ -303,43 +316,42 @@ function populateFilters() {
     const municipalities = new Set();
 
     rows.forEach(row => {
-        if (row.dataset.category) categories.add(row.dataset.category);
-        if (row.dataset.folder) folders.add(row.dataset.folder);
-        if (row.dataset.municipality) municipalities.add(row.dataset.municipality);
+        const category = normalizeFilterValue(row.dataset.category);
+        const folder = normalizeFilterValue(row.dataset.folder);
+        const municipality = normalizeFilterValue(row.dataset.municipality);
+
+        if (category) categories.add(category);
+        if (folder) folders.add(folder);
+        if (municipality) municipalities.add(municipality);
     });
 
     const catFilter = document.getElementById('categoryFilter');
     const folderFilter = document.getElementById('folderFilter');
     const muniFilter = document.getElementById('municipalityFilter');
 
-    Array.from(categories).sort().forEach(c => {
-        catFilter.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-
-    Array.from(folders).sort().forEach(f => {
-        folderFilter.innerHTML += `<option value="${f}">${f}</option>`;
-    });
-
+    Array.from(categories).sort().forEach(c => addFilterOption(catFilter, c));
+    Array.from(folders).sort().forEach(f => addFilterOption(folderFilter, f));
     Array.from(municipalities).sort().forEach(m => {
         const display = m.charAt(0).toUpperCase() + m.slice(1);
-        muniFilter.innerHTML += `<option value="${m}">${display}</option>`;
+        addFilterOption(muniFilter, m, display);
     });
 }
 
 // 🔎 FILTERING
 function applyFilters() {
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    const category = document.getElementById('categoryFilter').value;
-    const folder = document.getElementById('folderFilter').value;
-    const municipality = document.getElementById('municipalityFilter').value;
+    const search = normalizeFilterValue(document.getElementById('searchInput')?.value);
+    const category = normalizeFilterValue(document.getElementById('categoryFilter')?.value);
+    const folder = normalizeFilterValue(document.getElementById('folderFilter')?.value);
+    const municipality = normalizeFilterValue(document.getElementById('municipalityFilter')?.value);
 
     filteredRows = rows.filter(row => {
-        const name = row.dataset.name;
-        const cat = row.dataset.category;
-        const fol = row.dataset.folder;
-        const muni = row.dataset.municipality;
+        const name = normalizeFilterValue(row.dataset.name);
+        const cat = normalizeFilterValue(row.dataset.category);
+        const fol = normalizeFilterValue(row.dataset.folder);
+        const muni = normalizeFilterValue(row.dataset.municipality);
 
         const matchSearch =
+            !search ||
             name.includes(search) ||
             cat.includes(search) ||
             fol.includes(search) ||
@@ -361,7 +373,8 @@ function paginate() {
     // hide all first
     rows.forEach(row => row.style.display = 'none');
 
-    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+    currentPage = Math.min(currentPage, totalPages);
 
     filteredRows.forEach((row, index) => {
         if (
@@ -372,13 +385,14 @@ function paginate() {
         }
     });
 
-    document.getElementById('pageInfo').innerText =
-        `Page ${currentPage} of ${totalPages || 1}`;
+    document.getElementById('pageInfo').innerText = filteredRows.length
+        ? `Page ${currentPage} of ${totalPages}`
+        : 'No matching files';
 }
 
 // ➡ NEXT
 function nextPage() {
-    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
 
     if (currentPage < totalPages) {
         currentPage++;
@@ -451,8 +465,12 @@ async function deleteFolder(btn) {
 }
 
 // INIT
-populateFilters();
-paginate();
+document.addEventListener('DOMContentLoaded', () => {
+    rows = Array.from(document.querySelectorAll('tbody .data-row'));
+    filteredRows = [...rows];
+    populateFilters();
+    paginate();
+});
 </script>
 
 @endsection
