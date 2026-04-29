@@ -802,8 +802,10 @@
         @endif
 
         <div class="content">
+            @if(!View::hasSection('full_bleed_content'))
             <div id="appLiveAlerts"></div>
             @include('partials.alerts')
+            @endif
             @yield('content')
         </div>
     </div>

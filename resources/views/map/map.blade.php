@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Map - Pangasinan')
+@section('full_bleed_content', 'true')
 
 @section('content')
 
