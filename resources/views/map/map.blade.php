@@ -684,6 +684,30 @@ select[name="category"]:focus {
     background: rgba(11, 94, 44, 0.03);
 }
 
+.upload-box.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+    background: #f8fafc;
+}
+
+.upload-box.is-disabled:hover {
+    border-color: #e2e8f0;
+    background: #f8fafc;
+}
+
+.upload-choice-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 8px 0;
+}
+
 .upload-box i {
     font-size: 20px;
     color: #0b5e2c;
@@ -925,14 +949,16 @@ select[name="category"]:focus {
                 <div class="form-group">
                     <label>Upload Source</label>
                     <div class="upload-stack">
-                        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-box" id="fileUploadBox">
                             <i class="fas fa-file-upload"></i>
                             <strong>Select Files</strong>
-                            <span>.shp, .kml, .json, .kmz</span>
-                            <input type="file" id="fileInput" multiple style="display:none;">
+                            <span>.geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, .cpg</span>
+                            <input type="file" id="fileInput" multiple accept=".geojson,.json,.kml,.kmz,.zip,.shp,.shx,.dbf,.prj,.cpg" style="display:none;">
                         </div>
 
-                        <div class="upload-box" onclick="document.getElementById('folderInput').click()">
+                        <div class="upload-choice-divider">or</div>
+
+                        <div class="upload-box" id="folderUploadBox">
                             <i class="fas fa-folder-open"></i>
                             <strong>Upload Folder</strong>
                             <span>Select map directory</span>
@@ -946,7 +972,7 @@ select[name="category"]:focus {
                     <i class="fas fa-cloud-upload-alt"></i> Upload Data
                 </button>
             </form>
-            <div id="uploadStatus" class="upload-status"></div>
+            <div id="uploadStatus" class="upload-status" aria-hidden="true"></div>
         </div>
     </div>
 </div>
@@ -1678,6 +1704,8 @@ function showMiniMap(feature) {
 
 
 const form = document.getElementById('uploadForm');
+const supportedMapExtensions = ['geojson', 'json', 'kml', 'kmz', 'zip', 'shp', 'shx', 'dbf', 'prj', 'cpg'];
+const supportedMapExtensionLabel = '.geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, .cpg';
 
 if (form) {
     const statusBoxUpload = document.getElementById('uploadStatus');
@@ -1700,13 +1728,67 @@ if (form) {
         }
     }
 
+    function getUnsupportedMapFiles(fileList) {
+        return Array.from(fileList).filter((file) => {
+            const parts = String(file.name || '').toLowerCase().split('.');
+            const extension = parts.length > 1 ? parts.pop() : '';
+
+            return !supportedMapExtensions.includes(extension);
+        });
+    }
+
+    function openUploadFeedbackModal(message, title = 'Upload Failed') {
+        if (typeof openAsyncSuccessModal === 'function') {
+            openAsyncSuccessModal('#appFeedbackModal', message, title);
+            return;
+        }
+
+        alert(message);
+    }
+
     const fileInput = document.getElementById('fileInput');
     const folderInput = document.getElementById('folderInput');
+    const fileUploadBox = document.getElementById('fileUploadBox');
+    const folderUploadBox = document.getElementById('folderUploadBox');
+
+    function syncUploadSourceState() {
+        const hasFiles = fileInput.files.length > 0;
+        const hasFolderFiles = folderInput.files.length > 0;
+
+        fileInput.disabled = hasFolderFiles;
+        folderInput.disabled = hasFiles;
+
+        if (fileUploadBox) {
+            fileUploadBox.classList.toggle('is-disabled', hasFolderFiles);
+        }
+
+        if (folderUploadBox) {
+            folderUploadBox.classList.toggle('is-disabled', hasFiles);
+        }
+    }
+
+    if (fileUploadBox) {
+        fileUploadBox.addEventListener('click', () => {
+            if (!fileInput.disabled) {
+                fileInput.click();
+            }
+        });
+    }
+
+    if (folderUploadBox) {
+        folderUploadBox.addEventListener('click', () => {
+            if (!folderInput.disabled) {
+                folderInput.click();
+            }
+        });
+    }
 
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
             folderInput.value = '';
         }
+
+        syncUploadSourceState();
 
         updateSelectionInfo(
             fileInput.files.length
@@ -1720,6 +1802,8 @@ if (form) {
             fileInput.value = '';
         }
 
+        syncUploadSourceState();
+
         if (folderInput.files.length > 0) {
             const firstPath = folderInput.files[0].webkitRelativePath || folderInput.files[0].name;
             const rootFolder = firstPath.split('/')[0];
@@ -1732,6 +1816,7 @@ if (form) {
 
     categorySelect.addEventListener('change', updateTargetFolderOptions);
     updateTargetFolderOptions();
+    syncUploadSourceState();
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -1748,12 +1833,23 @@ if (form) {
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
         if (files.length === 0 && folderFiles.length === 0) {
-            alert('Please select files OR a folder');
+            openUploadFeedbackModal('Please select files or a folder.', 'Upload Required');
             return;
         }
 
         if (files.length > 0 && folderFiles.length > 0) {
-            alert('Please select only one: files OR folder');
+            openUploadFeedbackModal('Please select only one upload source: files or a folder.');
+            return;
+        }
+
+        const filesToValidate = files.length > 0 ? files : folderFiles;
+        const unsupportedFiles = getUnsupportedMapFiles(filesToValidate);
+
+        if (unsupportedFiles.length > 0) {
+            const invalidNames = unsupportedFiles.map((file) => file.name).slice(0, 5).join(', ');
+            openUploadFeedbackModal(
+                `Unsupported file detected: ${invalidNames}. Please upload only ${supportedMapExtensionLabel}.`
+            );
             return;
         }
 
@@ -1771,11 +1867,11 @@ if (form) {
             }
         }
 
-        statusBoxUpload.style.display = 'block';
-        statusBoxUpload.className = 'upload-status upload-loading';
-        statusBoxUpload.innerHTML = 'Uploading...';
         const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
+        if (typeof showAppLoader === 'function') {
+            showAppLoader('Uploading map files...');
+        }
 
         try {
             const response = await fetch("{{ route('map.upload') }}", {
@@ -1789,13 +1885,19 @@ if (form) {
             }));
 
             if (response.ok && result.files.length > 0) {
-                statusBoxUpload.className = 'upload-status upload-success';
+                statusBoxUpload.style.display = 'none';
                 statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
-                statusBoxUpload.innerHTML = result.message || `Uploaded ${result.files.length} file(s).`;
-                if (currentUserRole === 'admin') {
-                    alert(result.message || 'Upload successful. Other users have been notified.');
+                
+                if (typeof openAsyncSuccessModal === 'function') {
+                    openAsyncSuccessModal(
+                        '#appFeedbackModal',
+                        result.message || `Uploaded ${result.files.length} file(s).`,
+                        'Upload Complete'
+                    );
+                    statusBoxUpload.style.display = 'none';
                 }
                 form.reset();
+                syncUploadSourceState();
                 updateTargetFolderOptions();
                 updateSelectionInfo('No files selected.');
                 irrigatedStats = await fetch('/irrigated-chart-data').then(res => res.json());
@@ -1805,9 +1907,21 @@ if (form) {
             }
 
         } catch (error) {
-            statusBoxUpload.className = 'upload-status upload-error';
+            if (typeof openAsyncSuccessModal === 'function') {
+                openAsyncSuccessModal(
+                    '#appFeedbackModal',
+                    error.message || 'Upload failed.',
+                    'Upload Failed'
+                );
+                statusBoxUpload.style.display = 'none';
+            } else {
+                statusBoxUpload.className = 'upload-status upload-error';
+            }
             statusBoxUpload.innerHTML = '❌ ' + error.message;
         } finally {
+            if (typeof hideAppLoader === 'function') {
+                hideAppLoader();
+            }
             submitButton.disabled = false;
         }
     });

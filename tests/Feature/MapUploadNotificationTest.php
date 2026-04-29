@@ -66,11 +66,8 @@ class MapUploadNotificationTest extends TestCase
 
                     return $channels === ['database']
                         && $payload['type'] === 'map_file'
-                        && $payload['title'] === 'New map file uploaded'
-                        && str_contains($payload['message'], $payload['actor_name'] . ' (Admin) uploaded')
-                        && str_contains($payload['message'], 'sample-map.geojson')
-                        && str_contains($payload['message'], 'maps/irrigated/Agno')
-                        && str_contains($payload['message'], 'Irrigated Area')
+                        && $payload['title'] === 'Map file uploaded'
+                        && $payload['message'] === $payload['actor_name'] . ' (Admin) uploaded a new file into maps/irrigated/Agno/sample-map.geojson.'
                         && $payload['map_directory'] === 'maps/irrigated/Agno'
                         && $payload['map_files'] === ['sample-map.geojson']
                         && $payload['url'] === route('map');

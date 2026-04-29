@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\SystemNotificationService;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -174,8 +175,13 @@ class MapController extends Controller
             $request->validate([
                 'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
                 'files' => 'required',
-                'files.*' => 'file|max:51200',
+                'files.*' => 'file|extensions:geojson,json,kml,kmz,zip,shp,shx,dbf,prj,cpg|max:51200',
                 'target_folder' => 'nullable|string|max:255',
+            ], [
+                'files.required' => 'Please select at least one supported map file to upload.',
+                'files.*.file' => 'Only supported map files may be uploaded.',
+                'files.*.extensions' => 'Unsupported file detected. Please upload only: .geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, or .cpg.',
+                'files.*.max' => 'Each uploaded file must be 50MB or smaller.',
             ]);
 
             $category = $request->category;
@@ -241,6 +247,11 @@ class MapController extends Controller
                 'target_folder' => $targetFolder,
                 'notified_users_count' => $notificationResult['notified_users_count'],
             ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => $e->validator->errors()->first() ?: 'Upload failed. Please check the selected files and try again.',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Upload failed: ' . $e->getMessage(),
@@ -985,10 +996,10 @@ class MapController extends Controller
         $directory = trim("maps/{$categoryDirectory}/{$targetFolder}", '/');
         $directoryLabel = $directory !== '' ? $directory : 'maps';
         $actorLabel = $this->notifications()->actorLabel($actor);
-        $title = $fileNames->count() === 1 ? 'New map file uploaded' : 'New map files uploaded';
+        $title = $fileNames->count() === 1 ? 'Map file uploaded' : 'Map files uploaded';
         $message = $fileNames->count() === 1
-            ? "{$actorLabel} uploaded {$fileNames->first()} to {$directoryLabel} ({$category})."
-            : "{$actorLabel} uploaded {$fileNames->count()} map files to {$directoryLabel} ({$category}): {$fileNames->implode(', ')}.";
+            ? "{$actorLabel} uploaded a new file into {$directoryLabel}/{$fileNames->first()}."
+            : "{$actorLabel} uploaded new files into {$directoryLabel}: {$fileNames->implode(', ')}.";
 
         $this->notifications()->notifyAgency($actor, $title, $message, [
             'type' => 'map_file',
