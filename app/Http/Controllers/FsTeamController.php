@@ -379,7 +379,7 @@ class FsTeamController extends Controller
         $resolutionMessage = $files->count() === 1
             ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
             : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
-        $this->notifications()->notifyByActorScope($request->user(), 'fs_team', 'IA resolutions updated', $resolutionMessage, [
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'fs_team', 'IA resolutions updated', $resolutionMessage, [
             'type' => 'ia_resolution',
             'team' => 'fs_team',
             'team_label' => $teamLabel,
@@ -402,16 +402,17 @@ class FsTeamController extends Controller
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $resolutionTeam = $resolution->team ?: 'fs_team';
+        $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope(
+        $this->notifications()->notifyTeamAndAdmins(
             $request->user(),
-            'fs_team',
+            $resolutionTeam,
             'IA resolution updated',
             "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.",
             [
                 'type' => 'ia_resolution',
-                'team' => 'fs_team',
+                'team' => $resolutionTeam,
                 'team_label' => $teamLabel,
             ]
         );
@@ -427,15 +428,17 @@ class FsTeamController extends Controller
         $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
 
-        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $resolutionTeam = $resolution->team ?: 'fs_team';
+        $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyAgency(
+        $this->notifications()->notifyTeamAndAdmins(
             $request->user(),
+            $resolutionTeam,
             'IA resolution status changed',
             "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.",
             [
                 'type' => 'ia_resolution_status',
-                'team' => 'fs_team',
+                'team' => $resolutionTeam,
                 'team_label' => $teamLabel,
                 'status' => $request->status,
             ]
@@ -1010,16 +1013,17 @@ class FsTeamController extends Controller
         // Delete record from database
         $resolution->delete();
 
-        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $resolutionTeam = $resolution->team ?: 'fs_team';
+        $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope(
+        $this->notifications()->notifyTeamAndAdmins(
             $request->user(),
-            'fs_team',
+            $resolutionTeam,
             'IA resolution removed',
             "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.",
             [
                 'type' => 'ia_resolution',
-                'team' => 'fs_team',
+                'team' => $resolutionTeam,
                 'team_label' => $teamLabel,
             ]
         );

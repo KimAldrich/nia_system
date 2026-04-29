@@ -38,10 +38,10 @@
         .section-title { font-size: 18px; font-weight: 600; color: var(--primary); margin: 0; }
         .table-card { display: grid; gap: 18px; }
         .table-toolbar { display: grid; gap: 16px; }
-        .filter-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto; gap: 12px; align-items: end; }
+        .filter-form { display: grid; grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(0, 1fr)) auto auto; gap: 12px; align-items: end; }
         .filter-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
-        .filter-select { min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid #dbe3ee; background: #f8fafc; color: var(--text-main); font-size: 13px; width: 100%; }
-        .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08); background: #ffffff; }
+        .filter-input, .filter-select { min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid #dbe3ee; background: #f8fafc; color: var(--text-main); font-size: 13px; width: 100%; }
+        .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08); background: #ffffff; }
         .btn-filter { min-height: 44px; padding: 0 16px; border: none; border-radius: 12px; background: #18181b; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; }
         .btn-filter:hover { background: #09090b; }
         .btn-reset { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #dbe3ee; color: var(--text-main); text-decoration: none; font-size: 13px; font-weight: 700; background: #ffffff; }
@@ -171,6 +171,18 @@
                 <div class="table-toolbar">
                     <form action="{{ route('admin.users') }}" method="GET" class="filter-form js-user-filters">
                         <div>
+                            <label class="filter-label" for="searchFilter">Search</label>
+                            <input
+                                type="search"
+                                name="search"
+                                id="searchFilter"
+                                class="filter-input"
+                                value="{{ $search ?? '' }}"
+                                placeholder="Name, email, or role"
+                            >
+                        </div>
+
+                        <div>
                             <label class="filter-label" for="roleFilter">Role</label>
                             <select name="role" id="roleFilter" class="filter-select">
                                 <option value="">All Roles</option>
@@ -216,11 +228,11 @@
                         <a href="{{ route('admin.users') }}" class="btn-reset" data-async-pagination="true" data-async-target="#userManagementGrid">Reset</a>
                     </form>
 
-                    <div class="results-meta">
+                        <div class="results-meta">
                         @if($users->count())
                             <span>Showing {{ $users->firstItem() }}-{{ $users->lastItem() }} of {{ $users->total() }} users</span>
                         @else
-                            <span>No users match the current filters</span>
+                            <span>No users match the current search or filters</span>
                         @endif
                     </div>
                 </div>
@@ -306,7 +318,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="empty-state">No user accounts were found for the selected role, status, or sort order.</td>
+                                    <td colspan="5" class="empty-state">No user accounts were found for the current search and filters.</td>
                                 </tr>
                             @endforelse
                         </tbody>

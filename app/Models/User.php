@@ -46,7 +46,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function requiresEmailVerification(): bool
     {
-        return ! $this->isAdmin();
+        return true;
     }
 
     // A user belongs to one team

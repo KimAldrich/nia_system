@@ -425,10 +425,19 @@ class AdminController extends Controller
 
         $role = $request->query('role');
         $status = $request->query('status');
+        $search = trim((string) $request->query('search', ''));
         $sort = $request->query('sort', 'created_at');
         $direction = strtolower((string) $request->query('direction', 'desc'));
 
         $query = User::query();
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('role', 'like', "%{$search}%");
+            });
+        }
 
         if (in_array($role, $allowedRoles, true)) {
             $query->where('role', $role);
@@ -454,7 +463,7 @@ class AdminController extends Controller
             ->paginate(5)
             ->withQueryString();
 
-        return view('admin.users', compact('users', 'role', 'status', 'sort', 'direction'));
+        return view('admin.users', compact('users', 'role', 'status', 'search', 'sort', 'direction'));
     }
 
     // 3. Store New User
@@ -477,7 +486,7 @@ class AdminController extends Controller
             'password' => $validated['password'],
             'role' => $validated['role'],
             'is_active' => true,
-            'email_verified_at' => $isAdmin ? Carbon::now() : null,
+            'email_verified_at' => null,
             'agreed_to_terms' => $isAdmin,
         ]);
 

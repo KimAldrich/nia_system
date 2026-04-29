@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -95,7 +96,7 @@ class AdminUserManagementTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_admin_created_admin_account_can_log_in_with_the_given_password(): void
+    public function test_admin_created_admin_account_must_verify_email_before_access(): void
     {
         Notification::fake();
 
@@ -118,9 +119,8 @@ class AdminUserManagementTest extends TestCase
 
         $createdAdmin = User::where('email', 'second-admin@test.com')->firstOrFail();
 
-        $this->assertNotNull($createdAdmin->email_verified_at);
+        $this->assertNull($createdAdmin->email_verified_at);
         $this->assertTrue((bool) $createdAdmin->agreed_to_terms);
-        Notification::assertNothingSent();
 
         auth()->logout();
 
@@ -129,8 +129,39 @@ class AdminUserManagementTest extends TestCase
             'password' => 'secret123',
         ]);
 
-        $loginResponse->assertRedirect(route('terms.show'));
+        $loginResponse->assertRedirect(route('verification.notice'));
         $this->assertAuthenticated();
         $this->assertSame($createdAdmin->id, auth()->id());
+        Notification::assertSentTo($createdAdmin, VerifyEmail::class);
+    }
+
+    public function test_admin_can_search_team_directory_users(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'agreed_to_terms' => true,
+        ]);
+
+        $matchingUser = User::factory()->create([
+            'name' => 'Alice Waters',
+            'email' => 'alice@example.com',
+            'role' => 'fs_team',
+        ]);
+
+        $nonMatchingUser = User::factory()->create([
+            'name' => 'Brian Cruz',
+            'email' => 'brian@example.com',
+            'role' => 'row_team',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['agreed_to_terms' => true])
+            ->get(route('admin.users', ['search' => 'alice']));
+
+        $response->assertOk();
+        $response->assertSeeText($matchingUser->name);
+        $response->assertSeeText($matchingUser->email);
+        $response->assertDontSeeText($nonMatchingUser->name);
+        $response->assertDontSeeText($nonMatchingUser->email);
     }
 }

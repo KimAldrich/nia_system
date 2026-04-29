@@ -261,7 +261,7 @@ class ContractManagementTeamController extends Controller
         $resolutionMessage = $files->count() === 1
             ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
             : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
-        $this->notifications()->notifyByActorScope($request->user(), 'cm_team', 'IA resolutions updated', $resolutionMessage, ['type' => 'ia_resolution', 'team' => 'cm_team', 'team_label' => $teamLabel]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'cm_team', 'IA resolutions updated', $resolutionMessage, ['type' => 'ia_resolution', 'team' => 'cm_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, $message);
     }
@@ -280,9 +280,10 @@ class ContractManagementTeamController extends Controller
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
-        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $resolutionTeam = $resolution->team ?: 'cm_team';
+        $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope($request->user(), 'cm_team', 'IA resolution updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'cm_team', 'team_label' => $teamLabel]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => $resolutionTeam, 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution updated successfully.');
     }
@@ -294,9 +295,10 @@ class ContractManagementTeamController extends Controller
         $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
 
-        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $resolutionTeam = $resolution->team ?: 'cm_team';
+        $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyAgency($request->user(), 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'cm_team', 'team_label' => $teamLabel, 'status' => $request->status]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => $resolutionTeam, 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -320,9 +322,10 @@ class ContractManagementTeamController extends Controller
         // Delete record from database
         $resolution->delete();
 
-        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $resolutionTeam = $resolution->team ?: 'cm_team';
+        $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope($request->user(), 'cm_team', 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'cm_team', 'team_label' => $teamLabel]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => $resolutionTeam, 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }
