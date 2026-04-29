@@ -100,6 +100,46 @@ tbody tr:hover {
     background: #c62828;
 }
 
+.folders-panel {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    margin-bottom: 18px;
+    padding: 16px;
+}
+
+.folders-panel h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+}
+
+.folder-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.folder-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+}
+
+.folder-name {
+    font-weight: bold;
+    word-break: break-word;
+}
+
+.folder-meta {
+    color: #666;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
 /* PAGINATION */
 .pagination {
     margin-top: 15px;
@@ -153,6 +193,28 @@ tbody tr:hover {
             <option value="">All Municipalities</option>
         </select>
     </div>
+
+    @if(isset($foldersData) && count($foldersData))
+    <div class="folders-panel">
+        <h3>Folders</h3>
+        <div class="folder-list">
+            @foreach($foldersData as $folderIndex => $folder)
+            <div class="folder-item" id="folder-{{ $folderIndex }}">
+                <div>
+                    <div class="folder-name">{{ $folder['name'] }}</div>
+                    <div class="folder-meta">{{ $folder['category'] }} - {{ $folder['file_count'] }} file(s)</div>
+                </div>
+                <button class="btn-delete"
+                    data-folder="{{ $folder['path'] }}"
+                    data-id="{{ $folderIndex }}"
+                    onclick="deleteFolder(this)">
+                    Delete Folder
+                </button>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     <!-- TABLE -->
     <div class="table-container">
@@ -339,58 +401,52 @@ async function deleteFile(btn) {
 
     if (!confirm('Delete this file?')) return;
 
-    btn.disabled = true;
-    btn.classList.add('is-loading');
+    const response = await fetch('/map/delete', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ path: path })
+    });
 
-    if (typeof showAppLoader === 'function') {
-        showAppLoader('Deleting file...');
+    const result = await response.json();
+
+    if (response.ok) {
+        document.getElementById('row-' + rowId).remove();
+        alert(result.message || 'Deleted. Other users have been notified.');
+
+        // 🔥 update rows after delete
+        location.reload(); // simplest reliable fix
+    } else {
+        alert(result.message);
     }
+}
 
-    try {
-        const response = await fetch('/map/delete', {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ path: path })
-        });
+async function deleteFolder(btn) {
+    const folder = btn.getAttribute('data-folder');
+    const folderId = btn.getAttribute('data-id');
 
-        const result = await response.json();
+    if (!confirm('Delete this folder and all files inside it?')) return;
 
-        if (!response.ok) {
-            throw new Error(result.message || 'Unable to delete file.');
-        }
+    const response = await fetch('/map/delete-folder', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ folder: folder })
+    });
 
-        const row = document.getElementById('row-' + rowId);
-        if (row) {
-            row.remove();
-        }
+    const result = await response.json();
 
-        const rowIndex = rows.findIndex(row => row.id === 'row-' + rowId);
-        if (rowIndex !== -1) {
-            rows.splice(rowIndex, 1);
-        }
-
-        filteredRows = filteredRows.filter(row => row.id !== 'row-' + rowId);
-        paginate();
-
-        if (typeof showLiveAlert === 'function') {
-            showLiveAlert(result.message || 'File deleted successfully.', 'success');
-        }
-    } catch (error) {
-        if (typeof showLiveAlert === 'function') {
-            showLiveAlert(error.message || 'Unable to delete file.', 'error');
-        } else {
-            alert(error.message || 'Unable to delete file.');
-        }
-    } finally {
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
-
-        if (typeof hideAppLoader === 'function') {
-            hideAppLoader();
-        }
+    if (response.ok) {
+        const item = document.getElementById('folder-' + folderId);
+        if (item) item.remove();
+        alert(result.message || 'Folder deleted.');
+        location.reload();
+    } else {
+        alert(result.message || 'Folder delete failed.');
     }
 }
 

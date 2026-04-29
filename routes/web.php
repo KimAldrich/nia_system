@@ -32,6 +32,7 @@ Route::get('/guest/pao-team/pow/export-excel', [PaoTeamController::class, 'expor
 
 Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 Route::get('/map/notifications-feed', [MapController::class, 'mapNotifications'])->name('map.notifications.feed');
+Route::get('/map/file/{path}', [MapController::class, 'serveMapFile'])->where('path', '.*')->name('map.file');
 
 Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/guest/{team_slug}/dashboard', [GuestController::class, 'teamDashboard'])->name('guest.team.dashboard');
@@ -58,6 +59,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     //Map Routes
         Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
         Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
+        Route::delete('/map/delete-folder', [MapController::class, 'deleteFolder']);
         Route::delete('/map/delete', [MapController::class, 'deleteFile']);
         Route::get('/map/notifications', [MapController::class, 'mapNotifications'])->name('map.notifications');
         Route::post('/map/notifications/clear-old', [MapController::class, 'clearOldMapNotifications'])->name('map.notifications.clear_old');

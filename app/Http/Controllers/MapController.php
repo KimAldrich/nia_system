@@ -13,7 +13,7 @@ use ZipArchive;
 
 class MapController extends Controller
 {
-    private const IRRIGATED_CHART_CACHE_KEY = 'map.irrigated_chart_data.v5';
+    private const IRRIGATED_CHART_CACHE_KEY_PREFIX = 'map.irrigated_chart_data.v7.';
     private const MUNICIPALITY_DETAILS_PATH = 'maps/details.json';
     private const IRRIGATED_DIRECTORY = 'maps/irrigated';
     private const POTENTIAL_DIRECTORY = 'maps/potential';
@@ -93,7 +93,7 @@ class MapController extends Controller
             ->map(function ($path) use ($folder) {
                 return [
                     'name' => basename($path),
-                    'url' => Storage::url($path),
+                    'url' => $this->mapFileUrl($path),
                     'folder' => $this->relativeOverlayFolder($path, $folder),
                 ];
             })
@@ -216,7 +216,7 @@ class MapController extends Controller
                     $uploadedFiles[] = [
                         'name' => $finalName,
                         'path' => $path,
-                        'url' => Storage::url($path),
+                        'url' => $this->mapFileUrl($path),
                     ];
                 }
             }
@@ -244,6 +244,7 @@ class MapController extends Controller
     public function fileManager()
     {
         $filesData = [];
+        $foldersData = [];
 
         foreach (self::CATEGORY_DIRECTORY_MAP as $category => $directory) {
             $folder = $this->resolveOverlayFolder($category, $directory);
@@ -253,24 +254,41 @@ class MapController extends Controller
             }
 
             $files = collect(Storage::disk('public')->allFiles($folder));
+            $folderCounts = [];
 
             foreach ($files as $file) {
+                $fileFolder = dirname($file);
+                $folderCounts[$fileFolder] = ($folderCounts[$fileFolder] ?? 0) + 1;
+
                 $filesData[] = [
                     'name' => basename($file),
                     'category' => $category,
-                    'url' => Storage::url($file),
+                    'url' => $this->mapFileUrl($file),
                     'path' => $file,
-                    'folder' => dirname($file),
+                    'folder' => $fileFolder,
+                ];
+            }
+
+            foreach ($folderCounts as $fileFolder => $count) {
+                if ($fileFolder === $folder) {
+                    continue;
+                }
+
+                $foldersData[] = [
+                    'category' => $category,
+                    'path' => $fileFolder,
+                    'name' => trim($this->relativeOverlayFolder($fileFolder, $folder), '/') ?: basename($fileFolder),
+                    'file_count' => $count,
                 ];
             }
         }
 
-        return view('map.files', compact('filesData'));
+        return view('map.files', compact('filesData', 'foldersData'));
     }
 
     public function deleteFile(Request $request)
     {
-        $path = $request->path;
+        $path = $this->normalizePublicStoragePath((string) $request->path);
 
         if (Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
@@ -278,7 +296,7 @@ class MapController extends Controller
             $notificationResult = $this->notifyMapFileChange('delete', $category, [[
                 'name' => basename((string) $path),
                 'path' => (string) $path,
-                'url' => Storage::url((string) $path),
+                'url' => $this->mapFileUrl((string) $path),
             ]]);
 
             $this->clearMapDataCache();
@@ -292,6 +310,68 @@ class MapController extends Controller
         return response()->json([
             'message' => 'File not found',
         ], 404);
+    }
+
+    public function deleteFolder(Request $request)
+    {
+        $folder = $this->normalizePublicStoragePath((string) $request->input('folder'));
+        $allowedRoots = array_map(fn ($directory) => "maps/{$directory}", array_values(self::CATEGORY_DIRECTORY_MAP));
+
+        $isAllowed = collect($allowedRoots)->contains(function ($root) use ($folder) {
+            return $folder !== $root && str_starts_with($folder . '/', $root . '/');
+        });
+
+        if (!$isAllowed) {
+            return response()->json([
+                'message' => 'Invalid folder path.',
+            ], 422);
+        }
+
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($folder)) {
+            return response()->json([
+                'message' => 'Folder not found.',
+            ], 404);
+        }
+
+        $files = collect($disk->allFiles($folder))->map(function ($path) {
+            return [
+                'name' => basename($path),
+                'path' => $path,
+                'url' => $this->mapFileUrl($path),
+            ];
+        })->values()->all();
+
+        $disk->deleteDirectory($folder);
+        $category = $this->resolveCategoryFromStoragePath($folder);
+        $this->clearMapDataCache();
+
+        $notificationResult = $this->notifyMapFileChange('delete', $category, [[
+            'name' => basename($folder),
+            'path' => $folder,
+        ]]);
+
+        return response()->json([
+            'message' => 'Folder deleted. ' . $notificationResult['admin_message'],
+            'deleted_files_count' => count($files),
+            'notified_users_count' => $notificationResult['notified_users_count'],
+        ]);
+    }
+
+    public function serveMapFile(string $path)
+    {
+        $path = $this->normalizePublicStoragePath($path);
+        $disk = Storage::disk('public');
+        $fullPath = $disk->path($path);
+
+        if (!$disk->exists($path) || !is_file($fullPath)) {
+            abort(404);
+        }
+
+        return response()->file($fullPath, [
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ]);
     }
 
     public function mapNotifications(Request $request)
@@ -414,7 +494,7 @@ class MapController extends Controller
 
     public function getIrrigatedChartData()
     {
-        return response()->json(Cache::store('file')->remember(self::IRRIGATED_CHART_CACHE_KEY, now()->addHour(), function () {
+        return response()->json(Cache::store('file')->remember($this->irrigatedChartCacheKey(), now()->addHour(), function () {
             $municipalityDetails = $this->getMunicipalityDetailIndex();
 
             if (empty($municipalityDetails)) {
@@ -426,6 +506,7 @@ class MapController extends Controller
             $irrigatedStats = $this->collectIrrigatedAreas($municipalityDetails);
             $piaStats = $this->collectPotentialAreas($municipalityDetails);
             $chartData = [];
+            $hasUploadedIrrigatedData = !empty($irrigatedStats);
 
             foreach ($municipalityDetails as $normalizedName => $detail) {
                 $name = $detail['name'];
@@ -437,7 +518,7 @@ class MapController extends Controller
                 $irrigatedAreaSource = 'dbf';
 
                 if (
-                    ($irrigatedArea <= 0 && $fallbackIrrigatedArea > 0)
+                    (!$hasUploadedIrrigatedData && $irrigatedArea <= 0 && $fallbackIrrigatedArea > 0)
                     || ($totalLand > 0 && $irrigatedArea > $totalLand)
                 ) {
                     $irrigatedArea = $fallbackIrrigatedArea;
@@ -873,7 +954,7 @@ class MapController extends Controller
 
     private function clearMapDataCache(): void
     {
-        Cache::store('file')->forget(self::IRRIGATED_CHART_CACHE_KEY);
+        Cache::store('file')->forget($this->irrigatedChartCacheKey());
     }
 
     private function notifyMapFileChange(string $action, string $category, array $files): array
@@ -930,19 +1011,79 @@ class MapController extends Controller
     {
         $normalizedPath = strtolower(str_replace('\\', '/', $path));
 
-        if (str_contains($normalizedPath, '/maps/irrigated/')) {
+        if (str_contains('/' . trim($normalizedPath, '/') . '/', '/maps/irrigated/')) {
             return 'Irrigated Area';
         }
 
-        if (str_contains($normalizedPath, '/maps/potential/')) {
+        if (str_contains('/' . trim($normalizedPath, '/') . '/', '/maps/potential/')) {
             return 'Potential Irrigable Area';
         }
 
-        if (str_contains($normalizedPath, '/maps/land_boundary/')) {
+        if (str_contains('/' . trim($normalizedPath, '/') . '/', '/maps/land_boundary/')) {
             return 'Pangasinan Land Boundary';
         }
 
         return 'Map Files';
+    }
+
+    private function mapFileUrl(string $path): string
+    {
+        $segments = array_map('rawurlencode', explode('/', $this->normalizePublicStoragePath($path)));
+
+        return url('/map/file/' . implode('/', $segments));
+    }
+
+    private function normalizePublicStoragePath(string $path): string
+    {
+        $path = str_replace('\\', '/', $path);
+        $path = preg_replace('#/+#', '/', $path);
+        $path = preg_replace('#^/?storage/#', '', $path);
+        $path = trim($path, '/');
+
+        $parts = array_filter(explode('/', $path), function ($part) {
+            return $part !== '' && $part !== '.' && $part !== '..';
+        });
+
+        return implode('/', $parts);
+    }
+
+    private function irrigatedChartCacheKey(): string
+    {
+        return self::IRRIGATED_CHART_CACHE_KEY_PREFIX . $this->mapDataFingerprint([
+            self::IRRIGATED_DIRECTORY,
+            self::POTENTIAL_DIRECTORY,
+            self::MUNICIPALITY_DETAILS_PATH,
+        ]);
+    }
+
+    private function mapDataFingerprint(array $paths): string
+    {
+        $parts = [];
+
+        foreach ($paths as $path) {
+            $storagePath = storage_path('app/public/' . trim($path, '/'));
+            $publicPath = public_path(trim($path, '/'));
+            $target = is_dir($storagePath) || file_exists($storagePath) ? $storagePath : $publicPath;
+
+            if (is_dir($target)) {
+                $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($target, \FilesystemIterator::SKIP_DOTS));
+
+                foreach ($iterator as $file) {
+                    if (!$file->isFile()) {
+                        continue;
+                    }
+
+                    $relativePath = str_replace('\\', '/', substr($file->getPathname(), strlen($target) + 1));
+                    $parts[] = $path . '/' . $relativePath . ':' . $file->getMTime() . ':' . $file->getSize();
+                }
+            } elseif (is_file($target)) {
+                $parts[] = $path . ':' . filemtime($target) . ':' . filesize($target);
+            }
+        }
+
+        sort($parts);
+
+        return sha1(implode('|', $parts));
     }
 
     private function readMapNotifications(): array
