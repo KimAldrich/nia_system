@@ -350,8 +350,9 @@ class AdminController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel($request->team);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyAgency(
+        $this->notifications()->notifyTeamAndAdmins(
             $request->user(),
+            $request->team,
             'New downloadable uploaded',
             "{$actorLabel} uploaded {$file->getClientOriginalName()} to {$teamLabel} downloadables.",
             [
@@ -398,8 +399,9 @@ class AdminController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel($request->team);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyAgency(
+        $this->notifications()->notifyTeamAndAdmins(
             $request->user(),
+            $request->team,
             'New IA resolution uploaded',
             "{$actorLabel} uploaded {$file->getClientOriginalName()} to {$teamLabel} IA resolutions.",
             [

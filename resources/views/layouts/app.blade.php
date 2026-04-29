@@ -331,11 +331,39 @@
             background: #f8fafc;
             border: 1px solid #eef2f7;
         }
+        .app-notification-item-link {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+        }
         .app-notification-item.is-unread {
             background: #eff6ff;
             border-color: #bfdbfe;
         }
+        .app-notification-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
         .app-notification-item-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .app-notification-category {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .app-notification-category--blue { background: #dbeafe; color: #1d4ed8; }
+        .app-notification-category--amber { background: #fef3c7; color: #b45309; }
+        .app-notification-category--green { background: #dcfce7; color: #15803d; }
+        .app-notification-category--rose { background: #ffe4e6; color: #be123c; }
+        .app-notification-category--slate { background: #e2e8f0; color: #475569; }
         .app-notification-item-message { font-size: 12px; line-height: 1.5; color: #475569; }
         .app-notification-item-time { margin-top: 8px; font-size: 11px; color: #94a3b8; }
         .app-notification-empty { padding: 18px; text-align: center; font-size: 13px; color: #64748b; }
@@ -804,6 +832,34 @@
                 return '';
             }
 
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMinutes = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMinutes / 60);
+
+            if (diffMinutes < 1) {
+                return 'Just now';
+            }
+
+            if (diffMinutes < 60) {
+                return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+            }
+
+            const sameDay = now.toDateString() === date.toDateString();
+            if (sameDay) {
+                return `Today at ${new Intl.DateTimeFormat(undefined, {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }).format(date)}`;
+            }
+
+            if (diffHours < 48) {
+                return `Yesterday at ${new Intl.DateTimeFormat(undefined, {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }).format(date)}`;
+            }
+
             return new Intl.DateTimeFormat(undefined, {
                 month: 'short',
                 day: 'numeric',
@@ -878,9 +934,14 @@
 
                 list.innerHTML = appNotificationsState.items.map((item) => `
                     <div class="app-notification-item ${item.read_at ? '' : 'is-unread'}">
-                        <div class="app-notification-item-title">${item.title || 'Notification'}</div>
-                        <div class="app-notification-item-message">${item.message || ''}</div>
-                        <div class="app-notification-item-time">${formatAppNotificationTime(item.created_at)}</div>
+                        <a class="app-notification-item-link" href="${item.url || '#'}">
+                            <div class="app-notification-item-top">
+                                <div class="app-notification-item-title">${item.title || 'Notification'}</div>
+                                <span class="app-notification-category app-notification-category--${item.category_color || 'slate'}">${item.category_label || 'Update'}</span>
+                            </div>
+                            <div class="app-notification-item-message">${item.message || ''}</div>
+                            <div class="app-notification-item-time">${formatAppNotificationTime(item.created_at)}</div>
+                        </a>
                     </div>
                 `).join('');
             });

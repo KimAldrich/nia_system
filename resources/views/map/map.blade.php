@@ -8,6 +8,17 @@
 
 
 <style>
+.main-wrapper {
+    position: relative;
+}
+.app-notification-shell {
+    position: absolute !important;
+    top: 20px;
+    right: 20px;
+    z-index: 1200;
+    padding: 0 !important;
+    width: auto;
+}
 .content {
     padding: 0 !important;
     margin: 0 !important;

@@ -254,7 +254,7 @@ class FsTeamController extends Controller
         $fileMessage = $files->count() === 1
             ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
             : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
-        $this->notifications()->notifyByActorScope($request->user(), 'fs_team', 'Downloadables updated', $fileMessage, [
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'fs_team', 'Downloadables updated', $fileMessage, [
             'type' => 'downloadable',
             'team' => 'fs_team',
             'team_label' => $teamLabel,
@@ -279,7 +279,7 @@ class FsTeamController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel('fs_team');
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope(
+        $this->notifications()->notifyTeamAndAdmins(
             $request->user(),
             'fs_team',
             'Downloadable updated',
@@ -313,7 +313,7 @@ class FsTeamController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel('fs_team');
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope(
+        $this->notifications()->notifyTeamAndAdmins(
             $request->user(),
             'fs_team',
             'Downloadable removed',
@@ -429,9 +429,8 @@ class FsTeamController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel('fs_team');
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope(
+        $this->notifications()->notifyAgency(
             $request->user(),
-            'fs_team',
             'IA resolution status changed',
             "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.",
             [

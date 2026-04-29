@@ -118,7 +118,7 @@ class RowTeamController extends Controller
         $fileMessage = $files->count() === 1
             ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
             : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
-        $this->notifications()->notifyByActorScope($request->user(), 'row_team', 'Downloadables updated', $fileMessage, ['type' => 'downloadable', 'team' => 'row_team', 'team_label' => $teamLabel]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'row_team', 'Downloadables updated', $fileMessage, ['type' => 'downloadable', 'team' => 'row_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, $message);
     }
@@ -139,7 +139,7 @@ class RowTeamController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel('row_team');
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope($request->user(), 'row_team', 'Downloadable updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'row_team', 'team_label' => $teamLabel]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'row_team', 'Downloadable updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'row_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File updated successfully.');
     }
@@ -157,7 +157,7 @@ class RowTeamController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel('row_team');
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope($request->user(), 'row_team', 'Downloadable removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'row_team', 'team_label' => $teamLabel]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'row_team', 'Downloadable removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'row_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File deleted successfully.');
     }
@@ -247,7 +247,7 @@ class RowTeamController extends Controller
 
         $teamLabel = $this->notifications()->teamLabel('row_team');
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyByActorScope($request->user(), 'row_team', 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'row_team', 'team_label' => $teamLabel, 'status' => $request->status]);
+        $this->notifications()->notifyAgency($request->user(), 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'row_team', 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
