@@ -41,6 +41,7 @@ class SystemActivityNotification extends Notification
             'ia_resolution' => $this->teamRoute($team, 'resolutions'),
             'ia_resolution_status' => $this->activeProjectsRoute($notifiable, $team),
             'event' => $this->eventRoute($notifiable, $team),
+            'map_file' => route('map'),
             'minutes', 'memorandum' => route('administrative.index'),
             default => null,
         };
@@ -121,6 +122,7 @@ class SystemActivityNotification extends Notification
             'downloadable' => 'Downloadable',
             'ia_resolution' => 'IA Resolution',
             'ia_resolution_status' => 'Status Change',
+            'map_file' => 'Map',
             'minutes' => 'Minutes',
             'memorandum' => 'Memorandum',
             default => 'Update',
@@ -134,6 +136,7 @@ class SystemActivityNotification extends Notification
             'downloadable' => 'amber',
             'ia_resolution' => 'green',
             'ia_resolution_status' => 'rose',
+            'map_file' => 'blue',
             'minutes', 'memorandum' => 'slate',
             default => 'slate',
         };

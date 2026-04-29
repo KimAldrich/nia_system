@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SystemNotificationService;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +40,11 @@ class MapController extends Controller
     private const SHAPEFILE_COMPANION_EXTENSIONS = ['shp', 'shx', 'dbf', 'prj', 'cpg'];
     private const MAP_NOTIFICATION_FILE = 'map_notifications.json';
     private const MAP_NOTIFICATION_LIMIT = 200;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     public function Showmap()
     {
@@ -222,6 +228,7 @@ class MapController extends Controller
             }
 
             $this->clearMapDataCache();
+            $this->notifyUploadedMapFiles($request, $category, $uploadedFiles, $targetFolder);
             $notificationResult = $this->notifyMapFileChange(
                 'upload',
                 $category,
@@ -955,6 +962,42 @@ class MapController extends Controller
     private function clearMapDataCache(): void
     {
         Cache::store('file')->forget($this->irrigatedChartCacheKey());
+    }
+
+    private function notifyUploadedMapFiles(Request $request, string $category, array $uploadedFiles, string $targetFolder): void
+    {
+        $actor = $request->user();
+
+        if (!$actor || empty($uploadedFiles)) {
+            return;
+        }
+
+        $fileNames = collect($uploadedFiles)
+            ->pluck('name')
+            ->filter()
+            ->values();
+
+        if ($fileNames->isEmpty()) {
+            return;
+        }
+
+        $categoryDirectory = self::CATEGORY_DIRECTORY_MAP[$category] ?? $category;
+        $directory = trim("maps/{$categoryDirectory}/{$targetFolder}", '/');
+        $directoryLabel = $directory !== '' ? $directory : 'maps';
+        $actorLabel = $this->notifications()->actorLabel($actor);
+        $title = $fileNames->count() === 1 ? 'New map file uploaded' : 'New map files uploaded';
+        $message = $fileNames->count() === 1
+            ? "{$actorLabel} uploaded {$fileNames->first()} to {$directoryLabel} ({$category})."
+            : "{$actorLabel} uploaded {$fileNames->count()} map files to {$directoryLabel} ({$category}): {$fileNames->implode(', ')}.";
+
+        $this->notifications()->notifyAgency($actor, $title, $message, [
+            'type' => 'map_file',
+            'team' => 'all',
+            'team_label' => 'All Teams',
+            'map_category' => $category,
+            'map_directory' => $directoryLabel,
+            'map_files' => $fileNames->all(),
+        ]);
     }
 
     private function notifyMapFileChange(string $action, string $category, array $files): array
