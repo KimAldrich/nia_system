@@ -23,6 +23,17 @@
         border-bottom: 1px solid #f1f5f9;
     }
 
+    .event-manager-card .event-manager-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .event-manager-card .event-manager-filter-field {
+        min-width: 0;
+    }
+
     .event-manager-label {
         font-size: 11px;
         font-weight: 700;
@@ -127,6 +138,7 @@
         font-weight: 700;
         color: #1e293b;
         text-align: center;
+        width: 100%;
     }
 
     .event-manager-card .calendar-grid {
@@ -184,6 +196,7 @@
         gap: 15px;
         padding: 12px 0;
         border-top: 1px solid #f1f5f9;
+        cursor: pointer;
     }
 
     .event-manager-card .mini-event-date {
@@ -198,17 +211,26 @@
         flex-shrink: 0;
     }
 
+    .event-manager-card .mini-event-body {
+        min-width: 0;
+        flex: 1;
+    }
+
     .event-manager-card .mini-event-title {
         font-size: 13px;
         font-weight: 600;
         color: #1e293b;
         margin: 0;
+        line-height: 1.4;
+        word-break: break-word;
     }
 
     .event-manager-card .mini-event-time {
         font-size: 11px;
         color: #a0aec0;
         margin: 0;
+        line-height: 1.5;
+        word-break: break-word;
     }
 
     .event-manager-card .event-tag {
@@ -222,22 +244,186 @@
         letter-spacing: 0.5px;
     }
 
+    .event-manager-card .event-manager-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        outline: none;
+        background: #ffffff;
+        color: #1e293b;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .event-manager-card .event-manager-select:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .event-manager-readonly-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        overflow-y: auto;
+    }
+
+    .event-manager-readonly-modal.active {
+        display: flex;
+        animation: eventManagerModalFadeIn 0.2s ease;
+    }
+
+    .event-manager-readonly-modal__box {
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 16px;
+        width: min(100%, 520px);
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        margin: auto;
+    }
+
+    .event-manager-readonly-btn {
+        width: 100%;
+        padding: 10px 12px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        color: #475569;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .event-manager-readonly-btn:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    .event-manager-readonly-detail-card {
+        text-align: left;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    @keyframes eventManagerModalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .event-manager-card .custom-pagination {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 18px;
+        gap: 8px;
+        font-family: 'Poppins', sans-serif;
+        flex-wrap: wrap;
+    }
+
+    .event-manager-card .custom-pagination .page-item {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 8px;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #e2e8f0;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        line-height: 1;
+    }
+
+    .event-manager-card .custom-pagination .page-item:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+
+    .event-manager-card .custom-pagination .page-item.active {
+        background: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
+    }
+
+    .event-manager-card .custom-pagination .page-item.disabled {
+        background: #f8fafc;
+        color: #cbd5e1;
+        cursor: not-allowed;
+        border-color: #f1f5f9;
+    }
+
+    .event-manager-card .custom-pagination .page-item svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
     @media (max-width: 768px) {
         .event-manager-card {
             padding: 20px;
         }
 
+        .event-manager-card .event-manager-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .event-manager-card .mini-event {
+            align-items: flex-start;
+        }
+
         .event-manager-card .calendar-viewport {
             min-height: auto;
+        }
+
+        .event-manager-readonly-modal__box {
+            padding: 20px;
         }
     }
 </style>
 
 @php
+    $containerId = $containerId ?? 'eventManagerReadonlyCard';
     $calendarYear = \Carbon\Carbon::now()->year;
     $calendarToday = \Carbon\Carbon::now();
+    $eventTeamLabels = [
+        'all' => 'All Teams (General Event)',
+        'fs_team' => 'FS Team',
+        'rpwsis_team' => 'Social and Environmental Team',
+        'cm_team' => 'Contract Management Team',
+        'row_team' => 'Right Of Way Team',
+        'pcr_team' => 'Program Completion Report Team',
+        'pao_team' => 'Programming Team',
+    ];
 
-    $upcomingEvents = collect($events ?? [])
+    $allEvents = collect($events ?? [])->values();
+
+    $upcomingEvents = $allEvents
         ->filter(function ($event) {
             return method_exists($event, 'isUpcoming')
                 ? $event->isUpcoming()
@@ -245,9 +431,25 @@
         })
         ->sortBy('event_date')
         ->values();
+
+    $pastEvents = $allEvents
+        ->reject(function ($event) {
+            return method_exists($event, 'isUpcoming')
+                ? $event->isUpcoming()
+                : $event->event_date->isFuture();
+        })
+        ->sortByDesc(function ($event) {
+            return method_exists($event, 'getEndDateTime')
+                ? $event->getEndDateTime()->timestamp
+                : optional($event->event_date)->timestamp;
+        })
+        ->values();
+
+    $displayEvents = $upcomingEvents;
+    $displayPastEvents = $pastEvents;
 @endphp
 
-<div class="ui-card event-manager-card">
+<div id="{{ $containerId }}" class="ui-card event-manager-card">
     <div class="section-title">Event Manager</div>
 
     <div class="event-manager-legend-section">
@@ -264,8 +466,29 @@
         </div>
     </div>
 
+    <div class="event-manager-filter-grid">
+        <label class="event-manager-filter-field">
+            <span class="event-manager-label" style="display:block; margin-bottom:6px;">Filter by Tag</span>
+            <select id="{{ $containerId }}TagFilter" class="event-manager-select">
+                <option value="">All tags</option>
+                @foreach(($categories ?? []) as $cat)
+                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label class="event-manager-filter-field">
+            <span class="event-manager-label" style="display:block; margin-bottom:6px;">Filter by Team</span>
+            <select id="{{ $containerId }}TeamFilter" class="event-manager-select">
+                <option value="">All teams</option>
+                @foreach($eventTeamLabels as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
+                @endforeach
+            </select>
+        </label>
+    </div>
+
     <div class="calendar-carousel">
-        <button class="nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">
+        <button class="nav-btn" id="{{ $containerId }}PrevMonthBtn" onclick="changeReadonlyMonth('{{ $containerId }}', -1)">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
             </svg>
@@ -287,7 +510,7 @@
                         });
                 @endphp
 
-                <div class="month-block" id="month-{{ $m }}">
+                <div class="month-block {{ $m === $calendarToday->month ? 'active' : '' }}" id="{{ $containerId }}-month-{{ $m }}" style="{{ $m === $calendarToday->month ? 'display:block;' : 'display:none;' }}">
                     <div class="calendar-header">
                         <h4>{{ $monthDate->format('F Y') }}</h4>
                     </div>
@@ -315,7 +538,9 @@
 
                             <div
                                 class="day-num {{ $hasEvent ? 'has-event' : '' }} {{ $isToday ? 'today' : '' }}"
-                                style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}"
+                                data-date="{{ $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT) }}"
+                                onclick="openReadonlyEventDateDetails('{{ $containerId }}', '{{ $monthDate->format('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT) }}')"
+                                style="{{ $hasEvent && !$isToday ? 'border: 2px solid ' . $ringColor . '; color: ' . $ringColor . ';' : '' }}{{ $hasEvent ? '; cursor:pointer;' : '' }}"
                             >
                                 {{ $day }}
                             </div>
@@ -325,7 +550,7 @@
             @endfor
         </div>
 
-        <button class="nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">
+        <button class="nav-btn" id="{{ $containerId }}NextMonthBtn" onclick="changeReadonlyMonth('{{ $containerId }}', 1)">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
             </svg>
@@ -335,14 +560,21 @@
     <div class="event-manager-upcoming">
         <p class="event-manager-label">Upcoming Schedule</p>
 
-        @if ($upcomingEvents->count() > 0)
-            @foreach ($upcomingEvents->take(5) as $event)
-                <div class="mini-event">
+        @if (count($displayEvents) > 0)
+            @foreach ($displayEvents as $event)
+                <div class="mini-event readonly-filter-item"
+                    data-event-id="{{ $event->id }}"
+                    data-category-id="{{ $event->event_category_id }}"
+                    data-team="{{ $event->team }}"
+                    onclick="openReadonlyEventDetails('{{ $containerId }}', {{ $event->id }})">
                     <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
-                    <div>
+                    <div class="mini-event-body">
                         <h4 class="mini-event-title">{{ $event->title }}</h4>
                         <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
 
+                        @if (!empty($event->team))
+                            <p class="mini-event-time" style="margin-top:4px;">{{ $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', $event->team)) }}</p>
+                        @endif
                         @if (!empty($event->category))
                             <span
                                 class="event-tag"
@@ -358,4 +590,205 @@
             <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No upcoming events.</p>
         @endif
     </div>
+
+    <div class="event-manager-upcoming">
+        <p class="event-manager-label">Past Events</p>
+
+        @if (count($displayPastEvents) > 0)
+            @foreach ($displayPastEvents as $event)
+                <div class="mini-event readonly-filter-item"
+                    data-event-id="{{ $event->id }}"
+                    data-category-id="{{ $event->event_category_id }}"
+                    data-team="{{ $event->team }}"
+                    onclick="openReadonlyEventDetails('{{ $containerId }}', {{ $event->id }})">
+                    <div class="mini-event-date">{{ $event->event_date->format('d') }}</div>
+                    <div class="mini-event-body">
+                        <h4 class="mini-event-title">{{ $event->title }}</h4>
+                        <p class="mini-event-time">{{ $event->event_date->format('F') }} · {{ $event->event_time }}</p>
+
+                        @if (!empty($event->team))
+                            <p class="mini-event-time" style="margin-top:4px;">{{ $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', $event->team)) }}</p>
+                        @endif
+                        @if (!empty($event->category))
+                            <span
+                                class="event-tag"
+                                style="background-color: {{ $event->category->color }}15; color: {{ $event->category->color }}; border: 1px solid {{ $event->category->color }}30;"
+                            >
+                                {{ $event->category->name }}
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        @else
+            <p style="font-size: 12px; color: #a0aec0; text-align: center; margin-top: 20px;">No past events yet.</p>
+        @endif
+    </div>
 </div>
+
+<div class="event-manager-readonly-modal" id="{{ $containerId }}DetailsModal">
+    <div class="event-manager-readonly-modal__box">
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px;">
+            <div>
+                <h3 style="margin:0; font-size:18px; color:#1e293b;" id="{{ $containerId }}DetailsTitle">Event Details</h3>
+                <p style="margin:6px 0 0; font-size:12px; color:#64748b;" id="{{ $containerId }}DetailsMeta"></p>
+            </div>
+            <button type="button" onclick="closeReadonlyEventDetails('{{ $containerId }}')" style="background:none; border:none; font-size:28px; line-height:1; cursor:pointer;">&times;</button>
+        </div>
+        <div id="{{ $containerId }}DetailsBody" style="display:grid; gap:12px; color:#334155; font-size:14px;"></div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button type="button" onclick="closeReadonlyEventDetails('{{ $containerId }}')" class="event-manager-readonly-btn" style="flex:1;">Close</button>
+        </div>
+    </div>
+</div>
+
+@php
+    $readonlyEventEntries = $allEvents->map(function ($event) use ($eventTeamLabels) {
+        return [
+            'id' => $event->id,
+            'title' => $event->title,
+            'description' => $event->description,
+            'event_date' => optional($event->event_date)->format('Y-m-d'),
+            'event_date_label' => optional($event->event_date)->format('F d, Y'),
+            'event_time' => $event->event_time,
+            'event_category_id' => $event->event_category_id,
+            'category_name' => optional($event->category)->name,
+            'category_color' => optional($event->category)->color,
+            'team' => $event->team,
+            'team_label' => $eventTeamLabels[$event->team] ?? strtoupper(str_replace('_', ' ', (string) $event->team)),
+            'reminder_minutes' => $event->reminder_minutes,
+            'recurrence_pattern' => $event->recurrence_pattern ?? 'none',
+            'recurrence_until_label' => optional($event->recurrence_until)->format('F d, Y'),
+            'is_upcoming' => method_exists($event, 'isUpcoming') ? $event->isUpcoming() : optional($event->event_date)->isFuture(),
+        ];
+    })->values();
+@endphp
+
+<script>
+    (() => {
+        const containerId = @json($containerId);
+        let activeMonth = {{ $calendarToday->month }};
+        const events = @json($readonlyEventEntries);
+
+        window.changeReadonlyMonth = function (targetId, direction) {
+            if (targetId !== containerId) return;
+            activeMonth += direction;
+            if (activeMonth < 1) activeMonth = 1;
+            if (activeMonth > 12) activeMonth = 12;
+            updateReadonlyCalendarView();
+        };
+
+        const updateReadonlyCalendarView = () => {
+            document.querySelectorAll(`#${containerId} .month-block`).forEach((block) => {
+                block.classList.remove('active');
+                block.style.display = 'none';
+            });
+
+            const activeBlock = document.getElementById(`${containerId}-month-${activeMonth}`);
+            if (activeBlock) {
+                activeBlock.classList.add('active');
+                activeBlock.style.display = 'block';
+            }
+            const prevButton = document.getElementById(`${containerId}PrevMonthBtn`);
+            const nextButton = document.getElementById(`${containerId}NextMonthBtn`);
+            if (prevButton) prevButton.disabled = activeMonth === 1;
+            if (nextButton) nextButton.disabled = activeMonth === 12;
+        };
+
+        const getFilteredEvents = () => {
+            const tagValue = document.getElementById(`${containerId}TagFilter`)?.value || '';
+            const teamValue = document.getElementById(`${containerId}TeamFilter`)?.value || '';
+            return events.filter((event) => {
+                const matchesTag = !tagValue || String(event.event_category_id || '') === String(tagValue);
+                const matchesTeam = !teamValue || String(event.team || '') === String(teamValue);
+                return matchesTag && matchesTeam;
+            });
+        };
+
+        window.applyReadonlyEventFilters = function (targetId) {
+            if (targetId !== containerId) return;
+
+            const filteredEvents = getFilteredEvents();
+            const visibleIds = new Set(filteredEvents.map((event) => String(event.id)));
+
+            document.querySelectorAll(`#${containerId} .readonly-filter-item`).forEach((item) => {
+                item.style.display = visibleIds.has(String(item.dataset.eventId)) ? '' : 'none';
+            });
+
+            const upcomingEventsByDate = filteredEvents
+                .filter((event) => event.is_upcoming)
+                .reduce((carry, event) => {
+                    if (!carry[event.event_date]) carry[event.event_date] = [];
+                    carry[event.event_date].push(event);
+                    return carry;
+                }, {});
+
+            document.querySelectorAll(`#${containerId} .day-num[data-date]`).forEach((dayNode) => {
+                const dayEvents = upcomingEventsByDate[dayNode.dataset.date] || [];
+                const firstEvent = dayEvents[0] || null;
+                const isToday = dayNode.classList.contains('today');
+                dayNode.classList.toggle('has-event', dayEvents.length > 0);
+                if (dayEvents.length > 0 && !isToday) {
+                    dayNode.style.border = `2px solid ${firstEvent.category_color || '#18181b'}`;
+                    dayNode.style.color = firstEvent.category_color || '#18181b';
+                    dayNode.style.cursor = 'pointer';
+                } else if (!isToday) {
+                    dayNode.style.border = '';
+                    dayNode.style.color = '';
+                    dayNode.style.cursor = '';
+                }
+            });
+        };
+
+        window.openReadonlyEventDetails = function (targetId, eventId) {
+            if (targetId !== containerId) return;
+            const event = events.find((entry) => String(entry.id) === String(eventId));
+            if (!event) return;
+            document.getElementById(`${containerId}DetailsTitle`).innerText = event.title || 'Event Details';
+            document.getElementById(`${containerId}DetailsMeta`).innerText = `${event.event_date_label} · ${event.event_time}`;
+            document.getElementById(`${containerId}DetailsBody`).innerHTML = `
+                <div><strong>Team:</strong> ${event.team_label || 'N/A'}</div>
+                <div><strong>Tag:</strong> ${event.category_name || 'Uncategorized'}</div>
+                <div><strong>Reminder:</strong> ${event.reminder_minutes ? `${event.reminder_minutes} minute(s) before` : 'No reminder'}</div>
+                <div><strong>Recurring:</strong> ${event.recurrence_pattern && event.recurrence_pattern !== 'none' ? `${event.recurrence_pattern} until ${event.recurrence_until_label || 'the scheduled end'}` : 'No'}</div>
+                <div><strong>Details:</strong><br>${(event.description || 'No additional details provided.').replace(/\n/g, '<br>')}</div>
+            `;
+            document.getElementById(`${containerId}DetailsModal`).classList.add('active');
+        };
+
+        window.openReadonlyEventDateDetails = function (targetId, dateStr) {
+            if (targetId !== containerId) return;
+            const dayEvents = getFilteredEvents().filter((event) => event.event_date === dateStr && event.is_upcoming);
+            if (!dayEvents.length) return;
+
+            document.getElementById(`${containerId}DetailsTitle`).innerText = `Events on ${dateStr}`;
+            document.getElementById(`${containerId}DetailsMeta`).innerText = `${dayEvents.length} event(s) scheduled`;
+            document.getElementById(`${containerId}DetailsBody`).innerHTML = dayEvents.map((event) => `
+                <button type="button" class="event-manager-readonly-detail-card" onclick="openReadonlyEventDetails('${containerId}', ${event.id})">
+                    <strong>${event.title}</strong><br>
+                    <span style="font-size:12px; color:#64748b;">${event.event_time} · ${event.team_label || 'N/A'} · ${event.category_name || 'Uncategorized'}</span>
+                </button>
+            `).join('');
+            document.getElementById(`${containerId}DetailsModal`).classList.add('active');
+        };
+
+        window.closeReadonlyEventDetails = function (targetId) {
+            if (targetId !== containerId) return;
+            document.getElementById(`${containerId}DetailsModal`).classList.remove('active');
+        };
+
+        let initialized = false;
+
+        const bindFilters = () => {
+            if (initialized) return;
+            initialized = true;
+
+            document.getElementById(`${containerId}TagFilter`)?.addEventListener('change', () => window.applyReadonlyEventFilters(containerId));
+            document.getElementById(`${containerId}TeamFilter`)?.addEventListener('change', () => window.applyReadonlyEventFilters(containerId));
+            updateReadonlyCalendarView();
+            window.applyReadonlyEventFilters(containerId);
+        };
+
+        bindFilters();
+    })();
+</script>

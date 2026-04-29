@@ -13,6 +13,7 @@ use App\Http\Controllers\PaoTeamController;
 use App\Http\Controllers\AdministrativeController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RpwsisAccomplishmentController;
 
 
@@ -30,8 +31,11 @@ Route::get('/guest/dashboard', [GuestController::class, 'index'])->name('guest.d
 Route::post('/guest/logout', [GuestController::class, 'logout'])->name('guest.logout');
 Route::get('/guest/pao-team/pow/export-excel', [PaoTeamController::class, 'exportPowExcel'])->name('guest.pao.pow.export');
 
-Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/map', [MapController::class, 'Showmap'])->name('map');
+Route::get('/map/notifications-feed', [MapController::class, 'mapNotifications'])->name('map.notifications.feed');
+Route::get('/map/file/{path}', [MapController::class, 'serveMapFile'])->where('path', '.*')->name('map.file');
+
+Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/guest/{team_slug}/dashboard', [GuestController::class, 'teamDashboard'])->name('guest.team.dashboard');
 Route::get('/guest/team/{team_slug}/downloadables', [GuestController::class, 'teamDownloadables'])->name('guest.team.downloadables');
 Route::get('/guest/team/{team_slug}/resolutions', [GuestController::class, 'teamResolutions'])->name('guest.team.resolutions');
@@ -48,6 +52,9 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         Route::get('/administrative', [AdministrativeController::class, 'index'])->name('administrative.index');
         Route::post('/administrative', [AdministrativeController::class, 'store'])->name('administrative.store');
         Route::delete('/administrative/{id}', [AdministrativeController::class, 'destroy'])->name('administrative.destroy');
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.read_all');
+
 
     //guest
     // Route::get('/guest/dashboard', [App\Http\Controllers\GuestController::class, 'index'])->name('guest.dashboard');
@@ -55,7 +62,10 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     //Map Routes
         Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
         Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
+        Route::delete('/map/delete-folder', [MapController::class, 'deleteFolder']);
         Route::delete('/map/delete', [MapController::class, 'deleteFile']);
+        Route::get('/map/notifications', [MapController::class, 'mapNotifications'])->name('map.notifications');
+        Route::post('/map/notifications/clear-old', [MapController::class, 'clearOldMapNotifications'])->name('map.notifications.clear_old');
 
         // Protected Routes (Must have agreed to terms)
         Route::middleware(['check.terms'])->group(function () {
@@ -63,6 +73,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         // Admin Routes
         Route::middleware(['check.role:admin'])->prefix('admin')->group(function () {
             Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+            Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('admin.audit');
+            Route::get('/audit-trail/export', [AdminController::class, 'exportAuditTrail'])->name('admin.audit.export');
             Route::get('/users', [AdminController::class, 'manageUsers'])->name('admin.users');
             Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
             Route::patch('/users/{user}/status', [AdminController::class, 'updateUserStatus'])->name('admin.users.status');
@@ -71,6 +83,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
             // Add more admin routes here
 
             Route::post('/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
+            Route::patch('/events/{id}', [AdminController::class, 'updateEvent'])->name('admin.events.update');
             Route::delete('/events/{id}', [AdminController::class, 'destroyEvent'])->name('admin.events.destroy');
             // Manage Custom Categories
             Route::post('/event-categories', [AdminController::class, 'storeCategory'])->name('admin.categories.store');
@@ -159,7 +172,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                     Route::post('/nursery/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeNursery'])->name('rpwsis.nursery.store');
                     Route::put('/nursery/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateNursery'])->name('rpwsis.nursery.update');
                     Route::delete('/nursery/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteNursery'])->name('rpwsis.nursery.delete');
-                
+
                     // Signages table routes
                 Route::post('/signages/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeSignages'])->name('rpwsis.signages.store');
                 Route::put('/signages/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateSignages'])->name('rpwsis.signages.update');

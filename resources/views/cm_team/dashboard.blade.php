@@ -130,22 +130,7 @@
                 ])
             </div>
 
-            <div class="ui-card">
-                <div class="section-title">
-                    Analytics
-                    <span style="font-size: 12px; color: #a1a1aa; font-weight: 500;">Project Status</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity</p>
-                        <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
-                    </div>
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate</p>
-                        <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+            @include('partials.team-analytics-card', ['analytics' => $analytics ?? []])
         </div>
 
         <div class="side-column">
@@ -158,18 +143,6 @@
         Procurement Status Monitoring
         
         <div style="display: flex; gap: 15px; align-items: center;">
-            <form action="{{ url()->current() }}" method="GET" style="margin: 0;">
-                @foreach(request()->except(['proc_category', 'page']) as $key => $value)
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endforeach
-                <select name="proc_category" onchange="this.form.submit()" class="modern-input" style="margin-bottom: 0; padding: 8px 12px; width: 280px; font-weight: 600; cursor: pointer; border-color: #0c4d05;">
-                    <option value="All Projects">-- Show All Categories --</option>
-                    @foreach($procCategories ?? [] as $cat)
-                        <option value="{{ $cat }}" {{ request('proc_category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                    @endforeach
-                </select>
-            </form>
-
             @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
                 <button onclick="openProcAddModal()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                     + Add Data
@@ -181,6 +154,25 @@
 </a>
         </div>
     </div>
+
+    @include('partials.table-toolbar', [
+        'asyncTarget' => '#procurementSection',
+        'searchName' => 'proc_search',
+        'searchPlaceholder' => 'Search category, project, municipality, contractor...',
+        'filters' => [
+            [
+                'name' => 'proc_category',
+                'label' => 'Category',
+                'options' => ['All Projects' => 'All categories'] + collect($procCategories ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+            ],
+            [
+                'name' => 'proc_municipality',
+                'label' => 'Municipality',
+                'options' => ['' => 'All municipalities'] + collect($procMunicipalities ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+            ],
+        ],
+        'resetKeys' => ['proc_search', 'proc_category', 'proc_municipality', 'page'],
+    ])
     
     <div class="table-responsive" id="procurementTableContainer">
         <table class="sleek-table" id="procTable" style="min-width: 1700px;">
@@ -417,16 +409,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-            Chart.defaults.color = '#a1a1aa';
-
-            const ctxBar = document.getElementById('barChart').getContext('2d');
-            new Chart(ctxBar, { type: 'bar', data: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], datasets: [{ label: 'Uploads', data: [5, 12, 8, 15], backgroundColor: '#0c4d05', borderRadius: 6, barPercentage: 0.5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f4f4f5' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } } });
-
-            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-            new Chart(ctxDoughnut, { type: 'doughnut', data: { labels: ['Validated', 'On-Going', 'Pending'], datasets: [{ data: [45, 30, 25], backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'], borderColor: '#e4e4e7', borderWidth: 2, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, padding: 20 } } } } });
-        });
+        @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
 
         let activeMonth = new Date().getMonth() + 1;
         document.addEventListener('DOMContentLoaded', function() { updateCalendarView(); });

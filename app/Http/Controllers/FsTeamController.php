@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
 use App\Models\HydroGeoProject;
 use App\Models\FsdeProject;
+use App\Services\SystemNotificationService;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -19,10 +21,17 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use Illuminate\Support\Carbon;
 
 class FsTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     private function validateHydroGeo(Request $request): array
     {
@@ -74,7 +83,7 @@ class FsTeamController extends Controller
     }
 
     // 1. Dashboard
-    public function index()
+    public function index(Request $request)
     {
         // Fetch resolutions for the project table
         $resolutions = IaResolution::where('team', 'fs_team')
@@ -82,8 +91,12 @@ class FsTeamController extends Controller
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
 
-        // Fetch upcoming events set by the admin
+        // Fetch all events so the dashboard can show upcoming and past entries.
         $events = Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
+        $upcomingEventsQuery = Event::with('category')
             ->where('event_date', '>', now()->format('Y-m-d'))
             ->orWhere(function ($query) {
                 $today = now()->format('Y-m-d');
@@ -91,11 +104,14 @@ class FsTeamController extends Controller
                 $query->where('event_date', $today)
                     ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics('fs_team');
         // 2. Calculate the dynamic KPI numbers for the top cards
         $totalProjects = HydroGeoProject::count();
         $conducted = HydroGeoProject::whereIn('status', ['For Interpretation', 'Interpreted', 'For Submission of Raw data'])->count();
@@ -104,9 +120,53 @@ class FsTeamController extends Controller
         $hydroExportData = HydroGeoProject::all();
         $fsdeExportData = FsdeProject::all();
 
-        // 3. Fetch the table data with pagination (8 rows per page)
-        $hydroProjects = HydroGeoProject::paginate(8, ['*'], 'hydro_page');
-        $fsdeProjects = FsdeProject::paginate(8, ['*'], 'fsde_page');
+        // 3. Fetch the table data with filtering and pagination
+        $hydroQuery = HydroGeoProject::query();
+        if ($request->filled('hydro_search')) {
+            $search = trim((string) $request->input('hydro_search'));
+            $hydroQuery->where(function ($query) use ($search) {
+                $query->where('year', 'like', "%{$search}%")
+                    ->orWhere('district', 'like', "%{$search}%")
+                    ->orWhere('project_code', 'like', "%{$search}%")
+                    ->orWhere('system_name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('result', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('hydro_status')) {
+            $hydroQuery->where('status', $request->input('hydro_status'));
+        }
+        if ($request->filled('hydro_district')) {
+            $hydroQuery->where('district', $request->input('hydro_district'));
+        }
+
+        $fsdeQuery = FsdeProject::query();
+        if ($request->filled('fsde_search')) {
+            $search = trim((string) $request->input('fsde_search'));
+            $fsdeQuery->where(function ($query) use ($search) {
+                $query->where('year', 'like', "%{$search}%")
+                    ->orWhere('project_name', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('type_of_study', 'like', "%{$search}%")
+                    ->orWhere('consultant', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('fsde_year')) {
+            $fsdeQuery->where('year', $request->input('fsde_year'));
+        }
+        if ($request->filled('fsde_municipality')) {
+            $fsdeQuery->where('municipality', $request->input('fsde_municipality'));
+        }
+
+        $hydroProjects = $hydroQuery->orderByDesc('year')->paginate(8, ['*'], 'hydro_page')->withQueryString();
+        $fsdeProjects = $fsdeQuery->orderByDesc('year')->paginate(8, ['*'], 'fsde_page')->withQueryString();
+        $hydroDistricts = HydroGeoProject::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
+        $hydroStatuses = HydroGeoProject::select('status')->whereNotNull('status')->distinct()->orderBy('status')->pluck('status');
+        $fsdeYears = FsdeProject::select('year')->whereNotNull('year')->distinct()->orderByDesc('year')->pluck('year');
+        $fsdeMunicipalities = FsdeProject::select('municipality')->whereNotNull('municipality')->distinct()->orderBy('municipality')->pluck('municipality');
         return view('fs-team.dashboard', compact(
             'totalProjects',
             'conducted',
@@ -114,9 +174,15 @@ class FsTeamController extends Controller
             'feasible',
             'resolutions',
             'events',
+            'paginatedEvents',
             'categories',
+            'analytics',
             'hydroProjects',
             'fsdeProjects',
+            'hydroDistricts',
+            'hydroStatuses',
+            'fsdeYears',
+            'fsdeMunicipalities',
             'hydroExportData',
             'fsdeExportData'
         ));
@@ -140,6 +206,16 @@ class FsTeamController extends Controller
     // 4. Upload Downloadable
     public function uploadForm(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -149,13 +225,13 @@ class FsTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -173,6 +249,17 @@ class FsTeamController extends Controller
             ? 'File uploaded successfully.'
             : "{$files->count()} files uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $fileMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'fs_team', 'Downloadables updated', $fileMessage, [
+            'type' => 'downloadable',
+            'team' => 'fs_team',
+            'team_label' => $teamLabel,
+        ]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -182,11 +269,27 @@ class FsTeamController extends Controller
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $downloadable->original_name;
+
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins(
+            $request->user(),
+            'fs_team',
+            'Downloadable updated',
+            "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.",
+            [
+                'type' => 'downloadable',
+                'team' => 'fs_team',
+                'team_label' => $teamLabel,
+            ]
+        );
 
         return $this->successResponse($request, 'File updated successfully.');
     }
@@ -195,6 +298,8 @@ class FsTeamController extends Controller
     public function deleteForm(Request $request, $id)
     {
         $downloadable = Downloadable::findOrFail($id);
+
+        $deletedName = $downloadable->original_name;
 
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
@@ -206,12 +311,36 @@ class FsTeamController extends Controller
 // }
         $downloadable->delete();
 
+        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins(
+            $request->user(),
+            'fs_team',
+            'Downloadable removed',
+            "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.",
+            [
+                'type' => 'downloadable',
+                'team' => 'fs_team',
+                'team_label' => $teamLabel,
+            ]
+        );
+
         return $this->successResponse($request, 'File deleted successfully.');
     }
 
     // 7. Upload Resolution
     public function uploadResolution(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -221,13 +350,13 @@ class FsTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('resolutions', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -245,6 +374,17 @@ class FsTeamController extends Controller
             ? 'Resolution uploaded successfully.'
             : "{$files->count()} resolutions uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $resolutionMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
+        $this->notifications()->notifyByActorScope($request->user(), 'fs_team', 'IA resolutions updated', $resolutionMessage, [
+            'type' => 'ia_resolution',
+            'team' => 'fs_team',
+            'team_label' => $teamLabel,
+        ]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -254,11 +394,27 @@ class FsTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $resolution->original_name;
+
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope(
+            $request->user(),
+            'fs_team',
+            'IA resolution updated',
+            "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.",
+            [
+                'type' => 'ia_resolution',
+                'team' => 'fs_team',
+                'team_label' => $teamLabel,
+            ]
+        );
 
         return $this->successResponse($request, 'Resolution updated successfully.');
     }
@@ -268,7 +424,22 @@ class FsTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
+        $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
+
+        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency(
+            $request->user(),
+            'IA resolution status changed',
+            "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.",
+            [
+                'type' => 'ia_resolution_status',
+                'team' => 'fs_team',
+                'team_label' => $teamLabel,
+                'status' => $request->status,
+            ]
+        );
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -345,7 +516,8 @@ class FsTeamController extends Controller
 
     public function exportHydroExcel(Request $request): StreamedResponse
     {
-        $rows = HydroGeoProject::orderBy('year')
+        $rows = $this->buildHydroExportQuery($request)
+            ->orderBy('year')
             ->orderBy('district')
             ->orderBy('municipality')
             ->orderBy('system_name')
@@ -497,7 +669,11 @@ class FsTeamController extends Controller
             ->getStartColor()->setRGB('FFFFFF');
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'HYDRO-GEO.xlsx';
+        $filename = $this->buildExportFilename('HYDRO-GEO', $request, [
+            'hydro_search' => 'Search',
+            'hydro_district' => 'District',
+            'hydro_status' => 'Status',
+        ]);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
@@ -509,7 +685,8 @@ class FsTeamController extends Controller
 
     public function exportFsdeExcel(Request $request): StreamedResponse
     {
-        $rows = FsdeProject::orderBy('year')
+        $rows = $this->buildFsdeExportQuery($request)
+            ->orderBy('year')
             ->orderBy('project_name')
             ->get();
 
@@ -800,7 +977,11 @@ class FsTeamController extends Controller
         $this->addFsExcelLogo($sheet, storage_path('app/public/excel_export_assets/page_1_image_5.png'), 'K1', 109, 8, 8);
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'MONTHLY FSDE STATUS REPORT ' . strtoupper($currentDate->format('Fj Y')) . '.xlsx';
+        $filename = $this->buildExportFilename('MONTHLY FSDE STATUS REPORT', $request, [
+            'fsde_search' => 'Search',
+            'fsde_year' => 'Year',
+            'fsde_municipality' => 'Municipality',
+        ]);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
@@ -815,6 +996,8 @@ class FsTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
 
         // Delete file from storage
+        $deletedName = $resolution->original_name;
+
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
@@ -826,6 +1009,20 @@ class FsTeamController extends Controller
 
         // Delete record from database
         $resolution->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('fs_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope(
+            $request->user(),
+            'fs_team',
+            'IA resolution removed',
+            "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.",
+            [
+                'type' => 'ia_resolution',
+                'team' => 'fs_team',
+                'team_label' => $teamLabel,
+            ]
+        );
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }
@@ -872,5 +1069,83 @@ class FsTeamController extends Controller
         }
 
         return (float) $cleaned;
+    }
+
+    private function buildHydroExportQuery(Request $request)
+    {
+        $query = HydroGeoProject::query();
+
+        if ($request->filled('hydro_search')) {
+            $search = trim((string) $request->input('hydro_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('year', 'like', "%{$search}%")
+                    ->orWhere('district', 'like', "%{$search}%")
+                    ->orWhere('project_code', 'like', "%{$search}%")
+                    ->orWhere('system_name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('result', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('hydro_status')) {
+            $query->where('status', $request->input('hydro_status'));
+        }
+
+        if ($request->filled('hydro_district')) {
+            $query->where('district', $request->input('hydro_district'));
+        }
+
+        return $query;
+    }
+
+    private function buildFsdeExportQuery(Request $request)
+    {
+        $query = FsdeProject::query();
+
+        if ($request->filled('fsde_search')) {
+            $search = trim((string) $request->input('fsde_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('year', 'like', "%{$search}%")
+                    ->orWhere('project_name', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('type_of_study', 'like', "%{$search}%")
+                    ->orWhere('consultant', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('fsde_year')) {
+            $query->where('year', $request->input('fsde_year'));
+        }
+
+        if ($request->filled('fsde_municipality')) {
+            $query->where('municipality', $request->input('fsde_municipality'));
+        }
+
+        return $query;
+    }
+
+    private function buildExportFilename(string $baseTitle, Request $request, array $filterMap): string
+    {
+        $parts = [$baseTitle, 'as of', now()->format('F j, Y')];
+
+        foreach ($filterMap as $key => $label) {
+            $value = trim((string) $request->input($key, ''));
+            if ($value === '') {
+                continue;
+            }
+
+            $parts[] = $label;
+            $parts[] = $value;
+        }
+
+        $filename = collect($parts)
+            ->filter()
+            ->implode(' ')
+            . '.xlsx';
+
+        return preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
     }
 }

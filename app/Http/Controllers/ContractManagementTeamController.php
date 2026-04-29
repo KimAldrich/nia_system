@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
 use App\Models\ProcurementProject;
@@ -21,6 +23,12 @@ use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 class ContractManagementTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     public function index(Request $request)
     {
@@ -29,6 +37,10 @@ class ContractManagementTeamController extends Controller
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
         $events = Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
+        $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -41,17 +53,36 @@ class ContractManagementTeamController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics('cm_team');
         $procCategories = ProcurementProject::select('category')->distinct()->pluck('category');
+        $procMunicipalities = ProcurementProject::select('municipality')->whereNotNull('municipality')->distinct()->orderBy('municipality')->pluck('municipality');
 
         // Filter logic
         $procQuery = ProcurementProject::query();
+        if ($request->filled('proc_search')) {
+            $search = trim((string) $request->input('proc_search'));
+            $procQuery->where(function ($query) use ($search) {
+                $query->where('category', 'like', "%{$search}%")
+                    ->orWhere('name_of_project', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('contract_no', 'like', "%{$search}%")
+                    ->orWhere('name_of_contractor', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('project_description', 'like', "%{$search}%");
+            });
+        }
         if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
             $procQuery->where('category', $request->proc_category);
+        }
+        if ($request->filled('proc_municipality')) {
+            $procQuery->where('municipality', $request->input('proc_municipality'));
         }
 
         // 🌟 THE FIX: Clone the query for the Excel Export BEFORE paginating! 🌟
@@ -64,8 +95,11 @@ class ContractManagementTeamController extends Controller
         return view('cm_team.dashboard', compact(
             'resolutions',
             'events',
+            'paginatedEvents',
             'categories',
+            'analytics',
             'procCategories',
+            'procMunicipalities',
             'procurementProjects',
             'procExportData'
         ));
@@ -85,6 +119,16 @@ class ContractManagementTeamController extends Controller
 
     public function uploadForm(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -94,13 +138,13 @@ class ContractManagementTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -118,6 +162,13 @@ class ContractManagementTeamController extends Controller
             ? 'File uploaded successfully.'
             : "{$files->count()} files uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $fileMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'cm_team', 'Downloadables updated', $fileMessage, ['type' => 'downloadable', 'team' => 'cm_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -127,12 +178,17 @@ class ContractManagementTeamController extends Controller
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'cm_team', 'Downloadable updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'cm_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File updated successfully.');
     }
@@ -141,17 +197,32 @@ class ContractManagementTeamController extends Controller
     {
         $downloadable = Downloadable::findOrFail($id);
 
+        $deletedName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $downloadable->delete();
 
+        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'cm_team', 'Downloadable removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'cm_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, 'File deleted successfully.');
     }
 
     public function uploadResolution(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -161,13 +232,13 @@ class ContractManagementTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('resolutions', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -185,6 +256,13 @@ class ContractManagementTeamController extends Controller
             ? 'Resolution uploaded successfully.'
             : "{$files->count()} resolutions uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $resolutionMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
+        $this->notifications()->notifyByActorScope($request->user(), 'cm_team', 'IA resolutions updated', $resolutionMessage, ['type' => 'ia_resolution', 'team' => 'cm_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -194,12 +272,17 @@ class ContractManagementTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
 
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'cm_team', 'IA resolution updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'cm_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution updated successfully.');
     }
@@ -208,7 +291,12 @@ class ContractManagementTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
+        $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
+
+        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency($request->user(), 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'cm_team', 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -219,6 +307,7 @@ class ContractManagementTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
 
         // Delete file from storage
+        $deletedName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
@@ -230,6 +319,10 @@ class ContractManagementTeamController extends Controller
 
         // Delete record from database
         $resolution->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('cm_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'cm_team', 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'cm_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }
@@ -296,17 +389,44 @@ class ContractManagementTeamController extends Controller
     {
         $query = ProcurementProject::query();
 
+        if ($request->filled('proc_search')) {
+            $search = trim((string) $request->input('proc_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('category', 'like', "%{$search}%")
+                    ->orWhere('name_of_project', 'like', "%{$search}%")
+                    ->orWhere('municipality', 'like', "%{$search}%")
+                    ->orWhere('contract_no', 'like', "%{$search}%")
+                    ->orWhere('name_of_contractor', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('project_description', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
             $query->where('category', $request->proc_category);
         }
 
+        if ($request->filled('proc_municipality')) {
+            $query->where('municipality', $request->input('proc_municipality'));
+        }
+
         $rows = $query->orderBy('category')->orderBy('proj_no')->get();
 
-        $filename = 'Procurement Status as of ' . now()->format('F j, Y');
-        if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
-            $filename .= '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $request->proc_category);
+        $filenameParts = ['Procurement Status as of', now()->format('F j, Y')];
+        if ($request->filled('proc_search')) {
+            $filenameParts[] = 'Search';
+            $filenameParts[] = trim((string) $request->input('proc_search'));
         }
-        $filename .= '.xlsx';
+        if ($request->filled('proc_category') && $request->proc_category !== 'All Projects') {
+            $filenameParts[] = 'Category';
+            $filenameParts[] = $request->proc_category;
+        }
+        if ($request->filled('proc_municipality')) {
+            $filenameParts[] = 'Municipality';
+            $filenameParts[] = $request->input('proc_municipality');
+        }
+        $filename = collect($filenameParts)->filter()->implode(' ') . '.xlsx';
+        $filename = preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

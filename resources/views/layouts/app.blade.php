@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/2020-nia-logo.png') }}">
     <title>@yield('title', 'System Dashboard')</title>
     <style>
        :root {
@@ -146,6 +147,86 @@
 
         .page-title { margin-top: 0; color: #1e293b; font-size: 22px; margin-bottom: 15px; font-weight: 700; }
         .section-title { font-size: 16px; color: #64748b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
+        .table-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 18px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+        .table-toolbar__search,
+        .table-toolbar__field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 180px;
+            flex: 1 1 180px;
+        }
+        .table-toolbar__label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .table-toolbar__input,
+        .table-toolbar__select {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ee;
+            background: #ffffff;
+            color: #1e293b;
+            font-size: 13px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+        .table-toolbar__input:focus,
+        .table-toolbar__select:focus {
+            outline: none;
+            border-color: #110d9e;
+            box-shadow: 0 0 0 4px rgba(17, 13, 158, 0.08);
+        }
+        .table-toolbar__actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+        }
+        .table-toolbar__button {
+            min-height: 44px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .table-toolbar__button--primary {
+            background: #110d9e;
+            color: #ffffff;
+        }
+        .table-toolbar__button--primary:hover {
+            background: #0c0a78;
+        }
+        .table-toolbar__button--ghost {
+            background: #ffffff;
+            color: #475569;
+            border-color: #cbd5e1;
+        }
+        .table-toolbar__button--ghost:hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
 
         /* 🌟 NEW KPI METRIC CARDS 🌟 */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
@@ -177,6 +258,115 @@
         .mobile-header { display: none; align-items: center; justify-content: space-between; padding: 12px 15px; background: #ffffff; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); z-index: 900; }
         .mobile-menu-btn { background: var(--sidebar-bg); border: none; color: #ffffff; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         .mobile-title { font-weight: 700; color: var(--primary-dark); font-size: 14px; letter-spacing: 0.5px; }
+        .app-notification-shell { position: sticky; top: 0; z-index: 910; display: flex; justify-content: flex-end; padding: 18px 24px 0; pointer-events: none; }
+        .app-notification-shell > * { pointer-events: auto; }
+        .app-notification-panel { position: relative; }
+        .app-notification-btn {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border: 1px solid #dbe3ee;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.96);
+            color: #0f172a;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        }
+        .app-notification-btn svg { width: 20px; height: 20px; }
+        .app-notification-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+        }
+        .app-notification-badge.is-hidden { display: none; }
+        .app-notification-dropdown {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: min(92vw, 380px);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 28px 70px rgba(15, 23, 42, 0.16);
+            overflow: hidden;
+            display: none;
+        }
+        .app-notification-dropdown.is-open { display: block; }
+        .app-notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .app-notification-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+        .app-notification-action {
+            border: none;
+            background: transparent;
+            color: #110d9e;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .app-notification-list { max-height: 420px; overflow-y: auto; padding: 8px; display: grid; gap: 8px; }
+        .app-notification-item {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #f8fafc;
+            border: 1px solid #eef2f7;
+        }
+        .app-notification-item-link {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+        }
+        .app-notification-item.is-unread {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+        .app-notification-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .app-notification-item-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .app-notification-category {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .app-notification-category--blue { background: #dbeafe; color: #1d4ed8; }
+        .app-notification-category--amber { background: #fef3c7; color: #b45309; }
+        .app-notification-category--green { background: #dcfce7; color: #15803d; }
+        .app-notification-category--rose { background: #ffe4e6; color: #be123c; }
+        .app-notification-category--slate { background: #e2e8f0; color: #475569; }
+        .app-notification-item-message { font-size: 12px; line-height: 1.5; color: #475569; }
+        .app-notification-item-time { margin-top: 8px; font-size: 11px; color: #94a3b8; }
+        .app-notification-empty { padding: 18px; text-align: center; font-size: 13px; color: #64748b; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .app-alert-stack { display: grid; gap: 12px; margin-bottom: 20px; }
         .app-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 1px solid transparent; font-size: 13px; font-weight: 500; line-height: 1.5; }
@@ -302,6 +492,65 @@
             background: #dc2626;
             border-color: #dc2626;
         }
+        .app-feedback-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.38);
+            backdrop-filter: blur(4px);
+            z-index: 5100;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .app-feedback-modal.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .app-feedback-modal__dialog {
+            width: min(100%, 440px);
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+            padding: 26px 24px 22px;
+        }
+        .app-feedback-modal__title {
+            margin: 0 0 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .app-feedback-modal__message {
+            margin: 0 0 24px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+        }
+        .app-feedback-modal__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .app-feedback-modal__button {
+            border: 1px solid #110d9e;
+            border-radius: 10px;
+            padding: 11px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #110d9e;
+            color: #ffffff;
+        }
+        .app-feedback-modal__button:hover {
+            background: #0b0a75;
+            border-color: #0b0a75;
+        }
         .is-loading {
             opacity: 0.65;
             pointer-events: none;
@@ -317,10 +566,36 @@
         @media (max-width: 900px) {
             .main-wrapper { max-width: 100vw; }
             .mobile-header { display: flex; }
+            .app-notification-shell { display: none; }
+            .mobile-header .app-notification-btn {
+                width: 38px;
+                height: 38px;
+                border-radius: 12px;
+                box-shadow: none;
+            }
+            .mobile-header .app-notification-dropdown {
+                right: -8px;
+                width: min(92vw, 340px);
+            }
             .content { padding: 20px 15px; }
             .content .ui-card,
             .content .card {
                 padding: 20px;
+            }
+            .table-toolbar {
+                align-items: stretch;
+            }
+            .table-toolbar__search,
+            .table-toolbar__field,
+            .table-toolbar__actions {
+                min-width: 100%;
+                flex: 1 1 100%;
+            }
+            .table-toolbar__actions {
+                margin-left: 0;
+            }
+            .table-toolbar__button {
+                flex: 1 1 0;
             }
             .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
             .content .card [style*="grid-template-columns: 1fr 1fr"] {
@@ -349,6 +624,16 @@
             <div class="app-confirm-modal__actions">
                 <button type="button" id="appConfirmModalCancel" class="app-confirm-modal__button app-confirm-modal__button--cancel">Cancel</button>
                 <button type="button" id="appConfirmModalApprove" class="app-confirm-modal__button app-confirm-modal__button--confirm">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="appFeedbackModal" class="app-feedback-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="appFeedbackModalTitle">
+        <div class="app-feedback-modal__dialog">
+            <h3 id="appFeedbackModalTitle" class="app-feedback-modal__title" data-success-title>Success</h3>
+            <p class="app-feedback-modal__message" data-success-message>Saved successfully.</p>
+            <div class="app-feedback-modal__actions">
+                <button type="button" id="appFeedbackModalClose" class="app-feedback-modal__button">OK</button>
             </div>
         </div>
     </div>
@@ -400,6 +685,10 @@
                 <a href="{{ route('admin.users') }}" class="menu-item {{ request()->routeIs('admin.users') ? 'active' : '' }}" style="margin-bottom: 8px;">
                     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <span>User Management</span>
+                </a>
+                <a href="{{ route('admin.audit') }}" class="menu-item {{ request()->routeIs('admin.audit') ? 'active' : '' }}" style="margin-bottom: 8px;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z"></path></svg>
+                    <span>Activity Log</span>
                 </a>
             @endif
 
@@ -499,17 +788,224 @@
                 </span>
             </button>
             <div class="mobile-title">NIA PIMO Portal</div>
-            <div style="width: 24px;"></div>
+            @if(($appNotificationSummary['enabled'] ?? false) === true)
+                <div id="appNotificationMountMobile"></div>
+            @else
+                <div style="width: 24px;"></div>
+            @endif
         </div>
 
+        @if(($appNotificationSummary['enabled'] ?? false) === true)
+            <div class="app-notification-shell">
+                <div id="appNotificationMountDesktop"></div>
+            </div>
+        @endif
+
         <div class="content">
+            @if(!View::hasSection('full_bleed_content'))
             <div id="appLiveAlerts"></div>
             @include('partials.alerts')
+            @endif
             @yield('content')
         </div>
     </div>
 
     <script>
+        const appNotificationsEnabled = @json(($appNotificationSummary['enabled'] ?? false) === true);
+        const appNotificationsInitial = @json($appNotificationSummary['notifications'] ?? []);
+        const appNotificationsUnread = @json($appNotificationSummary['unread_count'] ?? 0);
+        const appNotificationsUrl = @json(($appNotificationSummary['enabled'] ?? false) === true ? route('notifications.index') : null);
+        const appNotificationsReadAllUrl = @json(($appNotificationSummary['enabled'] ?? false) === true ? route('notifications.read_all') : null);
+        const appNotificationUserKey = @json(auth()->check() && !session('is_guest') ? 'user_' . auth()->id() : null);
+        const appNotificationSeenKey = appNotificationUserKey ? `system_notifications_seen_${appNotificationUserKey}` : null;
+        let appNotificationsState = {
+            items: Array.isArray(appNotificationsInitial) ? appNotificationsInitial : [],
+            unreadCount: Number(appNotificationsUnread || 0),
+            isOpen: false,
+        };
+
+        function formatAppNotificationTime(isoString) {
+            if (!isoString) {
+                return '';
+            }
+
+            const date = new Date(isoString);
+            if (Number.isNaN(date.getTime())) {
+                return '';
+            }
+
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMinutes = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMinutes / 60);
+
+            if (diffMinutes < 1) {
+                return 'Just now';
+            }
+
+            if (diffMinutes < 60) {
+                return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+            }
+
+            const sameDay = now.toDateString() === date.toDateString();
+            if (sameDay) {
+                return `Today at ${new Intl.DateTimeFormat(undefined, {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }).format(date)}`;
+            }
+
+            if (diffHours < 48) {
+                return `Yesterday at ${new Intl.DateTimeFormat(undefined, {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }).format(date)}`;
+            }
+
+            return new Intl.DateTimeFormat(undefined, {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            }).format(date);
+        }
+
+        function buildNotificationPanelMarkup() {
+            return `
+                <div class="app-notification-panel">
+                    <button class="app-notification-btn" data-notification-toggle type="button" aria-label="Open notifications" aria-expanded="false">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.389 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span class="app-notification-badge is-hidden" data-notification-badge>0</span>
+                    </button>
+                    <div class="app-notification-dropdown" data-notification-dropdown aria-hidden="true">
+                        <div class="app-notification-header">
+                            <div class="app-notification-title">Notifications</div>
+                            <button class="app-notification-action" data-notification-read-all type="button">Mark all as read</button>
+                        </div>
+                        <div class="app-notification-list" data-notification-list></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNotificationPanel() {
+            if (!appNotificationsEnabled) {
+                return;
+            }
+
+            const desktopMount = document.getElementById('appNotificationMountDesktop');
+            const mobileMount = document.getElementById('appNotificationMountMobile');
+
+            if (desktopMount && !desktopMount.innerHTML.trim()) {
+                desktopMount.innerHTML = buildNotificationPanelMarkup();
+            }
+
+            if (mobileMount && !mobileMount.innerHTML.trim()) {
+                mobileMount.innerHTML = buildNotificationPanelMarkup();
+            }
+
+            const lastSeen = appNotificationSeenKey ? localStorage.getItem(appNotificationSeenKey) : null;
+            const unseenCount = (appNotificationsState.items || []).filter((item) => {
+                if (!lastSeen) {
+                    return true;
+                }
+
+                return String(item.created_at || '') > lastSeen;
+            }).length;
+
+            document.querySelectorAll('[data-notification-badge]').forEach((badge) => {
+                badge.textContent = unseenCount > 99 ? '99+' : String(unseenCount);
+                badge.classList.toggle('is-hidden', unseenCount < 1);
+            });
+
+            document.querySelectorAll('[data-notification-dropdown]').forEach((dropdown) => {
+                dropdown.classList.toggle('is-open', appNotificationsState.isOpen);
+                dropdown.setAttribute('aria-hidden', appNotificationsState.isOpen ? 'false' : 'true');
+            });
+
+            document.querySelectorAll('[data-notification-toggle]').forEach((button) => {
+                button.setAttribute('aria-expanded', appNotificationsState.isOpen ? 'true' : 'false');
+            });
+
+            document.querySelectorAll('[data-notification-list]').forEach((list) => {
+                if (!Array.isArray(appNotificationsState.items) || appNotificationsState.items.length === 0) {
+                    list.innerHTML = '<div class="app-notification-empty">No notifications yet.</div>';
+                    return;
+                }
+
+                list.innerHTML = appNotificationsState.items.map((item) => `
+                    <div class="app-notification-item ${item.read_at ? '' : 'is-unread'}">
+                        <a class="app-notification-item-link" href="${item.url || '#'}">
+                            <div class="app-notification-item-top">
+                                <div class="app-notification-item-title">${item.title || 'Notification'}</div>
+                                <span class="app-notification-category app-notification-category--${item.category_color || 'slate'}">${item.category_label || 'Update'}</span>
+                            </div>
+                            <div class="app-notification-item-message">${item.message || ''}</div>
+                            <div class="app-notification-item-time">${formatAppNotificationTime(item.created_at)}</div>
+                        </a>
+                    </div>
+                `).join('');
+            });
+        }
+
+        async function fetchAppNotifications() {
+            if (!appNotificationsEnabled || !appNotificationsUrl) {
+                return;
+            }
+
+            try {
+                const response = await fetch(appNotificationsUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to load notifications.');
+                }
+
+                const payload = await response.json();
+                appNotificationsState.items = Array.isArray(payload.notifications) ? payload.notifications : [];
+                appNotificationsState.unreadCount = Number(payload.unread_count || 0);
+                renderNotificationPanel();
+            } catch (error) {
+                console.error('Failed to fetch notifications', error);
+            }
+        }
+
+        async function markAllNotificationsRead() {
+            if (!appNotificationsEnabled || !appNotificationsReadAllUrl || appNotificationsState.unreadCount < 1) {
+                if (appNotificationSeenKey) {
+                    const latestTimestamp = appNotificationsState.items[0]?.created_at || new Date().toISOString();
+                    localStorage.setItem(appNotificationSeenKey, latestTimestamp);
+                    renderNotificationPanel();
+                }
+                return;
+            }
+
+            try {
+                const latestTimestamp = appNotificationsState.items[0]?.created_at || new Date().toISOString();
+                await fetch(appNotificationsReadAllUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (appNotificationSeenKey) {
+                    localStorage.setItem(appNotificationSeenKey, latestTimestamp);
+                }
+                appNotificationsState.unreadCount = 0;
+                appNotificationsState.items = appNotificationsState.items.map((item) => ({ ...item, read_at: item.read_at || new Date().toISOString() }));
+                renderNotificationPanel();
+            } catch (error) {
+                console.error('Failed to mark notifications as read', error);
+            }
+        }
+
         function setFieldValidityState(field) {
             if (!(field instanceof HTMLElement) || typeof field.checkValidity !== 'function' || !field.willValidate) {
                 return;
@@ -594,7 +1090,18 @@
             }
 
             modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
             return true;
+        }
+
+        function closeAsyncFeedbackModal(selector = '#appFeedbackModal') {
+            const modal = document.querySelector(selector);
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
         }
 
         const appLoaderState = {
@@ -696,6 +1203,33 @@
         }
 
         document.addEventListener('click', function(event) {
+            const notificationToggle = event.target.closest('[data-notification-toggle]');
+            const notificationReadAll = event.target.closest('[data-notification-read-all]');
+            const notificationPanel = event.target.closest('.app-notification-panel');
+
+            if (notificationToggle) {
+                appNotificationsState.isOpen = !appNotificationsState.isOpen;
+                renderNotificationPanel();
+
+                if (appNotificationsState.isOpen) {
+                    fetchAppNotifications().finally(() => {
+                        markAllNotificationsRead();
+                    });
+                }
+
+                return;
+            }
+
+            if (notificationReadAll) {
+                markAllNotificationsRead();
+                return;
+            }
+
+            if (!notificationPanel && appNotificationsState.isOpen) {
+                appNotificationsState.isOpen = false;
+                renderNotificationPanel();
+            }
+
             if (event.target?.id === 'appConfirmModalCancel') {
                 closeAppConfirmModal(false);
             }
@@ -707,6 +1241,14 @@
             if (event.target?.id === 'appConfirmModal') {
                 closeAppConfirmModal(false);
             }
+
+            if (event.target?.id === 'appFeedbackModalClose') {
+                closeAsyncFeedbackModal();
+            }
+
+            if (event.target?.id === 'appFeedbackModal') {
+                closeAsyncFeedbackModal();
+            }
         });
 
         document.addEventListener('keydown', function(event) {
@@ -717,6 +1259,7 @@
 
             if (event.key === 'Escape') {
                 closeAppConfirmModal(false);
+                closeAsyncFeedbackModal();
             }
         });
 
@@ -724,6 +1267,7 @@
         window.hideAppLoader = hideAppLoader;
         window.withAppLoader = withAppLoader;
         window.requestAppConfirmation = requestAppConfirmation;
+        window.closeAsyncFeedbackModal = closeAsyncFeedbackModal;
 
         async function refreshAsyncTargets(targets) {
             return refreshAsyncTargetsFromUrl(window.location.href, targets, false);
@@ -748,10 +1292,13 @@
             focusTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true) {
+        async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true, options = {}) {
             if (!targets || !targets.length) return;
 
             return withAppLoader(async () => {
+                const preserveScroll = options.preserveScroll === true;
+                const previousWindowScrollX = window.scrollX;
+                const previousWindowScrollY = window.scrollY;
                 const refreshUrl = new URL(url, window.location.origin);
                 refreshUrl.searchParams.set('_async_refresh', Date.now().toString());
 
@@ -791,7 +1338,11 @@
                     window.history.pushState({}, '', url);
                 }
 
-                focusAsyncPaginationTarget(targets[0]);
+                if (preserveScroll) {
+                    window.scrollTo(previousWindowScrollX, previousWindowScrollY);
+                } else {
+                    focusAsyncPaginationTarget(targets[0]);
+                }
             }, 'Loading content...');
         }
 
@@ -804,8 +1355,11 @@
             const closeSelector = options.closeSelector ?? form.dataset.asyncClose;
             const confirmMessage = options.confirmMessage ?? form.dataset.asyncConfirm;
             const successModalSelector = options.successModalSelector ?? form.dataset.asyncSuccessModal;
+            const errorModalSelector = options.errorModalSelector ?? form.dataset.asyncErrorModal;
             const suppressSuccessFeedback = options.suppressSuccessFeedback ?? form.dataset.asyncSuccess === 'silent';
             const successTitle = options.successTitle ?? form.dataset.asyncSuccessTitle ?? 'Success';
+            const errorTitle = options.errorTitle ?? form.dataset.asyncErrorTitle ?? 'Unable to Save';
+            const reloadOnSuccess = options.reloadOnSuccess ?? form.dataset.asyncReload === 'true';
 
             if (!validateFormBeforeSubmit(form)) {
                 return false;
@@ -852,19 +1406,34 @@
                     throw new Error(payload.message || 'Unable to save changes.');
                 }
 
-                if (targetSelectors.length > 0) {
-                    await refreshAsyncTargets(targetSelectors);
-                }
-
-                if (resetForm) {
-                    form.reset();
-                }
-
                 if (closeSelector) {
                     const modal = document.querySelector(closeSelector);
                     if (modal) {
                         modal.classList.remove('active');
                     }
+                }
+
+                if (targetSelectors.length > 0) {
+                    await refreshAsyncTargetsFromUrl(window.location.href, targetSelectors, false, {
+                        preserveScroll: form.dataset.asyncPreserveScroll === 'true'
+                    });
+                }
+
+                document.dispatchEvent(new CustomEvent('app:async-form-success', {
+                    detail: {
+                        form,
+                        payload,
+                        targets: targetSelectors
+                    }
+                }));
+
+                if (resetForm) {
+                    form.reset();
+                }
+
+                if (reloadOnSuccess) {
+                    window.location.reload();
+                    return false;
                 }
 
                 if (!suppressSuccessFeedback) {
@@ -877,7 +1446,12 @@
                 }
                 return false;
             } catch (error) {
-                showLiveAlert(error.message || 'Unable to save changes.', 'error');
+                const errorMessage = error.message || 'Unable to save changes.';
+                const openedErrorModal = openAsyncSuccessModal(errorModalSelector, errorMessage, errorTitle);
+
+                if (!openedErrorModal) {
+                    showLiveAlert(errorMessage, 'error');
+                }
                 return false;
             } finally {
                 form.classList.remove('is-loading');
@@ -908,6 +1482,39 @@
             const form = event.target;
             if (!(form instanceof HTMLFormElement)) return;
 
+            if (form.dataset.asyncGet === 'true') {
+                event.preventDefault();
+
+                const targets = (form.dataset.asyncTarget || '')
+                    .split(',')
+                    .map((selector) => selector.trim())
+                    .filter(Boolean);
+
+                const formData = new FormData(form);
+                const url = new URL(form.action || window.location.href, window.location.origin);
+                url.search = '';
+
+                formData.forEach((value, key) => {
+                    if (value === null || typeof value === 'undefined') {
+                        return;
+                    }
+
+                    const stringValue = String(value).trim();
+                    if (!stringValue) {
+                        return;
+                    }
+
+                    url.searchParams.append(key, stringValue);
+                });
+
+                refreshAsyncTargetsFromUrl(url.toString(), targets, true, {
+                    preserveScroll: form.dataset.asyncPreserveScroll === 'true'
+                }).catch((error) => {
+                    showLiveAlert(error.message || 'Unable to apply filters.', 'error');
+                });
+                return;
+            }
+
             if (!form.dataset.asyncTarget && form.dataset.async !== 'true') {
                 if (!validateFormBeforeSubmit(form)) {
                     event.preventDefault();
@@ -925,6 +1532,15 @@
             const input = event.target;
             if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
                 setFieldValidityState(input);
+            }
+
+            if (input instanceof HTMLInputElement && input.type === 'file') {
+                const uploadForm = input.closest('form[data-file-upload-feedback="true"]');
+                if (uploadForm && hasInvalidUploadFiles([input])) {
+                    input.value = '';
+                    showUploadFileFeedback();
+                    return;
+                }
             }
 
             if (!(input instanceof HTMLSelectElement) || !input.hasAttribute('data-auto-submit')) {
@@ -950,7 +1566,9 @@
                 .map((selector) => selector.trim())
                 .filter(Boolean);
 
-            refreshAsyncTargetsFromUrl(link.href, targets, true).catch((error) => {
+            refreshAsyncTargetsFromUrl(link.href, targets, true, {
+                preserveScroll: link.dataset.asyncPreserveScroll === 'true'
+            }).catch((error) => {
                 showLiveAlert(error.message || 'Unable to change page.', 'error');
             });
         });
@@ -992,6 +1610,53 @@
                 submitBtn.style.display = 'none';
             }, 0);
         });
+
+        const allowedUploadExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
+
+        function getInvalidUploadFilesFromInput(input) {
+            if (!(input instanceof HTMLInputElement) || input.type !== 'file') {
+                return [];
+            }
+
+            return Array.from(input.files || []).filter((file) => {
+                const parts = String(file.name || '').split('.');
+                const extension = parts.length > 1 ? parts.pop().toLowerCase() : '';
+                return !allowedUploadExtensions.includes(extension);
+            });
+        }
+
+        function hasInvalidUploadFiles(fileInputs) {
+            return fileInputs.some((input) => getInvalidUploadFilesFromInput(input).length > 0);
+        }
+
+        function showUploadFileFeedback() {
+            const message = 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.';
+            const openedModal = openAsyncSuccessModal('#appFeedbackModal', message, 'Upload Failed');
+
+            if (!openedModal) {
+                showLiveAlert(message, 'error');
+            }
+        }
+
+        document.addEventListener('submit', function(event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement) || form.dataset.fileUploadFeedback !== 'true') {
+                return;
+            }
+
+            const fileInputs = Array.from(form.querySelectorAll('input[type="file"]'));
+            if (!hasInvalidUploadFiles(fileInputs)) {
+                return;
+            }
+
+            event.preventDefault();
+            fileInputs.forEach((input) => {
+                if (getInvalidUploadFilesFromInput(input).length > 0) {
+                    input.value = '';
+                }
+            });
+            showUploadFileFeedback();
+        }, true);
 
         function toggleMenu(menuId, element) {
             const menu = document.getElementById(menuId);
@@ -1040,7 +1705,15 @@
             syncSidebarToggleButtons();
         });
 
-        document.addEventListener('DOMContentLoaded', syncSidebarToggleButtons);
+        document.addEventListener('DOMContentLoaded', function() {
+            syncSidebarToggleButtons();
+            renderNotificationPanel();
+
+            if (appNotificationsEnabled) {
+                fetchAppNotifications();
+                window.setInterval(fetchAppNotifications, 30000);
+            }
+        });
     </script>
 </body>
 

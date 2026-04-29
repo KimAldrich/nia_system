@@ -10,10 +10,22 @@ class Event extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'event_date', 'event_time', 'event_category_id'];
+    protected $fillable = [
+        'title',
+        'description',
+        'event_date',
+        'event_time',
+        'event_category_id',
+        'team',
+        'reminder_minutes',
+        'recurrence_pattern',
+        'recurrence_until',
+        'recurrence_group',
+    ];
 
     protected $casts = [
         'event_date' => 'date',
+        'recurrence_until' => 'date',
     ];
 
     public function category()

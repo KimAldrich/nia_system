@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
 use App\Models\PcrStatusReport;
@@ -20,6 +22,12 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class PcrTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     private function validatePcrStatus(Request $request, bool $requireId = false): array
     {
@@ -42,13 +50,17 @@ class PcrTeamController extends Controller
         return $request->validate($rules);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $resolutions = IaResolution::where('team', 'pcr_team')
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
         $events = Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
+        $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -61,13 +73,29 @@ class PcrTeamController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
-        $pcrStatusReports = PcrStatusReport::orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
-        return view('pcr_team.dashboard', compact('resolutions', 'events', 'categories', 'pcrStatusReports'));
+        $analytics = $this->buildResolutionAnalytics('pcr_team');
+        $pcrQuery = PcrStatusReport::query();
+        if ($request->filled('pcr_search')) {
+            $search = trim((string) $request->input('pcr_search'));
+            $pcrQuery->where(function ($query) use ($search) {
+                $query->where('fund_source', 'like', "%{$search}%")
+                    ->orWhere('allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pcr_fund_source')) {
+            $pcrQuery->where('fund_source', $request->input('pcr_fund_source'));
+        }
+
+        $pcrStatusReports = $pcrQuery->orderByDesc('fund_source')->paginate(8, ['*'], 'pcr_page')->withQueryString();
+        $pcrFundSources = PcrStatusReport::select('fund_source')->whereNotNull('fund_source')->distinct()->orderByDesc('fund_source')->pluck('fund_source');
+        return view('pcr_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'analytics', 'pcrStatusReports', 'pcrFundSources'));
     }
 
     public function downloadables()
@@ -84,6 +112,16 @@ class PcrTeamController extends Controller
 
     public function uploadForm(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -93,13 +131,13 @@ class PcrTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -117,6 +155,13 @@ class PcrTeamController extends Controller
             ? 'File uploaded successfully.'
             : "{$files->count()} files uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('pcr_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $fileMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'pcr_team', 'Downloadables updated', $fileMessage, ['type' => 'downloadable', 'team' => 'pcr_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -126,12 +171,17 @@ class PcrTeamController extends Controller
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('pcr_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'pcr_team', 'Downloadable updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'pcr_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File updated successfully.');
     }
@@ -140,17 +190,32 @@ class PcrTeamController extends Controller
     {
         $downloadable = Downloadable::findOrFail($id);
 
+        $deletedName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $downloadable->delete();
 
+        $teamLabel = $this->notifications()->teamLabel('pcr_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'pcr_team', 'Downloadable removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'pcr_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, 'File deleted successfully.');
     }
 
     public function uploadResolution(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -160,13 +225,13 @@ class PcrTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('resolutions', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -184,6 +249,13 @@ class PcrTeamController extends Controller
             ? 'Resolution uploaded successfully.'
             : "{$files->count()} resolutions uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('pcr_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $resolutionMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
+        $this->notifications()->notifyByActorScope($request->user(), 'pcr_team', 'IA resolutions updated', $resolutionMessage, ['type' => 'ia_resolution', 'team' => 'pcr_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -193,12 +265,17 @@ class PcrTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
 
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('pcr_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'pcr_team', 'IA resolution updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'pcr_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution updated successfully.');
     }
@@ -207,7 +284,12 @@ class PcrTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
+        $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
+
+        $teamLabel = $this->notifications()->teamLabel('pcr_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency($request->user(), 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'pcr_team', 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -218,6 +300,7 @@ class PcrTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
 
         // Delete file from storage
+        $deletedName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
@@ -229,6 +312,10 @@ class PcrTeamController extends Controller
 
         // Delete record from database
         $resolution->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('pcr_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'pcr_team', 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'pcr_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }
@@ -272,9 +359,31 @@ class PcrTeamController extends Controller
 
     public function exportPcrStatusExcel(Request $request): StreamedResponse
     {
-        $rows = PcrStatusReport::orderByDesc('fund_source')->get();
+        $query = PcrStatusReport::query();
+        if ($request->filled('pcr_search')) {
+            $search = trim((string) $request->input('pcr_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('fund_source', 'like', "%{$search}%")
+                    ->orWhere('allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pcr_fund_source')) {
+            $query->where('fund_source', $request->input('pcr_fund_source'));
+        }
+
+        $rows = $query->orderByDesc('fund_source')->get();
         $dateLabel = now()->format('F j, Y');
-        $filename = 'PCR STATUS AS OF ' . now()->format('Fj Y') . '.xlsx';
+        $filenameParts = ['PCR STATUS as of', $dateLabel];
+        if ($request->filled('pcr_search')) {
+            $filenameParts[] = 'Search';
+            $filenameParts[] = trim((string) $request->input('pcr_search'));
+        }
+        if ($request->filled('pcr_fund_source')) {
+            $filenameParts[] = 'Fund Source';
+            $filenameParts[] = $request->input('pcr_fund_source');
+        }
+        $filename = collect($filenameParts)->filter()->implode(' ') . '.xlsx';
+        $filename = preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

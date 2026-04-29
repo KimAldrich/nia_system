@@ -181,6 +181,24 @@
     @if(isset($db_team) && $db_team === 'fs_team' && isset($hydroProjects) && isset($fsdeProjects))
         <div class="ui-card" id="guestHydroSection" style="margin-top: 24px;">
             <div class="section-title">Hydro-Georesistivity Status Monitoring</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestHydroSection',
+                'searchName' => 'hydro_search',
+                'searchPlaceholder' => 'Search project code, system, municipality, status...',
+                'filters' => [
+                    [
+                        'name' => 'hydro_district',
+                        'label' => 'District',
+                        'options' => ['' => 'All districts'] + collect($hydroDistricts ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                    [
+                        'name' => 'hydro_status',
+                        'label' => 'Status',
+                        'options' => ['' => 'All statuses'] + collect($hydroStatuses ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['hydro_search', 'hydro_district', 'hydro_status', 'hydro_page'],
+            ])
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1200px;">
                     <thead>
@@ -243,6 +261,24 @@
 
         <div class="ui-card" id="guestFsdeSection">
             <div class="section-title">Monthly FSDE Status Report</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestFsdeSection',
+                'searchName' => 'fsde_search',
+                'searchPlaceholder' => 'Search project, consultant, municipality...',
+                'filters' => [
+                    [
+                        'name' => 'fsde_year',
+                        'label' => 'Year',
+                        'options' => ['' => 'All years'] + collect($fsdeYears ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                    [
+                        'name' => 'fsde_municipality',
+                        'label' => 'Municipality',
+                        'options' => ['' => 'All municipalities'] + collect($fsdeMunicipalities ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['fsde_search', 'fsde_year', 'fsde_municipality', 'fsde_page'],
+            ])
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1500px;">
                     <thead>
@@ -311,8 +347,21 @@
     @endif
 
     @if(isset($db_team) && $db_team === 'pao_team' && isset($powData))
-        <div class="ui-card" style="margin-top: 24px;">
+        <div class="ui-card" id="guestPowSection" style="margin-top: 24px;">
             <div class="section-title">Program of Works Status Monitoring</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestPowSection',
+                'searchName' => 'pow_search',
+                'searchPlaceholder' => 'Search district, allocation, remarks...',
+                'filters' => [
+                    [
+                        'name' => 'pow_district',
+                        'label' => 'District',
+                        'options' => ['' => 'All districts'] + collect($powDistricts ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['pow_search', 'pow_district', 'pow_page'],
+            ])
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1400px;">
                     <thead>
@@ -375,7 +424,7 @@
 
             @if(isset($powData) && $powData->hasPages())
                 <div class="custom-pagination">
-                    <a href="{{ $powData->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $powData->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $powData->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $powData->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestPowSection">&lt;</a>
 
                     @php
                         $pStart = max($powData->currentPage() - 2, 1);
@@ -384,10 +433,10 @@
                     @endphp
 
                     @for ($page = $pStart; $page <= $pEnd; $page++)
-                        <a href="{{ $powData->appends(request()->query())->url($page) }}" class="page-item {{ $page == $powData->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                        <a href="{{ $powData->appends(request()->query())->url($page) }}" class="page-item {{ $page == $powData->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestPowSection">{{ $page }}</a>
                     @endfor
 
-                    <a href="{{ $powData->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$powData->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                    <a href="{{ $powData->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$powData->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestPowSection">&gt;</a>
                 </div>
             @endif
         </div>
@@ -396,6 +445,19 @@
     @if(isset($db_team) && $db_team === 'pcr_team' && isset($pcrStatusReports))
         <div class="ui-card" id="guestPcrSection" style="margin-top: 24px;">
             <div class="section-title">PCR Status Monitoring</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestPcrSection',
+                'searchName' => 'pcr_search',
+                'searchPlaceholder' => 'Search fund source or allocation...',
+                'filters' => [
+                    [
+                        'name' => 'pcr_fund_source',
+                        'label' => 'Fund Source',
+                        'options' => ['' => 'All fund sources'] + collect($pcrFundSources ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['pcr_search', 'pcr_fund_source', 'pcr_page'],
+            ])
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1300px;">
                     <thead>
@@ -448,16 +510,16 @@
             </div>
             @if($pcrStatusReports->hasPages())
                 <div class="custom-pagination">
-                    <a href="{{ $pcrStatusReports->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $pcrStatusReports->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $pcrStatusReports->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $pcrStatusReports->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestPcrSection">&lt;</a>
                     @php
                         $pcrStart = max($pcrStatusReports->currentPage() - 2, 1);
                         $pcrEnd = min($pcrStart + 4, $pcrStatusReports->lastPage());
                         if ($pcrEnd - $pcrStart < 4) { $pcrStart = max($pcrEnd - 4, 1); }
                     @endphp
                     @for ($page = $pcrStart; $page <= $pcrEnd; $page++)
-                        <a href="{{ $pcrStatusReports->appends(request()->query())->url($page) }}" class="page-item {{ $page == $pcrStatusReports->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                        <a href="{{ $pcrStatusReports->appends(request()->query())->url($page) }}" class="page-item {{ $page == $pcrStatusReports->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestPcrSection">{{ $page }}</a>
                     @endfor
-                    <a href="{{ $pcrStatusReports->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$pcrStatusReports->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                    <a href="{{ $pcrStatusReports->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$pcrStatusReports->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestPcrSection">&gt;</a>
                 </div>
             @endif
         </div>
@@ -465,9 +527,21 @@
 
     @if(isset($db_team) && $db_team === 'rpwsis_team' && isset($records) && isset($summaryRecords))
         <div class="ui-card" id="guestRpwsisStatusSection" style="margin-top: 24px;">
-            <div class="section-title">Social And Environmental Accomplishment</div>
+            <div class="section-title">
+                A. ACCOMPLISHMENT OF SOCIAL AND ENVIRONMENTAL
+            </div>
+            <div class="table-toolbar" data-client-table-toolbar>
+                <label class="table-toolbar__search">
+                    <span class="table-toolbar__label">Search</span>
+                    <input type="search" id="guestRpwsisStatusSearch" class="table-toolbar__input" placeholder="Search activity, NIS, batch, remarks...">
+                </label>
+                <div class="table-toolbar__actions">
+                    <button type="button" id="guestRpwsisStatusApplyButton" class="table-toolbar__button table-toolbar__button--primary">Apply</button>
+                    <button type="button" id="guestRpwsisStatusResetButton" class="table-toolbar__button table-toolbar__button--ghost">Reset</button>
+                </div>
+            </div>
             <div class="table-responsive">
-                <table class="sleek-table" style="min-width: 2200px;">
+                <table class="sleek-table" id="guestRpwsisStatusTable" style="min-width: 2200px;">
                     <thead>
                         <tr>
                             <th rowspan="2">Region</th>
@@ -531,22 +605,43 @@
             </div>
             @if($records->hasPages())
                 <div class="custom-pagination">
-                    <a href="{{ $records->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $records->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $records->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $records->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisStatusSection">&lt;</a>
                     @php
                         $rsStart = max($records->currentPage() - 2, 1);
                         $rsEnd = min($rsStart + 4, $records->lastPage());
                         if ($rsEnd - $rsStart < 4) { $rsStart = max($rsEnd - 4, 1); }
                     @endphp
                     @for ($page = $rsStart; $page <= $rsEnd; $page++)
-                        <a href="{{ $records->appends(request()->query())->url($page) }}" class="page-item {{ $page == $records->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                        <a href="{{ $records->appends(request()->query())->url($page) }}" class="page-item {{ $page == $records->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisStatusSection">{{ $page }}</a>
                     @endfor
-                    <a href="{{ $records->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$records->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                    <a href="{{ $records->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$records->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisStatusSection">&gt;</a>
                 </div>
             @endif
         </div>
 
         <div class="ui-card" id="guestRpwsisSummarySection" style="margin-top: 24px;">
-            <div class="section-title">Water Resources Supporting Irrigation System Summary</div>
+            <div class="section-title">
+                REHABILITATION AND PROTECTION OF WATER RESOURCES SUPPORTING IRRIGATION SYSTEM (R&P WRSIS)
+                <div style="font-size: 14px; font-weight: normal; margin-top: 4px; opacity: 0.9;">Summary of Accomplishment</div>
+            </div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestRpwsisSummarySection',
+                'searchName' => 'rpwsis_summary_search',
+                'searchPlaceholder' => 'Search province, municipality, plantation type, NIS...',
+                'filters' => [
+                    [
+                        'name' => 'rpwsis_summary_province',
+                        'label' => 'Province',
+                        'options' => ['' => 'All provinces'] + $summaryRecords->getCollection()->pluck('province')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                    [
+                        'name' => 'rpwsis_summary_municipality',
+                        'label' => 'Municipality',
+                        'options' => ['' => 'All municipalities'] + $summaryRecords->getCollection()->pluck('municipality')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['rpwsis_summary_search', 'rpwsis_summary_province', 'rpwsis_summary_municipality', 'rpwsis_summary_page'],
+            ])
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1800px;">
                     <thead>
@@ -599,16 +694,228 @@
             </div>
             @if($summaryRecords->hasPages())
                 <div class="custom-pagination">
-                    <a href="{{ $summaryRecords->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $summaryRecords->onFirstPage() ? 'disabled' : '' }}">&lt;</a>
+                    <a href="{{ $summaryRecords->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $summaryRecords->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisSummarySection">&lt;</a>
                     @php
                         $sumStart = max($summaryRecords->currentPage() - 2, 1);
                         $sumEnd = min($sumStart + 4, $summaryRecords->lastPage());
                         if ($sumEnd - $sumStart < 4) { $sumStart = max($sumEnd - 4, 1); }
                     @endphp
                     @for ($page = $sumStart; $page <= $sumEnd; $page++)
-                        <a href="{{ $summaryRecords->appends(request()->query())->url($page) }}" class="page-item {{ $page == $summaryRecords->currentPage() ? 'active' : '' }}">{{ $page }}</a>
+                        <a href="{{ $summaryRecords->appends(request()->query())->url($page) }}" class="page-item {{ $page == $summaryRecords->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisSummarySection">{{ $page }}</a>
                     @endfor
-                    <a href="{{ $summaryRecords->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$summaryRecords->hasMorePages() ? 'disabled' : '' }}">&gt;</a>
+                    <a href="{{ $summaryRecords->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$summaryRecords->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisSummarySection">&gt;</a>
+                </div>
+            @endif
+        </div>
+
+        <div class="ui-card" id="guestRpwsisNurserySection" style="margin-top: 24px;">
+            <div class="section-title">Nursery Establishment</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestRpwsisNurserySection',
+                'searchName' => 'rpwsis_nursery_search',
+                'searchPlaceholder' => 'Search municipality, barangay, nursery type, NIS...',
+                'filters' => [
+                    [
+                        'name' => 'rpwsis_nursery_municipality',
+                        'label' => 'Municipality',
+                        'options' => ['' => 'All municipalities'] + $nurseryRecords->getCollection()->pluck('municipality')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                    [
+                        'name' => 'rpwsis_nursery_type',
+                        'label' => 'Type',
+                        'options' => ['' => 'All nursery types'] + $nurseryRecords->getCollection()->pluck('nursery_type')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['rpwsis_nursery_search', 'rpwsis_nursery_municipality', 'rpwsis_nursery_type', 'rpwsis_nursery_page'],
+            ])
+            <div class="table-responsive">
+                <table class="sleek-table" style="min-width: 1500px;">
+                    <thead>
+                        <tr>
+                            <th>Region</th>
+                            <th>Province</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
+                            <th>X-Coordinates</th>
+                            <th>Y-Coordinates</th>
+                            <th>Number Seedlings Produced</th>
+                            <th>Type of Nursery</th>
+                            <th>Name of NIS</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($nurseryRecords as $row)
+                            <tr>
+                                <td>{{ $row->region }}</td>
+                                <td>{{ $row->province }}</td>
+                                <td>{{ $row->municipality }}</td>
+                                <td>{{ $row->barangay }}</td>
+                                <td>{{ $row->x_coordinates }}</td>
+                                <td>{{ $row->y_coordinates }}</td>
+                                <td>{{ $row->seedlings_produced }}</td>
+                                <td>{{ $row->nursery_type }}</td>
+                                <td>{{ $row->nis_name }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $row->remarks }}</div></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="10" style="text-align:center; padding: 30px 0; color: #a0aec0;">No nursery records found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($nurseryRecords->hasPages())
+                <div class="custom-pagination">
+                    <a href="{{ $nurseryRecords->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $nurseryRecords->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisNurserySection">&lt;</a>
+                    @php
+                        $nurStart = max($nurseryRecords->currentPage() - 2, 1);
+                        $nurEnd = min($nurStart + 4, $nurseryRecords->lastPage());
+                        if ($nurEnd - $nurStart < 4) { $nurStart = max($nurEnd - 4, 1); }
+                    @endphp
+                    @for ($page = $nurStart; $page <= $nurEnd; $page++)
+                        <a href="{{ $nurseryRecords->appends(request()->query())->url($page) }}" class="page-item {{ $page == $nurseryRecords->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisNurserySection">{{ $page }}</a>
+                    @endfor
+                    <a href="{{ $nurseryRecords->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$nurseryRecords->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisNurserySection">&gt;</a>
+                </div>
+            @endif
+        </div>
+
+        <div class="ui-card" id="guestRpwsisSignagesSection" style="margin-top: 24px;">
+            <div class="section-title">Informative Signages Installed</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestRpwsisSignagesSection',
+                'searchName' => 'rpwsis_signage_search',
+                'searchPlaceholder' => 'Search municipality, barangay, signage type, NIS...',
+                'filters' => [
+                    [
+                        'name' => 'rpwsis_signage_municipality',
+                        'label' => 'Municipality',
+                        'options' => ['' => 'All municipalities'] + $signageRecords->getCollection()->pluck('municipality')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                    [
+                        'name' => 'rpwsis_signage_type',
+                        'label' => 'Type',
+                        'options' => ['' => 'All signage types'] + $signageRecords->getCollection()->pluck('signage_type')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['rpwsis_signage_search', 'rpwsis_signage_municipality', 'rpwsis_signage_type', 'rpwsis_signage_page'],
+            ])
+            <div class="table-responsive">
+                <table class="sleek-table" style="min-width: 1500px;">
+                    <thead>
+                        <tr>
+                            <th>Region</th>
+                            <th>Province</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
+                            <th>X-Coordinates</th>
+                            <th>Y-Coordinates</th>
+                            <th>Type of Signages</th>
+                            <th>Name of NIS</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($signageRecords as $row)
+                            <tr>
+                                <td>{{ $row->region }}</td>
+                                <td>{{ $row->province }}</td>
+                                <td>{{ $row->municipality }}</td>
+                                <td>{{ $row->barangay }}</td>
+                                <td>{!! nl2br(e($row->x_coordinates)) !!}</td>
+                                <td>{!! nl2br(e($row->y_coordinates)) !!}</td>
+                                <td>{!! nl2br(e($row->signage_type)) !!}</td>
+                                <td>{{ $row->nis_name }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $row->remarks }}</div></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="9" style="text-align:center; padding: 30px 0; color: #a0aec0;">No signage records found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($signageRecords->hasPages())
+                <div class="custom-pagination">
+                    <a href="{{ $signageRecords->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $signageRecords->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisSignagesSection">&lt;</a>
+                    @php
+                        $sigStart = max($signageRecords->currentPage() - 2, 1);
+                        $sigEnd = min($sigStart + 4, $signageRecords->lastPage());
+                        if ($sigEnd - $sigStart < 4) { $sigStart = max($sigEnd - 4, 1); }
+                    @endphp
+                    @for ($page = $sigStart; $page <= $sigEnd; $page++)
+                        <a href="{{ $signageRecords->appends(request()->query())->url($page) }}" class="page-item {{ $page == $signageRecords->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisSignagesSection">{{ $page }}</a>
+                    @endfor
+                    <a href="{{ $signageRecords->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$signageRecords->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisSignagesSection">&gt;</a>
+                </div>
+            @endif
+        </div>
+
+        <div class="ui-card" id="guestRpwsisInfrastructureSection" style="margin-top: 24px;">
+            <div class="section-title">Other Infrastructures</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestRpwsisInfrastructureSection',
+                'searchName' => 'rpwsis_infrastructure_search',
+                'searchPlaceholder' => 'Search municipality, barangay, infrastructure type, NIS...',
+                'filters' => [
+                    [
+                        'name' => 'rpwsis_infrastructure_municipality',
+                        'label' => 'Municipality',
+                        'options' => ['' => 'All municipalities'] + $infrastructureRecords->getCollection()->pluck('municipality')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                    [
+                        'name' => 'rpwsis_infrastructure_type',
+                        'label' => 'Type',
+                        'options' => ['' => 'All infrastructure types'] + $infrastructureRecords->getCollection()->pluck('infrastructure_type')->filter()->unique()->sort()->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['rpwsis_infrastructure_search', 'rpwsis_infrastructure_municipality', 'rpwsis_infrastructure_type', 'rpwsis_infrastructure_page'],
+            ])
+            <div class="table-responsive">
+                <table class="sleek-table" style="min-width: 1500px;">
+                    <thead>
+                        <tr>
+                            <th>Region</th>
+                            <th>Province</th>
+                            <th>Municipality</th>
+                            <th>Barangay</th>
+                            <th>X-Coordinates</th>
+                            <th>Y-Coordinates</th>
+                            <th>Type of Infrastructure</th>
+                            <th>Name of NIS</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($infrastructureRecords as $row)
+                            <tr>
+                                <td>{{ $row->region }}</td>
+                                <td>{{ $row->province }}</td>
+                                <td>{{ $row->municipality }}</td>
+                                <td>{{ $row->barangay }}</td>
+                                <td>{!! nl2br(e($row->x_coordinates)) !!}</td>
+                                <td>{!! nl2br(e($row->y_coordinates)) !!}</td>
+                                <td>{!! nl2br(e($row->infrastructure_type)) !!}</td>
+                                <td>{{ $row->nis_name }}</td>
+                                <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $row->remarks }}</div></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="9" style="text-align:center; padding: 30px 0; color: #a0aec0;">No infrastructure records found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($infrastructureRecords->hasPages())
+                <div class="custom-pagination">
+                    <a href="{{ $infrastructureRecords->appends(request()->query())->previousPageUrl() }}" class="page-item {{ $infrastructureRecords->onFirstPage() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisInfrastructureSection">&lt;</a>
+                    @php
+                        $infStart = max($infrastructureRecords->currentPage() - 2, 1);
+                        $infEnd = min($infStart + 4, $infrastructureRecords->lastPage());
+                        if ($infEnd - $infStart < 4) { $infStart = max($infEnd - 4, 1); }
+                    @endphp
+                    @for ($page = $infStart; $page <= $infEnd; $page++)
+                        <a href="{{ $infrastructureRecords->appends(request()->query())->url($page) }}" class="page-item {{ $page == $infrastructureRecords->currentPage() ? 'active' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisInfrastructureSection">{{ $page }}</a>
+                    @endfor
+                    <a href="{{ $infrastructureRecords->appends(request()->query())->nextPageUrl() }}" class="page-item {{ !$infrastructureRecords->hasMorePages() ? 'disabled' : '' }}" data-async-pagination="true" data-async-target="#guestRpwsisInfrastructureSection">&gt;</a>
                 </div>
             @endif
         </div>
@@ -616,21 +923,25 @@
 
     @if(isset($db_team) && $db_team === 'cm_team' && isset($procurementProjects))
         <div class="ui-card" id="guestProcurementSection" style="margin-top: 24px;">
-            <div class="section-title">
-                Procurement Status Monitoring
-                
-                <form action="{{ url()->current() }}" method="GET" style="margin: 0;">
-                    @foreach(request()->except(['proc_category', 'page']) as $key => $value)
-                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                    @endforeach
-                    <select name="proc_category" onchange="this.form.submit()" class="modern-input" style="margin-bottom: 0; padding: 8px 12px; width: 280px; font-weight: 600; cursor: pointer; border-color: #0c4d05;">
-                        <option value="All Projects">-- Show All Categories --</option>
-                        @foreach($procCategories ?? [] as $cat)
-                            <option value="{{ $cat }}" {{ request('proc_category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                        @endforeach
-                    </select>
-                </form>
-            </div>
+            <div class="section-title">Procurement Status Monitoring</div>
+            @include('partials.table-toolbar', [
+                'asyncTarget' => '#guestProcurementSection',
+                'searchName' => 'proc_search',
+                'searchPlaceholder' => 'Search category, project, municipality, contractor...',
+                'filters' => [
+                    [
+                        'name' => 'proc_category',
+                        'label' => 'Category',
+                        'options' => ['All Projects' => 'All categories'] + collect($procCategories ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                    [
+                        'name' => 'proc_municipality',
+                        'label' => 'Municipality',
+                        'options' => ['' => 'All municipalities'] + collect($procMunicipalities ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                    ],
+                ],
+                'resetKeys' => ['proc_search', 'proc_category', 'proc_municipality', 'page'],
+            ])
             
             <div class="table-responsive">
                 <table class="sleek-table" style="min-width: 1500px;">
@@ -766,5 +1077,60 @@
                 document.querySelectorAll('.acc-data-' + m).forEach(el => { el.style.display = (m === val) ? 'block' : 'none'; });
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('guestRpwsisStatusTable');
+            const searchInput = document.getElementById('guestRpwsisStatusSearch');
+            const applyButton = document.getElementById('guestRpwsisStatusApplyButton');
+            const resetButton = document.getElementById('guestRpwsisStatusResetButton');
+
+            if (!table || !searchInput || !applyButton || !resetButton || !table.tBodies.length) {
+                return;
+            }
+
+            const tbody = table.tBodies[0];
+
+            const applyGuestRpwsisStatusFilters = () => {
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter((row) => !row.dataset.emptyState);
+                const searchValue = searchInput.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                rows.forEach((row) => {
+                    const rowText = Array.from(row.cells)
+                        .map((cell) => cell.textContent.replace(/\s+/g, ' ').trim().toLowerCase())
+                        .join(' ');
+
+                    const isVisible = !searchValue || rowText.includes(searchValue);
+                    row.style.display = isVisible ? '' : 'none';
+
+                    if (isVisible) {
+                        visibleCount += 1;
+                    }
+                });
+
+                let emptyStateRow = tbody.querySelector('tr[data-empty-state="true"]');
+                if (!emptyStateRow) {
+                    emptyStateRow = document.createElement('tr');
+                    emptyStateRow.dataset.emptyState = 'true';
+                    emptyStateRow.innerHTML = '<td colspan="22" style="text-align:center; padding: 28px 16px; color: #94a3b8;">No rows match the current filters.</td>';
+                    tbody.appendChild(emptyStateRow);
+                }
+
+                emptyStateRow.style.display = visibleCount === 0 ? '' : 'none';
+            };
+
+            applyButton.addEventListener('click', applyGuestRpwsisStatusFilters);
+            resetButton.addEventListener('click', () => {
+                searchInput.value = '';
+                applyGuestRpwsisStatusFilters();
+            });
+
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    applyGuestRpwsisStatusFilters();
+                }
+            });
+        });
     </script>
 @endsection

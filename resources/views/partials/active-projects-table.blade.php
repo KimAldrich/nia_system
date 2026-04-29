@@ -202,7 +202,8 @@
                         @if ($editable && $updateRouteName)
                             <td class="active-project-action">
                                 <form action="{{ route($updateRouteName, $res->id) }}" method="POST"
-                                    data-async-target="#{{ $containerId }}">
+                                    data-async-target="#{{ $containerId }}"
+                                    data-async-reload="true">
                                     @csrf
                                     <select name="status" class="status-select" data-auto-submit>
                                         <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>

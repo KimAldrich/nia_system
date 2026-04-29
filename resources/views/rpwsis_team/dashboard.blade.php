@@ -795,6 +795,26 @@
             vertical-align: top;
         }
 
+        #simpleTable thead th.impl {
+            min-width: 190px;
+            max-width: 220px;
+        }
+
+        #simpleTable thead th.impl.col-remarks {
+            min-width: 240px;
+            max-width: 280px;
+        }
+
+        #simpleTable tbody td.impl.col-standard {
+            min-width: 190px;
+            max-width: 220px;
+        }
+
+        #simpleTable tbody td.impl.col-remarks {
+            min-width: 240px;
+            max-width: 280px;
+        }
+
         .status-compact-cell {
             white-space: normal;
             text-align: left;
@@ -960,24 +980,7 @@
                 ])
             </div>
 
-            <div class="ui-card">
-                <div class="section-title">
-                    Analytics
-                    <span style="font-size: 12px; color: #a1a1aa; font-weight: 500;">Project Status</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity
-                        </p>
-                        <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
-                    </div>
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate
-                        </p>
-                        <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+            @include('partials.team-analytics-card', ['analytics' => $analytics ?? []])
         </div>
 
         <div class="side-column">
@@ -999,6 +1002,17 @@
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export Excel
                 </button>
+            </div>
+        </div>
+
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="simpleTableSearch" class="table-toolbar__input" placeholder="Search activity, NIS, batch, remarks...">
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" id="simpleTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('simpleTable')">Apply</button>
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('simpleTable')">Reset</button>
             </div>
         </div>
 
@@ -1230,6 +1244,29 @@
             </div>
         </div>
 
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="summaryTableSearch" class="table-toolbar__input" placeholder="Search municipality, plantation type, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Province</span>
+                <select id="summaryTableProvinceFilter" class="table-toolbar__select">
+                    <option value="">All provinces</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="summaryTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" id="summaryTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('summaryTable')">Apply</button>
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('summaryTable')">Reset</button>
+            </div>
+        </div>
+
         <div class="table-responsive-wrapper">
             <table class="custom-table" id="summaryTable">
                 <thead>
@@ -1437,6 +1474,29 @@
             </div>
         </div>
 
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="nurseryTableSearch" class="table-toolbar__input" placeholder="Search nursery, municipality, barangay, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="nurseryTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Type</span>
+                <select id="nurseryTableTypeFilter" class="table-toolbar__select">
+                    <option value="">All nursery types</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" id="nurseryTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('nurseryTable')">Apply</button>
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('nurseryTable')">Reset</button>
+            </div>
+        </div>
+
         <div class="table-responsive-wrapper">
             <table class="custom-table" id="nurseryTable">
                 <thead>
@@ -1561,6 +1621,29 @@
             </div>
         </div>
 
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="signagesTableSearch" class="table-toolbar__input" placeholder="Search signages, municipality, barangay, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="signagesTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Type</span>
+                <select id="signagesTableTypeFilter" class="table-toolbar__select">
+                    <option value="">All signage types</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" id="signagesTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('signagesTable')">Apply</button>
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('signagesTable')">Reset</button>
+            </div>
+        </div>
+
         <div class="table-responsive-wrapper">
             <table class="custom-table" id="signagesTable" style="min-width: 1600px;">
                 <thead>
@@ -1678,6 +1761,29 @@
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export Excel
                 </button>
+            </div>
+        </div>
+
+        <div class="table-toolbar" data-client-table-toolbar>
+            <label class="table-toolbar__search">
+                <span class="table-toolbar__label">Search</span>
+                <input type="search" id="infrastructureTableSearch" class="table-toolbar__input" placeholder="Search infrastructure, municipality, barangay, NIS...">
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Municipality</span>
+                <select id="infrastructureTableMunicipalityFilter" class="table-toolbar__select">
+                    <option value="">All municipalities</option>
+                </select>
+            </label>
+            <label class="table-toolbar__field">
+                <span class="table-toolbar__label">Type</span>
+                <select id="infrastructureTableTypeFilter" class="table-toolbar__select">
+                    <option value="">All infrastructure types</option>
+                </select>
+            </label>
+            <div class="table-toolbar__actions">
+                <button type="button" id="infrastructureTableApplyButton" class="table-toolbar__button table-toolbar__button--primary" onclick="applyClientTableFilters('infrastructureTable')">Apply</button>
+                <button type="button" class="table-toolbar__button table-toolbar__button--ghost" onclick="resetClientTableFilters('infrastructureTable')">Reset</button>
             </div>
         </div>
 
@@ -2455,22 +2561,27 @@
                 accomplishment: {
                     bodyId: 'tableBody',
                     render: renderAccomplishmentRow,
+                    tableId: 'simpleTable',
                 },
                 summary: {
                     bodyId: 'summaryTableBody',
                     render: renderSummaryRow,
+                    tableId: 'summaryTable',
                 },
                 nursery: {
                     bodyId: 'nurseryTableBody',
                     render: renderNurseryRow,
+                    tableId: 'nurseryTable',
                 },
                 signages: {
                     bodyId: 'signagesTableBody',
                     render: renderSignagesRow,
+                    tableId: 'signagesTable',
                 },
                 infrastructure: {
                     bodyId: 'infrastructureTableBody',
                     render: renderInfrastructureRow,
+                    tableId: 'infrastructureTable',
                 }
             };
 
@@ -2483,6 +2594,8 @@
             } else {
                 document.getElementById(config.bodyId).insertAdjacentHTML('beforeend', html);
             }
+
+            refreshClientTableFilters(config.tableId);
         }
 
         // ======================= SAVE ACCOMPLISHMENT (FIRST TABLE) =======================
@@ -2808,6 +2921,7 @@
                 })
                 .then(data => {
                     btn.closest('tr').remove();
+                    refreshClientTableFilters('simpleTable');
                     closeDeleteModal();
                 })
                 .catch(error => {
@@ -2849,6 +2963,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('summaryTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -2893,6 +3008,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('nurseryTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -2937,6 +3053,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('signagesTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -2981,6 +3098,7 @@
                 .then(data => {
                     if (data.success) {
                         btn.closest('tr').remove();
+                        refreshClientTableFilters('infrastructureTable');
                         closeDeleteModal();
                     } else {
                         alert("Failed to delete the record.");
@@ -3031,7 +3149,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Accomplishment");
-            XLSX.writeFile(wb, "status_accomplishment.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Status Accomplishment', [
+                { label: 'Search', inputId: 'simpleTableSearch' },
+                { label: 'Region', selectId: 'simpleTableRegionFilter' },
+                { label: 'Batch', selectId: 'simpleTableBatchFilter' },
+            ]));
         }
 
         function exportSummaryExcel() {
@@ -3062,7 +3184,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Summary");
-            XLSX.writeFile(wb, "summary_of_accomplishment.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Summary of Accomplishment', [
+                { label: 'Search', inputId: 'summaryTableSearch' },
+                { label: 'Province', selectId: 'summaryTableProvinceFilter' },
+                { label: 'Municipality', selectId: 'summaryTableMunicipalityFilter' },
+            ]));
         }
 
         function exportNurseryExcel() {
@@ -3091,7 +3217,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Nursery");
-            XLSX.writeFile(wb, "nursery_establishment.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Nursery Establishment', [
+                { label: 'Search', inputId: 'nurseryTableSearch' },
+                { label: 'Municipality', selectId: 'nurseryTableMunicipalityFilter' },
+                { label: 'Type', selectId: 'nurseryTableTypeFilter' },
+            ]));
         }
 
         function exportSignagesExcel() {
@@ -3120,7 +3250,11 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Signages");
-            XLSX.writeFile(wb, "informative_signages.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Informative Signages', [
+                { label: 'Search', inputId: 'signagesTableSearch' },
+                { label: 'Municipality', selectId: 'signagesTableMunicipalityFilter' },
+                { label: 'Type', selectId: 'signagesTableTypeFilter' },
+            ]));
         }
 
         function exportInfrastructureExcel() {
@@ -3149,89 +3283,240 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Infrastructure");
-            XLSX.writeFile(wb, "other_infrastructures.xlsx");
+            XLSX.writeFile(wb, getRpwsisExportFilename('Other Infrastructures', [
+                { label: 'Search', inputId: 'infrastructureTableSearch' },
+                { label: 'Municipality', selectId: 'infrastructureTableMunicipalityFilter' },
+                { label: 'Type', selectId: 'infrastructureTableTypeFilter' },
+            ]));
         }
+
+        function getRpwsisExportFilename(baseTitle, filters = []) {
+            const dateText = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const parts = [`${baseTitle} as of ${dateText}`];
+
+            filters.forEach((filter) => {
+                if (filter.inputId) {
+                    const input = document.getElementById(filter.inputId);
+                    const value = (input?.value || '').trim();
+                    if (value) {
+                        parts.push(`${filter.label} ${value}`);
+                    }
+                }
+
+                if (filter.selectId) {
+                    const select = document.getElementById(filter.selectId);
+                    const value = (select?.value || '').trim();
+                    const text = (select?.selectedOptions?.[0]?.textContent || '').trim();
+                    if (value && text) {
+                        parts.push(`${filter.label} ${text}`);
+                    }
+                }
+            });
+
+            return `${parts.join(' ').replace(/[\\/:*?"<>|]+/g, '-')}.xlsx`;
+        }
+
+        const clientTableFilterConfigs = {};
+
+        function populateClientFilterOptions(selectId, values, placeholder) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            const uniqueValues = [...new Set(values.map(value => String(value || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            uniqueValues.forEach((value) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            });
+        }
+
+        function refreshClientTableFilters(tableId) {
+            const config = clientTableFilterConfigs[tableId];
+            if (!config) return;
+
+            const table = document.getElementById(tableId);
+            if (!table || !table.tBodies.length) return;
+
+            const rows = Array.from(table.tBodies[0].rows).filter(row => !row.dataset.emptyState);
+
+            (config.filters || []).forEach((filter) => {
+                const select = document.getElementById(filter.selectId);
+                const previousValue = select ? select.value : '';
+
+                populateClientFilterOptions(
+                    filter.selectId,
+                    rows.map(row => row.cells[filter.columnIndex]?.textContent || ''),
+                    filter.placeholder
+                );
+
+                if (select) {
+                    const hasPreviousValue = Array.from(select.options).some(option => option.value === previousValue);
+                    select.value = hasPreviousValue ? previousValue : '';
+                }
+            });
+
+            applyClientTableFilters(tableId);
+        }
+
+        function applyClientTableFilters(tableId) {
+            const config = clientTableFilterConfigs[tableId];
+            if (!config) return;
+
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const tbody = table.tBodies[0];
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.dataset.emptyState);
+            const searchValue = config.searchInputId ? String(document.getElementById(config.searchInputId)?.value || '').trim().toLowerCase() : '';
+            const filterValues = (config.filters || []).map((filter) => ({
+                columnIndex: filter.columnIndex,
+                value: String(document.getElementById(filter.selectId)?.value || '').trim().toLowerCase(),
+            }));
+
+            let visibleCount = 0;
+
+            rows.forEach((row) => {
+                const cells = Array.from(row.cells);
+                const rowText = cells.map(cell => cell.textContent.replace(/\s+/g, ' ').trim().toLowerCase()).join(' ');
+                const matchesSearch = !searchValue || rowText.includes(searchValue);
+                const matchesFilters = filterValues.every((filter) => {
+                    if (!filter.value) return true;
+                    const cell = cells[filter.columnIndex];
+                    return cell && cell.textContent.replace(/\s+/g, ' ').trim().toLowerCase() === filter.value;
+                });
+
+                const isVisible = matchesSearch && matchesFilters;
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount += 1;
+            });
+
+            let emptyStateRow = tbody.querySelector('tr[data-empty-state="true"]');
+            if (!emptyStateRow) {
+                emptyStateRow = document.createElement('tr');
+                emptyStateRow.dataset.emptyState = 'true';
+                emptyStateRow.innerHTML = `<td colspan="${table.tHead.rows[table.tHead.rows.length - 1].cells.length}" style="text-align:center; padding: 28px 16px; color: #94a3b8;">No rows match the current filters.</td>`;
+                tbody.appendChild(emptyStateRow);
+            }
+            emptyStateRow.style.display = visibleCount === 0 ? '' : 'none';
+        }
+
+        function setupClientTableFilters(config) {
+            clientTableFilterConfigs[config.tableId] = config;
+            const table = document.getElementById(config.tableId);
+            if (!table || !table.tBodies.length) return;
+
+            const rows = Array.from(table.tBodies[0].rows);
+            (config.filters || []).forEach((filter) => {
+                populateClientFilterOptions(
+                    filter.selectId,
+                    rows.map(row => row.cells[filter.columnIndex]?.textContent || ''),
+                    filter.placeholder
+                );
+
+                const select = document.getElementById(filter.selectId);
+            });
+
+            if (config.searchInputId) {
+                const searchInput = document.getElementById(config.searchInputId);
+                if (searchInput) {
+                    searchInput.addEventListener('keydown', (event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            applyClientTableFilters(config.tableId);
+                        }
+                    });
+                }
+            }
+
+            if (config.applyButtonId) {
+                const applyButton = document.getElementById(config.applyButtonId);
+                if (applyButton) {
+                    applyButton.addEventListener('click', () => applyClientTableFilters(config.tableId));
+                }
+            }
+
+            refreshClientTableFilters(config.tableId);
+        }
+
+        function resetClientTableFilters(tableId) {
+            const config = clientTableFilterConfigs[tableId];
+            if (!config) return;
+
+            if (config.searchInputId) {
+                const searchInput = document.getElementById(config.searchInputId);
+                if (searchInput) searchInput.value = '';
+            }
+
+            (config.filters || []).forEach((filter) => {
+                const select = document.getElementById(filter.selectId);
+                if (select) select.value = '';
+            });
+
+            applyClientTableFilters(tableId);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setupClientTableFilters({
+                tableId: 'simpleTable',
+                applyButtonId: 'simpleTableApplyButton',
+                searchInputId: 'simpleTableSearch',
+                filters: [],
+            });
+
+            setupClientTableFilters({
+                tableId: 'summaryTable',
+                applyButtonId: 'summaryTableApplyButton',
+                searchInputId: 'summaryTableSearch',
+                filters: [
+                    { selectId: 'summaryTableProvinceFilter', columnIndex: 1, placeholder: 'All provinces' },
+                    { selectId: 'summaryTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                ],
+            });
+
+            setupClientTableFilters({
+                tableId: 'nurseryTable',
+                applyButtonId: 'nurseryTableApplyButton',
+                searchInputId: 'nurseryTableSearch',
+                filters: [
+                    { selectId: 'nurseryTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                    { selectId: 'nurseryTableTypeFilter', columnIndex: 7, placeholder: 'All nursery types' },
+                ],
+            });
+
+            setupClientTableFilters({
+                tableId: 'signagesTable',
+                applyButtonId: 'signagesTableApplyButton',
+                searchInputId: 'signagesTableSearch',
+                filters: [
+                    { selectId: 'signagesTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                    { selectId: 'signagesTableTypeFilter', columnIndex: 6, placeholder: 'All signage types' },
+                ],
+            });
+
+            setupClientTableFilters({
+                tableId: 'infrastructureTable',
+                applyButtonId: 'infrastructureTableApplyButton',
+                searchInputId: 'infrastructureTableSearch',
+                filters: [
+                    { selectId: 'infrastructureTableMunicipalityFilter', columnIndex: 2, placeholder: 'All municipalities' },
+                    { selectId: 'infrastructureTableTypeFilter', columnIndex: 6, placeholder: 'All infrastructure types' },
+                ],
+            });
+        });
     </script>
 
     {{-- CHART LOGIC --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-            Chart.defaults.color = '#a1a1aa';
-
-            const ctxBar = document.getElementById('barChart').getContext('2d');
-            new Chart(ctxBar, {
-                type: 'bar',
-                data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    datasets: [{
-                        label: 'Uploads',
-                        data: [5, 12, 8, 15],
-                        backgroundColor: '#0c4d05',
-                        borderRadius: 6,
-                        barPercentage: 0.5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f4f4f5'
-                            },
-                            border: {
-                                display: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            border: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-
-            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-            new Chart(ctxDoughnut, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Validated', 'On-Going', 'Pending'],
-                    datasets: [{
-                        data: [45, 30, 25],
-                        backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'],
-                        borderColor: '#e4e4e7',
-                        borderWidth: 2,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        }
-                    }
-                }
-            });
-        });
+        @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
 
         let activeMonth = new Date().getMonth() + 1;
         document.addEventListener('DOMContentLoaded', function() {

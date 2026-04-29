@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Facades\Storage;
 use App\Models\RpwsisAccomplishment;
 use App\Models\EventCategory;
@@ -23,6 +25,12 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class RpwsisTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     private function validateAccomplishment(Request $request): array
     {
@@ -119,6 +127,10 @@ class RpwsisTeamController extends Controller
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
         $events = Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
+        $upcomingEventsQuery = Event::with('category')
             ->where(function ($query) {
                 $today = now()->toDateString();
                 $currentTime = now()->format('H:i:s');
@@ -131,9 +143,11 @@ class RpwsisTeamController extends Controller
                             );
                     });
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         // ✅ ADDED THIS: Fetch records to fix the "undefined $records" error
         $records = RpwsisAccomplishment::latest()->get();
@@ -151,7 +165,8 @@ class RpwsisTeamController extends Controller
         $infrastructureRecords = RpwsisInfrastructure::latest()->get();
 
         $categories = EventCategory::all();
-        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'categories','records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
+        $analytics = $this->buildResolutionAnalytics('rpwsis_team');
+        return view('rpwsis_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'analytics', 'records', 'summaryRecords', 'nurseryRecords', 'signageRecords', 'infrastructureRecords'));
     }
 
     // 2. View Downloadables Page
@@ -171,6 +186,16 @@ class RpwsisTeamController extends Controller
     // 4. Upload Downloadable
     public function uploadForm(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -180,13 +205,13 @@ class RpwsisTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -204,6 +229,13 @@ class RpwsisTeamController extends Controller
             ? 'File uploaded successfully.'
             : "{$files->count()} files uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $fileMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'rpwsis_team', 'Downloadables updated', $fileMessage, ['type' => 'downloadable', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -213,11 +245,16 @@ class RpwsisTeamController extends Controller
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'rpwsis_team', 'Downloadable updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File updated successfully.');
     }
@@ -227,11 +264,16 @@ class RpwsisTeamController extends Controller
     {
         $downloadable = Downloadable::findOrFail($id);
 
+        $deletedName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $downloadable->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'rpwsis_team', 'Downloadable removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File deleted successfully.');
     }
@@ -239,6 +281,16 @@ class RpwsisTeamController extends Controller
     // 7. Upload Resolution
     public function uploadResolution(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -248,13 +300,13 @@ class RpwsisTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('resolutions', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -272,6 +324,13 @@ class RpwsisTeamController extends Controller
             ? 'Resolution uploaded successfully.'
             : "{$files->count()} resolutions uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $resolutionMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'IA resolutions updated', $resolutionMessage, ['type' => 'ia_resolution', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -281,11 +340,16 @@ class RpwsisTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'IA resolution updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution updated successfully.');
     }
@@ -295,7 +359,12 @@ class RpwsisTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
+        $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency($request->user(), 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'rpwsis_team', 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -306,6 +375,7 @@ class RpwsisTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
 
         // Delete file from storage
+        $deletedName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
@@ -317,6 +387,10 @@ class RpwsisTeamController extends Controller
 
         // Delete record from database
         $resolution->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('rpwsis_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'rpwsis_team', 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'rpwsis_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }

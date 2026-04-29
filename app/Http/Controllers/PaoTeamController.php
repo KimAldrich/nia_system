@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
 use App\Models\Downloadable;
 use App\Models\Event;
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventCategory;
 use App\Models\PaoPowData;
@@ -22,6 +24,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 class PaoTeamController extends Controller
 {
     use HandlesAsyncRequests;
+    use BuildsResolutionAnalytics;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     private function validatePowData(Request $request, bool $requireId = false): array
     {
@@ -46,13 +54,17 @@ class PaoTeamController extends Controller
         return $request->validate($rules);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $resolutions = IaResolution::where('team', 'pao_team')
             ->latest()
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
         $events = Event::with('category')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
+        $upcomingEventsQuery = Event::with('category')
             ->where('event_date', '>', now()->format('Y-m-d'))
             ->orWhere(function ($query) {
                 $today = now()->format('Y-m-d');
@@ -60,13 +72,30 @@ class PaoTeamController extends Controller
                 $query->where('event_date', $today)
                     ->whereRaw("TIME(STR_TO_DATE(SUBSTRING_INDEX(TRIM(`event_time`), ' - ', -1), '%h:%i %p')) > '{$currentTime}'");
             })
-            ->orderBy('event_date', 'asc')
-            ->take(5)
-            ->get();
+            ->orderBy('event_date', 'asc');
+
+        $paginatedEvents = (clone $upcomingEventsQuery)
+            ->paginate(5, ['*'], 'events_page')
+            ->withQueryString();
 
         $categories = EventCategory::all();
-        $powData = PaoPowData::paginate(8, ['*'], 'pow_page')->withQueryString();
-        return view('pao_team.dashboard', compact('resolutions', 'events', 'categories', 'powData'));
+        $analytics = $this->buildResolutionAnalytics('pao_team');
+        $powQuery = PaoPowData::query();
+        if ($request->filled('pow_search')) {
+            $search = trim((string) $request->input('pow_search'));
+            $powQuery->where(function ($query) use ($search) {
+                $query->where('district', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('total_allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pow_district')) {
+            $powQuery->where('district', $request->input('pow_district'));
+        }
+
+        $powData = $powQuery->orderBy('district')->paginate(8, ['*'], 'pow_page')->withQueryString();
+        $powDistricts = PaoPowData::select('district')->whereNotNull('district')->distinct()->orderBy('district')->pluck('district');
+        return view('pao_team.dashboard', compact('resolutions', 'events', 'paginatedEvents', 'categories', 'analytics', 'powData', 'powDistricts'));
     }
 
     public function downloadables()
@@ -83,6 +112,16 @@ class PaoTeamController extends Controller
 
     public function uploadForm(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -92,13 +131,13 @@ class PaoTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -116,6 +155,13 @@ class PaoTeamController extends Controller
             ? 'File uploaded successfully.'
             : "{$files->count()} files uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('pao_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $fileMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} downloadables."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} downloadables.";
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'pao_team', 'Downloadables updated', $fileMessage, ['type' => 'downloadable', 'team' => 'pao_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -125,12 +171,17 @@ class PaoTeamController extends Controller
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $path = $file->store('forms', 'public');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('pao_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'pao_team', 'Downloadable updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'pao_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'File updated successfully.');
     }
@@ -139,17 +190,32 @@ class PaoTeamController extends Controller
     {
         $downloadable = Downloadable::findOrFail($id);
 
+        $deletedName = $downloadable->original_name;
         if (Storage::disk('public')->exists($downloadable->file_path)) {
             Storage::disk('public')->delete($downloadable->file_path);
         }
 
         $downloadable->delete();
 
+        $teamLabel = $this->notifications()->teamLabel('pao_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyTeamAndAdmins($request->user(), 'pao_team', 'Downloadable removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} downloadables.", ['type' => 'downloadable', 'team' => 'pao_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, 'File deleted successfully.');
     }
 
     public function uploadResolution(Request $request)
     {
+        $fileValidationMessages = [
+            'documents.required' => 'Please select at least one file to upload.',
+            'documents.array' => 'Please upload valid files only.',
+            'documents.min' => 'Please select at least one file to upload.',
+            'document.required' => 'Please select a file to upload.',
+            'document.file' => 'Only document files are allowed.',
+            'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
+            'document.max' => 'Each file must not be larger than 5 MB.',
+        ];
+
         $singleFile = $request->file('document');
         $multipleFiles = $request->file('documents', []);
         $files = collect(is_array($multipleFiles) ? $multipleFiles : [])->filter()->values();
@@ -159,13 +225,13 @@ class PaoTeamController extends Controller
         }
 
         if ($files->isEmpty()) {
-            $request->validate(['documents' => ['required', 'array', 'min:1']]);
+            $request->validate(['documents' => ['required', 'array', 'min:1']], $fileValidationMessages);
         }
 
         foreach ($files as $file) {
             validator(['document' => $file], [
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
-            ])->validate();
+            ], $fileValidationMessages)->validate();
 
             $path = $file->store('resolutions', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -183,6 +249,13 @@ class PaoTeamController extends Controller
             ? 'Resolution uploaded successfully.'
             : "{$files->count()} resolutions uploaded successfully.";
 
+        $teamLabel = $this->notifications()->teamLabel('pao_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $resolutionMessage = $files->count() === 1
+            ? "{$actorLabel} uploaded {$files->first()->getClientOriginalName()} to {$teamLabel} IA resolutions."
+            : "{$actorLabel} uploaded {$files->count()} files to {$teamLabel} IA resolutions.";
+        $this->notifications()->notifyByActorScope($request->user(), 'pao_team', 'IA resolutions updated', $resolutionMessage, ['type' => 'ia_resolution', 'team' => 'pao_team', 'team_label' => $teamLabel]);
+
         return $this->successResponse($request, $message);
     }
 
@@ -192,12 +265,17 @@ class PaoTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
+        $previousName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
 
         $path = $file->store('resolutions', 'public');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
+
+        $teamLabel = $this->notifications()->teamLabel('pao_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'pao_team', 'IA resolution updated', "{$actorLabel} replaced {$previousName} with {$file->getClientOriginalName()} in {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'pao_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution updated successfully.');
     }
@@ -206,7 +284,12 @@ class PaoTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
+        $previousStatus = $resolution->status ?: 'no status';
         $resolution->update(['status' => $request->status]);
+
+        $teamLabel = $this->notifications()->teamLabel('pao_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyAgency($request->user(), 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => 'pao_team', 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -217,6 +300,7 @@ class PaoTeamController extends Controller
         $resolution = IaResolution::findOrFail($id);
 
         // Delete file from storage
+        $deletedName = $resolution->original_name;
         if (Storage::disk('public')->exists($resolution->file_path)) {
             Storage::disk('public')->delete($resolution->file_path);
         }
@@ -228,6 +312,10 @@ class PaoTeamController extends Controller
 
         // Delete record from database
         $resolution->delete();
+
+        $teamLabel = $this->notifications()->teamLabel('pao_team');
+        $actorLabel = $this->notifications()->actorLabel($request->user());
+        $this->notifications()->notifyByActorScope($request->user(), 'pao_team', 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => 'pao_team', 'team_label' => $teamLabel]);
 
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }
@@ -268,13 +356,36 @@ class PaoTeamController extends Controller
 
         abort_unless($isAuthorizedGuest || $isAuthorizedUser, 403);
 
-        $filename = 'STATUS OF POW CY ' . now()->format('Y') . ' AS OF ' . now()->format('F j, Y') . '.xlsx';
+        $filenameParts = ['STATUS OF POW CY ' . now()->format('Y') . ' as of', now()->format('F j, Y')];
+        if ($request->filled('pow_search')) {
+            $filenameParts[] = 'Search';
+            $filenameParts[] = trim((string) $request->input('pow_search'));
+        }
+        if ($request->filled('pow_district')) {
+            $filenameParts[] = 'District';
+            $filenameParts[] = $request->input('pow_district');
+        }
+        $filename = collect($filenameParts)->filter()->implode(' ') . '.xlsx';
+        $filename = preg_replace('/[\\\\\\/:*?"<>|]+/', '-', $filename);
         $headers = [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $rows = PaoPowData::orderBy('district')->get();
+        $query = PaoPowData::query();
+        if ($request->filled('pow_search')) {
+            $search = trim((string) $request->input('pow_search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('district', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('total_allocation', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('pow_district')) {
+            $query->where('district', $request->input('pow_district'));
+        }
+
+        $rows = $query->orderBy('district')->get();
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('POW Status');

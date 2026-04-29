@@ -625,24 +625,7 @@
                 ])
             </div>
 
-            <div class="ui-card">
-                <div class="section-title">
-                    Analytics
-                    <span style="font-size: 12px; color: #a1a1aa; font-weight: 500;">Project Status</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity
-                        </p>
-                        <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
-                    </div>
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate
-                        </p>
-                        <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+            @include('partials.team-analytics-card', ['analytics' => $analytics ?? []])
         </div>
 
         <div class="side-column">
@@ -663,12 +646,26 @@
                         + Add Data
                     </button>
                 @endif
-                <a href="{{ route('pcr.status.export') }}" onclick="handlePcrExport(event, this.href)" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <a href="{{ route('pcr.status.export', request()->query()) }}" onclick="handlePcrExport(event, this.href)" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Export Excel
                 </a>
             </div>
         </div>
+
+        @include('partials.table-toolbar', [
+            'asyncTarget' => '#pcrStatusSection',
+            'searchName' => 'pcr_search',
+            'searchPlaceholder' => 'Search fund source or allocation...',
+            'filters' => [
+                [
+                    'name' => 'pcr_fund_source',
+                    'label' => 'Fund Source',
+                    'options' => ['' => 'All fund sources'] + collect($pcrFundSources ?? [])->mapWithKeys(fn($value) => [$value => $value])->all(),
+                ],
+            ],
+            'resetKeys' => ['pcr_search', 'pcr_fund_source', 'pcr_page'],
+        ])
 
         <div class="table-responsive">
             <table class="sleek-table">
@@ -868,83 +865,7 @@
     @endif
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-            Chart.defaults.color = '#a1a1aa';
-
-            const ctxBar = document.getElementById('barChart').getContext('2d');
-            new Chart(ctxBar, {
-                type: 'bar',
-                data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    datasets: [{
-                        label: 'Uploads',
-                        data: [5, 12, 8, 15],
-                        backgroundColor: '#0c4d05',
-                        borderRadius: 6,
-                        barPercentage: 0.5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#f4f4f5'
-                            },
-                            border: {
-                                display: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            border: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-
-            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-            new Chart(ctxDoughnut, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Validated', 'On-Going', 'Pending'],
-                    datasets: [{
-                        data: [45, 30, 25],
-                        backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'],
-                        borderColor: '#e4e4e7',
-                        borderWidth: 2,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                usePointStyle: true,
-                                padding: 20
-                            }
-                        }
-                    }
-                }
-            });
-        });
+        @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
 
         let activeMonth = new Date().getMonth() + 1;
 
