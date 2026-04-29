@@ -38,7 +38,7 @@ class SystemActivityNotification extends Notification
 
         return match ($type) {
             'downloadable' => $this->teamRoute($team, 'downloadables'),
-            'ia_resolution' => $this->teamRoute($team, 'resolutions'),
+            'ia_resolution' => $this->activeProjectsRoute($notifiable, $team),
             'ia_resolution_status' => $this->activeProjectsRoute($notifiable, $team),
             'event' => $this->eventRoute($notifiable, $team),
             'map_file' => route('map'),
