@@ -432,10 +432,10 @@
                                 <strong style="color: #16a34a;">Start:</strong> {{ $project->period_start ?? '-' }}<br>
                                 <strong style="color: #ef4444;">End:</strong> {{ $project->period_end ?? '-' }}
                             </td>
-                            <td style="font-weight: 600; color: #1e293b;">{{ $project->contract_amount ?? '-' }}</td>
-                            <td style="font-weight: 600; color: #1e293b;">{{ $project->actual_obligation ?? '-' }}</td>
-                            <td style="font-weight: 600; color: #1e293b;">{{ $project->value_of_acc ?? '-' }}</td>
-                            <td style="font-weight: 600; color: #1e293b;">{{ $project->actual_expenditures ?? '-' }}</td>
+                            <td style="font-weight: 600; color: #1e293b;">{{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}</td>
+                            <td style="font-weight: 600; color: #1e293b;">{{ $project->actual_obligation !== null && $project->actual_obligation !== '' ? number_format((float) $project->actual_obligation, 2) : '-' }}</td>
+                            <td style="font-weight: 600; color: #1e293b;">{{ $project->value_of_acc !== null && $project->value_of_acc !== '' ? number_format((float) $project->value_of_acc, 2) : '-' }}</td>
+                            <td style="font-weight: 600; color: #1e293b;">{{ $project->actual_expenditures !== null && $project->actual_expenditures !== '' ? number_format((float) $project->actual_expenditures, 2) : '-' }}</td>
                             
                             <td style="background: #f8fafc; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
                                 @php
