@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
+use App\Models\IaResolutionFile;
 use App\Models\Downloadable;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
@@ -199,8 +200,16 @@ class FsTeamController extends Controller
     // 3. View IA Resolutions Page
     public function resolutions()
     {
-        $resolutions = IaResolution::where('team', 'fs_team')->latest()->get();
-        return view('fs-team.resolutions', compact('resolutions'));
+        $resolutions = IaResolution::with('files')->where('team', 'fs_team')->latest()->get();
+        return view('shared.team-resolutions', [
+            'pageTitle' => 'IA Resolutions',
+            'headerTitle' => 'IA Resolutions',
+            'headerDesc' => 'Manage status entries and attached files for the Feasibility Study team.',
+            'teamRole' => 'fs_team',
+            'uploadRouteName' => 'fs.resolutions.upload',
+            'deleteRouteName' => 'fs.resolutions.delete',
+            'resolutions' => $resolutions,
+        ]);
     }
 
     // 4. Upload Downloadable
@@ -358,16 +367,7 @@ class FsTeamController extends Controller
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
             ], $fileValidationMessages)->validate();
 
-            $path = $file->store('resolutions', 'public');
-            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-            IaResolution::create([
-                'title' => $cleanTitle,
-                'file_path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'team' => 'fs_team'
-            ]);
+            IaResolution::attachUploadedFile($file, 'fs_team');
         }
 
         $message = $files->count() === 1
@@ -998,24 +998,24 @@ class FsTeamController extends Controller
     // 9. Delete IA Resolution
     public function deleteResolution(Request $request, $id)
     {
-        $resolution = IaResolution::findOrFail($id);
+        $resolutionFile = IaResolutionFile::with('resolution')->findOrFail($id);
+        $resolution = $resolutionFile->resolution;
+        $deletedName = $resolutionFile->original_name;
 
-        // Delete file from storage
-        $deletedName = $resolution->original_name;
-
-        if (Storage::disk('public')->exists($resolution->file_path)) {
-            Storage::disk('public')->delete($resolution->file_path);
+        if (Storage::disk('public')->exists($resolutionFile->file_path)) {
+            Storage::disk('public')->delete($resolutionFile->file_path);
         }
 
-        // Optional: role/team check (same as your comment)
-        // if ($resolution->team !== 'fs_team') {
-        //     abort(403);
-        // }
+        $resolutionFile->delete();
 
-        // Delete record from database
-        $resolution->delete();
-
-        $resolutionTeam = $resolution->team ?: 'fs_team';
+        $resolutionTeam = $resolution?->team ?: 'fs_team';
+        if ($resolution) {
+            if ($resolution->files()->exists()) {
+                $resolution->refreshPrimaryAttachment();
+            } else {
+                $resolution->delete();
+            }
+        }
         $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
         $this->notifications()->notifyTeamAndAdmins(

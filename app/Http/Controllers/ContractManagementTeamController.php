@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
+use App\Models\IaResolutionFile;
 use App\Models\Downloadable;
 use App\Models\Event;
 use App\Services\SystemNotificationService;
@@ -109,8 +110,16 @@ class ContractManagementTeamController extends Controller
 
     public function resolutions()
     {
-        $resolutions = IaResolution::where('team', 'cm_team')->latest()->get();
-        return view('cm_team.resolutions', compact('resolutions'));
+        $resolutions = IaResolution::with('files')->where('team', 'cm_team')->latest()->get();
+        return view('shared.team-resolutions', [
+            'pageTitle' => 'Contract Management Files',
+            'headerTitle' => 'Contract Management Files',
+            'headerDesc' => 'Manage status entries and attached files for Contract Management.',
+            'teamRole' => 'cm_team',
+            'uploadRouteName' => 'cm.resolutions.upload',
+            'deleteRouteName' => 'cm.resolutions.delete',
+            'resolutions' => $resolutions,
+        ]);
     }
 
     public function uploadForm(Request $request)
@@ -231,16 +240,7 @@ class ContractManagementTeamController extends Controller
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
             ], $fileValidationMessages)->validate();
 
-            $path = $file->store('resolutions', 'public');
-            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-            IaResolution::create([
-                'title' => $cleanTitle,
-                'file_path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'team' => 'cm_team'
-            ]);
+            IaResolution::attachUploadedFile($file, 'cm_team');
         }
 
         $message = $files->count() === 1 ? 'Resolution uploaded successfully.' : "{$files->count()} resolutions uploaded successfully.";
@@ -293,14 +293,22 @@ class ContractManagementTeamController extends Controller
 
     public function deleteResolution(Request $request, $id)
     {
-        $resolution = IaResolution::findOrFail($id);
-        $deletedName = $resolution->original_name;
-        if (Storage::disk('public')->exists($resolution->file_path)) {
-            Storage::disk('public')->delete($resolution->file_path);
+        $resolutionFile = IaResolutionFile::with('resolution')->findOrFail($id);
+        $resolution = $resolutionFile->resolution;
+        $deletedName = $resolutionFile->original_name;
+        if (Storage::disk('public')->exists($resolutionFile->file_path)) {
+            Storage::disk('public')->delete($resolutionFile->file_path);
         }
-        $resolution->delete();
+        $resolutionFile->delete();
 
-        $resolutionTeam = $resolution->team ?: 'cm_team';
+        $resolutionTeam = $resolution?->team ?: 'cm_team';
+        if ($resolution) {
+            if ($resolution->files()->exists()) {
+                $resolution->refreshPrimaryAttachment();
+            } else {
+                $resolution->delete();
+            }
+        }
         $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
         $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => $resolutionTeam, 'team_label' => $teamLabel]);

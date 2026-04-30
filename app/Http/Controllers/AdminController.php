@@ -389,17 +389,7 @@ class AdminController extends Controller
         ], $fileValidationMessages);
 
         $file = $request->file('document');
-        $path = $file->store('resolutions', 'public');
-
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-        \App\Models\IaResolution::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => $request->team // 🔥 SAME LOGIC
-        ]);
+        \App\Models\IaResolution::attachUploadedFile($file, $request->team);
 
         $teamLabel = $this->notifications()->teamLabel($request->team);
         $actorLabel = $this->notifications()->actorLabel($request->user());

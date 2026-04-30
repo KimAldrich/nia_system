@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
+use App\Models\IaResolutionFile;
 use App\Models\Downloadable;
 use App\Models\Event;
 use App\Services\SystemNotificationService;
@@ -64,8 +65,16 @@ class RowTeamController extends Controller
 
     public function resolutions()
     {
-        $resolutions = IaResolution::where('team', 'row_team')->latest()->get();
-        return view('row_team.resolutions', compact('resolutions'));
+        $resolutions = IaResolution::with('files')->where('team', 'row_team')->latest()->get();
+        return view('shared.team-resolutions', [
+            'pageTitle' => 'Right of Way Files',
+            'headerTitle' => 'Right of Way Files',
+            'headerDesc' => 'Manage status entries and attached files for Right of Way.',
+            'teamRole' => 'row_team',
+            'uploadRouteName' => 'row.resolutions.upload',
+            'deleteRouteName' => 'row.resolutions.delete',
+            'resolutions' => $resolutions,
+        ]);
     }
 
     public function uploadForm(Request $request)
@@ -191,16 +200,7 @@ class RowTeamController extends Controller
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
             ], $fileValidationMessages)->validate();
 
-            $path = $file->store('resolutions', 'public');
-            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-            IaResolution::create([
-                'title' => $cleanTitle,
-                'file_path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'team' => 'row_team'
-            ]);
+            IaResolution::attachUploadedFile($file, 'row_team');
         }
 
         $message = $files->count() === 1
@@ -259,12 +259,11 @@ class RowTeamController extends Controller
     // 9. Delete IA Resolution
     public function deleteResolution(Request $request, $id)
     {
-        $resolution = IaResolution::findOrFail($id);
-
-        // Delete file from storage
-        $deletedName = $resolution->original_name;
-        if (Storage::disk('public')->exists($resolution->file_path)) {
-            Storage::disk('public')->delete($resolution->file_path);
+        $resolutionFile = IaResolutionFile::with('resolution')->findOrFail($id);
+        $resolution = $resolutionFile->resolution;
+        $deletedName = $resolutionFile->original_name;
+        if (Storage::disk('public')->exists($resolutionFile->file_path)) {
+            Storage::disk('public')->delete($resolutionFile->file_path);
         }
 
         // Optional: role/team check (same as your comment)
@@ -272,10 +271,17 @@ class RowTeamController extends Controller
         //     abort(403);
         // }
 
-        // Delete record from database
-        $resolution->delete();
+        $resolutionFile->delete();
 
-        $resolutionTeam = $resolution->team ?: 'row_team';
+        if ($resolution) {
+            if ($resolution->files()->exists()) {
+                $resolution->refreshPrimaryAttachment();
+            } else {
+                $resolution->delete();
+            }
+        }
+
+        $resolutionTeam = $resolution?->team ?: 'row_team';
         $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
         $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => $resolutionTeam, 'team_label' => $teamLabel]);

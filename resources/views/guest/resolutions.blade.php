@@ -165,42 +165,56 @@
             <table class="sleek-table" style="min-width: 900px;">
                 <thead>
                     <tr>
-                        <th style="width: 44%;">Resolution</th>
+                        <th style="width: 28%;">Resolution</th>
                         <th style="width: 20%;">Status</th>
-                        <th style="width: 16%;">Date Uploaded</th>
-                        <th style="width: 20%; text-align: right;">Action</th>
+                        <th style="width: 28%;">File Name</th>
+                        <th style="width: 12%;">Date Uploaded</th>
+                        <th style="width: 12%; text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($resolutions as $res)
                         @php
                             $statusLabel = \App\Models\IaResolution::displayStatusLabel($res->status, $res->team);
+                            $files = $res->files;
+                            if ($files->isEmpty() && $res->file_path) {
+                                $files = collect([
+                                    (object) [
+                                        'file_path' => $res->file_path,
+                                        'original_name' => $res->original_name,
+                                        'created_at' => $res->created_at,
+                                    ],
+                                ]);
+                            }
                         @endphp
-                        <tr>
-                            <td>
-                                <div class="res-title">{{ $res->title }}</div>
-                                <div class="res-meta">{{ $teamLabel ?? 'Team' }} resolution</div>
-                            </td>
-                            <td>
-                                @if (\App\Models\IaResolution::isCompletedStatus($res->status))
-                                    <span class="status-badge status-completed">{{ $statusLabel }}</span>
-                                @elseif($res->status == \App\Models\IaResolution::STATUS_ONGOING)
-                                    <span class="status-badge status-progress">On-Going</span>
-                                @else
-                                    <span class="status-badge status-pending">{{ $statusLabel }}</span>
-                                @endif
-                            </td>
-                            <td>{{ $res->created_at->format('M d, Y') }}</td>
-                            <td style="text-align: right;">
-                                <a href="{{ asset('storage/' . $res->file_path) }}" target="_blank" class="btn-download" download>
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                    Download
-                                </a>
-                            </td>
-                        </tr>
+                        @foreach($files as $file)
+                            <tr>
+                                <td>
+                                    <div class="res-title">{{ $res->title }}</div>
+                                    <div class="res-meta">{{ $teamLabel ?? 'Team' }} file</div>
+                                </td>
+                                <td>
+                                    @if (\App\Models\IaResolution::isCompletedStatus($res->status))
+                                        <span class="status-badge status-completed">{{ $statusLabel }}</span>
+                                    @elseif($res->status == \App\Models\IaResolution::STATUS_ONGOING)
+                                        <span class="status-badge status-progress">On-Going</span>
+                                    @else
+                                        <span class="status-badge status-pending">{{ $statusLabel }}</span>
+                                    @endif
+                                </td>
+                                <td>{{ $file->original_name }}</td>
+                                <td>{{ optional($file->created_at)->format('M d, Y') }}</td>
+                                <td style="text-align: right;">
+                                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-download" download>
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                        Download
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
                     @empty
                         <tr>
-                            <td colspan="4" class="empty-state">No resolutions available for this team.</td>
+                            <td colspan="5" class="empty-state">No files available for this team.</td>
                         </tr>
                     @endforelse
                 </tbody>

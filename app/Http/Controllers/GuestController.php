@@ -480,7 +480,7 @@ class GuestController extends Controller
         // THE FIX: Convert URL dash to Database underscore
         $db_team = str_replace('-', '_', $team_slug);
 
-        $resolutions = IaResolution::where('team', $db_team)->latest()->get();
+        $resolutions = IaResolution::with('files')->where('team', $db_team)->latest()->get();
         $teamLabel = $this->teamDisplayLabel($db_team);
         $pageTitle = $db_team === 'fs_team'
             ? "{$teamLabel} IA Resolutions"
