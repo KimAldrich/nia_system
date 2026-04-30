@@ -309,7 +309,25 @@
                                     type="button"
                                     class="btn-edit-icon"
                                     title="Edit Project"
-                                    onclick="openProcEditModal({{ $project->id }}, '{{ addslashes($project->name_of_project) }}', '{{ $project->category }}', '{{ $project->municipality }}', '{{ $project->allocation }}', '{{ $project->abc }}', '{{ $project->bid_out }}', '{{ $project->for_bidding }}', '{{ $project->date_of_bidding }}', '{{ $project->awarded }}', '{{ $project->date_of_award }}', '{{ $project->ca_date }}', '{{ $project->ntp_date }}', '{{ $project->contract_no }}', '{{ $project->contract_amount }}', '{{ addslashes($project->name_of_contractor) }}', '{{ addslashes($project->remarks) }}', '{{ addslashes($project->project_description) }}')">
+                                    onclick="openProcEditModal({{ $project->id }},
+    '{{ addslashes($project->proj_no) }}',
+    '{{ addslashes($project->name_of_project) }}',
+    '{{ $project->category }}',
+    '{{ $project->municipality }}',
+    '{{ $project->allocation }}',
+    '{{ $project->abc }}',
+    '{{ $project->bid_out }}',
+    '{{ $project->for_bidding }}',
+    '{{ $project->date_of_bidding }}',
+    '{{ $project->awarded }}',
+    '{{ $project->date_of_award }}',
+    '{{ $project->ca_date }}',
+    '{{ $project->ntp_date }}',
+    '{{ $project->contract_no }}',
+    '{{ $project->contract_amount }}',
+    '{{ addslashes($project->name_of_contractor) }}',
+    '{{ addslashes($project->remarks) }}',
+    '{{ addslashes($project->project_description) }}')">
                                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                     Edit
                                 </button>
@@ -457,7 +475,7 @@
                             @endforeach
                         </datalist>
                     </div>
-                    <div><label class="modern-label">Project No.</label><input type="text" id="edit-proc-proj_no" name="proj_no" class="modern-input" placeholder="e.g. 1" required maxlength="50" disabled></div>
+                    <div><label class="modern-label">Project No.</label><input type="text" id="edit-proc-proj_no" name="proj_no" class="modern-input" placeholder="e.g. 1" required maxlength="50" readonly></div>
                 </div>
                 
                 <div><label class="modern-label">Name of Project</label><input type="text" id="edit-proc-name" name="name_of_project" required class="modern-input" maxlength="1000"></div>
@@ -532,29 +550,42 @@
         function openProcAddModal() { document.getElementById('addProcModal').classList.add('active'); }
         function closeProcAddModal() { document.getElementById('addProcModal').classList.remove('active'); }
         
-        function openProcEditModal(id, name, category, municipality, allocation, abc, bid_out, for_bidding, date_bidding, awarded, date_award, ca_date, ntp_date, contract_no, contract_amount, contractor, remarks, description) {
-            document.getElementById('edit-proc-id').value = id;
-            document.getElementById('edit-proc-name').value = name;
-            document.getElementById('edit-proc-category').value = category;
-            document.getElementById('edit-proc-municipality').value = municipality;
-            document.getElementById('edit-proc-allocation').value = allocation;
-            document.getElementById('edit-proc-abc').value = abc;
-            document.getElementById('edit-proc-bid_out').value = bid_out;
-            document.getElementById('edit-proc-for_bidding').value = for_bidding;
-            document.getElementById('edit-proc-date_bidding').value = date_bidding;
-            document.getElementById('edit-proc-awarded').value = awarded;
-            document.getElementById('edit-proc-date_award').value = date_award;
-            
-            document.getElementById('edit-proc-ca_date').value = ca_date;
-            document.getElementById('edit-proc-ntp_date').value = ntp_date;
-            
-            document.getElementById('edit-proc-contract_no').value = contract_no;
-            document.getElementById('edit-proc-contract_amount').value = contract_amount;
-            document.getElementById('edit-proc-contractor').value = contractor;
-            document.getElementById('edit-proc-remarks').value = remarks;
-            document.getElementById('edit-proc-description').value = description;
-            document.getElementById('editProcModal').classList.add('active');
-        }
+        function openProcEditModal(
+    id, proj_no, name, category, municipality,
+    allocation, abc, bid_out, for_bidding,
+    date_bidding, awarded, date_award,
+    ca_date, ntp_date, contract_no, contract_amount,
+    contractor, remarks, description
+) {
+    document.getElementById('edit-proc-id').value = id;
+
+    document.getElementById('edit-proc-proj_no').value = proj_no; // ✅ FIX
+    document.getElementById('edit-proc-name').value = name;
+    document.getElementById('edit-proc-category').value = category;
+    document.getElementById('edit-proc-municipality').value = municipality;
+
+    document.getElementById('edit-proc-allocation').value = allocation; // ✅ FIX
+    document.getElementById('edit-proc-abc').value = abc; // ✅ FIX
+
+    document.getElementById('edit-proc-bid_out').value = bid_out;
+    document.getElementById('edit-proc-for_bidding').value = for_bidding;
+    document.getElementById('edit-proc-date_bidding').value = date_bidding;
+
+    document.getElementById('edit-proc-awarded').value = awarded;
+    document.getElementById('edit-proc-date_award').value = date_award;
+
+    document.getElementById('edit-proc-ca_date').value = ca_date;
+    document.getElementById('edit-proc-ntp_date').value = ntp_date;
+
+    document.getElementById('edit-proc-contract_no').value = contract_no;
+    document.getElementById('edit-proc-contract_amount').value = contract_amount;
+
+    document.getElementById('edit-proc-contractor').value = contractor;
+    document.getElementById('edit-proc-remarks').value = remarks;
+    document.getElementById('edit-proc-description').value = description;
+
+    document.getElementById('editProcModal').classList.add('active');
+}
         
         function closeProcEditModal() { document.getElementById('editProcModal').classList.remove('active'); }
         function closeCmSuccessModal() { document.getElementById('cmSuccessModal').classList.remove('active'); window.location.reload(); }
