@@ -33,6 +33,8 @@ class IaResolution extends Model
                 'team' => $team,
             ],
             [
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
                 'status' => self::STATUS_PENDING,
             ]
         );

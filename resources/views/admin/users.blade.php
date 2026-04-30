@@ -38,13 +38,15 @@
         .section-title { font-size: 18px; font-weight: 600; color: var(--primary); margin: 0; }
         .table-card { display: grid; gap: 18px; }
         .table-toolbar { display: grid; gap: 16px; }
-        .filter-form { display: grid; grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(0, 1fr)) auto auto; gap: 12px; align-items: end; }
+        .filter-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+        .filter-form > div { flex: 1 1 155px; min-width: 155px; }
+        .filter-form > div:first-child { flex: 1.6 1 240px; min-width: 240px; }
         .filter-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
-        .filter-input, .filter-select { min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid #dbe3ee; background: #f8fafc; color: var(--text-main); font-size: 13px; width: 100%; }
+        .filter-input, .filter-select { min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid #dbe3ee; background: #f8fafc; color: var(--text-main); font-size: 13px; width: 100%; min-width: 0; }
         .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08); background: #ffffff; }
-        .btn-filter { min-height: 44px; padding: 0 16px; border: none; border-radius: 12px; background: #18181b; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .btn-filter { flex: 0 0 auto; align-self: end; min-width: 88px; min-height: 44px; padding: 0 16px; border: none; border-radius: 12px; background: #18181b; color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; }
         .btn-filter:hover { background: #09090b; }
-        .btn-reset { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #dbe3ee; color: var(--text-main); text-decoration: none; font-size: 13px; font-weight: 700; background: #ffffff; }
+        .btn-reset { flex: 0 0 auto; align-self: end; min-width: 88px; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #dbe3ee; color: var(--text-main); text-decoration: none; font-size: 13px; font-weight: 700; background: #ffffff; }
         .btn-reset:hover { background: #f8fafc; border-color: #cbd5e1; }
         .results-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--text-muted); font-size: 12px; }
 
@@ -65,32 +67,32 @@
         .btn-dark:hover { background: linear-gradient(135deg, #09090b 0%, #18181b 100%); transform: translateY(-1px); }
 
         /* Table Styling */
-        .table-container { overflow: visible; width: 100%; border: 1px solid #eef2f7; border-radius: 18px; background: #fbfdff; }
-        .sleek-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 0; table-layout: fixed; }
-        .sleek-table th { text-align: left; padding: 14px 14px; color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid #e9eef5; background: #f8fafc; white-space: normal; line-height: 1.4; }
-        .sleek-table td { padding: 14px; border-bottom: 1px solid #eef2f7; font-size: 13px; color: var(--text-main); vertical-align: middle; background: #ffffff; }
+        .table-container { overflow: hidden; width: 100%; max-width: 100%; border: 1px solid #eef2f7; border-radius: 18px; background: #fbfdff; }
+        .sleek-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+        .sleek-table th { text-align: left; padding: 14px 12px; color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid #e9eef5; background: #f8fafc; white-space: normal; line-height: 1.4; overflow-wrap: anywhere; box-sizing: border-box; }
+        .sleek-table td { padding: 14px 12px; border-bottom: 1px solid #eef2f7; font-size: 13px; color: var(--text-main); vertical-align: middle; background: #ffffff; overflow-wrap: anywhere; word-break: normal; box-sizing: border-box; }
         .sleek-table tbody tr:hover td { background-color: #fcfdff; }
         .sleek-table tbody tr:last-child td { border-bottom: none; }
 
         .user-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
         .user-avatar { width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #18181b 0%, #334155 100%); color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12); }
-        .user-meta { min-width: 0; }
-        .user-name { font-weight: 700; color: var(--primary); margin-bottom: 2px; line-height: 1.3; font-size: 13px; }
+        .user-meta { min-width: 0; max-width: 100%; }
+        .user-name { font-weight: 700; color: var(--primary); margin-bottom: 2px; line-height: 1.3; font-size: 13px; overflow-wrap: anywhere; }
         .user-email { font-size: 12px; color: var(--text-muted); word-break: break-word; overflow-wrap: anywhere; line-height: 1.45; }
 
-        .role-badge { display: inline-flex; align-items: center; min-height: 30px; padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569; line-height: 1.35; max-width: 100%; white-space: normal; text-align: center; }
+        .role-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 6px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569; line-height: 1.35; max-width: 100%; white-space: normal; text-align: center; overflow-wrap: anywhere; }
         .role-badge.admin { background: #e0e7ff; color: #4338ca; }
 
-        .status-pill { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #065f46; white-space: normal; text-align: center; }
+        .status-pill { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 6px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #065f46; white-space: normal; text-align: center; max-width: 100%; overflow-wrap: anywhere; }
         .status-pill.inactive { background: #fff1f2; color: #9f1239; }
 
-        .actions-cell { width: 1%; }
-        .action-stack { display: flex; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; width: 100%; max-width: 130px; margin-left: auto; }
+        .actions-cell { width: 1%; text-align: right; }
+        .action-stack { display: flex; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; width: 100%; min-width: 0; max-width: 100%; margin-left: auto; }
 
-        .status-select { width: 100%; min-width: 0; height: 40px; padding: 0 34px 0 12px; border-radius: 12px; border: 1px solid #dbe3ee; font-size: 12px; font-weight: 600; background: #ffffff; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
+        .status-select { width: 100%; min-width: 0; height: 40px; padding: 0 26px 0 10px; border-radius: 12px; border: 1px solid #dbe3ee; font-size: 12px; font-weight: 600; background: #ffffff; color: var(--text-main); cursor: pointer; box-sizing: border-box; }
         .status-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(24, 24, 27, 0.08); }
 
-        .btn-danger, .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-width: 0; height: 40px; padding: 0 12px; background: #ffffff; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; line-height: 1; box-sizing: border-box; }
+        .btn-danger, .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-width: 0; max-width: 100%; min-height: 40px; padding: 8px 10px; background: #ffffff; border-radius: 12px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: normal; line-height: 1.2; text-align: center; box-sizing: border-box; overflow-wrap: anywhere; }
         .btn-danger { color: var(--danger); border: 1px solid #fecaca; }
         .btn-danger:hover:not(:disabled) { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
         .btn-secondary { color: #0f172a; border: 1px solid #cbd5e1; background: #f8fafc; }
@@ -125,15 +127,14 @@
         .page-current { background: #18181b; color: #ffffff; }
         .page-dots { color: var(--text-muted); min-width: auto; padding: 0 4px; }
 
-        @media (max-width: 1100px) {
-            .filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-
         @media (max-width: 768px) {
             .content-wrapper { padding: 24px 14px; }
             .ui-card { padding: 20px; }
             .action-stack { max-width: 100%; }
-            .filter-form { grid-template-columns: 1fr; }
+            .filter-form > div,
+            .filter-form > div:first-child,
+            .btn-filter,
+            .btn-reset { flex-basis: 100%; width: 100%; min-width: 0; }
             .results-meta, .pagination-bar { align-items: flex-start; }
         }
 
@@ -242,10 +243,10 @@
                         <thead>
                             <tr>
                                 <th style="width: 30%;">User Details</th>
-                                <th style="width: 22%;">Role / Team</th>
-                                <th style="width: 14%;">Status</th>
-                                <th style="width: 14%;">Joined</th>
-                                <th style="width: 20%; text-align: right;">Actions</th>
+                                <th style="width: 20%;">Role / Team</th>
+                                <th style="width: 13%;">Status</th>
+                                <th style="width: 13%;">Joined</th>
+                                <th style="width: 24%; text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>

@@ -131,7 +131,6 @@ class ContractManagementTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -148,7 +147,7 @@ class ContractManagementTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
@@ -176,7 +175,7 @@ class ContractManagementTeamController extends Controller
 
     public function updateForm(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
@@ -220,7 +219,6 @@ class ContractManagementTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -237,7 +235,7 @@ class ContractManagementTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
             IaResolution::attachUploadedFile($file, 'cm_team');
@@ -256,7 +254,7 @@ class ContractManagementTeamController extends Controller
 
     public function updateResolution(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
@@ -333,9 +331,9 @@ class ContractManagementTeamController extends Controller
 
             // New CA and NTP Fields
             'ca_date' => ['nullable', 'date'],
-            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
             'ntp_date' => ['nullable', 'date'],
-            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
 
             'contract_no' => ['nullable', 'string', 'max:100'],
             'contract_amount' => ['nullable', 'numeric', 'min:0'],
@@ -373,9 +371,9 @@ class ContractManagementTeamController extends Controller
 
             // New CA and NTP Fields
             'ca_date' => ['nullable', 'date'],
-            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
             'ntp_date' => ['nullable', 'date'],
-            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
 
             'contract_no' => ['nullable', 'string', 'max:100'],
             'contract_amount' => ['nullable', 'numeric', 'min:0'],

@@ -222,7 +222,6 @@ class FsTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -239,7 +238,7 @@ class FsTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
@@ -274,7 +273,7 @@ class FsTeamController extends Controller
 
     public function updateForm(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
@@ -347,7 +346,6 @@ class FsTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -364,7 +362,7 @@ class FsTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
             IaResolution::attachUploadedFile($file, 'fs_team');
@@ -390,7 +388,7 @@ class FsTeamController extends Controller
 
     public function updateResolution(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 

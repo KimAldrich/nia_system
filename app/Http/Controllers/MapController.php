@@ -175,13 +175,12 @@ class MapController extends Controller
             $request->validate([
                 'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
                 'files' => 'required',
-                'files.*' => 'file|extensions:geojson,json,kml,kmz,zip,shp,shx,dbf,prj,cpg|max:51200',
+                'files.*' => 'file|extensions:geojson,json,kml,kmz,zip,shp,shx,dbf,prj,cpg',
                 'target_folder' => 'nullable|string|max:255',
             ], [
                 'files.required' => 'Please select at least one supported map file to upload.',
                 'files.*.file' => 'Only supported map files may be uploaded.',
                 'files.*.extensions' => 'Unsupported file detected. Please upload only: .geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, or .cpg.',
-                'files.*.max' => 'Each uploaded file must be 50MB or smaller.',
             ]);
 
             $category = $request->category;
