@@ -45,9 +45,41 @@
         .badge-outline { border: 1px solid #e4e4e7; color: #71717a; }
 
         .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 40px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
+        .btn-delete-sm { padding: 4px 10px; font-size: 11px; border-radius: 6px; box-shadow: none;}
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px);}
         .btn-edit-icon { background: #e0e7ff; color: #4f46e5; border: none; min-width: 40px; height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12); flex-shrink: 0; white-space: nowrap; }
         .btn-edit-icon:hover { background: #c7d2fe; color: #3730a3; transform: translateY(-1px); }
+        .btn-view {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);
+}
+
+.btn-view:hover {
+    background: #bae6fd;
+    color: #0369a1;
+    transform: translateY(-1px);
+}
+
+.btn-view-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+    box-shadow: none;
+}
         .action-cell { text-align: center; white-space: nowrap !important; word-wrap: normal !important; overflow-wrap: normal !important; word-break: normal !important; }
         .action-buttons { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 5px; min-width: max-content; }
         .action-buttons form { display: inline-flex; margin: 0; }
@@ -215,8 +247,26 @@
                         <td><span style="color:#64748b; font-size: 11px;">{{ $project->ca_date ?: '-' }}</span></td>
                         <td style="text-align: center;">
                             @if($project->ca_file)
-                                <a href="{{ asset('storage/' . $project->ca_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
-                            @else
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <a href="{{ asset('storage/' . $project->ca_file) }}" 
+   target="_blank" 
+   class="btn-view btn-view-sm">
+    View
+</a>
+
+        @if(auth()->check() && in_array(auth()->user()->role, ['cm_team','admin']))
+            <form action="{{ route('cm.procurement.delete_ca', $project->id) }}"
+                  method="POST"
+                  onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Delete CA file?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn-delete btn-delete-sm">
+    Delete
+</button>
+            </form>
+        @endif
+    </div>
+@else
                                 <span style="color: #a1a1aa; font-size: 11px;">-</span>
                             @endif
                         </td>
@@ -224,8 +274,26 @@
                         <td><span style="color:#64748b; font-size: 11px;">{{ $project->ntp_date ?: '-' }}</span></td>
                         <td style="text-align: center;">
                             @if($project->ntp_file)
-                                <a href="{{ asset('storage/' . $project->ntp_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
-                            @else
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <a href="{{ asset('storage/' . $project->ca_file) }}" 
+   target="_blank" 
+   class="btn-view btn-view-sm">
+    View
+</a>
+
+        @if(auth()->check() && in_array(auth()->user()->role, ['cm_team','admin']))
+            <form action="{{ route('cm.procurement.delete_ntp', $project->id) }}"
+                  method="POST"
+                  onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Delete NTP file?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn-delete btn-delete-sm">
+    Delete
+</button>
+            </form>
+        @endif
+    </div>
+@else
                                 <span style="color: #a1a1aa; font-size: 11px;">-</span>
                             @endif
                         </td>

@@ -667,4 +667,30 @@ class ContractManagementTeamController extends Controller
         ]);
     }
 
+public function deleteCaFile(Request $request, $id)
+{
+    $project = ProcurementProject::findOrFail($id);
+
+    if ($project->ca_file && Storage::disk('public')->exists($project->ca_file)) {
+        Storage::disk('public')->delete($project->ca_file);
+    }
+
+    $project->update(['ca_file' => null]);
+
+    return $this->successResponse($request, 'Contract Agreement file deleted successfully.');
+}
+
+public function deleteNtpFile(Request $request, $id)
+{
+    $project = ProcurementProject::findOrFail($id);
+
+    if ($project->ntp_file && Storage::disk('public')->exists($project->ntp_file)) {
+        Storage::disk('public')->delete($project->ntp_file);
+    }
+
+    $project->update(['ntp_file' => null]);
+
+    return $this->successResponse($request, 'Notice to Proceed file deleted successfully.');
+}
+
 }

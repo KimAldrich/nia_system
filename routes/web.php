@@ -218,6 +218,9 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/procurement/store', [ContractManagementTeamController::class, 'storeProcurement'])->name('cm.procurement.store');
                 Route::put('/procurement/update', [ContractManagementTeamController::class, 'updateProcurement'])->name('cm.procurement.update');
                 Route::delete('/procurement/{id}', [ContractManagementTeamController::class, 'destroyProcurement'])->name('cm.procurement.destroy');
+                
+                Route::delete('/procurement/{id}/delete-ca-file', [ContractManagementTeamController::class, 'deleteCAFile'])->name('cm.procurement.delete_ca');
+                Route::delete('/procurement/{id}/delete-ntp-file', [ContractManagementTeamController::class, 'deleteNTPFile'])->name('cm.procurement.delete_ntp');
             });
         });
 
