@@ -1125,7 +1125,7 @@
                                         $colClass = 'col-amount';
                                     }
                                     if (in_array($index, [6, 21], true) && $value !== null && $value !== '') {
-                                        $displayValue = number_format((float) $value, 2);
+                                        $displayValue = '&#8369;' . number_format((float) $value, 2);
                                     }
                                 @endphp
                                 <td class="{{ $index >= 7 && $index <= 18 ? 'impl ' : '' }}{{ $colClass }} status-compact-cell"
