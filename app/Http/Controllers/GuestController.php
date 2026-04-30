@@ -24,6 +24,19 @@ class GuestController extends Controller
 {
     use BuildsResolutionAnalytics;
 
+    private function teamDisplayLabel(string $dbTeam): string
+    {
+        return match ($dbTeam) {
+            'fs_team' => 'FS',
+            'pao_team' => 'Programming',
+            'pcr_team' => 'Program Completion',
+            'cm_team' => 'Contract Management',
+            'row_team' => 'Right of Way',
+            'rpwsis_team' => 'RPWSIS',
+            default => ucwords(str_replace('_', ' ', $dbTeam)),
+        };
+    }
+
     // 1. Process the 1-Click Guest Login
     public function authenticate(Request $request)
     {
@@ -452,9 +465,10 @@ class GuestController extends Controller
         $db_team = str_replace('-', '_', $team_slug);
 
         $files = Downloadable::where('team', $db_team)->latest()->get();
-        $pageTitle = strtoupper(str_replace('_', ' ', $db_team)) . " Downloadables";
+        $teamLabel = $this->teamDisplayLabel($db_team);
+        $pageTitle = "{$teamLabel} Downloadable Forms";
 
-        return view('guest.downloadables', compact('files', 'pageTitle'));
+        return view('guest.downloadables', compact('files', 'pageTitle', 'teamLabel'));
     }
 
     // 3. Show Team Resolutions (Read-Only)
@@ -467,8 +481,9 @@ class GuestController extends Controller
         $db_team = str_replace('-', '_', $team_slug);
 
         $resolutions = IaResolution::where('team', $db_team)->latest()->get();
-        $pageTitle = strtoupper(str_replace('_', ' ', $db_team)) . " IA Resolutions";
+        $teamLabel = $this->teamDisplayLabel($db_team);
+        $pageTitle = "{$teamLabel} IA Resolutions";
 
-        return view('guest.resolutions', compact('resolutions', 'pageTitle'));
+        return view('guest.resolutions', compact('resolutions', 'pageTitle', 'teamLabel'));
     }
 }

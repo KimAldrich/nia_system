@@ -103,35 +103,6 @@
 
     <h1 class="header-title">{{ $pageTitle ?? 'Dashboard' }}</h1>
 
-    @if(isset($db_team) && $db_team === 'fs_team')
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-title">Total SPIP Projects</div>
-                <div class="kpi-value">{{ $totalProjects ?? 0 }}</div>
-                <div class="kpi-icon blue"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-text">Recorded in database</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Georesistivity Conducted</div>
-                <div class="kpi-value">{{ $conducted ?? 0 }}</div>
-                <div class="kpi-icon green"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-up">On Track</span><span class="trend-text">Successfully mapped</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Remaining Sites</div>
-                <div class="kpi-value">{{ $remaining ?? 0 }}</div>
-                <div class="kpi-icon orange"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-neutral">Pending</span><span class="trend-text">Awaiting schedule</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Feasible Projects</div>
-                <div class="kpi-value">{{ $feasible ?? 0 }}</div>
-                <div class="kpi-icon purple"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-text">Validated as feasible</span></div>
-            </div>
-        </div>
-    @endif
-
     <div class="dashboard-grid">
         <div class="main-column">
             <div class="ui-card dark">
