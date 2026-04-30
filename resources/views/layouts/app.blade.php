@@ -8,10 +8,11 @@
     <link rel="icon" type="image/png" href="{{ asset('images/2020-nia-logo.png') }}">
     <title>@yield('title', 'System Dashboard')</title>
     <style>
-       :root {
+        :root {
             --primary: #0b5e2c;
             --primary-dark: #084721;
-            --sidebar-bg: #110d9e; /* #045115; 0d9e2c 110d9e */
+            --sidebar-bg: #110d9e;
+            /* #045115; 0d9e2c 110d9e */
             --sidebar-hover: rgba(255, 255, 255, 0.1);
             --sidebar-active: rgba(255, 255, 255, 0.2);
             --sidebar-text: #ffffff;
@@ -25,68 +26,375 @@
         }
 
         /* GLOBAL SCROLLBAR HIDING */
-        * { scrollbar-width: none; -ms-overflow-style: none; }
-        *::-webkit-scrollbar { display: none; }
+        * {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
 
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; width: 100vw; overflow: hidden; box-sizing: border-box; }
+        *::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
 
         /* SIDEBAR LOGIC (Kept exactly as you had it) */
-        .sidebar { position: relative; width: 310px; min-width: 310px; background-color: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; z-index: 1000; box-shadow: 2px 0 15px rgba(0,0,0,0.15); transition: margin-left 0.3s ease-in-out, transform 0.3s ease-in-out; }
-        .sidebar.collapsed { margin-left: -310px; }
-        .menu-toggle-btn { position: absolute; top: 20px; right: -16px; width: 32px; height: 32px; background-color: var(--sidebar-bg); color: #ffffff; border: 3px solid var(--bg-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1001; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: right 0.3s ease-in-out, transform 0.2s; }
-        .menu-toggle-btn:hover { transform: scale(1.05); }
-        .sidebar.collapsed .menu-toggle-btn { right: -50px; border-color: transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-        .sidebar-toggle-icon { position: relative; width: 16px; height: 12px; display: inline-flex; align-items: center; justify-content: center; }
-        .sidebar-toggle-icon span { position: absolute; left: 0; width: 100%; height: 2px; border-radius: 999px; background: currentColor; transform-origin: center; transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease; }
-        .sidebar-toggle-icon span:nth-child(1) { top: 0; }
-        .sidebar-toggle-icon span:nth-child(2) { top: 5px; }
-        .sidebar-toggle-icon span:nth-child(3) { top: 10px; }
-        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(1) { top: 5px; transform: rotate(45deg); }
-        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
-        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(3) { top: 5px; transform: rotate(-45deg); }
-        .sidebar-header { padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .sidebar-logo { width: 100px; height: auto; margin-bottom: 8px; }
-        .sidebar-title { font-size: 13px; font-weight: 700; color: #ffffff; letter-spacing: 1px; line-height: 1.3; }
-        .nav-links { flex: 1; padding: 5px 15px 15px 15px; overflow-y: auto; }
-        .nav-label { margin-top: 10px; margin-bottom: 4px; padding: 0 12px; font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-        .menu-item { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; color: var(--sidebar-text); text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; margin-bottom: 2px; }
-        .menu-item:hover { background-color: var(--sidebar-hover); }
-        .menu-item.active { background-color: var(--sidebar-active); color: white; font-weight: 600; }
-        .menu-item svg { width: 16px; height: 16px; margin-right: 12px; stroke: var(--sidebar-icon); }
-        .menu-item.active svg { stroke: white; }
-        .menu-item .chevron { margin-left: auto; transition: transform 0.3s; }
-        .menu-item.open .chevron { transform: rotate(180deg); }
-        .sub-menu { display: none; padding-left: 32px; margin-top: -2px; margin-bottom: 4px; }
-        .sub-menu.open { display: block; }
-        .sub-item { position: relative; display: block; padding: 5px 12px; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 12px; border-radius: 4px; margin-top: 1px; }
-        .sub-item:hover, .sub-item.active { background-color: var(--sidebar-hover); color: white; }
-        .sub-item::before { content: ''; position: absolute; left: -11px; top: -12px; bottom: 50%; width: 12px; border-left: 1px solid var(--tree-line); border-bottom: 1px solid var(--tree-line); border-bottom-left-radius: 8px; }
-        .sub-item:not(:last-child)::after { content: ''; position: absolute; left: -11px; top: 50%; bottom: -12px; border-left: 1px solid var(--tree-line); }
-        .sidebar-bottom { padding: 12px 15px; border-top: 1px solid rgba(255, 255, 255, 0.1); background-color: rgba(0, 0, 0, 0.05); }
-        .sidebar-user-card { display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; margin-bottom: 12px; }
-        .sidebar-avatar { width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: #ffffff; color: var(--sidebar-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
-        .sidebar-user-info { display: flex; flex-direction: column; overflow: hidden; }
-        .sidebar-user-name { font-size: 12px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sidebar-user-role { font-size: 9px; font-weight: 600; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .logout-btn { width: 100%; padding: 6px; background-color: transparent; color: #ef4444; border: 1px solid #ef4444; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.3s; }
-        .logout-btn:hover { background-color: #ef4444; color: white; }
-        .copyright-text { margin-top: 10px; font-size: 8px; color: rgba(255, 255, 255, 0.4); line-height: 1.4; text-align: center; }
+        .sidebar {
+            position: relative;
+            width: 310px;
+            min-width: 310px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15);
+            transition: margin-left 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        .sidebar.collapsed {
+            margin-left: -310px;
+        }
+
+        .menu-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: -16px;
+            width: 32px;
+            height: 32px;
+            background-color: var(--sidebar-bg);
+            color: #ffffff;
+            border: 3px solid var(--bg-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease-in-out, transform 0.2s;
+        }
+
+        .menu-toggle-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .sidebar.collapsed .menu-toggle-btn {
+            right: -50px;
+            border-color: transparent;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .sidebar-toggle-icon {
+            position: relative;
+            width: 16px;
+            height: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-toggle-icon span {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            border-radius: 999px;
+            background: currentColor;
+            transform-origin: center;
+            transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease;
+        }
+
+        .sidebar-toggle-icon span:nth-child(1) {
+            top: 0;
+        }
+
+        .sidebar-toggle-icon span:nth-child(2) {
+            top: 5px;
+        }
+
+        .sidebar-toggle-icon span:nth-child(3) {
+            top: 10px;
+        }
+
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(1) {
+            top: 5px;
+            transform: rotate(45deg);
+        }
+
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0.2);
+        }
+
+        .sidebar-toggle-btn.is-active .sidebar-toggle-icon span:nth-child(3) {
+            top: 5px;
+            transform: rotate(-45deg);
+        }
+
+        .sidebar-header {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .sidebar-logo {
+            width: 100px;
+            height: auto;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+            line-height: 1.3;
+        }
+
+        .nav-links {
+            flex: 1;
+            padding: 5px 15px 15px 15px;
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            margin-top: 10px;
+            margin-bottom: 4px;
+            padding: 0 12px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .menu-item:hover {
+            background-color: var(--sidebar-hover);
+        }
+
+        .menu-item.active {
+            background-color: var(--sidebar-active);
+            color: white;
+            font-weight: 600;
+        }
+
+        .menu-item svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 12px;
+            stroke: var(--sidebar-icon);
+        }
+
+        .menu-item.active svg {
+            stroke: white;
+        }
+
+        .menu-item .chevron {
+            margin-left: auto;
+            transition: transform 0.3s;
+        }
+
+        .menu-item.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .sub-menu {
+            display: none;
+            padding-left: 32px;
+            margin-top: -2px;
+            margin-bottom: 4px;
+        }
+
+        .sub-menu.open {
+            display: block;
+        }
+
+        .sub-item {
+            position: relative;
+            display: block;
+            padding: 5px 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 12px;
+            border-radius: 4px;
+            margin-top: 1px;
+        }
+
+        .sub-item:hover,
+        .sub-item.active {
+            background-color: var(--sidebar-hover);
+            color: white;
+        }
+
+        .sub-item::before {
+            content: '';
+            position: absolute;
+            left: -11px;
+            top: -12px;
+            bottom: 50%;
+            width: 12px;
+            border-left: 1px solid var(--tree-line);
+            border-bottom: 1px solid var(--tree-line);
+            border-bottom-left-radius: 8px;
+        }
+
+        .sub-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: -11px;
+            top: 50%;
+            bottom: -12px;
+            border-left: 1px solid var(--tree-line);
+        }
+
+        .sidebar-bottom {
+            padding: 12px 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-user-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-avatar {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: var(--sidebar-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .sidebar-user-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-user-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-role {
+            font-size: 9px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 6px;
+            background-color: transparent;
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .copyright-text {
+            margin-top: 10px;
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.4);
+            line-height: 1.4;
+            text-align: center;
+        }
 
         /* =========================================
            MAIN CONTENT AREA
            ========================================= */
-        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; transition: all 0.3s ease-in-out; max-width: calc(100vw - 310px); }
-        .sidebar.collapsed ~ .main-wrapper { max-width: 100vw; }
-        .content { padding: 30px; overflow-y: auto; overflow-x: hidden; flex: 1; width: 100%; box-sizing: border-box; }
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+            transition: all 0.3s ease-in-out;
+            max-width: calc(100vw - 310px);
+        }
+
+        .sidebar.collapsed~.main-wrapper {
+            max-width: 100vw;
+        }
+
+        .content {
+            padding: 30px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
         /* 🌟 NEW SOFT UI CARD STYLES (Matches Image) 🌟 */
-        .card, .ui-card {
+        .card,
+        .ui-card {
             background: var(--card-bg);
-            border-radius: 16px; /* Smoother, rounder corners */
+            border-radius: 16px;
+            /* Smoother, rounder corners */
             padding: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); /* Soft, blurred shadow */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            /* Soft, blurred shadow */
             margin-bottom: 20px;
-            border: none; /* Removed the hard border! */
+            border: none;
+            /* Removed the hard border! */
             max-width: 100%;
             width: 100%;
             min-width: 0;
@@ -94,6 +402,7 @@
             box-sizing: border-box;
             overflow: hidden;
         }
+
         .content .ui-card,
         .content .card {
             width: 100%;
@@ -103,11 +412,13 @@
             box-sizing: border-box;
             overflow: hidden;
         }
-        .content .ui-card > *,
-        .content .card > * {
+
+        .content .ui-card>*,
+        .content .card>* {
             min-width: 0;
             max-width: 100%;
         }
+
         .content .ui-card img,
         .content .ui-card svg,
         .content .ui-card canvas,
@@ -116,6 +427,7 @@
         .content .card canvas {
             max-width: 100%;
         }
+
         .content .dashboard-grid,
         .content .dashboard-main-grid,
         .content .kpi-grid {
@@ -123,30 +435,51 @@
             min-width: 0;
             align-items: start;
         }
+
         .content .dashboard-grid {
             grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
         }
+
         .content .main-column,
         .content .side-column {
             width: 100%;
             min-width: 0;
         }
+
         .content .section-title {
             flex-wrap: wrap;
             gap: 10px;
         }
+
         .content .ui-card table,
         .content .card table {
             width: 100%;
             max-width: 100%;
         }
+
         .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
         .content .card [style*="grid-template-columns: 1fr 1fr"] {
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
         }
 
-        .page-title { margin-top: 0; color: #1e293b; font-size: 22px; margin-bottom: 15px; font-weight: 700; }
-        .section-title { font-size: 16px; color: #64748b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
+        .page-title {
+            margin-top: 0;
+            color: #1e293b;
+            font-size: 22px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-size: 16px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
         .table-toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -158,6 +491,7 @@
             border-radius: 14px;
             background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         }
+
         .table-toolbar__search,
         .table-toolbar__field {
             display: flex;
@@ -166,6 +500,7 @@
             min-width: 180px;
             flex: 1 1 180px;
         }
+
         .table-toolbar__label {
             font-size: 11px;
             font-weight: 700;
@@ -173,6 +508,7 @@
             text-transform: uppercase;
             color: #64748b;
         }
+
         .table-toolbar__input,
         .table-toolbar__select {
             width: 100%;
@@ -185,18 +521,21 @@
             font-size: 13px;
             transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
         }
+
         .table-toolbar__input:focus,
         .table-toolbar__select:focus {
             outline: none;
             border-color: #110d9e;
             box-shadow: 0 0 0 4px rgba(17, 13, 158, 0.08);
         }
+
         .table-toolbar__actions {
             display: flex;
             gap: 10px;
             align-items: center;
             margin-left: auto;
         }
+
         .table-toolbar__button {
             min-height: 44px;
             padding: 0 16px;
@@ -211,56 +550,221 @@
             cursor: pointer;
             transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
         }
+
         .table-toolbar__button--primary {
             background: #110d9e;
             color: #ffffff;
         }
+
         .table-toolbar__button--primary:hover {
             background: #0c0a78;
         }
+
         .table-toolbar__button--ghost {
             background: #ffffff;
             color: #475569;
             border-color: #cbd5e1;
         }
+
         .table-toolbar__button--ghost:hover {
             background: #f8fafc;
             color: #1e293b;
         }
 
         /* 🌟 NEW KPI METRIC CARDS 🌟 */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
-        .kpi-card { position: relative; background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); display: flex; flex-direction: column; }
-        .kpi-title { font-size: 14px; color: #a0aec0; font-weight: 500; }
-        .kpi-value { font-size: 28px; font-weight: 700; color: #1e293b; margin: 8px 0; }
-        .kpi-icon { position: absolute; top: 24px; right: 24px; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .kpi-icon.blue { background: #e0e7ff; color: #4318FF; }
-        .kpi-icon.green { background: #dcfce7; color: #10b981; }
-        .kpi-icon.orange { background: #ffedd5; color: #f59e0b; }
-        .kpi-trend { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px; margin-top: auto;}
-        .trend-up { color: #10b981; background: #dcfce7; padding: 2px 6px; border-radius: 4px;}
-        .trend-down { color: #ef4444; background: #fee2e2; padding: 2px 6px; border-radius: 4px;}
-        .trend-text { color: #a0aec0; font-weight: 500; }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            position: relative;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .kpi-title {
+            font-size: 14px;
+            color: #a0aec0;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 8px 0;
+        }
+
+        .kpi-icon {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .kpi-icon.blue {
+            background: #e0e7ff;
+            color: #4318FF;
+        }
+
+        .kpi-icon.green {
+            background: #dcfce7;
+            color: #10b981;
+        }
+
+        .kpi-icon.orange {
+            background: #ffedd5;
+            color: #f59e0b;
+        }
+
+        .kpi-trend {
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: auto;
+        }
+
+        .trend-up {
+            color: #10b981;
+            background: #dcfce7;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .trend-down {
+            color: #ef4444;
+            background: #fee2e2;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .trend-text {
+            color: #a0aec0;
+            font-weight: 500;
+        }
 
         /* 🌟 GRID LAYOUT FOR CHARTS & CALENDAR 🌟 */
-        .dashboard-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
+        .dashboard-main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; table-layout: fixed; }
-        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #f1f5f9; word-break: break-word; font-size: 13px; color: #334155; }
-        th { background-color: transparent; color: #a0aec0; font-weight: 600; text-transform: capitalize; font-size: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            table-layout: fixed;
+        }
 
-        .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-pending { background: #ffedd5; color: #ea580c; }
-        .badge-progress { background: #e0e7ff; color: #4f46e5; }
-        .badge-completed { background: #dcfce7; color: #16a34a; }
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+            word-break: break-word;
+            font-size: 13px;
+            color: #334155;
+        }
+
+        th {
+            background-color: transparent;
+            color: #a0aec0;
+            font-weight: 600;
+            text-transform: capitalize;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-pending {
+            background: #ffedd5;
+            color: #ea580c;
+        }
+
+        .badge-progress {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        .badge-completed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
 
         /* Mobile Styles */
-        .mobile-header { display: none; align-items: center; justify-content: space-between; padding: 12px 15px; background: #ffffff; border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); z-index: 900; }
-        .mobile-menu-btn { background: var(--sidebar-bg); border: none; color: #ffffff; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-        .mobile-title { font-weight: 700; color: var(--primary-dark); font-size: 14px; letter-spacing: 0.5px; }
-        .app-notification-shell { position: sticky; top: 0; z-index: 910; display: flex; justify-content: flex-end; padding: 18px 24px 0; pointer-events: none; }
-        .app-notification-shell > * { pointer-events: auto; }
-        .app-notification-panel { position: relative; }
+        .mobile-header {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            z-index: 900;
+        }
+
+        .mobile-menu-btn {
+            background: var(--sidebar-bg);
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-title {
+            font-weight: 700;
+            color: var(--primary-dark);
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .app-notification-shell {
+            position: sticky;
+            top: 0;
+            z-index: 910;
+            display: flex;
+            justify-content: flex-end;
+            padding: 18px 24px 0;
+            pointer-events: none;
+        }
+
+        .app-notification-shell>* {
+            pointer-events: auto;
+        }
+
+        .app-notification-panel {
+            position: relative;
+        }
+
         .app-notification-btn {
             position: relative;
             width: 46px;
@@ -275,7 +779,12 @@
             cursor: pointer;
             box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
         }
-        .app-notification-btn svg { width: 20px; height: 20px; }
+
+        .app-notification-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
         .app-notification-badge {
             position: absolute;
             top: -6px;
@@ -293,7 +802,11 @@
             justify-content: center;
             border: 2px solid #ffffff;
         }
-        .app-notification-badge.is-hidden { display: none; }
+
+        .app-notification-badge.is-hidden {
+            display: none;
+        }
+
         .app-notification-dropdown {
             position: absolute;
             top: calc(100% + 12px);
@@ -306,7 +819,11 @@
             overflow: hidden;
             display: none;
         }
-        .app-notification-dropdown.is-open { display: block; }
+
+        .app-notification-dropdown.is-open {
+            display: block;
+        }
+
         .app-notification-header {
             display: flex;
             align-items: center;
@@ -315,7 +832,13 @@
             padding: 16px 18px 12px;
             border-bottom: 1px solid #eef2f7;
         }
-        .app-notification-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+
+        .app-notification-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
         .app-notification-action {
             border: none;
             background: transparent;
@@ -324,22 +847,33 @@
             font-weight: 700;
             cursor: pointer;
         }
-        .app-notification-list { max-height: 420px; overflow-y: auto; padding: 8px; display: grid; gap: 8px; }
+
+        .app-notification-list {
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 8px;
+            display: grid;
+            gap: 8px;
+        }
+
         .app-notification-item {
             padding: 12px 14px;
             border-radius: 14px;
             background: #f8fafc;
             border: 1px solid #eef2f7;
         }
+
         .app-notification-item-link {
             display: block;
             color: inherit;
             text-decoration: none;
         }
+
         .app-notification-item.is-unread {
             background: #eff6ff;
             border-color: #bfdbfe;
         }
+
         .app-notification-item-top {
             display: flex;
             align-items: center;
@@ -347,7 +881,14 @@
             gap: 10px;
             margin-bottom: 6px;
         }
-        .app-notification-item-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+
+        .app-notification-item-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
         .app-notification-category {
             display: inline-flex;
             align-items: center;
@@ -359,24 +900,128 @@
             text-transform: uppercase;
             white-space: nowrap;
         }
-        .app-notification-category--blue { background: #dbeafe; color: #1d4ed8; }
-        .app-notification-category--amber { background: #fef3c7; color: #b45309; }
-        .app-notification-category--green { background: #dcfce7; color: #15803d; }
-        .app-notification-category--rose { background: #ffe4e6; color: #be123c; }
-        .app-notification-category--slate { background: #e2e8f0; color: #475569; }
-        .app-notification-item-message { font-size: 12px; line-height: 1.5; color: #475569; }
-        .app-notification-item-time { margin-top: 8px; font-size: 11px; color: #94a3b8; }
-        .app-notification-empty { padding: 18px; text-align: center; font-size: 13px; color: #64748b; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
-        .app-alert-stack { display: grid; gap: 12px; margin-bottom: 20px; }
-        .app-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 1px solid transparent; font-size: 13px; font-weight: 500; line-height: 1.5; }
-        .app-alert-success { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
-        .app-alert-error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-        .app-alert-info { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-        .app-alert-icon { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; background: currentColor; color: #ffffff; }
-        .app-alert-title { font-weight: 700; margin-bottom: 4px; }
-        .app-alert-list { margin: 0; padding-left: 18px; }
-        .app-alert-list li + li { margin-top: 4px; }
+
+        .app-notification-category--blue {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .app-notification-category--amber {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .app-notification-category--green {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .app-notification-category--rose {
+            background: #ffe4e6;
+            color: #be123c;
+        }
+
+        .app-notification-category--slate {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .app-notification-item-message {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #475569;
+        }
+
+        .app-notification-item-time {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .app-notification-empty {
+            padding: 18px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .app-alert-stack {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .app-alert {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .app-alert-success {
+            background: #ecfdf5;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .app-alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        .app-alert-info {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+
+        .app-alert-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+            background: currentColor;
+            color: #ffffff;
+        }
+
+        .app-alert-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .app-alert-list {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .app-alert-list li+li {
+            margin-top: 4px;
+        }
+
         .app-global-loader {
             position: fixed;
             inset: 0;
@@ -391,11 +1036,13 @@
             pointer-events: none;
             transition: opacity 0.2s ease, visibility 0.2s ease;
         }
+
         .app-global-loader.is-visible {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
         }
+
         .app-global-loader__card {
             min-width: 220px;
             max-width: min(90vw, 320px);
@@ -407,6 +1054,7 @@
             align-items: center;
             gap: 14px;
         }
+
         .app-global-loader__spinner {
             width: 22px;
             height: 22px;
@@ -416,12 +1064,14 @@
             animation: appGlobalSpin 0.85s linear infinite;
             flex-shrink: 0;
         }
+
         .app-global-loader__text {
             color: #0f172a;
             font-size: 14px;
             font-weight: 700;
             letter-spacing: 0.2px;
         }
+
         .app-confirm-modal {
             position: fixed;
             inset: 0;
@@ -437,11 +1087,13 @@
             pointer-events: none;
             transition: opacity 0.2s ease, visibility 0.2s ease;
         }
+
         .app-confirm-modal.is-visible {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
         }
+
         .app-confirm-modal__dialog {
             width: min(100%, 440px);
             background: #ffffff;
@@ -449,23 +1101,27 @@
             box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
             padding: 26px 24px 22px;
         }
+
         .app-confirm-modal__title {
             margin: 0 0 10px;
             font-size: 20px;
             font-weight: 700;
             color: #0f172a;
         }
+
         .app-confirm-modal__message {
             margin: 0 0 24px;
             font-size: 14px;
             line-height: 1.6;
             color: #475569;
         }
+
         .app-confirm-modal__actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
         }
+
         .app-confirm-modal__button {
             border: 1px solid transparent;
             border-radius: 10px;
@@ -475,23 +1131,28 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
+
         .app-confirm-modal__button--cancel {
             background: #ffffff;
             color: #334155;
             border-color: #cbd5e1;
         }
+
         .app-confirm-modal__button--cancel:hover {
             background: #f8fafc;
         }
+
         .app-confirm-modal__button--confirm {
             background: #ef4444;
             color: #ffffff;
             border-color: #ef4444;
         }
+
         .app-confirm-modal__button--confirm:hover {
             background: #dc2626;
             border-color: #dc2626;
         }
+
         .app-feedback-modal {
             position: fixed;
             inset: 0;
@@ -507,11 +1168,13 @@
             pointer-events: none;
             transition: opacity 0.2s ease, visibility 0.2s ease;
         }
+
         .app-feedback-modal.active {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
         }
+
         .app-feedback-modal__dialog {
             width: min(100%, 440px);
             background: #ffffff;
@@ -519,23 +1182,27 @@
             box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
             padding: 26px 24px 22px;
         }
+
         .app-feedback-modal__title {
             margin: 0 0 10px;
             font-size: 20px;
             font-weight: 700;
             color: #0f172a;
         }
+
         .app-feedback-modal__message {
             margin: 0 0 24px;
             font-size: 14px;
             line-height: 1.6;
             color: #475569;
         }
+
         .app-feedback-modal__actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
         }
+
         .app-feedback-modal__button {
             border: 1px solid #110d9e;
             border-radius: 10px;
@@ -547,64 +1214,112 @@
             background: #110d9e;
             color: #ffffff;
         }
+
         .app-feedback-modal__button:hover {
             background: #0b0a75;
             border-color: #0b0a75;
         }
+
         .is-loading {
             opacity: 0.65;
             pointer-events: none;
         }
+
         @keyframes appGlobalSpin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
+
         @media (max-width: 1150px) {
-            .dashboard-main-grid { grid-template-columns: 1fr; }
-            .content .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+            .dashboard-main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content .dashboard-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
         }
 
         @media (max-width: 900px) {
-            .main-wrapper { max-width: 100vw; }
-            .mobile-header { display: flex; }
-            .app-notification-shell { display: none; }
+            .main-wrapper {
+                max-width: 100vw;
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            .app-notification-shell {
+                display: none;
+            }
+
             .mobile-header .app-notification-btn {
                 width: 38px;
                 height: 38px;
                 border-radius: 12px;
                 box-shadow: none;
             }
+
             .mobile-header .app-notification-dropdown {
                 right: -8px;
                 width: min(92vw, 340px);
             }
-            .content { padding: 20px 15px; }
+
+            .content {
+                padding: 20px 15px;
+            }
+
             .content .ui-card,
             .content .card {
                 padding: 20px;
             }
+
             .table-toolbar {
                 align-items: stretch;
             }
+
             .table-toolbar__search,
             .table-toolbar__field,
             .table-toolbar__actions {
                 min-width: 100%;
                 flex: 1 1 100%;
             }
+
             .table-toolbar__actions {
                 margin-left: 0;
             }
+
             .table-toolbar__button {
                 flex: 1 1 0;
             }
+
             .content .ui-card [style*="grid-template-columns: 1fr 1fr"],
             .content .card [style*="grid-template-columns: 1fr 1fr"] {
                 grid-template-columns: minmax(0, 1fr) !important;
             }
-            .menu-toggle-btn { display: none; }
-            .sidebar { position: fixed; top: 0; bottom: 0; left: 0; margin-left: 0 !important; transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
-            .sidebar-overlay.show { opacity: 1; visibility: visible; }
+
+            .menu-toggle-btn {
+                display: none;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                margin-left: 0 !important;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                opacity: 1;
+                visibility: visible;
+            }
         }
     </style>
 </head>
@@ -617,18 +1332,22 @@
         </div>
     </div>
 
-    <div id="appConfirmModal" class="app-confirm-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="appConfirmModalTitle">
+    <div id="appConfirmModal" class="app-confirm-modal" aria-hidden="true" role="dialog" aria-modal="true"
+        aria-labelledby="appConfirmModalTitle">
         <div class="app-confirm-modal__dialog">
             <h3 id="appConfirmModalTitle" class="app-confirm-modal__title">Confirm delete</h3>
             <p id="appConfirmModalMessage" class="app-confirm-modal__message">Are you sure you want to continue?</p>
             <div class="app-confirm-modal__actions">
-                <button type="button" id="appConfirmModalCancel" class="app-confirm-modal__button app-confirm-modal__button--cancel">Cancel</button>
-                <button type="button" id="appConfirmModalApprove" class="app-confirm-modal__button app-confirm-modal__button--confirm">Delete</button>
+                <button type="button" id="appConfirmModalCancel"
+                    class="app-confirm-modal__button app-confirm-modal__button--cancel">Cancel</button>
+                <button type="button" id="appConfirmModalApprove"
+                    class="app-confirm-modal__button app-confirm-modal__button--confirm">Delete</button>
             </div>
         </div>
     </div>
 
-    <div id="appFeedbackModal" class="app-feedback-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="appFeedbackModalTitle">
+    <div id="appFeedbackModal" class="app-feedback-modal" aria-hidden="true" role="dialog" aria-modal="true"
+        aria-labelledby="appFeedbackModalTitle">
         <div class="app-feedback-modal__dialog">
             <h3 id="appFeedbackModalTitle" class="app-feedback-modal__title" data-success-title>Success</h3>
             <p class="app-feedback-modal__message" data-success-message>Saved successfully.</p>
@@ -639,7 +1358,7 @@
     </div>
 
     @php
-        if(session('is_guest')) {
+        if (session('is_guest')) {
             $userName = 'Guest User';
             $currentUserTeam = 'Public Visitor';
         } else {
@@ -661,7 +1380,8 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <div class="sidebar" id="sidebar">
-        <button class="menu-toggle-btn sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar" aria-expanded="true">
+        <button class="menu-toggle-btn sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar"
+            aria-label="Toggle Sidebar" aria-expanded="true">
             <span class="sidebar-toggle-icon" aria-hidden="true">
                 <span></span>
                 <span></span>
@@ -670,32 +1390,55 @@
         </button>
 
         <div class="sidebar-header">
-            <img src="{{ asset('images/nia-logo.png') }}" alt="NIA Logo" class="sidebar-logo" onerror="this.style.display='none'">
+            <img src="{{ asset('images/nia-logo.png') }}" alt="NIA Logo" class="sidebar-logo"
+                onerror="this.style.display='none'">
             <div class="sidebar-title">PANGASINAN IMO</div>
         </div>
 
         <div class="nav-links">
 
-            @if(auth()->check() && auth()->user()->role == 'admin')
+            @if (auth()->check() && auth()->user()->role == 'admin')
                 <div class="nav-label">Admin Controls</div>
-                <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <a href="{{ route('admin.dashboard') }}"
+                    class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                        </path>
+                    </svg>
                     <span>Home</span>
                 </a>
-                <a href="{{ route('admin.users') }}" class="menu-item {{ request()->routeIs('admin.users') ? 'active' : '' }}" style="margin-bottom: 8px;">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <a href="{{ route('admin.users') }}"
+                    class="menu-item {{ request()->routeIs('admin.users') ? 'active' : '' }}"
+                    style="margin-bottom: 8px;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
                     <span>User Management</span>
                 </a>
-                <a href="{{ route('admin.audit') }}" class="menu-item {{ request()->routeIs('admin.audit') ? 'active' : '' }}" style="margin-bottom: 8px;">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z"></path></svg>
+                <a href="{{ route('admin.audit') }}"
+                    class="menu-item {{ request()->routeIs('admin.audit') ? 'active' : '' }}"
+                    style="margin-bottom: 8px;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 17v-6m3 6V7m3 10v-3m4 6H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z"></path>
+                    </svg>
                     <span>Activity Log</span>
                 </a>
             @endif
 
-            @if(session('is_guest'))
+            @if (session('is_guest'))
                 <div class="nav-label">Guest Portal</div>
-                <a href="{{ route('guest.dashboard') }}" class="menu-item {{ request()->routeIs('guest.dashboard') ? 'active' : '' }}" style="margin-bottom: 8px;">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                <a href="{{ route('guest.dashboard') }}"
+                    class="menu-item {{ request()->routeIs('guest.dashboard') ? 'active' : '' }}"
+                    style="margin-bottom: 8px;">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                        </path>
+                    </svg>
                     <span>Master Dashboard</span>
                 </a>
             @endif
@@ -709,45 +1452,70 @@
                     'cm_team' => 'Contract Management Team',
                     'row_team' => 'Right Of Way Team',
                     'pcr_team' => 'Program Completion Report Team',
-                    'pao_team' => 'Programming Team'
+                    'pao_team' => 'Programming Team',
                 ];
                 $activeTeam = request()->segment(1);
-                if(session('is_guest') && request()->segment(2) == 'team') {
+                if (session('is_guest') && request()->segment(2) == 'team') {
                     $activeTeam = request()->segment(3);
                 }
             @endphp
 
-            @foreach($teams as $slug => $name)
-                <div class="menu-item {{ $activeTeam == $slug ? 'active open' : '' }}" onclick="toggleMenu('menu-{{ $slug }}', this)">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            @foreach ($teams as $slug => $name)
+                <div class="menu-item {{ $activeTeam == $slug ? 'active open' : '' }}"
+                    onclick="toggleMenu('menu-{{ $slug }}', this)">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
                     <span style="white-space: nowrap;">{{ $name }}</span>
-                    <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                        style="width: 14px; height: 14px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                    </svg>
                 </div>
 
-<div class="sub-menu {{ $activeTeam == $slug ? 'open' : '' }}" id="menu-{{ $slug }}">
-    @if(session('is_guest'))
-        <a href="{{ route('guest.team.dashboard', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
-        <a href="{{ route('guest.team.downloadables', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
-        <a href="{{ route('guest.team.resolutions', $slug) }}" class="sub-item {{ request()->is('guest/' . $slug . '/resolutions') ? 'active' : '' }}">IA Resolutions</a>
-    @else
-        <a href="/{{ $slug }}/dashboard" class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
-        <a href="/{{ $slug }}/downloadables" class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
-        <a href="/{{ $slug }}/ia-resolutions" class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">IA Resolutions</a>
-    @endif
-</div>
+                <div class="sub-menu {{ $activeTeam == $slug ? 'open' : '' }}" id="menu-{{ $slug }}">
+                    @if (session('is_guest'))
+                        <a href="{{ route('guest.team.dashboard', $slug) }}"
+                            class="sub-item {{ request()->is('guest/' . $slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
+                        <a href="{{ route('guest.team.downloadables', $slug) }}"
+                            class="sub-item {{ request()->is('guest/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+                        <a href="{{ route('guest.team.resolutions', $slug) }}"
+                            class="sub-item {{ request()->is('guest/' . $slug . '/resolutions') ? 'active' : '' }}">Download
+                            Team Files</a>
+                    @else
+                        <a href="/{{ $slug }}/dashboard"
+                            class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
+                        <a href="/{{ $slug }}/downloadables"
+                            class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+                        <a href="/{{ $slug }}/ia-resolutions"
+                            class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">Upload
+                            Files</a>
+                    @endif
+                </div>
             @endforeach
 
             <div class="nav-label" style="margin-top: 15px;">Shared Hubs</div>
 
-            @if(!session('is_guest'))
-                <a href="{{ route('administrative.index') }}" class="menu-item {{ request()->routeIs('administrative.*') ? 'active' : '' }}">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            @if (!session('is_guest'))
+                <a href="{{ route('administrative.index') }}"
+                    class="menu-item {{ request()->routeIs('administrative.*') ? 'active' : '' }}">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                        </path>
+                    </svg>
                     <span>Administrative</span>
                 </a>
             @endif
 
             <a href="{{ route('map') }}" class="menu-item {{ request()->routeIs('map') ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.553-.832L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-1.553-.832L15 9m0 8V9m0 0L9 7"></path></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.553-.832L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-1.553-.832L15 9m0 8V9m0 0L9 7">
+                    </path>
+                </svg>
                 <span>Interactive Map</span>
             </a>
         </div>
@@ -761,13 +1529,13 @@
                 </div>
             </div>
 
-            @if(session('is_guest'))
+            @if (session('is_guest'))
                 <form action="{{ route('guest.logout') }}" method="POST">
-            @else
-                <form action="{{ route('logout') }}" method="POST">
+                @else
+                    <form action="{{ route('logout') }}" method="POST">
             @endif
-                @csrf
-                <button type="submit" class="logout-btn">Log Out</button>
+            @csrf
+            <button type="submit" class="logout-btn">Log Out</button>
             </form>
 
             <div class="copyright-text">
@@ -780,7 +1548,8 @@
 
     <div class="main-wrapper">
         <div class="mobile-header">
-            <button class="mobile-menu-btn sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar" aria-expanded="false">
+            <button class="mobile-menu-btn sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar"
+                aria-expanded="false">
                 <span class="sidebar-toggle-icon" aria-hidden="true">
                     <span></span>
                     <span></span>
@@ -788,23 +1557,23 @@
                 </span>
             </button>
             <div class="mobile-title">NIA PIMO Portal</div>
-            @if(($appNotificationSummary['enabled'] ?? false) === true)
+            @if (($appNotificationSummary['enabled'] ?? false) === true)
                 <div id="appNotificationMountMobile"></div>
             @else
                 <div style="width: 24px;"></div>
             @endif
         </div>
 
-        @if(($appNotificationSummary['enabled'] ?? false) === true)
+        @if (($appNotificationSummary['enabled'] ?? false) === true)
             <div class="app-notification-shell">
                 <div id="appNotificationMountDesktop"></div>
             </div>
         @endif
 
         <div class="content">
-            @if(!View::hasSection('full_bleed_content'))
-            <div id="appLiveAlerts"></div>
-            @include('partials.alerts')
+            @if (!View::hasSection('full_bleed_content'))
+                <div id="appLiveAlerts"></div>
+                @include('partials.alerts')
             @endif
             @yield('content')
         </div>
@@ -817,7 +1586,8 @@
         const appNotificationsUrl = @json(($appNotificationSummary['enabled'] ?? false) === true ? route('notifications.index') : null);
         const appNotificationsReadAllUrl = @json(($appNotificationSummary['enabled'] ?? false) === true ? route('notifications.read_all') : null);
         const appNotificationUserKey = @json(auth()->check() && !session('is_guest') ? 'user_' . auth()->id() : null);
-        const appNotificationSeenKey = appNotificationUserKey ? `system_notifications_seen_${appNotificationUserKey}` : null;
+        const appNotificationSeenKey = appNotificationUserKey ? `system_notifications_seen_${appNotificationUserKey}` :
+            null;
         let appNotificationsState = {
             items: Array.isArray(appNotificationsInitial) ? appNotificationsInitial : [],
             unreadCount: Number(appNotificationsUnread || 0),
@@ -990,7 +1760,8 @@
                 await fetch(appNotificationsReadAllUrl, {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute(
+                            'content') || '',
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     }
@@ -999,7 +1770,10 @@
                     localStorage.setItem(appNotificationSeenKey, latestTimestamp);
                 }
                 appNotificationsState.unreadCount = 0;
-                appNotificationsState.items = appNotificationsState.items.map((item) => ({ ...item, read_at: item.read_at || new Date().toISOString() }));
+                appNotificationsState.items = appNotificationsState.items.map((item) => ({
+                    ...item,
+                    read_at: item.read_at || new Date().toISOString()
+                }));
                 renderNotificationPanel();
             } catch (error) {
                 console.error('Failed to mark notifications as read', error);
@@ -1034,7 +1808,10 @@
 
             if (firstInvalidField instanceof HTMLElement) {
                 firstInvalidField.focus();
-                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalidField.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
             }
 
             showLiveAlert('Please review the highlighted fields and try again.', 'error');
@@ -1288,8 +2065,13 @@
                 focusTarget.setAttribute('tabindex', '-1');
             }
 
-            focusTarget.focus({ preventScroll: true });
-            focusTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            focusTarget.focus({
+                preventScroll: true
+            });
+            focusTarget.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         }
 
         async function refreshAsyncTargetsFromUrl(url, targets, updateHistory = true, options = {}) {
@@ -1438,7 +2220,8 @@
 
                 if (!suppressSuccessFeedback) {
                     const successMessage = payload.message || 'Changes saved successfully.';
-                    const openedSuccessModal = openAsyncSuccessModal(successModalSelector, successMessage, successTitle);
+                    const openedSuccessModal = openAsyncSuccessModal(successModalSelector, successMessage,
+                        successTitle);
 
                     if (!openedSuccessModal) {
                         showLiveAlert(successMessage, 'success');
@@ -1530,7 +2313,8 @@
 
         document.addEventListener('change', function(event) {
             const input = event.target;
-            if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
+            if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement ||
+                input instanceof HTMLTextAreaElement) {
                 setFieldValidityState(input);
             }
 
@@ -1550,7 +2334,9 @@
             const form = input.closest('form');
             if (!form) return;
 
-            submitAsyncForm(form, { submitter: input });
+            submitAsyncForm(form, {
+                submitter: input
+            });
         });
 
         document.addEventListener('click', function(event) {
@@ -1584,7 +2370,8 @@
 
         document.addEventListener('invalid', function(event) {
             const input = event.target;
-            if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement)) {
+            if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement ||
+                    input instanceof HTMLTextAreaElement)) {
                 return;
             }
 
@@ -1660,7 +2447,10 @@
 
         function toggleMenu(menuId, element) {
             const menu = document.getElementById(menuId);
-            if(menu) { menu.classList.toggle('open'); element.classList.toggle('open'); }
+            if (menu) {
+                menu.classList.toggle('open');
+                element.classList.toggle('open');
+            }
         }
 
         function syncSidebarToggleButtons() {
@@ -1684,7 +2474,7 @@
                 sidebar.classList.toggle('collapsed');
             } else {
                 sidebar.classList.toggle('open');
-                if(sidebar.classList.contains('open')) {
+                if (sidebar.classList.contains('open')) {
                     overlay.classList.add('show');
                 } else {
                     overlay.classList.remove('show');

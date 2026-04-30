@@ -327,8 +327,8 @@
         }
     </style>
 
-    <h1 class="header-title">IA Resolutions</h1>
-    <p class="header-desc">Manage and upload resolutions for the regional office and field offices.</p>
+    <h1 class="header-title">Programming Team Files</h1>
+    <p class="header-desc">Manage and upload programming team files for the regional office and field offices.</p>
 
     @if (session('success'))
         <div
@@ -342,14 +342,15 @@
     @endif
 
     <div class="tab-nav">
-        <button class="tab-btn active" onclick="switchTab(event, 'available-resolutions')">Available Resolutions</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'available-resolutions')">Available Files</button>
         @if (auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
-            <button class="tab-btn" onclick="switchTab(event, 'upload-resolution')">Upload a Resolution</button>
+            <button class="tab-btn" onclick="switchTab(event, 'upload-resolution')">Upload a File</button>
         @endif
     </div>
 
     <div id="available-resolutions" class="tab-pane active">
-        <div id="resolutionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+        <div id="resolutionsList"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
 
             @forelse($resolutions as $resolution)
                 @php
@@ -407,7 +408,8 @@
 
                         @if (auth()->check() && in_array(auth()->user()->role, ['pao_team', 'admin']))
                             <form action="{{ route('pao.resolutions.delete', $resolution->id) }}" method="POST"
-                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList" data-async-confirm="Delete this resolution?" data-async-success="silent">
+                                style="margin: 0; flex: 1;" data-async-target="#resolutionsList"
+                                data-async-confirm="Delete this file?" data-async-success="silent">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -421,14 +423,17 @@
             @empty
                 <div
                     style="grid-column: 1 / -1; background: #ffffff; padding: 40px; border-radius: 12px; text-align: center; border: 1px solid #e4e4e7;">
-                    <p style="color: #a1a1aa; font-weight: 500; font-size: 13px;">No resolutions have been uploaded yet.</p>
+                    <p style="color: #a1a1aa; font-weight: 500; font-size: 13px;">No files have been uploaded yet.</p>
                 </div>
             @endforelse
         </div>
     </div>
 
     <div id="upload-resolution" class="tab-pane">
-        <form action="{{ route('pao.resolutions.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#resolutionsList" data-async-reset="true" data-file-upload-feedback="true" data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed">
+        <form action="{{ route('pao.resolutions.upload') }}" method="POST" enctype="multipart/form-data"
+            data-async-target="#resolutionsList" data-async-reset="true" data-file-upload-feedback="true"
+            data-async-success-modal="#appFeedbackModal" data-async-success-title="Upload Complete"
+            data-async-error-modal="#appFeedbackModal" data-async-error-title="Upload Failed">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
@@ -441,7 +446,7 @@
                         </path>
                     </svg>
 
-                    <div class="upload-title">Drag & drop resolution</div>
+                    <div class="upload-title">Drag & drop files</div>
                     <div class="upload-or">or</div>
                     <button type="button" class="browse-btn">Browse Files</button>
                     <p style="font-size: 11px; color: #a1a1aa; margin-top: 15px; text-align: center; font-weight: 500;">
@@ -455,7 +460,7 @@
                         <div class="empty-state">No file selected.</div>
                     </div>
                     <button type="submit" class="btn-dark" id="submit-btn"
-                        style="padding: 12px; font-size: 13px; display: none;">Upload Resolution</button>
+                        style="padding: 12px; font-size: 13px; display: none;">Upload Files</button>
                 </div>
             </div>
         </form>
