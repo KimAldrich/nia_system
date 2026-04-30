@@ -1455,12 +1455,27 @@
                     'pao_team' => 'Programming Team',
                 ];
                 $activeTeam = request()->segment(1);
-                if (session('is_guest') && request()->segment(2) == 'team') {
-                    $activeTeam = request()->segment(3);
+                if (session('is_guest')) {
+                    if (request()->segment(2) == 'team') {
+                        $activeTeam = request()->segment(3);
+                    } elseif (request()->segment(1) == 'guest') {
+                        $activeTeam = request()->segment(2);
+                    }
                 }
             @endphp
 
             @foreach ($teams as $slug => $name)
+                @php
+                    $teamUploadLabel = match ($slug) {
+                        'fs-team' => 'IA Resolutions',
+                        'rpwsis_team' => 'Social and Environmental Files',
+                        'cm_team' => 'Contract Management Files',
+                        'row_team' => 'Right of Way Files',
+                        'pcr_team' => 'Program Completion Report Files',
+                        'pao_team' => 'Program of Works',
+                        default => 'Upload Files',
+                    };
+                @endphp
                 <div class="menu-item {{ $activeTeam == $slug ? 'active open' : '' }}"
                     onclick="toggleMenu('menu-{{ $slug }}', this)">
                     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1480,18 +1495,16 @@
                         <a href="{{ route('guest.team.dashboard', $slug) }}"
                             class="sub-item {{ request()->is('guest/' . $slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
                         <a href="{{ route('guest.team.downloadables', $slug) }}"
-                            class="sub-item {{ request()->is('guest/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
+                            class="sub-item {{ request()->is('guest/team/' . $slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
                         <a href="{{ route('guest.team.resolutions', $slug) }}"
-                            class="sub-item {{ request()->is('guest/' . $slug . '/resolutions') ? 'active' : '' }}">Download
-                            Team Files</a>
+                            class="sub-item {{ request()->is('guest/team/' . $slug . '/resolutions') ? 'active' : '' }}">{{ $teamUploadLabel }}</a>
                     @else
                         <a href="/{{ $slug }}/dashboard"
                             class="sub-item {{ request()->is($slug . '/dashboard') ? 'active' : '' }}">Dashboard</a>
                         <a href="/{{ $slug }}/downloadables"
                             class="sub-item {{ request()->is($slug . '/downloadables') ? 'active' : '' }}">Downloadables</a>
                         <a href="/{{ $slug }}/ia-resolutions"
-                            class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">Upload
-                            Files</a>
+                            class="sub-item {{ request()->is($slug . '/ia-resolutions') ? 'active' : '' }}">{{ $teamUploadLabel }}</a>
                     @endif
                 </div>
             @endforeach

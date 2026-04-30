@@ -2,11 +2,62 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Database\Eloquent\Model;
 
 class IaResolution extends Model
 {
     protected $fillable = ['title', 'file_path', 'original_name', 'status', 'team'];
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(IaResolutionFile::class)->latest();
+    }
+
+    public static function cleanedTitleFromFileName(string $originalName): string
+    {
+        $rawName = pathinfo($originalName, PATHINFO_FILENAME);
+
+        return ucwords(str_replace(['_', '-'], ' ', $rawName));
+    }
+
+    public static function attachUploadedFile(UploadedFile $file, string $team): self
+    {
+        $path = $file->store('resolutions', 'public');
+        $title = self::cleanedTitleFromFileName($file->getClientOriginalName());
+
+        $resolution = self::firstOrCreate(
+            [
+                'title' => $title,
+                'team' => $team,
+            ],
+            [
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'status' => self::STATUS_PENDING,
+            ]
+        );
+
+        $resolution->files()->create([
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+        ]);
+
+        $resolution->refreshPrimaryAttachment();
+
+        return $resolution->fresh('files');
+    }
+
+    public function refreshPrimaryAttachment(): void
+    {
+        $latestFile = $this->files()->latest()->first();
+
+        $this->forceFill([
+            'file_path' => $latestFile?->file_path,
+            'original_name' => $latestFile?->original_name,
+        ])->save();
+    }
 
     public const STATUS_PENDING = 'not-validated';
     public const STATUS_ONGOING = 'on-going';

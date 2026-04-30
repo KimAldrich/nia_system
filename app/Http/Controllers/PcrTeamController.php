@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
+use App\Models\IaResolutionFile;
 use App\Models\Downloadable;
 use App\Models\Event;
 use App\Services\SystemNotificationService;
@@ -106,8 +107,16 @@ class PcrTeamController extends Controller
 
     public function resolutions()
     {
-        $resolutions = IaResolution::where('team', 'pcr_team')->latest()->get();
-        return view('pcr_team.resolutions', compact('resolutions'));
+        $resolutions = IaResolution::with('files')->where('team', 'pcr_team')->latest()->get();
+        return view('shared.team-resolutions', [
+            'pageTitle' => 'Program Completion Report Files',
+            'headerTitle' => 'Program Completion Report Files',
+            'headerDesc' => 'Manage status entries and attached files for the Program Completion team.',
+            'teamRole' => 'pcr_team',
+            'uploadRouteName' => 'pcr.resolutions.upload',
+            'deleteRouteName' => 'pcr.resolutions.delete',
+            'resolutions' => $resolutions,
+        ]);
     }
 
     public function uploadForm(Request $request)
@@ -119,7 +128,6 @@ class PcrTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -136,7 +144,7 @@ class PcrTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
@@ -167,7 +175,7 @@ class PcrTeamController extends Controller
 
     public function updateForm(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
@@ -213,7 +221,6 @@ class PcrTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -230,19 +237,10 @@ class PcrTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
-            $path = $file->store('resolutions', 'public');
-            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-            IaResolution::create([
-                'title' => $cleanTitle,
-                'file_path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'team' => 'pcr_team'
-            ]);
+            IaResolution::attachUploadedFile($file, 'pcr_team');
         }
 
         $message = $files->count() === 1
@@ -261,7 +259,7 @@ class PcrTeamController extends Controller
 
     public function updateResolution(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
@@ -301,12 +299,11 @@ class PcrTeamController extends Controller
     // 9. Delete IA Resolution
     public function deleteResolution(Request $request, $id)
     {
-        $resolution = IaResolution::findOrFail($id);
-
-        // Delete file from storage
-        $deletedName = $resolution->original_name;
-        if (Storage::disk('public')->exists($resolution->file_path)) {
-            Storage::disk('public')->delete($resolution->file_path);
+        $resolutionFile = IaResolutionFile::with('resolution')->findOrFail($id);
+        $resolution = $resolutionFile->resolution;
+        $deletedName = $resolutionFile->original_name;
+        if (Storage::disk('public')->exists($resolutionFile->file_path)) {
+            Storage::disk('public')->delete($resolutionFile->file_path);
         }
 
         // Optional: role/team check (same as your comment)
@@ -314,10 +311,17 @@ class PcrTeamController extends Controller
         //     abort(403);
         // }
 
-        // Delete record from database
-        $resolution->delete();
+        $resolutionFile->delete();
 
-        $resolutionTeam = $resolution->team ?: 'pcr_team';
+        if ($resolution) {
+            if ($resolution->files()->exists()) {
+                $resolution->refreshPrimaryAttachment();
+            } else {
+                $resolution->delete();
+            }
+        }
+
+        $resolutionTeam = $resolution?->team ?: 'pcr_team';
         $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
         $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => $resolutionTeam, 'team_label' => $teamLabel]);

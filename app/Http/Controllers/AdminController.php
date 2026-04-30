@@ -329,13 +329,12 @@ class AdminController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
             'team.required' => 'Please select a team.',
             'team.in' => 'Please select a valid team.',
         ];
 
         $request->validate([
-            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
+            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx',
             'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
         ], $fileValidationMessages);
 
@@ -378,28 +377,17 @@ class AdminController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
             'team.required' => 'Please select a team.',
             'team.in' => 'Please select a valid team.',
         ];
 
         $request->validate([
-            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
+            'document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx',
             'team' => 'required|in:fs_team,rpwsis_team,cm_team,row_team,pcr_team,pao_team'
         ], $fileValidationMessages);
 
         $file = $request->file('document');
-        $path = $file->store('resolutions', 'public');
-
-        $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-        \App\Models\IaResolution::create([
-            'title' => $cleanTitle,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'team' => $request->team // 🔥 SAME LOGIC
-        ]);
+        \App\Models\IaResolution::attachUploadedFile($file, $request->team);
 
         $teamLabel = $this->notifications()->teamLabel($request->team);
         $actorLabel = $this->notifications()->actorLabel($request->user());

@@ -45,9 +45,41 @@
         .badge-outline { border: 1px solid #e4e4e7; color: #71717a; }
 
         .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 40px; line-height: 1; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1); }
+        .btn-delete-sm { padding: 4px 10px; font-size: 11px; border-radius: 6px; box-shadow: none;}
         .btn-delete:hover { background: #fecaca; color: #b91c1c; transform: translateY(-1px);}
         .btn-edit-icon { background: #e0e7ff; color: #4f46e5; border: none; min-width: 40px; height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12); flex-shrink: 0; white-space: nowrap; }
         .btn-edit-icon:hover { background: #c7d2fe; color: #3730a3; transform: translateY(-1px); }
+        .btn-view {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);
+}
+
+.btn-view:hover {
+    background: #bae6fd;
+    color: #0369a1;
+    transform: translateY(-1px);
+}
+
+.btn-view-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+    box-shadow: none;
+}
         .action-cell { text-align: center; white-space: nowrap !important; word-wrap: normal !important; overflow-wrap: normal !important; word-break: normal !important; }
         .action-buttons { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 5px; min-width: max-content; }
         .action-buttons form { display: inline-flex; margin: 0; }
@@ -208,15 +240,33 @@
                             <span style="display: block;">{{ $project->name_of_project }}</span>
                         </td>
                         <td>{{ $project->municipality }}</td>
-                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation ?: '-' }}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc ?: '-' }}</td>
+                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {!! $project->allocation !== null && $project->allocation !== '' ? '&#8369;' . number_format((float) $project->allocation, 2) : '-' !!}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {!! $project->abc !== null && $project->abc !== '' ? '&#8369;' . number_format((float) $project->abc, 2) : '-' !!}</td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Bid Out:</strong> {{ $project->bid_out ?: '0' }}<br><strong style="color:#1e293b;">For Bidding:</strong> {{ $project->for_bidding ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_bidding ?: '-' }}</span></td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Awarded:</strong> {{ $project->awarded ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_award ?: '-' }}</span></td>
                         
                         <td><span style="color:#64748b; font-size: 11px;">{{ $project->ca_date ?: '-' }}</span></td>
                         <td style="text-align: center;">
                             @if($project->ca_file)
-                                <a href="{{ asset('storage/' . $project->ca_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
-                            @else
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <a href="{{ asset('storage/' . $project->ca_file) }}" 
+   target="_blank" 
+   class="btn-view btn-view-sm">
+    View
+</a>
+
+        @if(auth()->check() && in_array(auth()->user()->role, ['cm_team','admin']))
+            <form action="{{ route('cm.procurement.delete_ca', $project->id) }}"
+                  method="POST"
+                  onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Delete CA file?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn-delete btn-delete-sm">
+    Delete
+</button>
+            </form>
+        @endif
+    </div>
+@else
                                 <span style="color: #a1a1aa; font-size: 11px;">-</span>
                             @endif
                         </td>
@@ -224,13 +274,31 @@
                         <td><span style="color:#64748b; font-size: 11px;">{{ $project->ntp_date ?: '-' }}</span></td>
                         <td style="text-align: center;">
                             @if($project->ntp_file)
-                                <a href="{{ asset('storage/' . $project->ntp_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
-                            @else
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <a href="{{ asset('storage/' . $project->ca_file) }}" 
+   target="_blank" 
+   class="btn-view btn-view-sm">
+    View
+</a>
+
+        @if(auth()->check() && in_array(auth()->user()->role, ['cm_team','admin']))
+            <form action="{{ route('cm.procurement.delete_ntp', $project->id) }}"
+                  method="POST"
+                  onsubmit="return handleAjaxSubmit(event, '#procurementSection', 'Delete NTP file?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn-delete btn-delete-sm">
+    Delete
+</button>
+            </form>
+        @endif
+    </div>
+@else
                                 <span style="color: #a1a1aa; font-size: 11px;">-</span>
                             @endif
                         </td>
 
-                        <td style="line-height: 1.8;"><strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br><span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount ?: '-' }}</td>
+                        <td style="line-height: 1.8;"><strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br><span style="color:#ea580c; font-weight:700;">Amt:</span> {!! $project->contract_amount !== null && $project->contract_amount !== '' ? '&#8369;' . number_format((float) $project->contract_amount, 2) : '-' !!}</td>
                         <td>{{ $project->name_of_contractor ?: '-' }}</td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->remarks }}</div></td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->project_description }}</div></td>
@@ -241,7 +309,27 @@
                                     type="button"
                                     class="btn-edit-icon"
                                     title="Edit Project"
-                                    onclick="openProcEditModal({{ $project->id }}, '{{ addslashes($project->name_of_project) }}', '{{ $project->category }}', '{{ $project->municipality }}', '{{ $project->allocation }}', '{{ $project->abc }}', '{{ $project->bid_out }}', '{{ $project->for_bidding }}', '{{ $project->date_of_bidding }}', '{{ $project->awarded }}', '{{ $project->date_of_award }}', '{{ $project->ca_date }}', '{{ $project->ntp_date }}', '{{ $project->contract_no }}', '{{ $project->contract_amount }}', '{{ addslashes($project->name_of_contractor) }}', '{{ addslashes($project->remarks) }}', '{{ addslashes($project->project_description) }}')">
+                                    onclick="openProcEditModal(
+    {{ $project->id }},
+    @js($project->proj_no),
+    @js($project->name_of_project),
+    @js($project->category),
+    @js($project->municipality),
+    @js($project->allocation),
+    @js($project->abc),
+    @js($project->bid_out),
+    @js($project->for_bidding),
+    @js($project->date_of_bidding),
+    @js($project->awarded),
+    @js($project->date_of_award),
+    @js($project->ca_date),
+    @js($project->ntp_date),
+    @js($project->contract_no),
+    @js($project->contract_amount),
+    @js($project->name_of_contractor),
+    @js($project->remarks),
+    @js($project->project_description)
+)">
                                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                     Edit
                                 </button>
@@ -389,7 +477,7 @@
                             @endforeach
                         </datalist>
                     </div>
-                    <div><label class="modern-label">Project No.</label><input type="text" id="edit-proc-proj_no" name="proj_no" class="modern-input" placeholder="e.g. 1" required maxlength="50" disabled></div>
+                    <div><label class="modern-label">Project No.</label><input type="text" id="edit-proc-proj_no" name="proj_no" class="modern-input" placeholder="e.g. 1" required maxlength="50" readonly></div>
                 </div>
                 
                 <div><label class="modern-label">Name of Project</label><input type="text" id="edit-proc-name" name="name_of_project" required class="modern-input" maxlength="1000"></div>
@@ -464,29 +552,42 @@
         function openProcAddModal() { document.getElementById('addProcModal').classList.add('active'); }
         function closeProcAddModal() { document.getElementById('addProcModal').classList.remove('active'); }
         
-        function openProcEditModal(id, name, category, municipality, allocation, abc, bid_out, for_bidding, date_bidding, awarded, date_award, ca_date, ntp_date, contract_no, contract_amount, contractor, remarks, description) {
-            document.getElementById('edit-proc-id').value = id;
-            document.getElementById('edit-proc-name').value = name;
-            document.getElementById('edit-proc-category').value = category;
-            document.getElementById('edit-proc-municipality').value = municipality;
-            document.getElementById('edit-proc-allocation').value = allocation;
-            document.getElementById('edit-proc-abc').value = abc;
-            document.getElementById('edit-proc-bid_out').value = bid_out;
-            document.getElementById('edit-proc-for_bidding').value = for_bidding;
-            document.getElementById('edit-proc-date_bidding').value = date_bidding;
-            document.getElementById('edit-proc-awarded').value = awarded;
-            document.getElementById('edit-proc-date_award').value = date_award;
-            
-            document.getElementById('edit-proc-ca_date').value = ca_date;
-            document.getElementById('edit-proc-ntp_date').value = ntp_date;
-            
-            document.getElementById('edit-proc-contract_no').value = contract_no;
-            document.getElementById('edit-proc-contract_amount').value = contract_amount;
-            document.getElementById('edit-proc-contractor').value = contractor;
-            document.getElementById('edit-proc-remarks').value = remarks;
-            document.getElementById('edit-proc-description').value = description;
-            document.getElementById('editProcModal').classList.add('active');
-        }
+        function openProcEditModal(
+    id, proj_no, name, category, municipality,
+    allocation, abc, bid_out, for_bidding,
+    date_bidding, awarded, date_award,
+    ca_date, ntp_date, contract_no, contract_amount,
+    contractor, remarks, description
+) {
+    document.getElementById('edit-proc-id').value = id;
+
+    document.getElementById('edit-proc-proj_no').value = proj_no; // ✅ FIX
+    document.getElementById('edit-proc-name').value = name;
+    document.getElementById('edit-proc-category').value = category;
+    document.getElementById('edit-proc-municipality').value = municipality;
+
+    document.getElementById('edit-proc-allocation').value = allocation; // ✅ FIX
+    document.getElementById('edit-proc-abc').value = abc; // ✅ FIX
+
+    document.getElementById('edit-proc-bid_out').value = bid_out;
+    document.getElementById('edit-proc-for_bidding').value = for_bidding;
+    document.getElementById('edit-proc-date_bidding').value = date_bidding;
+
+    document.getElementById('edit-proc-awarded').value = awarded;
+    document.getElementById('edit-proc-date_award').value = date_award;
+
+    document.getElementById('edit-proc-ca_date').value = ca_date;
+    document.getElementById('edit-proc-ntp_date').value = ntp_date;
+
+    document.getElementById('edit-proc-contract_no').value = contract_no;
+    document.getElementById('edit-proc-contract_amount').value = contract_amount;
+
+    document.getElementById('edit-proc-contractor').value = contractor;
+    document.getElementById('edit-proc-remarks').value = remarks;
+    document.getElementById('edit-proc-description').value = description;
+
+    document.getElementById('editProcModal').classList.add('active');
+}
         
         function closeProcEditModal() { document.getElementById('editProcModal').classList.remove('active'); }
         function closeCmSuccessModal() { document.getElementById('cmSuccessModal').classList.remove('active'); window.location.reload(); }

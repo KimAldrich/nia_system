@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use App\Http\Controllers\Concerns\HandlesAsyncRequests;
 use App\Models\IaResolution;
+use App\Models\IaResolutionFile;
 use App\Models\Downloadable;
 use App\Models\Event;
 use App\Services\SystemNotificationService;
@@ -109,8 +110,16 @@ class ContractManagementTeamController extends Controller
 
     public function resolutions()
     {
-        $resolutions = IaResolution::where('team', 'cm_team')->latest()->get();
-        return view('cm_team.resolutions', compact('resolutions'));
+        $resolutions = IaResolution::with('files')->where('team', 'cm_team')->latest()->get();
+        return view('shared.team-resolutions', [
+            'pageTitle' => 'Contract Management Files',
+            'headerTitle' => 'Contract Management Files',
+            'headerDesc' => 'Manage status entries and attached files for Contract Management.',
+            'teamRole' => 'cm_team',
+            'uploadRouteName' => 'cm.resolutions.upload',
+            'deleteRouteName' => 'cm.resolutions.delete',
+            'resolutions' => $resolutions,
+        ]);
     }
 
     public function uploadForm(Request $request)
@@ -122,7 +131,6 @@ class ContractManagementTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -139,7 +147,7 @@ class ContractManagementTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
             $path = $file->store('forms', 'public');
@@ -167,7 +175,7 @@ class ContractManagementTeamController extends Controller
 
     public function updateForm(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $downloadable = Downloadable::findOrFail($id);
         $file = $request->file('document');
 
@@ -211,7 +219,6 @@ class ContractManagementTeamController extends Controller
             'document.required' => 'Please select a file to upload.',
             'document.file' => 'Only document files are allowed.',
             'document.mimes' => 'Only document files are allowed. Please upload PDF, DOC, DOCX, XLS, or XLSX files only.',
-            'document.max' => 'Each file must not be larger than 5 MB.',
         ];
 
         $singleFile = $request->file('document');
@@ -228,19 +235,10 @@ class ContractManagementTeamController extends Controller
 
         foreach ($files as $file) {
             validator(['document' => $file], [
-                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:5120'],
+                'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
-            $path = $file->store('resolutions', 'public');
-            $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
-
-            IaResolution::create([
-                'title' => $cleanTitle,
-                'file_path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'team' => 'cm_team'
-            ]);
+            IaResolution::attachUploadedFile($file, 'cm_team');
         }
 
         $message = $files->count() === 1 ? 'Resolution uploaded successfully.' : "{$files->count()} resolutions uploaded successfully.";
@@ -256,7 +254,7 @@ class ContractManagementTeamController extends Controller
 
     public function updateResolution(Request $request, $id)
     {
-        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:pdf,doc,docx,xls,xlsx']);
         $resolution = IaResolution::findOrFail($id);
         $file = $request->file('document');
 
@@ -293,14 +291,22 @@ class ContractManagementTeamController extends Controller
 
     public function deleteResolution(Request $request, $id)
     {
-        $resolution = IaResolution::findOrFail($id);
-        $deletedName = $resolution->original_name;
-        if (Storage::disk('public')->exists($resolution->file_path)) {
-            Storage::disk('public')->delete($resolution->file_path);
+        $resolutionFile = IaResolutionFile::with('resolution')->findOrFail($id);
+        $resolution = $resolutionFile->resolution;
+        $deletedName = $resolutionFile->original_name;
+        if (Storage::disk('public')->exists($resolutionFile->file_path)) {
+            Storage::disk('public')->delete($resolutionFile->file_path);
         }
-        $resolution->delete();
+        $resolutionFile->delete();
 
-        $resolutionTeam = $resolution->team ?: 'cm_team';
+        $resolutionTeam = $resolution?->team ?: 'cm_team';
+        if ($resolution) {
+            if ($resolution->files()->exists()) {
+                $resolution->refreshPrimaryAttachment();
+            } else {
+                $resolution->delete();
+            }
+        }
         $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
         $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution removed', "{$actorLabel} removed {$deletedName} from {$teamLabel} IA resolutions.", ['type' => 'ia_resolution', 'team' => $resolutionTeam, 'team_label' => $teamLabel]);
@@ -325,9 +331,9 @@ class ContractManagementTeamController extends Controller
 
             // New CA and NTP Fields
             'ca_date' => ['nullable', 'date'],
-            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
             'ntp_date' => ['nullable', 'date'],
-            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
 
             'contract_no' => ['nullable', 'string', 'max:100'],
             'contract_amount' => ['nullable', 'numeric', 'min:0'],
@@ -365,9 +371,9 @@ class ContractManagementTeamController extends Controller
 
             // New CA and NTP Fields
             'ca_date' => ['nullable', 'date'],
-            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ca_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
             'ntp_date' => ['nullable', 'date'],
-            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'ntp_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png'],
 
             'contract_no' => ['nullable', 'string', 'max:100'],
             'contract_amount' => ['nullable', 'numeric', 'min:0'],
@@ -666,5 +672,31 @@ class ContractManagementTeamController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
+
+public function deleteCaFile(Request $request, $id)
+{
+    $project = ProcurementProject::findOrFail($id);
+
+    if ($project->ca_file && Storage::disk('public')->exists($project->ca_file)) {
+        Storage::disk('public')->delete($project->ca_file);
+    }
+
+    $project->update(['ca_file' => null]);
+
+    return $this->successResponse($request, 'Contract Agreement file deleted successfully.');
+}
+
+public function deleteNtpFile(Request $request, $id)
+{
+    $project = ProcurementProject::findOrFail($id);
+
+    if ($project->ntp_file && Storage::disk('public')->exists($project->ntp_file)) {
+        Storage::disk('public')->delete($project->ntp_file);
+    }
+
+    $project->update(['ntp_file' => null]);
+
+    return $this->successResponse($request, 'Notice to Proceed file deleted successfully.');
+}
 
 }

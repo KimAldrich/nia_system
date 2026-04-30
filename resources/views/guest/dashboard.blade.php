@@ -103,35 +103,6 @@
 
     <h1 class="header-title">{{ $pageTitle ?? 'Dashboard' }}</h1>
 
-    @if(isset($db_team) && $db_team === 'fs_team')
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-title">Total SPIP Projects</div>
-                <div class="kpi-value">{{ $totalProjects ?? 0 }}</div>
-                <div class="kpi-icon blue"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-text">Recorded in database</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Georesistivity Conducted</div>
-                <div class="kpi-value">{{ $conducted ?? 0 }}</div>
-                <div class="kpi-icon green"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-up">On Track</span><span class="trend-text">Successfully mapped</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Remaining Sites</div>
-                <div class="kpi-value">{{ $remaining ?? 0 }}</div>
-                <div class="kpi-icon orange"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-neutral">Pending</span><span class="trend-text">Awaiting schedule</span></div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Feasible Projects</div>
-                <div class="kpi-value">{{ $feasible ?? 0 }}</div>
-                <div class="kpi-icon purple"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                <div class="kpi-trend"><span class="trend-text">Validated as feasible</span></div>
-            </div>
-        </div>
-    @endif
-
     <div class="dashboard-grid">
         <div class="main-column">
             <div class="ui-card dark">
@@ -290,8 +261,8 @@
                                 <td>{{ $project->municipality }}</td><td>{{ $project->type_of_study }}</td>
                                 <td class="col-desc" style="min-width:180px;">{{ $project->consultant }}</td>
                                 <td style="min-width:150px; font-size:11px;"><strong style="color:#16a34a;">Start:</strong> {{ $project->period_start ?? '-' }}<br><strong style="color:#ef4444;">End:</strong> {{ $project->period_end ?? '-' }}</td>
-                                <td style="font-weight: 600; color: #1e293b;">{{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}</td><td style="font-weight: 600; color: #1e293b;">{{ $project->actual_obligation !== null && $project->actual_obligation !== '' ? number_format((float) $project->actual_obligation, 2) : '-' }}</td>
-                                <td style="font-weight: 600; color: #1e293b;">{{ $project->value_of_acc !== null && $project->value_of_acc !== '' ? number_format((float) $project->value_of_acc, 2) : '-' }}</td><td style="font-weight: 600; color: #1e293b;">{{ $project->actual_expenditures !== null && $project->actual_expenditures !== '' ? number_format((float) $project->actual_expenditures, 2) : '-' }}</td>
+                                <td style="font-weight: 600; color: #1e293b;">{!! $project->contract_amount !== null && $project->contract_amount !== '' ? '&#8369;' . number_format((float) $project->contract_amount, 2) : '-' !!}</td><td style="font-weight: 600; color: #1e293b;">{!! $project->actual_obligation !== null && $project->actual_obligation !== '' ? '&#8369;' . number_format((float) $project->actual_obligation, 2) : '-' !!}</td>
+                                <td style="font-weight: 600; color: #1e293b;">{!! $project->value_of_acc !== null && $project->value_of_acc !== '' ? '&#8369;' . number_format((float) $project->value_of_acc, 2) : '-' !!}</td><td style="font-weight: 600; color: #1e293b;">{!! $project->actual_expenditures !== null && $project->actual_expenditures !== '' ? '&#8369;' . number_format((float) $project->actual_expenditures, 2) : '-' !!}</td>
                                 <td style="background: #f8fafc; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
                                     @php $months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']; @endphp
                                     @foreach($months as $m)
@@ -565,7 +536,7 @@
                                 <td>{{ $r->nis }}</td>
                                 <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->activity }}</div></td>
                                 <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->remarks }}</div></td>
-                                <td>{{ $r->amount !== null && $r->amount !== '' ? number_format((float) $r->amount, 2) : '-' }}</td>
+                                <td>{!! $r->amount !== null && $r->amount !== '' ? '&#8369;' . number_format((float) $r->amount, 2) : '-' !!}</td>
                                 <td>{{ $r->c1 }}</td>
                                 <td>{{ $r->c2 }}</td>
                                 <td>{{ $r->c3 }}</td>
@@ -580,7 +551,7 @@
                                 <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->c12 }}</div></td>
                                 <td>{{ $r->phy }}</td>
                                 <td>{{ $r->fin }}</td>
-                                <td>{{ $r->exp !== null && $r->exp !== '' ? number_format((float) $r->exp, 2) : '-' }}</td>
+                                <td>{!! $r->exp !== null && $r->exp !== '' ? '&#8369;' . number_format((float) $r->exp, 2) : '-' !!}</td>
                             </tr>
                         @empty
                             <tr><td colspan="22" style="text-align:center; padding: 30px 0; color: #a0aec0;">No accomplishment data found.</td></tr>
@@ -960,8 +931,8 @@
                                 
                                 <td>{{ $project->municipality }}</td>
                                 <td style="line-height: 1.8;">
-                                    <span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation !== null && $project->allocation !== '' ? number_format((float) $project->allocation, 2) : '-' }}<br>
-                                    <span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc !== null && $project->abc !== '' ? number_format((float) $project->abc, 2) : '-' }}
+                                    <span style="color:#16a34a; font-weight:700;">Alloc:</span> {!! $project->allocation !== null && $project->allocation !== '' ? '&#8369;' . number_format((float) $project->allocation, 2) : '-' !!}<br>
+                                    <span style="color:#4f46e5; font-weight:700;">ABC:</span> {!! $project->abc !== null && $project->abc !== '' ? '&#8369;' . number_format((float) $project->abc, 2) : '-' !!}
                                 </td>
                                 <td style="line-height: 1.8; font-size: 11px;">
                                     <strong style="color:#1e293b;">Bid Out:</strong> {{ $project->bid_out ?: '0' }}<br>
@@ -974,7 +945,7 @@
                                 </td>
                                 <td style="line-height: 1.8;">
                                     <strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br>
-                                    <span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}
+                                    <span style="color:#ea580c; font-weight:700;">Amt:</span> {!! $project->contract_amount !== null && $project->contract_amount !== '' ? '&#8369;' . number_format((float) $project->contract_amount, 2) : '-' !!}
                                 </td>
                                 <td>{{ $project->name_of_contractor ?: '-' }}</td>
                                 <td class="col-desc">
