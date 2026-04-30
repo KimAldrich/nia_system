@@ -32,7 +32,7 @@ class GuestController extends Controller
             'pcr_team' => 'Program Completion',
             'cm_team' => 'Contract Management',
             'row_team' => 'Right of Way',
-            'rpwsis_team' => 'RPWSIS',
+            'rpwsis_team' => 'Social and Environmental',
             default => ucwords(str_replace('_', ' ', $dbTeam)),
         };
     }
@@ -482,7 +482,9 @@ class GuestController extends Controller
 
         $resolutions = IaResolution::where('team', $db_team)->latest()->get();
         $teamLabel = $this->teamDisplayLabel($db_team);
-        $pageTitle = "{$teamLabel} IA Resolutions";
+        $pageTitle = $db_team === 'fs_team'
+            ? "{$teamLabel} IA Resolutions"
+            : "{$teamLabel} Files";
 
         return view('guest.resolutions', compact('resolutions', 'pageTitle', 'teamLabel'));
     }

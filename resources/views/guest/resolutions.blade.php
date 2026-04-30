@@ -158,7 +158,7 @@
     </style>
 
     <h1 class="header-title">{{ $pageTitle }}</h1>
-    <p class="header-desc">Browse official {{ $teamLabel ?? 'team' }} resolutions. Files are view-only on the guest side.</p>
+    <p class="header-desc">Browse official {{ $teamLabel ?? 'team' }} files. Files are view-only on the guest side.</p>
 
     <div class="ui-card">
         <div class="table-responsive">

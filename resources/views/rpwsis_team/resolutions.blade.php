@@ -1,11 +1,10 @@
 @extends('layouts.app')
-@section('title', 'IA Resolutions')
+@section('title', 'Social and Environmental Files')
 
 @section('sidebar')
     <a href="{{ route('rpwsis.dashboard') }}">Dashboard</a>
     <a href="{{ route('rpwsis.downloadables') }}">Downloadables</a>
-    <a href="{{ route('rpwsis.resolutions') }}" style="background:rgba(255,255,255,0.1); border-left-color:white;">IA
-        Resolutions</a>
+    <a href="{{ route('rpwsis.resolutions') }}" style="background:rgba(255,255,255,0.1); border-left-color:white;">Social and Environmental Files</a>
 @endsection
 
 @section('content')
