@@ -1124,8 +1124,10 @@
                                     if ($index === 6) {
                                         $colClass = 'col-amount';
                                     }
+                                    $displayPrefix = '';
                                     if (in_array($index, [6, 21], true) && $value !== null && $value !== '') {
-                                        $displayValue = '&#8369;' . number_format((float) $value, 2);
+                                        $displayPrefix = '&#8369;';
+                                        $displayValue = number_format((float) $value, 2);
                                     }
                                 @endphp
                                 <td class="{{ $index >= 7 && $index <= 18 ? 'impl ' : '' }}{{ $colClass }} status-compact-cell"
@@ -1135,9 +1137,11 @@
                                             (mb_strlen((string) $displayValue) <= 28 ? ' is-expanded' : '') .
                                             '">' .
                                             '<div class="expandable-preview">' .
+                                            $displayPrefix .
                                             e(\Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', (string) $displayValue), 28)) .
                                             '</div>' .
                                             '<div class="expandable-full">' .
+                                            $displayPrefix .
                                             nl2br(e($displayValue)) .
                                             '</div>' .
                                             (mb_strlen((string) $displayValue) > 28
@@ -1959,7 +1963,7 @@
             const number = Number(text.replace(/,/g, ''));
             if (!Number.isFinite(number)) return text;
 
-            return new Intl.NumberFormat('en-US', {
+            return '\u20B1' + new Intl.NumberFormat('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             }).format(number);
