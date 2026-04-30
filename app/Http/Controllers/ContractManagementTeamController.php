@@ -292,13 +292,15 @@ class ContractManagementTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
-        $previousStatus = $resolution->status ?: 'no status';
-        $resolution->update(['status' => $request->status]);
-
         $resolutionTeam = $resolution->team ?: 'cm_team';
+        $previousStatus = $resolution->status ?: 'no status';
+        $updatedStatus = IaResolution::normalizeStatusForTeam($request->status, $resolutionTeam);
+        $resolution->update(['status' => $updatedStatus]);
         $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => $resolutionTeam, 'team_label' => $teamLabel, 'status' => $request->status]);
+        $previousStatusLabel = IaResolution::displayStatusLabel($previousStatus, $resolutionTeam);
+        $updatedStatusLabel = IaResolution::displayStatusLabel($updatedStatus, $resolutionTeam);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatusLabel} to {$updatedStatusLabel}.", ['type' => 'ia_resolution_status', 'team' => $resolutionTeam, 'team_label' => $teamLabel, 'status' => $updatedStatus]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
