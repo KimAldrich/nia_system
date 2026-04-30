@@ -155,22 +155,7 @@
                 ])
             </div>
 
-            <div class="ui-card">
-                <div class="section-title">
-                    Analytics
-                    <span style="font-size: 12px; color: #a1a1aa; font-weight: 500;">Project Status</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity</p>
-                        <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
-                    </div>
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate</p>
-                        <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+            @include('partials.team-analytics-card', ['analytics' => $analytics ?? []])
         </div>
 
         <div class="side-column">
@@ -305,8 +290,8 @@
                                 <td>{{ $project->municipality }}</td><td>{{ $project->type_of_study }}</td>
                                 <td class="col-desc" style="min-width:180px;">{{ $project->consultant }}</td>
                                 <td style="min-width:150px; font-size:11px;"><strong style="color:#16a34a;">Start:</strong> {{ $project->period_start ?? '-' }}<br><strong style="color:#ef4444;">End:</strong> {{ $project->period_end ?? '-' }}</td>
-                                <td style="font-weight: 600; color: #1e293b;">{{ $project->contract_amount ?? '-' }}</td><td style="font-weight: 600; color: #1e293b;">{{ $project->actual_obligation ?? '-' }}</td>
-                                <td style="font-weight: 600; color: #1e293b;">{{ $project->value_of_acc ?? '-' }}</td><td style="font-weight: 600; color: #1e293b;">{{ $project->actual_expenditures ?? '-' }}</td>
+                                <td style="font-weight: 600; color: #1e293b;">{{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}</td><td style="font-weight: 600; color: #1e293b;">{{ $project->actual_obligation !== null && $project->actual_obligation !== '' ? number_format((float) $project->actual_obligation, 2) : '-' }}</td>
+                                <td style="font-weight: 600; color: #1e293b;">{{ $project->value_of_acc !== null && $project->value_of_acc !== '' ? number_format((float) $project->value_of_acc, 2) : '-' }}</td><td style="font-weight: 600; color: #1e293b;">{{ $project->actual_expenditures !== null && $project->actual_expenditures !== '' ? number_format((float) $project->actual_expenditures, 2) : '-' }}</td>
                                 <td style="background: #f8fafc; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
                                     @php $months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']; @endphp
                                     @foreach($months as $m)
@@ -580,7 +565,7 @@
                                 <td>{{ $r->nis }}</td>
                                 <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->activity }}</div></td>
                                 <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->remarks }}</div></td>
-                                <td>{{ $r->amount }}</td>
+                                <td>{{ $r->amount !== null && $r->amount !== '' ? number_format((float) $r->amount, 2) : '-' }}</td>
                                 <td>{{ $r->c1 }}</td>
                                 <td>{{ $r->c2 }}</td>
                                 <td>{{ $r->c3 }}</td>
@@ -595,7 +580,7 @@
                                 <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')">{{ $r->c12 }}</div></td>
                                 <td>{{ $r->phy }}</td>
                                 <td>{{ $r->fin }}</td>
-                                <td>{{ $r->exp }}</td>
+                                <td>{{ $r->exp !== null && $r->exp !== '' ? number_format((float) $r->exp, 2) : '-' }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="22" style="text-align:center; padding: 30px 0; color: #a0aec0;">No accomplishment data found.</td></tr>
@@ -975,8 +960,8 @@
                                 
                                 <td>{{ $project->municipality }}</td>
                                 <td style="line-height: 1.8;">
-                                    <span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation ?: '-' }}<br>
-                                    <span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc ?: '-' }}
+                                    <span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation !== null && $project->allocation !== '' ? number_format((float) $project->allocation, 2) : '-' }}<br>
+                                    <span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc !== null && $project->abc !== '' ? number_format((float) $project->abc, 2) : '-' }}
                                 </td>
                                 <td style="line-height: 1.8; font-size: 11px;">
                                     <strong style="color:#1e293b;">Bid Out:</strong> {{ $project->bid_out ?: '0' }}<br>
@@ -989,7 +974,7 @@
                                 </td>
                                 <td style="line-height: 1.8;">
                                     <strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br>
-                                    <span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount ?: '-' }}
+                                    <span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}
                                 </td>
                                 <td>{{ $project->name_of_contractor ?: '-' }}</td>
                                 <td class="col-desc">
@@ -1032,24 +1017,7 @@
 
     <script>
         // 🌟 1. CHART RENDERER 🌟
-        document.addEventListener('DOMContentLoaded', function() {
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-            Chart.defaults.color = '#a1a1aa';
-
-            const ctxBar = document.getElementById('barChart').getContext('2d');
-            new Chart(ctxBar, {
-                type: 'bar',
-                data: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], datasets: [{ label: 'Uploads', data: [5, 12, 8, 15], backgroundColor: '#0c4d05', borderRadius: 6, barPercentage: 0.5 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f4f4f5' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
-            });
-
-            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-            new Chart(ctxDoughnut, {
-                type: 'doughnut',
-                data: { labels: ['Validated', 'On-Going', 'Pending'], datasets: [{ data: [45, 30, 25], backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'], borderColor: '#e4e4e7', borderWidth: 2, hoverOffset: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, padding: 20 } } } }
-            });
-        });
+        @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
 
         // 🌟 2. CALENDAR RENDERER 🌟
         let activeMonth = new Date().getMonth() + 1;

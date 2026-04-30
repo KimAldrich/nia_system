@@ -4,6 +4,8 @@
     $weeklyUploadsTotal = $analytics['weeklyUploadsTotal'] ?? 0;
     $completionRate = $analytics['completionRate'] ?? 0;
     $validatedCount = $analytics['validatedCount'] ?? 0;
+    $completedLabel = $analytics['completedLabel'] ?? 'Completed';
+    $pendingLabel = $analytics['pendingLabel'] ?? 'Pending';
     $ongoingCount = $analytics['ongoingCount'] ?? 0;
     $notValidatedCount = $analytics['pendingCount'] ?? 0;
     $monthRangeLabel = $analytics['monthRangeLabel'] ?? '';
@@ -33,11 +35,11 @@
             <div style="font-size: 22px; font-weight: 700; color: #92400e; margin-top: 2px;">{{ $ongoingCount }}</div>
         </div>
         <div style="padding: 10px 14px; border-radius: 14px; background: #ecfdf5; border: 1px solid #bbf7d0; min-width: 160px;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #15803d;">Validated</div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #15803d;">{{ $completedLabel }}</div>
             <div style="font-size: 22px; font-weight: 700; color: #166534; margin-top: 2px;">{{ $validatedCount }}</div>
         </div>
         <div style="padding: 10px 14px; border-radius: 14px; background: #fff7ed; border: 1px solid #fed7aa; min-width: 160px;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #c2410c;">Not Validated</div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #c2410c;">{{ $pendingLabel }}</div>
             <div style="font-size: 22px; font-weight: 700; color: #7c2d12; margin-top: 2px;">{{ $notValidatedCount }}</div>
         </div>
     </div>

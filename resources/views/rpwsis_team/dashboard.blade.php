@@ -1114,6 +1114,7 @@
                             @foreach ($statusValues as $index => $value)
                                 @php
                                     $colClass = 'col-standard';
+                                    $displayValue = $value;
                                     if ($index === 4) {
                                         $colClass = 'col-activity';
                                     }
@@ -1123,20 +1124,23 @@
                                     if ($index === 6) {
                                         $colClass = 'col-amount';
                                     }
+                                    if (in_array($index, [6, 21], true) && $value !== null && $value !== '') {
+                                        $displayValue = number_format((float) $value, 2);
+                                    }
                                 @endphp
                                 <td class="{{ $index >= 7 && $index <= 18 ? 'impl ' : '' }}{{ $colClass }} status-compact-cell"
                                     data-export-value="{{ $value }}">
-                                    {!! !empty($value)
+                                    {!! !empty($displayValue)
                                         ? '<div class="expandable-cell' .
-                                            (mb_strlen((string) $value) <= 28 ? ' is-expanded' : '') .
+                                            (mb_strlen((string) $displayValue) <= 28 ? ' is-expanded' : '') .
                                             '">' .
                                             '<div class="expandable-preview">' .
-                                            e(\Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', (string) $value), 28)) .
+                                            e(\Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', (string) $displayValue), 28)) .
                                             '</div>' .
                                             '<div class="expandable-full">' .
-                                            nl2br(e($value)) .
+                                            nl2br(e($displayValue)) .
                                             '</div>' .
-                                            (mb_strlen((string) $value) > 28
+                                            (mb_strlen((string) $displayValue) > 28
                                                 ? '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>'
                                                 : '') .
                                             '</div>'
@@ -1948,7 +1952,20 @@
             `;
         }
 
-        function renderStatusExpandableCell(value, extraClass = '') {
+        function formatMoneyValue(value) {
+            const text = String(value ?? '').trim();
+            if (!text) return '';
+
+            const number = Number(text.replace(/,/g, ''));
+            if (!Number.isFinite(number)) return text;
+
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(number);
+        }
+
+        function renderStatusExpandableCell(value, extraClass = '', exportRawValue = value) {
             const text = String(value ?? '').trim();
             const className = extraClass ? ` class="${extraClass}"` : '';
             if (!text) return `<td${className}>-</td>`;
@@ -1962,7 +1979,7 @@
             const expandedClass = normalizedText.length <= previewLimit ? ' is-expanded' : '';
             const toggleButton = normalizedText.length > previewLimit ?
                 '<button type="button" class="expand-toggle" onclick="toggleSummaryCell(this)">Show more</button>' : '';
-            const exportValue = escapeSummaryHtml(text);
+            const exportValue = escapeSummaryHtml(String(exportRawValue ?? '').trim());
 
             return `<td${className} data-export-value="${exportValue}">
                 <div class="expandable-cell${expandedClass}">
@@ -2428,7 +2445,8 @@
                 if (index === 5 || (index >= 14 && index <= 18)) colClass = 'col-remarks';
                 if (index === 6) colClass = 'col-amount';
                 const className = `${(index >= 7 && index <= 18) ? 'impl ' : ''}${colClass} status-compact-cell`.trim();
-                return renderStatusExpandableCell(value, className);
+                const displayValue = [6, 21].includes(index) ? formatMoneyValue(value) : value;
+                return renderStatusExpandableCell(displayValue, className, value);
             }).join('');
 
             return `<tr data-record="${serializeRecord(record)}">${renderedCells}${renderActionButtons('Accomplishment', record.id)}</tr>`;

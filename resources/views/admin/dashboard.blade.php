@@ -164,7 +164,7 @@
 
     <div class="kpi-grid">
         <div class="kpi-card">
-            <div class="kpi-title">Total Validated</div>
+            <div class="kpi-title">Total Completed</div>
             <div class="kpi-value">{{ $validatedResolutions }}</div>
             <div class="kpi-icon green">
                 <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
