@@ -142,6 +142,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             HydroGeoProjectSeeder::class,
             FsdeProjectSeeder::class,
+            RpwsisAccomplishmentSeeder::class,
+            RpwsisAccomplishmentSummarySeeder::class,
+            RpwsisNurseryEstablishmentSeeder::class,
+            RpwsisSignageSeeder::class,
+            RpwsisInfrastructureSeeder::class,
             ProcurementProjectSeeder::class,
             PcrStatusReportSeeder::class,
             PaoPowDataSeeder::class,
