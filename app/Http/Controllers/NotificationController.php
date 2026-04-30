@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SystemNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,8 +13,9 @@ class NotificationController extends Controller
         $user = $request->user();
 
         $notifications = $user->notifications()
-            ->latest()
-            ->limit(20)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(SystemNotificationService::MAX_NOTIFICATIONS)
             ->get()
             ->map(function ($notification) {
                 return [

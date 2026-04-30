@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\SystemNotificationService;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,8 +33,9 @@ class AppServiceProvider extends ServiceProvider
                 $summary = [
                     'enabled' => true,
                     'notifications' => $user->notifications()
-                        ->latest()
-                        ->limit(8)
+                        ->orderByDesc('created_at')
+                        ->orderByDesc('id')
+                        ->limit(SystemNotificationService::MAX_NOTIFICATIONS)
                         ->get()
                         ->map(function ($notification) {
                             return [

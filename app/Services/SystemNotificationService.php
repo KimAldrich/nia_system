@@ -5,10 +5,13 @@ namespace App\Services;
 use App\Models\User;
 use App\Notifications\SystemActivityNotification;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Notification;
 
 class SystemNotificationService
 {
+    public const MAX_NOTIFICATIONS = 100;
+
     private const TEAM_LABELS = [
         'admin' => 'Admin',
         'all' => 'All Teams',
@@ -99,5 +102,36 @@ class SystemNotificationService
             'actor_role_label' => $this->teamLabel($actor->role),
             'created_at' => now()->toIso8601String(),
         ] + $context));
+
+        $this->pruneRecipientsToLatestLimit($recipients);
+    }
+
+    private function pruneRecipientsToLatestLimit(Collection $recipients): void
+    {
+        $recipients->each(function (User $recipient): void {
+            $totalNotifications = $recipient->notifications()->count();
+            $excessNotifications = $totalNotifications - self::MAX_NOTIFICATIONS;
+
+            if ($excessNotifications <= 0) {
+                return;
+            }
+
+            $notificationIdsToDelete = $recipient->notifications()
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->skip(self::MAX_NOTIFICATIONS)
+                ->take($excessNotifications)
+                ->pluck('id');
+
+            if ($notificationIdsToDelete->isEmpty()) {
+                return;
+            }
+
+            DatabaseNotification::query()
+                ->where('notifiable_type', User::class)
+                ->where('notifiable_id', $recipient->getKey())
+                ->whereIn('id', $notificationIdsToDelete)
+                ->delete();
+        });
     }
 }
