@@ -395,8 +395,12 @@ input:checked + .slider:before {
     transform: translateY(-3px) scale(1.02);
 }
 
+
+
 /* INFO PANEL */
-.info-panel { position: fixed; /* 🔥 CHANGE from absolute */ top: 0; right: -400px; width: 250px; height: 100vh; background: #81717187; box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53); z-index: 10000 !important; /* 🔥 STRONGER than everything */ transition: right 0.3s ease; display: flex; flex-direction: column; }
+.info-panel { position: fixed;
+top: 0; right: -400px; width: 250px; height: 100vh; background: #81717187; box-shadow: -4px 0 10px rgba(150, 133, 133, 0.53); z-index: 10000 !important;
+ transition: right 0.3s ease; display: flex; flex-direction: column; }
 
 .info-panel.active {
     right: 0;
@@ -443,7 +447,7 @@ input:checked + .slider:before {
     text-align: center;
 }
 #legendContainer {
-    margin-top: 5px; /* reduce gap */
+    margin-top: 5px;
     text-align: left;
 }
 
@@ -1313,6 +1317,7 @@ async function loadBaseMap() {
                     fillOpacity: 0.75
                 });
 
+
                 if (layer.bringToFront) {
                     layer.bringToFront();
                 }
@@ -1947,7 +1952,7 @@ if (form) {
             if (response.ok && result.files.length > 0) {
                 statusBoxUpload.style.display = 'none';
                 statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
-                
+
                 if (typeof openAsyncSuccessModal === 'function') {
                     openAsyncSuccessModal(
                         '#appFeedbackModal',
