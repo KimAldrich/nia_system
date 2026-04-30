@@ -240,7 +240,7 @@
                             <span style="display: block;">{{ $project->name_of_project }}</span>
                         </td>
                         <td>{{ $project->municipality }}</td>
-                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation ?: '-' }}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc ?: '-' }}</td>
+                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation !== null && $project->allocation !== '' ? number_format((float) $project->allocation, 2) : '-' }}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc !== null && $project->abc !== '' ? number_format((float) $project->abc, 2) : '-' }}</td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Bid Out:</strong> {{ $project->bid_out ?: '0' }}<br><strong style="color:#1e293b;">For Bidding:</strong> {{ $project->for_bidding ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_bidding ?: '-' }}</span></td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Awarded:</strong> {{ $project->awarded ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_award ?: '-' }}</span></td>
                         
@@ -298,7 +298,7 @@
                             @endif
                         </td>
 
-                        <td style="line-height: 1.8;"><strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br><span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount ?: '-' }}</td>
+                        <td style="line-height: 1.8;"><strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br><span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}</td>
                         <td>{{ $project->name_of_contractor ?: '-' }}</td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->remarks }}</div></td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->project_description }}</div></td>
@@ -309,25 +309,27 @@
                                     type="button"
                                     class="btn-edit-icon"
                                     title="Edit Project"
-                                    onclick="openProcEditModal({{ $project->id }},
-    '{{ addslashes($project->proj_no) }}',
-    '{{ addslashes($project->name_of_project) }}',
-    '{{ $project->category }}',
-    '{{ $project->municipality }}',
-    '{{ $project->allocation }}',
-    '{{ $project->abc }}',
-    '{{ $project->bid_out }}',
-    '{{ $project->for_bidding }}',
-    '{{ $project->date_of_bidding }}',
-    '{{ $project->awarded }}',
-    '{{ $project->date_of_award }}',
-    '{{ $project->ca_date }}',
-    '{{ $project->ntp_date }}',
-    '{{ $project->contract_no }}',
-    '{{ $project->contract_amount }}',
-    '{{ addslashes($project->name_of_contractor) }}',
-    '{{ addslashes($project->remarks) }}',
-    '{{ addslashes($project->project_description) }}')">
+                                    onclick="openProcEditModal(
+    {{ $project->id }},
+    @js($project->proj_no),
+    @js($project->name_of_project),
+    @js($project->category),
+    @js($project->municipality),
+    @js($project->allocation),
+    @js($project->abc),
+    @js($project->bid_out),
+    @js($project->for_bidding),
+    @js($project->date_of_bidding),
+    @js($project->awarded),
+    @js($project->date_of_award),
+    @js($project->ca_date),
+    @js($project->ntp_date),
+    @js($project->contract_no),
+    @js($project->contract_amount),
+    @js($project->name_of_contractor),
+    @js($project->remarks),
+    @js($project->project_description)
+)">
                                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                     Edit
                                 </button>
