@@ -149,9 +149,9 @@
                 </button>
             @endif
             
-<a href="{{ route('cm.procurement.export', request()->query()) }}" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
-</a>
+            <a href="{{ route('cm.procurement.export', request()->query()) }}" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
+            </a>
         </div>
     </div>
 
@@ -175,21 +175,27 @@
     ])
     
     <div class="table-responsive" id="procurementTableContainer">
-        <table class="sleek-table" id="procTable" style="min-width: 1700px;">
+        <table class="sleek-table" id="procTable" style="min-width: 2200px;">
             <thead>
                 <tr>
-                    <th style="width: 4%;">No.</th>
-                    <th style="width: 16%;">Project Name</th>
-                    <th style="width: 10%;">Municipality</th>
-                    <th style="width: 14%;">Allocation / ABC</th>
-                    <th style="width: 10%;">Bidding Info</th>
-                    <th style="width: 10%;">Award Info</th>
-                    <th style="width: 13%;">Contract Info</th>
+                    <th style="width: 3%;">No.</th>
+                    <th style="width: 14%;">Project Name</th>
+                    <th style="width: 8%;">Municipality</th>
+                    <th style="width: 10%;">Allocation / ABC</th>
+                    <th style="width: 9%;">Bidding Info</th>
+                    <th style="width: 9%;">Award Info</th>
+                    
+                    <th style="width: 6%;">Contract Agreement Date</th>
+                    <th style="width: 6%; text-align: center;">Contract Agreement File</th>
+                    <th style="width: 6%;">Notice to Proceed Date</th>
+                    <th style="width: 5%; text-align: center;">Notice to Proceed File</th>
+                    
+                    <th style="width: 9%;">Contract Info</th>
                     <th style="width: 8%;">Contractor</th>
                     <th style="width: 8%;">Remarks</th>
-                    <th style="width: 15%;">Description</th>
+                    <th style="width: 10%;">Description</th>
                     @if (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin']))
-                        <th style="text-align: center; width: 7%;">Action</th>
+                        <th style="text-align: center; width: 6%;">Action</th>
                     @endif
                 </tr>
             </thead>
@@ -202,10 +208,29 @@
                             <span style="display: block;">{{ $project->name_of_project }}</span>
                         </td>
                         <td>{{ $project->municipality }}</td>
-                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation !== null && $project->allocation !== '' ? number_format((float) $project->allocation, 2) : '-' }}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc !== null && $project->abc !== '' ? number_format((float) $project->abc, 2) : '-' }}</td>
+                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation ?: '-' }}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc ?: '-' }}</td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Bid Out:</strong> {{ $project->bid_out ?: '0' }}<br><strong style="color:#1e293b;">For Bidding:</strong> {{ $project->for_bidding ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_bidding ?: '-' }}</span></td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Awarded:</strong> {{ $project->awarded ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_award ?: '-' }}</span></td>
-                        <td style="line-height: 1.8;"><strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br><span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}</td>
+                        
+                        <td><span style="color:#64748b; font-size: 11px;">{{ $project->ca_date ?: '-' }}</span></td>
+                        <td style="text-align: center;">
+                            @if($project->ca_file)
+                                <a href="{{ asset('storage/' . $project->ca_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
+                            @else
+                                <span style="color: #a1a1aa; font-size: 11px;">-</span>
+                            @endif
+                        </td>
+                        
+                        <td><span style="color:#64748b; font-size: 11px;">{{ $project->ntp_date ?: '-' }}</span></td>
+                        <td style="text-align: center;">
+                            @if($project->ntp_file)
+                                <a href="{{ asset('storage/' . $project->ntp_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
+                            @else
+                                <span style="color: #a1a1aa; font-size: 11px;">-</span>
+                            @endif
+                        </td>
+
+                        <td style="line-height: 1.8;"><strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br><span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount ?: '-' }}</td>
                         <td>{{ $project->name_of_contractor ?: '-' }}</td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->remarks }}</div></td>
                         <td class="col-desc"><div class="text-clamp" onclick="this.classList.toggle('expanded')" title="Click to expand">{{ $project->project_description }}</div></td>
@@ -216,7 +241,7 @@
                                     type="button"
                                     class="btn-edit-icon"
                                     title="Edit Project"
-                                    onclick="openProcEditModal({{ $project->id }}, '{{ addslashes($project->name_of_project) }}', '{{ $project->category }}', '{{ $project->municipality }}', '{{ $project->allocation }}', '{{ $project->abc }}', '{{ $project->bid_out }}', '{{ $project->for_bidding }}', '{{ $project->date_of_bidding }}', '{{ $project->awarded }}', '{{ $project->date_of_award }}', '{{ $project->contract_no }}', '{{ $project->contract_amount }}', '{{ addslashes($project->name_of_contractor) }}', '{{ addslashes($project->remarks) }}', '{{ addslashes($project->project_description) }}')">
+                                    onclick="openProcEditModal({{ $project->id }}, '{{ addslashes($project->name_of_project) }}', '{{ $project->category }}', '{{ $project->municipality }}', '{{ $project->allocation }}', '{{ $project->abc }}', '{{ $project->bid_out }}', '{{ $project->for_bidding }}', '{{ $project->date_of_bidding }}', '{{ $project->awarded }}', '{{ $project->date_of_award }}', '{{ $project->ca_date }}', '{{ $project->ntp_date }}', '{{ $project->contract_no }}', '{{ $project->contract_amount }}', '{{ addslashes($project->name_of_contractor) }}', '{{ addslashes($project->remarks) }}', '{{ addslashes($project->project_description) }}')">
                                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a2 2 0 01-.878.513L8 16l.951-3.658A2 2 0 019.464 11.46z"></path></svg>
                                     Edit
                                 </button>
@@ -232,7 +257,7 @@
                         @endif
                     </tr>
                 @empty
-                    <tr><td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin'])) ? '11' : '10' }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No Procurement records found.</td></tr>
+                    <tr><td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin'])) ? '15' : '14' }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No Procurement records found.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -261,7 +286,7 @@
         <div class="modal-box" style="max-width: 600px;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Add Procurement Data</h3>
             
-            <form action="{{ route('cm.procurement.store') }}" method="POST" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#addProcModal')">
+            <form action="{{ route('cm.procurement.store') }}" method="POST" enctype="multipart/form-data" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#addProcModal')">
                 @csrf
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
@@ -318,6 +343,16 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Contract Agreement Date</label><input type="date" name="ca_date" class="modern-input"></div>
+                    <div><label class="modern-label">Upload CA File (PDF, etc.)</label><input type="file" name="ca_file" class="modern-input" style="padding: 7px; background: #fff;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Notice to Proceed Date</label><input type="date" name="ntp_date" class="modern-input"></div>
+                    <div><label class="modern-label">Upload NTP File (PDF, etc.)</label><input type="file" name="ntp_file" class="modern-input" style="padding: 7px; background: #fff;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Contract No.</label><input type="text" name="contract_no" class="modern-input" maxlength="100"></div>
                     <div><label class="modern-label">Contract Amount</label><input type="number" name="contract_amount" class="modern-input" min="0" step="0.01"></div>
                 </div>
@@ -336,10 +371,10 @@
     </div>
 
     <div class="modal-overlay" id="editProcModal">
-        <div class="modal-box" style="max-width: 600px;">
+        <div class="modal-box" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
             <h3 style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 20px;">Edit Procurement Data</h3>
             
-            <form action="{{ route('cm.procurement.update') }}" method="POST" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#editProcModal')">
+            <form action="{{ route('cm.procurement.update') }}" method="POST" enctype="multipart/form-data" data-async-success-modal="#cmSuccessModal" onsubmit="return handleAjaxSubmit(event, '#procurementSection', null, true, '#editProcModal')">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="id" id="edit-proc-id">
@@ -381,6 +416,16 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Contract Agreement Date</label><input type="date" id="edit-proc-ca_date" name="ca_date" class="modern-input"></div>
+                    <div><label class="modern-label">Replace CA File (Optional)</label><input type="file" name="ca_file" class="modern-input" style="padding: 7px; background: #fff;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><label class="modern-label">Notice to Proceed Date</label><input type="date" id="edit-proc-ntp_date" name="ntp_date" class="modern-input"></div>
+                    <div><label class="modern-label">Replace NTP File (Optional)</label><input type="file" name="ntp_file" class="modern-input" style="padding: 7px; background: #fff;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div><label class="modern-label">Contract No.</label><input type="text" id="edit-proc-contract_no" name="contract_no" class="modern-input" maxlength="100"></div>
                     <div><label class="modern-label">Contract Amount</label><input type="number" id="edit-proc-contract_amount" name="contract_amount" class="modern-input" min="0" step="0.01"></div>
                 </div>
@@ -418,7 +463,8 @@
         function updateCalendarView() { document.querySelectorAll('.month-block').forEach(block => { block.classList.remove('active'); }); const current = document.getElementById('month-' + activeMonth); if (current) current.classList.add('active'); document.getElementById('prevMonthBtn').disabled = (activeMonth === 1); document.getElementById('nextMonthBtn').disabled = (activeMonth === 12); }
         function openProcAddModal() { document.getElementById('addProcModal').classList.add('active'); }
         function closeProcAddModal() { document.getElementById('addProcModal').classList.remove('active'); }
-        function openProcEditModal(id, name, category, municipality, allocation, abc, bid_out, for_bidding, date_bidding, awarded, date_award, contract_no, contract_amount, contractor, remarks, description) {
+        
+        function openProcEditModal(id, name, category, municipality, allocation, abc, bid_out, for_bidding, date_bidding, awarded, date_award, ca_date, ntp_date, contract_no, contract_amount, contractor, remarks, description) {
             document.getElementById('edit-proc-id').value = id;
             document.getElementById('edit-proc-name').value = name;
             document.getElementById('edit-proc-category').value = category;
@@ -430,6 +476,10 @@
             document.getElementById('edit-proc-date_bidding').value = date_bidding;
             document.getElementById('edit-proc-awarded').value = awarded;
             document.getElementById('edit-proc-date_award').value = date_award;
+            
+            document.getElementById('edit-proc-ca_date').value = ca_date;
+            document.getElementById('edit-proc-ntp_date').value = ntp_date;
+            
             document.getElementById('edit-proc-contract_no').value = contract_no;
             document.getElementById('edit-proc-contract_amount').value = contract_amount;
             document.getElementById('edit-proc-contractor').value = contractor;
@@ -437,190 +487,204 @@
             document.getElementById('edit-proc-description').value = description;
             document.getElementById('editProcModal').classList.add('active');
         }
+        
         function closeProcEditModal() { document.getElementById('editProcModal').classList.remove('active'); }
-        function closeCmSuccessModal() { document.getElementById('cmSuccessModal').classList.remove('active'); }
+        function closeCmSuccessModal() { document.getElementById('cmSuccessModal').classList.remove('active'); window.location.reload(); }
 
-        // 🌟 NEW: SMART EXCEL EXPORTER THAT FORMATS PERFECTLY 🌟
-// 🌟 SMART EXCEL EXPORTER THAT FORMATS PERFECTLY & GRABS ALL DATA 🌟
-const rawExportData = @json($procExportData ?? []);
+        async function handleAjaxSubmit(event, targetContainerId, confirmMessage = null, isModal = false, modalId = null) {
+            event.preventDefault(); 
+            if (confirmMessage && !confirm(confirmMessage)) return false; 
 
-function exportToExcel() {
-    if (rawExportData.length === 0) {
-        alert("No data available to export.");
-        return;
-    }
+            const form = event.target;
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            let originalBtnText = "";
 
-    const formatDateForTitle = (date) => date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+            if (submitBtn) {
+                originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = 'Processing...';
+                submitBtn.disabled = true;
+            } else {
+                form.style.opacity = '0.5';
+            }
 
-    const formatSheetDate = (value) => {
-        if (!value) {
-            return '';
+            try {
+                const response = await fetch(form.action, {
+                    method: form.method || 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (response.status === 422) {
+                    const data = await response.json();
+                    let errorMessages = [];
+                    for (const key in data.errors) {
+                        errorMessages.push(data.errors[key].join('\n'));
+                    }
+                    alert("Validation Error:\n" + errorMessages.join('\n'));
+                    return false;
+                }
+
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const data = await response.json();
+                    
+                    if (modalId) {
+                        document.querySelector(modalId).classList.remove('active');
+                    }
+
+                    const successModalId = form.getAttribute('data-async-success-modal');
+                    if (successModalId) {
+                        const successModal = document.querySelector(successModalId);
+                        if (successModal) {
+                            successModal.classList.add('active');
+                            const msgEl = successModal.querySelector('[data-success-message]');
+                            if (msgEl) msgEl.innerText = data.message || "Saved successfully.";
+                            form.reset();
+                            return false;
+                        }
+                    }
+                    
+                    window.location.reload(); 
+                    return false;
+                }
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                const newContent = doc.querySelector(targetContainerId);
+                const targetContainer = document.querySelector(targetContainerId);
+                
+                if (newContent && targetContainer) {
+                    targetContainer.innerHTML = newContent.innerHTML;
+                }
+
+                if (modalId) {
+                    document.querySelector(modalId).classList.remove('active');
+                    form.reset(); 
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("An error occurred while saving data. Check console for details.");
+            } finally {
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                } else {
+                    form.style.opacity = '1';
+                }
+            }
+            return false;
         }
 
-        const parsed = new Date(value);
-        if (Number.isNaN(parsed.getTime())) {
-            return value;
+        // 🌟 JS FALLBACK EXPORTER 🌟
+        const rawExportData = @json($procExportData ?? []);
+
+        function exportToExcel() {
+            if (rawExportData.length === 0) {
+                alert("No data available to export.");
+                return;
+            }
+
+            const formatDateForTitle = (date) => date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const formatSheetDate = (value) => {
+                if (!value) return '';
+                const parsed = new Date(value);
+                if (Number.isNaN(parsed.getTime())) return value;
+                return parsed.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            };
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const today = new Date();
+            const selectedCategory = urlParams.get('proc_category');
+            const currentYear = today.getFullYear();
+            const titleDate = formatDateForTitle(today);
+
+            const groupedRows = rawExportData.reduce((groups, row) => {
+                const key = row.category || 'Uncategorized';
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(row);
+                return groups;
+            }, {});
+
+            const orderedCategories = Object.keys(groupedRows).sort((a, b) => a.localeCompare(b));
+            const sheetData = [
+                ['STATUS OF PROCUREMENT AND CONTRACT - PANGASINAN IRRIGATION MANAGEMENT OFFICE'],
+                [`CY ${currentYear} PROJECTS`],
+                [`as of ${titleDate}`],
+                [
+                    'No. of Proj.', 'Name of Project', 'Municipality', 'Allocation and ABC', '', 'BID-OUT', 'For Bidding', 'Date of Bidding', 'AWARDED', 'Date of Award', 'CA Date', 'CA File', 'NTP Date', 'NTP File', 'Contract No.', 'Contract Amount', 'Name of Contractor', 'Remarks', 'Project Description'
+                ],
+                [
+                    '', '', '', `FY ${currentYear} (Allocation)`, 'Approved Budget of the Contract', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+                ],
+                new Array(19).fill(''),
+                ['PANGASINAN IMO']
+            ];
+
+            orderedCategories.forEach((category) => {
+                sheetData.push([category]);
+                groupedRows[category].forEach((row) => {
+                    sheetData.push([
+                        row.proj_no || '', row.name_of_project || '', row.municipality || '', row.allocation || '', row.abc || '', row.bid_out || '', row.for_bidding || '', formatSheetDate(row.date_of_bidding), row.awarded || '', formatSheetDate(row.date_of_award), formatSheetDate(row.ca_date), row.ca_file ? 'Attached' : 'None', formatSheetDate(row.ntp_date), row.ntp_file ? 'Attached' : 'None', row.contract_no || '', row.contract_amount || '', row.name_of_contractor || '', row.remarks || '', row.project_description || ''
+                    ]);
+                });
+            });
+
+            const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+            worksheet['!cols'] = [
+                { wch: 12 }, { wch: 42 }, { wch: 20 }, { wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 12 }, { wch: 18 }, { wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 55 }
+            ];
+
+            worksheet['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 18 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 18 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 18 } },
+                { s: { r: 3, c: 3 }, e: { r: 3, c: 4 } },
+                { s: { r: 3, c: 0 }, e: { r: 5, c: 0 } },
+                { s: { r: 3, c: 1 }, e: { r: 5, c: 1 } },
+                { s: { r: 3, c: 2 }, e: { r: 5, c: 2 } },
+                { s: { r: 4, c: 3 }, e: { r: 5, c: 3 } },
+                { s: { r: 4, c: 4 }, e: { r: 5, c: 4 } },
+                { s: { r: 3, c: 5 }, e: { r: 5, c: 5 } },
+                { s: { r: 3, c: 6 }, e: { r: 5, c: 6 } },
+                { s: { r: 3, c: 7 }, e: { r: 5, c: 7 } },
+                { s: { r: 3, c: 8 }, e: { r: 5, c: 8 } },
+                { s: { r: 3, c: 9 }, e: { r: 5, c: 9 } },
+                { s: { r: 3, c: 10 }, e: { r: 5, c: 10 } },
+                { s: { r: 3, c: 11 }, e: { r: 5, c: 11 } },
+                { s: { r: 3, c: 12 }, e: { r: 5, c: 12 } }, 
+                { s: { r: 3, c: 13 }, e: { r: 5, c: 13 } },
+                { s: { r: 3, c: 14 }, e: { r: 5, c: 14 } },
+                { s: { r: 3, c: 15 }, e: { r: 5, c: 15 } },
+                { s: { r: 3, c: 16 }, e: { r: 5, c: 16 } },
+                { s: { r: 3, c: 17 }, e: { r: 5, c: 17 } },
+                { s: { r: 3, c: 18 }, e: { r: 5, c: 18 } },
+                { s: { r: 6, c: 0 }, e: { r: 6, c: 18 } }
+            ];
+
+            let currentRowIndex = 7;
+            orderedCategories.forEach((category) => {
+                const categoryStartIndex = currentRowIndex;
+                worksheet['!merges'].push({ s: { r: categoryStartIndex, c: 0 }, e: { r: categoryStartIndex, c: 18 } });
+                currentRowIndex += groupedRows[category].length + 1;
+            });
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+            let filename = `Procurement Status as of ${titleDate}`;
+            if (selectedCategory && selectedCategory !== 'All Projects') {
+                filename += "_" + selectedCategory.replace(/[^a-z0-9]/gi, '_');
+            }
+            filename += ".xlsx";
+
+            XLSX.writeFile(workbook, filename);
         }
-
-        return parsed.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const today = new Date();
-    const selectedCategory = urlParams.get('proc_category');
-    const currentYear = today.getFullYear();
-    const titleDate = formatDateForTitle(today);
-
-    const groupedRows = rawExportData.reduce((groups, row) => {
-        const key = row.category || 'Uncategorized';
-        if (!groups[key]) {
-            groups[key] = [];
-        }
-
-        groups[key].push(row);
-        return groups;
-    }, {});
-
-    const orderedCategories = Object.keys(groupedRows).sort((a, b) => a.localeCompare(b));
-    const sheetData = [
-        ['STATUS OF PROCUREMENT AND CONTRACT - PANGASINAN IRRIGATION MANAGEMENT OFFICE'],
-        [`CY ${currentYear} PROJECTS`],
-        [`as of ${titleDate}`],
-        [
-            'No. of Proj.',
-            'Name of Project',
-            'Municipality',
-            'Allocation and ABC',
-            '',
-            'BID-OUT',
-            'For Bidding',
-            'Date of Bidding',
-            'AWARDED',
-            'Date of Award',
-            'Contract No.',
-            'Contract Amount',
-            'Name of Contractor',
-            'Remarks',
-            'Project Description'
-        ],
-        [
-            '',
-            '',
-            '',
-            `FY ${currentYear} (Allocation)`,
-            'Approved Budget of the Contract',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            ''
-        ],
-        new Array(15).fill(''),
-        ['PANGASINAN IMO']
-    ];
-
-    orderedCategories.forEach((category) => {
-        sheetData.push([category]);
-
-        groupedRows[category].forEach((row) => {
-            sheetData.push([
-                row.proj_no || '',
-                row.name_of_project || '',
-                row.municipality || '',
-                row.allocation || '',
-                row.abc || '',
-                row.bid_out || '',
-                row.for_bidding || '',
-                formatSheetDate(row.date_of_bidding),
-                row.awarded || '',
-                formatSheetDate(row.date_of_award),
-                row.contract_no || '',
-                row.contract_amount || '',
-                row.name_of_contractor || '',
-                row.remarks || '',
-                row.project_description || ''
-            ]);
-        });
-    });
-
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-
-    worksheet['!cols'] = [
-        { wch: 12 },
-        { wch: 42 },
-        { wch: 20 },
-        { wch: 18 },
-        { wch: 24 },
-        { wch: 10 },
-        { wch: 12 },
-        { wch: 18 },
-        { wch: 10 },
-        { wch: 18 },
-        { wch: 20 },
-        { wch: 18 },
-        { wch: 28 },
-        { wch: 22 },
-        { wch: 55 }
-    ];
-
-    worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } },
-        { s: { r: 3, c: 3 }, e: { r: 3, c: 4 } },
-        { s: { r: 3, c: 0 }, e: { r: 5, c: 0 } },
-        { s: { r: 3, c: 1 }, e: { r: 5, c: 1 } },
-        { s: { r: 3, c: 2 }, e: { r: 5, c: 2 } },
-        { s: { r: 4, c: 3 }, e: { r: 5, c: 3 } },
-        { s: { r: 4, c: 4 }, e: { r: 5, c: 4 } },
-        { s: { r: 3, c: 5 }, e: { r: 5, c: 5 } },
-        { s: { r: 3, c: 6 }, e: { r: 5, c: 6 } },
-        { s: { r: 3, c: 7 }, e: { r: 5, c: 7 } },
-        { s: { r: 3, c: 8 }, e: { r: 5, c: 8 } },
-        { s: { r: 3, c: 9 }, e: { r: 5, c: 9 } },
-        { s: { r: 3, c: 10 }, e: { r: 5, c: 10 } },
-        { s: { r: 3, c: 11 }, e: { r: 5, c: 11 } },
-        { s: { r: 3, c: 12 }, e: { r: 5, c: 12 } },
-        { s: { r: 3, c: 13 }, e: { r: 5, c: 13 } },
-        { s: { r: 3, c: 14 }, e: { r: 5, c: 14 } },
-        { s: { r: 6, c: 0 }, e: { r: 6, c: 14 } }
-    ];
-
-    let currentRowIndex = 7;
-    orderedCategories.forEach((category) => {
-        const categoryStartIndex = currentRowIndex;
-        worksheet['!merges'].push({
-            s: { r: categoryStartIndex, c: 0 },
-            e: { r: categoryStartIndex, c: 14 }
-        });
-
-        currentRowIndex += groupedRows[category].length + 1;
-    });
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-
-    let filename = `Procurement Status as of ${titleDate}`;
-
-    if (selectedCategory && selectedCategory !== 'All Projects') {
-        filename += "_" + selectedCategory.replace(/[^a-z0-9]/gi, '_');
-    }
-    filename += ".xlsx";
-
-    XLSX.writeFile(workbook, filename);
-}
     </script>
 @endsection

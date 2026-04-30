@@ -56,8 +56,12 @@ class AdminController extends Controller
     {
         $users = User::all();
         $this->checkAdmin();
-        $validatedResolutions = IaResolution::where('status', 'validated')->count();
-        $pendingResolutions = IaResolution::whereIn('status', ['on-going', 'not-validated'])->count();
+        $validatedResolutions = IaResolution::whereIn('status', ['validated', 'accomplished'])->count();
+        $pendingResolutions = IaResolution::where(function ($query) {
+            $query->where('status', 'on-going')
+                ->orWhere('status', 'not-validated')
+                ->orWhereNull('status');
+        })->count();
         $resolutions = IaResolution::latest()->paginate(5, ['*'], 'active_projects_page')->withQueryString();
 
         $eventTagFilter = trim((string) $request->query('event_tag', ''));

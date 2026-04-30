@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\BuildsResolutionAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Downloadable;
@@ -21,6 +22,8 @@ use App\Models\RpwsisInfrastructure;
 
 class GuestController extends Controller
 {
+    use BuildsResolutionAnalytics;
+
     // 1. Process the 1-Click Guest Login
     public function authenticate(Request $request)
     {
@@ -93,8 +96,9 @@ class GuestController extends Controller
             ->paginate(5, ['*'], 'events_page')
             ->withQueryString();
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics();
 
-        return view('guest.dashboard', compact('downloadables', 'resolutions', 'events', 'paginatedEvents', 'categories'));
+        return view('guest.dashboard', compact('downloadables', 'resolutions', 'events', 'paginatedEvents', 'categories', 'analytics'));
     }
 
     // 5. Secure Logout
@@ -125,7 +129,8 @@ class GuestController extends Controller
         $pageTitle = ($teamTitles[$db_team] ?? strtoupper(str_replace('_', ' ', $db_team))) . ' Dashboard';
 
         // 🌟 1. Fetch the exact same data the Teams see!
-        $resolutions = IaResolution::orderBy('created_at', 'desc')
+        $resolutions = IaResolution::where('team', $db_team)
+            ->orderBy('created_at', 'desc')
             ->paginate(8, ['*'], 'active_projects_page')
             ->withQueryString();
         $events = Event::with('category')
@@ -150,6 +155,7 @@ class GuestController extends Controller
             ->paginate(5, ['*'], 'events_page')
             ->withQueryString();
         $categories = EventCategory::all();
+        $analytics = $this->buildResolutionAnalytics($db_team);
 
         // 🌟 2. Set default empty variables
         $totalProjects = $conducted = $remaining = $feasible = 0;
@@ -405,6 +411,7 @@ class GuestController extends Controller
             'events',
             'paginatedEvents',
             'categories',
+            'analytics',
             'pageTitle',
             'db_team',
             'totalProjects',

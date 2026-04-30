@@ -155,22 +155,7 @@
                 ])
             </div>
 
-            <div class="ui-card">
-                <div class="section-title">
-                    Analytics
-                    <span style="font-size: 12px; color: #a1a1aa; font-weight: 500;">Project Status</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Upload Activity</p>
-                        <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
-                    </div>
-                    <div>
-                        <p style="font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #71717a;">Completion Rate</p>
-                        <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+            @include('partials.team-analytics-card', ['analytics' => $analytics ?? []])
         </div>
 
         <div class="side-column">
@@ -1032,24 +1017,7 @@
 
     <script>
         // 🌟 1. CHART RENDERER 🌟
-        document.addEventListener('DOMContentLoaded', function() {
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-            Chart.defaults.color = '#a1a1aa';
-
-            const ctxBar = document.getElementById('barChart').getContext('2d');
-            new Chart(ctxBar, {
-                type: 'bar',
-                data: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], datasets: [{ label: 'Uploads', data: [5, 12, 8, 15], backgroundColor: '#0c4d05', borderRadius: 6, barPercentage: 0.5 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f4f4f5' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }
-            });
-
-            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-            new Chart(ctxDoughnut, {
-                type: 'doughnut',
-                data: { labels: ['Validated', 'On-Going', 'Pending'], datasets: [{ data: [45, 30, 25], backgroundColor: ['#0c4d05', '#fda611', '#e1e1ef'], borderColor: '#e4e4e7', borderWidth: 2, hoverOffset: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, padding: 20 } } } }
-            });
-        });
+        @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
 
         // 🌟 2. CALENDAR RENDERER 🌟
         let activeMonth = new Date().getMonth() + 1;

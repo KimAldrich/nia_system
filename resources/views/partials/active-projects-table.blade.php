@@ -185,18 +185,26 @@
             </thead>
             <tbody>
                 @forelse($resolutions as $res)
+                    @php
+                        $statusTeam = $statusTeam ?? null;
+                        $resolutionTeam = $statusTeam ?: $res->team;
+                        $completedStatusValue = \App\Models\IaResolution::completedStatusValueForTeam($resolutionTeam);
+                        $completedStatusLabel = \App\Models\IaResolution::completedStatusLabelForTeam($resolutionTeam);
+                        $pendingStatusLabel = \App\Models\IaResolution::pendingStatusLabelForTeam($resolutionTeam);
+                        $statusLabel = \App\Models\IaResolution::displayStatusLabel($res->status, $resolutionTeam);
+                    @endphp
                     <tr>
                         <td>
                             <span class="active-project-title">{{ $res->title }}</span>
                             <span class="active-project-date">{{ $res->created_at->format('M d, Y') }}</span>
                         </td>
                         <td>
-                            @if ($res->status == 'validated')
-                                <span class="status-badge badge-dark">Validated</span>
-                            @elseif($res->status == 'on-going')
+                            @if (\App\Models\IaResolution::isCompletedStatus($res->status))
+                                <span class="status-badge badge-dark">{{ $statusLabel }}</span>
+                            @elseif($res->status == \App\Models\IaResolution::STATUS_ONGOING)
                                 <span class="status-badge badge-light">On-Going</span>
                             @else
-                                <span class="status-badge badge-outline">Not-Validated</span>
+                                <span class="status-badge badge-outline">{{ $pendingStatusLabel }}</span>
                             @endif
                         </td>
                         @if ($editable && $updateRouteName)
@@ -206,14 +214,14 @@
                                     data-async-reload="true">
                                     @csrf
                                     <select name="status" class="status-select" data-auto-submit>
-                                        <option value="not-validated" {{ $res->status == 'not-validated' ? 'selected' : '' }}>
-                                            Not-Validated
+                                        <option value="{{ \App\Models\IaResolution::STATUS_PENDING }}" {{ $res->status == \App\Models\IaResolution::STATUS_PENDING ? 'selected' : '' }}>
+                                            {{ $pendingStatusLabel }}
                                         </option>
-                                        <option value="on-going" {{ $res->status == 'on-going' ? 'selected' : '' }}>
+                                        <option value="{{ \App\Models\IaResolution::STATUS_ONGOING }}" {{ $res->status == \App\Models\IaResolution::STATUS_ONGOING ? 'selected' : '' }}>
                                             On-Going
                                         </option>
-                                        <option value="validated" {{ $res->status == 'validated' ? 'selected' : '' }}>
-                                            Validated
+                                        <option value="{{ $completedStatusValue }}" {{ \App\Models\IaResolution::normalizeStatusForTeam($res->status, $resolutionTeam) == $completedStatusValue ? 'selected' : '' }}>
+                                            {{ $completedStatusLabel }}
                                         </option>
                                     </select>
                                 </form>

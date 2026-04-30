@@ -45,12 +45,15 @@
                         </span>
                     </td>
                     <td>
-                        @if ($res->status == 'validated')
-                            <span class="badge badge-completed" style="padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #d1fae5; color: #059669;">Validated</span>
-                        @elseif($res->status == 'on-going')
+                        @php
+                            $statusLabel = \App\Models\IaResolution::displayStatusLabel($res->status, $res->team);
+                        @endphp
+                        @if (\App\Models\IaResolution::isCompletedStatus($res->status))
+                            <span class="badge badge-completed" style="padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #d1fae5; color: #059669;">{{ $statusLabel }}</span>
+                        @elseif($res->status == \App\Models\IaResolution::STATUS_ONGOING)
                             <span class="badge badge-progress" style="padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #dbeafe; color: #2563eb;">On-Going</span>
                         @else
-                            <span class="badge badge-pending" style="padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #fef3c7; color: #d97706;">Not-Validated</span>
+                            <span class="badge badge-pending" style="padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #fef3c7; color: #d97706;">{{ $statusLabel }}</span>
                         @endif
                     </td>
                     <td style="color: #64748b; font-size: 13px;">{{ $res->created_at->format('M d, Y') }}</td>

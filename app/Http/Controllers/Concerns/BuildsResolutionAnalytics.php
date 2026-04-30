@@ -59,18 +59,20 @@ trait BuildsResolutionAnalytics
 
         $statusCounts = (clone $baseQuery)
             ->selectRaw("
-                SUM(CASE WHEN status = 'validated' THEN 1 ELSE 0 END) as validated_count,
+                SUM(CASE WHEN status IN ('validated', 'accomplished') THEN 1 ELSE 0 END) as completed_count,
                 SUM(CASE WHEN status = 'on-going' THEN 1 ELSE 0 END) as ongoing_count,
-                SUM(CASE WHEN status IS NULL OR status NOT IN ('validated', 'on-going') THEN 1 ELSE 0 END) as pending_count,
+                SUM(CASE WHEN status IS NULL OR status NOT IN ('validated', 'accomplished', 'on-going') THEN 1 ELSE 0 END) as pending_count,
                 COUNT(*) as total_count
             ")
             ->first();
 
-        $validatedCount = (int) ($statusCounts->validated_count ?? 0);
+        $completedCount = (int) ($statusCounts->completed_count ?? 0);
         $ongoingCount = (int) ($statusCounts->ongoing_count ?? 0);
         $pendingCount = (int) ($statusCounts->pending_count ?? 0);
         $totalCount = (int) ($statusCounts->total_count ?? 0);
-        $completionRate = $totalCount > 0 ? round(($validatedCount / $totalCount) * 100, 1) : 0;
+        $completionRate = $totalCount > 0 ? round(($completedCount / $totalCount) * 100, 1) : 0;
+        $completedLabel = $team === 'fs_team' ? 'Validated' : ($team === null ? 'Completed' : 'Accomplished');
+        $pendingLabel = $team === 'fs_team' ? 'Not Validated' : ($team === null ? 'Pending' : 'Not Accomplished');
 
         return [
             'monthlyLabels' => $monthlyLabels,
@@ -79,9 +81,12 @@ trait BuildsResolutionAnalytics
             'weeklyLabels' => $weeklyLabels,
             'weeklyUploads' => $weeklyUploads,
             'weeklyUploadsTotal' => array_sum($weeklyUploads),
-            'statusLabels' => ['Validated', 'On-Going', 'Pending'],
-            'statusValues' => [$validatedCount, $ongoingCount, $pendingCount],
-            'validatedCount' => $validatedCount,
+            'statusLabels' => [$completedLabel, 'On-Going', 'Pending'],
+            'statusValues' => [$completedCount, $ongoingCount, $pendingCount],
+            'validatedCount' => $completedCount,
+            'completedCount' => $completedCount,
+            'completedLabel' => $completedLabel,
+            'pendingLabel' => $pendingLabel,
             'ongoingCount' => $ongoingCount,
             'pendingCount' => $pendingCount,
             'totalActivities' => $totalCount,
