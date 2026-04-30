@@ -115,7 +115,6 @@ class ContractManagementTeamController extends Controller
 
     public function uploadForm(Request $request)
     {
-        // ... (Keep existing implementation) ...
         $fileValidationMessages = [
             'documents.required' => 'Please select at least one file to upload.',
             'documents.array' => 'Please upload valid files only.',
@@ -205,7 +204,6 @@ class ContractManagementTeamController extends Controller
 
     public function uploadResolution(Request $request)
     {
-        // ... (Keep existing implementation) ...
         $fileValidationMessages = [
             'documents.required' => 'Please select at least one file to upload.',
             'documents.array' => 'Please upload valid files only.',
@@ -282,15 +280,13 @@ class ContractManagementTeamController extends Controller
     {
         $request->validate(['status' => 'required|string']);
         $resolution = IaResolution::findOrFail($id);
-        $resolutionTeam = $resolution->team ?: 'cm_team';
         $previousStatus = $resolution->status ?: 'no status';
-        $updatedStatus = IaResolution::normalizeStatusForTeam($request->status, $resolutionTeam);
-        $resolution->update(['status' => $updatedStatus]);
+        $resolution->update(['status' => $request->status]);
+
+        $resolutionTeam = $resolution->team ?: 'cm_team';
         $teamLabel = $this->notifications()->teamLabel($resolutionTeam);
         $actorLabel = $this->notifications()->actorLabel($request->user());
-        $previousStatusLabel = IaResolution::displayStatusLabel($previousStatus, $resolutionTeam);
-        $updatedStatusLabel = IaResolution::displayStatusLabel($updatedStatus, $resolutionTeam);
-        $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatusLabel} to {$updatedStatusLabel}.", ['type' => 'ia_resolution_status', 'team' => $resolutionTeam, 'team_label' => $teamLabel, 'status' => $updatedStatus]);
+        $this->notifications()->notifyTeamAndAdmins($request->user(), $resolutionTeam, 'IA resolution status changed', "{$actorLabel} changed the status of {$resolution->title} in {$teamLabel} from {$previousStatus} to {$request->status}.", ['type' => 'ia_resolution_status', 'team' => $resolutionTeam, 'team_label' => $teamLabel, 'status' => $request->status]);
 
         return $this->successResponse($request, 'Resolution status updated successfully.');
     }
@@ -312,7 +308,6 @@ class ContractManagementTeamController extends Controller
         return $this->successResponse($request, 'Resolution deleted successfully.');
     }
 
-    // 🌟 UPDATED: Store Procurement handling new fields & file uploads 🌟
     public function storeProcurement(Request $request)
     {
         $validated = $request->validate([
@@ -341,7 +336,6 @@ class ContractManagementTeamController extends Controller
             'project_description' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        // Handle File Uploads
         if ($request->hasFile('ca_file')) {
             $validated['ca_file'] = $request->file('ca_file')->store('procurement_files', 'public');
         }
@@ -354,7 +348,6 @@ class ContractManagementTeamController extends Controller
         return $this->successResponse($request, 'Added successfully.');
     }
 
-    // 🌟 UPDATED: Update Procurement handling old file deletion & new file uploads 🌟
     public function updateProcurement(Request $request)
     {
         $validated = $request->validate([
@@ -385,7 +378,6 @@ class ContractManagementTeamController extends Controller
 
         $project = ProcurementProject::findOrFail($validated['id']);
 
-        // Handle File Replacements
         if ($request->hasFile('ca_file')) {
             if ($project->ca_file && Storage::disk('public')->exists($project->ca_file)) {
                 Storage::disk('public')->delete($project->ca_file);
@@ -405,12 +397,10 @@ class ContractManagementTeamController extends Controller
         return $this->successResponse($request, 'Updated successfully.');
     }
 
-    // 🌟 UPDATED: Delete Procurement handling file cleanup 🌟
     public function destroyProcurement(Request $request, $id)
     {
         $project = ProcurementProject::findOrFail($id);
 
-        // Clean up associated files
         if ($project->ca_file && Storage::disk('public')->exists($project->ca_file)) {
             Storage::disk('public')->delete($project->ca_file);
         }
@@ -422,7 +412,7 @@ class ContractManagementTeamController extends Controller
         return $this->successResponse($request, 'Project deleted!');
     }
 
-    // 🌟 UPDATED: Excel Export handling new fields 🌟
+    // 🌟 SEPARATED EXCEL COLUMNS FOR DATE AND FILE 🌟
     public function exportProcurementExcel(Request $request): StreamedResponse
     {
         $query = ProcurementProject::query();
@@ -476,7 +466,7 @@ class ContractManagementTeamController extends Controller
             ->setFitToWidth(1)
             ->setFitToHeight(0);
 
-        // Adjusting columns for the 2 new fields (now goes up to Q)
+        // Adjusting columns for the 4 separated fields (now goes up to S)
         foreach ([
             'A' => 12,
             'B' => 38,
@@ -489,29 +479,31 @@ class ContractManagementTeamController extends Controller
             'I' => 10,
             'J' => 18,
             'K' => 18,
-            'L' => 18,
-            'M' => 20,
-            'N' => 22,
-            'O' => 28,
-            'P' => 22,
-            'Q' => 55,
+            'L' => 15,
+            'M' => 18,
+            'N' => 15,
+            'O' => 20,
+            'P' => 18,
+            'Q' => 28,
+            'R' => 22,
+            'S' => 55,
         ] as $column => $width) {
             $sheet->getColumnDimension($column)->setWidth($width);
         }
 
-        $sheet->mergeCells('A1:Q1');
-        $sheet->mergeCells('A2:Q2');
-        $sheet->mergeCells('A3:Q3');
+        $sheet->mergeCells('A1:S1');
+        $sheet->mergeCells('A2:S2');
+        $sheet->mergeCells('A3:S3');
         $sheet->mergeCells('D4:E4');
         $sheet->mergeCells('A4:A6');
         $sheet->mergeCells('B4:B6');
         $sheet->mergeCells('C4:C6');
         $sheet->mergeCells('D5:D6');
         $sheet->mergeCells('E5:E6');
-        foreach (range('F', 'Q') as $column) {
+        foreach (range('F', 'S') as $column) {
             $sheet->mergeCells("{$column}4:{$column}6");
         }
-        $sheet->mergeCells('A7:Q7');
+        $sheet->mergeCells('A7:S7');
 
         $sheet->setCellValue('A1', 'STATUS OF PROCUREMENT AND CONTRACT - PANGASINAN IRRIGATION MANAGEMENT OFFICE');
         $sheet->setCellValue('A2', 'CY ' . now()->format('Y') . ' PROJECTS');
@@ -528,17 +520,19 @@ class ContractManagementTeamController extends Controller
         $sheet->setCellValue('H4', 'Date of Bidding');
         $sheet->setCellValue('I4', 'AWARDED');
         $sheet->setCellValue('J4', 'Date of Award');
-        $sheet->setCellValue('K4', 'Contract Agreement');
-        $sheet->setCellValue('L4', 'Notice to Proceed');
-        $sheet->setCellValue('M4', 'Contract No.');
-        $sheet->setCellValue('N4', 'Contract Amount');
-        $sheet->setCellValue('O4', 'Name of Contractor');
-        $sheet->setCellValue('P4', 'Remarks');
-        $sheet->setCellValue('Q4', 'Project Description');
+        $sheet->setCellValue('K4', 'Contract Agreement Date');
+        $sheet->setCellValue('L4', 'Contract Agreement File');
+        $sheet->setCellValue('M4', 'Notice to Proceed Date');
+        $sheet->setCellValue('N4', 'Notice to Proceed File');
+        $sheet->setCellValue('O4', 'Contract No.');
+        $sheet->setCellValue('P4', 'Contract Amount');
+        $sheet->setCellValue('Q4', 'Name of Contractor');
+        $sheet->setCellValue('R4', 'Remarks');
+        $sheet->setCellValue('S4', 'Project Description');
 
         $sheet->setCellValue('A7', 'PANGASINAN IMO');
 
-        $sheet->getStyle('A1:Q3')->applyFromArray([
+        $sheet->getStyle('A1:S3')->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'bold' => true,
@@ -558,7 +552,7 @@ class ContractManagementTeamController extends Controller
         $sheet->getStyle('A2')->getFont()->setSize(11);
         $sheet->getStyle('A3')->getFont()->setSize(10)->setItalic(true);
 
-        $sheet->getStyle('A4:Q6')->applyFromArray([
+        $sheet->getStyle('A4:S6')->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'bold' => true,
@@ -578,7 +572,7 @@ class ContractManagementTeamController extends Controller
             ],
         ]);
 
-        $sheet->getStyle('A7:Q7')->applyFromArray([
+        $sheet->getStyle('A7:S7')->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'bold' => true,
@@ -610,9 +604,9 @@ class ContractManagementTeamController extends Controller
         $groupedRows = $rows->groupBy(fn($row) => $row->category ?: 'Uncategorized');
 
         foreach ($groupedRows as $category => $projects) {
-            $sheet->mergeCells("A{$currentRow}:Q{$currentRow}");
+            $sheet->mergeCells("A{$currentRow}:S{$currentRow}");
             $sheet->setCellValue("A{$currentRow}", $category);
-            $sheet->getStyle("A{$currentRow}:Q{$currentRow}")->applyFromArray([
+            $sheet->getStyle("A{$currentRow}:S{$currentRow}")->applyFromArray([
                 'font' => ['name' => 'Arial', 'bold' => true, 'size' => 10],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2F0D9']],
@@ -633,30 +627,32 @@ class ContractManagementTeamController extends Controller
                 $sheet->setCellValue("I{$currentRow}", $project->awarded ?? '');
                 $sheet->setCellValue("J{$currentRow}", $project->date_of_award ? \Carbon\Carbon::parse($project->date_of_award)->format('F j, Y') : '');
                 $sheet->setCellValue("K{$currentRow}", $project->ca_date ? \Carbon\Carbon::parse($project->ca_date)->format('F j, Y') : '');
-                $sheet->setCellValue("L{$currentRow}", $project->ntp_date ? \Carbon\Carbon::parse($project->ntp_date)->format('F j, Y') : '');
-                $sheet->setCellValue("M{$currentRow}", $project->contract_no);
-                $sheet->setCellValue("N{$currentRow}", $project->contract_amount === null ? '' : (float) $project->contract_amount);
-                $sheet->setCellValue("O{$currentRow}", $project->name_of_contractor);
-                $sheet->setCellValue("P{$currentRow}", $project->remarks);
-                $sheet->setCellValue("Q{$currentRow}", $project->project_description);
+                $sheet->setCellValue("L{$currentRow}", $project->ca_file ? 'Attached' : 'None');
+                $sheet->setCellValue("M{$currentRow}", $project->ntp_date ? \Carbon\Carbon::parse($project->ntp_date)->format('F j, Y') : '');
+                $sheet->setCellValue("N{$currentRow}", $project->ntp_file ? 'Attached' : 'None');
+                $sheet->setCellValue("O{$currentRow}", $project->contract_no);
+                $sheet->setCellValue("P{$currentRow}", $project->contract_amount === null ? '' : (float) $project->contract_amount);
+                $sheet->setCellValue("Q{$currentRow}", $project->name_of_contractor);
+                $sheet->setCellValue("R{$currentRow}", $project->remarks);
+                $sheet->setCellValue("S{$currentRow}", $project->project_description);
                 $sheet->getRowDimension($currentRow)->setRowHeight(34);
                 $currentRow++;
             }
         }
 
         $lastRow = max($currentRow - 1, 8);
-        $sheet->getStyle("A8:Q{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A8:S{$lastRow}")->applyFromArray([
             'font' => ['name' => 'Arial', 'size' => 10],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
 
-        foreach (['B', 'O', 'P', 'Q'] as $column) {
+        foreach (['B', 'Q', 'R', 'S'] as $column) {
             $sheet->getStyle("{$column}8:{$column}{$lastRow}")
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
         }
 
-        foreach (['D', 'E', 'N'] as $column) {
+        foreach (['D', 'E', 'P'] as $column) {
             $sheet->getStyle("{$column}8:{$column}{$lastRow}")
                 ->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
         }

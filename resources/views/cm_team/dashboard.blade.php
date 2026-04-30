@@ -149,9 +149,9 @@
                 </button>
             @endif
             
-<a href="{{ route('cm.procurement.export', request()->query()) }}" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
-</a>
+            <a href="{{ route('cm.procurement.export', request()->query()) }}" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel
+            </a>
         </div>
     </div>
 
@@ -175,7 +175,7 @@
     ])
     
     <div class="table-responsive" id="procurementTableContainer">
-        <table class="sleek-table" id="procTable" style="min-width: 2000px;">
+        <table class="sleek-table" id="procTable" style="min-width: 2200px;">
             <thead>
                 <tr>
                     <th style="width: 3%;">No.</th>
@@ -184,8 +184,12 @@
                     <th style="width: 10%;">Allocation / ABC</th>
                     <th style="width: 9%;">Bidding Info</th>
                     <th style="width: 9%;">Award Info</th>
-                    <th style="width: 9%;">Contract Agreement</th>
-                    <th style="width: 9%;">Notice to Proceed</th>
+                    
+                    <th style="width: 6%;">Contract Agreement Date</th>
+                    <th style="width: 6%; text-align: center;">Contract Agreement File</th>
+                    <th style="width: 6%;">Notice to Proceed Date</th>
+                    <th style="width: 5%; text-align: center;">Notice to Proceed File</th>
+                    
                     <th style="width: 9%;">Contract Info</th>
                     <th style="width: 8%;">Contractor</th>
                     <th style="width: 8%;">Remarks</th>
@@ -204,26 +208,25 @@
                             <span style="display: block;">{{ $project->name_of_project }}</span>
                         </td>
                         <td>{{ $project->municipality }}</td>
-                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation !== null && $project->allocation !== '' ? number_format((float) $project->allocation, 2) : '-' }}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc !== null && $project->abc !== '' ? number_format((float) $project->abc, 2) : '-' }}</td>
+                        <td style="line-height: 1.8;"><span style="color:#16a34a; font-weight:700;">Alloc:</span> {{ $project->allocation ?: '-' }}<br><span style="color:#4f46e5; font-weight:700;">ABC:</span> {{ $project->abc ?: '-' }}</td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Bid Out:</strong> {{ $project->bid_out ?: '0' }}<br><strong style="color:#1e293b;">For Bidding:</strong> {{ $project->for_bidding ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_bidding ?: '-' }}</span></td>
                         <td style="line-height: 1.8; font-size: 11px;"><strong style="color:#1e293b;">Awarded:</strong> {{ $project->awarded ?: '0' }}<br><strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->date_of_award ?: '-' }}</span></td>
-                        <td style="line-height: 1.8;"><strong style="color:#1e293b; font-size: 11px;">No:</strong> {{ $project->contract_no ?: '-' }}<br><span style="color:#ea580c; font-weight:700;">Amt:</span> {{ $project->contract_amount !== null && $project->contract_amount !== '' ? number_format((float) $project->contract_amount, 2) : '-' }}</td>
                         
-                        <td style="line-height: 1.8; font-size: 11px;">
-                            <strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->ca_date ?: '-' }}</span><br>
+                        <td><span style="color:#64748b; font-size: 11px;">{{ $project->ca_date ?: '-' }}</span></td>
+                        <td style="text-align: center;">
                             @if($project->ca_file)
-                                <a href="{{ asset('storage/' . $project->ca_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">View File</a>
+                                <a href="{{ asset('storage/' . $project->ca_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
                             @else
-                                <span style="color: #a1a1aa;">No File</span>
+                                <span style="color: #a1a1aa; font-size: 11px;">-</span>
                             @endif
                         </td>
                         
-                        <td style="line-height: 1.8; font-size: 11px;">
-                            <strong style="color:#1e293b;">Date:</strong> <span style="color:#64748b">{{ $project->ntp_date ?: '-' }}</span><br>
+                        <td><span style="color:#64748b; font-size: 11px;">{{ $project->ntp_date ?: '-' }}</span></td>
+                        <td style="text-align: center;">
                             @if($project->ntp_file)
-                                <a href="{{ asset('storage/' . $project->ntp_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">View File</a>
+                                <a href="{{ asset('storage/' . $project->ntp_file) }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600; font-size: 11px;">View</a>
                             @else
-                                <span style="color: #a1a1aa;">No File</span>
+                                <span style="color: #a1a1aa; font-size: 11px;">-</span>
                             @endif
                         </td>
 
@@ -254,7 +257,7 @@
                         @endif
                     </tr>
                 @empty
-                    <tr><td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin'])) ? '13' : '12' }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No Procurement records found.</td></tr>
+                    <tr><td colspan="{{ (auth()->check() && in_array(auth()->user()->role, ['cm_team', 'admin'])) ? '15' : '14' }}" style="text-align:center; padding: 30px 0; color: #a0aec0;">No Procurement records found.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -450,7 +453,7 @@
         </div>
     </div>
 
-<script>
+    <script>
         @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
 
         let activeMonth = new Date().getMonth() + 1;
@@ -488,7 +491,6 @@
         function closeProcEditModal() { document.getElementById('editProcModal').classList.remove('active'); }
         function closeCmSuccessModal() { document.getElementById('cmSuccessModal').classList.remove('active'); window.location.reload(); }
 
-        // 🌟 RESTORED AJAX SUBMIT FUNCTION 🌟
         async function handleAjaxSubmit(event, targetContainerId, confirmMessage = null, isModal = false, modalId = null) {
             event.preventDefault(); 
             if (confirmMessage && !confirm(confirmMessage)) return false; 
@@ -513,7 +515,6 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
 
-                // Catch Laravel Validation Errors (e.g. file too big)
                 if (response.status === 422) {
                     const data = await response.json();
                     let errorMessages = [];
@@ -526,7 +527,6 @@
 
                 if (!response.ok) throw new Error('Network response was not ok');
 
-                // Check if Controller returned a JSON success response
                 const contentType = response.headers.get("content-type");
                 if (contentType && contentType.indexOf("application/json") !== -1) {
                     const data = await response.json();
@@ -535,7 +535,6 @@
                         document.querySelector(modalId).classList.remove('active');
                     }
 
-                    // Show success modal if configured, otherwise reload immediately
                     const successModalId = form.getAttribute('data-async-success-modal');
                     if (successModalId) {
                         const successModal = document.querySelector(successModalId);
@@ -548,11 +547,10 @@
                         }
                     }
                     
-                    window.location.reload(); // Reload to show new data
+                    window.location.reload(); 
                     return false;
                 }
 
-                // Fallback: If Controller returns HTML view
                 const html = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
@@ -583,7 +581,7 @@
             return false;
         }
 
-        // 🌟 SMART EXCEL EXPORTER THAT FORMATS PERFECTLY & GRABS ALL DATA 🌟
+        // 🌟 JS FALLBACK EXPORTER 🌟
         const rawExportData = @json($procExportData ?? []);
 
         function exportToExcel() {
@@ -619,12 +617,12 @@
                 [`CY ${currentYear} PROJECTS`],
                 [`as of ${titleDate}`],
                 [
-                    'No. of Proj.', 'Name of Project', 'Municipality', 'Allocation and ABC', '', 'BID-OUT', 'For Bidding', 'Date of Bidding', 'AWARDED', 'Date of Award', 'Contract Agreement', 'Notice to Proceed', 'Contract No.', 'Contract Amount', 'Name of Contractor', 'Remarks', 'Project Description'
+                    'No. of Proj.', 'Name of Project', 'Municipality', 'Allocation and ABC', '', 'BID-OUT', 'For Bidding', 'Date of Bidding', 'AWARDED', 'Date of Award', 'CA Date', 'CA File', 'NTP Date', 'NTP File', 'Contract No.', 'Contract Amount', 'Name of Contractor', 'Remarks', 'Project Description'
                 ],
                 [
-                    '', '', '', `FY ${currentYear} (Allocation)`, 'Approved Budget of the Contract', '', '', '', '', '', '', '', '', '', '', '', ''
+                    '', '', '', `FY ${currentYear} (Allocation)`, 'Approved Budget of the Contract', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
                 ],
-                new Array(17).fill(''),
+                new Array(19).fill(''),
                 ['PANGASINAN IMO']
             ];
 
@@ -632,7 +630,7 @@
                 sheetData.push([category]);
                 groupedRows[category].forEach((row) => {
                     sheetData.push([
-                        row.proj_no || '', row.name_of_project || '', row.municipality || '', row.allocation || '', row.abc || '', row.bid_out || '', row.for_bidding || '', formatSheetDate(row.date_of_bidding), row.awarded || '', formatSheetDate(row.date_of_award), formatSheetDate(row.ca_date), formatSheetDate(row.ntp_date), row.contract_no || '', row.contract_amount || '', row.name_of_contractor || '', row.remarks || '', row.project_description || ''
+                        row.proj_no || '', row.name_of_project || '', row.municipality || '', row.allocation || '', row.abc || '', row.bid_out || '', row.for_bidding || '', formatSheetDate(row.date_of_bidding), row.awarded || '', formatSheetDate(row.date_of_award), formatSheetDate(row.ca_date), row.ca_file ? 'Attached' : 'None', formatSheetDate(row.ntp_date), row.ntp_file ? 'Attached' : 'None', row.contract_no || '', row.contract_amount || '', row.name_of_contractor || '', row.remarks || '', row.project_description || ''
                     ]);
                 });
             });
@@ -640,13 +638,13 @@
             const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
 
             worksheet['!cols'] = [
-                { wch: 12 }, { wch: 42 }, { wch: 20 }, { wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 12 }, { wch: 18 }, { wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 55 }
+                { wch: 12 }, { wch: 42 }, { wch: 20 }, { wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 12 }, { wch: 18 }, { wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 55 }
             ];
 
             worksheet['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 16 } },
-                { s: { r: 1, c: 0 }, e: { r: 1, c: 16 } },
-                { s: { r: 2, c: 0 }, e: { r: 2, c: 16 } },
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 18 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 18 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 18 } },
                 { s: { r: 3, c: 3 }, e: { r: 3, c: 4 } },
                 { s: { r: 3, c: 0 }, e: { r: 5, c: 0 } },
                 { s: { r: 3, c: 1 }, e: { r: 5, c: 1 } },
@@ -665,13 +663,15 @@
                 { s: { r: 3, c: 14 }, e: { r: 5, c: 14 } },
                 { s: { r: 3, c: 15 }, e: { r: 5, c: 15 } },
                 { s: { r: 3, c: 16 }, e: { r: 5, c: 16 } },
-                { s: { r: 6, c: 0 }, e: { r: 6, c: 16 } }
+                { s: { r: 3, c: 17 }, e: { r: 5, c: 17 } },
+                { s: { r: 3, c: 18 }, e: { r: 5, c: 18 } },
+                { s: { r: 6, c: 0 }, e: { r: 6, c: 18 } }
             ];
 
             let currentRowIndex = 7;
             orderedCategories.forEach((category) => {
                 const categoryStartIndex = currentRowIndex;
-                worksheet['!merges'].push({ s: { r: categoryStartIndex, c: 0 }, e: { r: categoryStartIndex, c: 16 } });
+                worksheet['!merges'].push({ s: { r: categoryStartIndex, c: 0 }, e: { r: categoryStartIndex, c: 18 } });
                 currentRowIndex += groupedRows[category].length + 1;
             });
 
