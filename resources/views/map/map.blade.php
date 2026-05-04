@@ -94,6 +94,12 @@
     width: 100%;
     height: 100%;
 }
+
+/* Mini map */
+#miniMap {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    border: 3px solid rgba(255,255,255,0.8);
+}
 /* TOGGLE BUTTON */
 #toggleBtn {
     position: absolute;
@@ -150,6 +156,92 @@
     gap: 8px;
     font-size: 13px;
 }
+#map-notification {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+.notification-btn {
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+    font-size: 18px;
+    position: relative;
+}
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    padding: 0 5px;
+    background: #d32f2f;
+    color: #fff;
+    font-size: 11px;
+    line-height: 18px;
+    text-align: center;
+    display: none;
+}
+.notification-panel {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    width: 360px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: rgba(255,255,255,0.96);
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+    padding: 10px;
+    display: none;
+}
+.notification-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e7e7e7;
+}
+.notification-action-btn {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #1f2937;
+    border-radius: 6px;
+    font-size: 11px;
+    padding: 5px 8px;
+    cursor: pointer;
+}
+.notification-action-btn:hover {
+    background: #f3f4f6;
+}
+.notification-panel.active {
+    display: block;
+}
+.notification-item {
+    border-bottom: 1px solid #e7e7e7;
+    padding: 10px 6px;
+    font-size: 12px;
+    color: #1f2937;
+}
+.notification-item:last-child {
+    border-bottom: none;
+}
+.notification-item-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.notification-item-time {
+    color: #6b7280;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
 #resetMapBtn {
     background: none;
     color: #ebeef2;
@@ -216,9 +308,6 @@
 #map {
     position: relative;
     z-index: 1;
-}
-.leaflet-pane {
-    z-index: 1 !important;
 }
 .leaflet-top,
 .leaflet-bottom {
@@ -385,14 +474,10 @@ input:checked + .slider:before {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.leaflet-interactive {
-    filter: drop-shadow(3px 4px 4px rgba(0,0,0,0.5));
-    transition: all 0.2s ease;
-}
-
-/* when hovered = raised */
-.leaflet-interactive:hover {
-    transform: translateY(-3px) scale(1.02);
+/* Removed heavy 3D interactivity filters for performance */
+.municipality-selected-3d {
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+    transform: scale(1.02);
 }
 
 /* INFO PANEL */
@@ -750,11 +835,18 @@ input:checked + .slider:before {
     cursor: not-allowed;
     border-color: #e2e8f0;
     background: #f8fafc;
+    transform: none;
+    pointer-events: none;
 }
 
 .upload-box.is-disabled:hover {
     border-color: #e2e8f0;
     background: #f8fafc;
+}
+
+.submit-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 .upload-choice-divider {
@@ -950,15 +1042,15 @@ input:checked + .slider:before {
 
     <div id="layer-controls">
         <label class="layer-check">
-            <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['files']) ? 'disabled' : '' }}>
+            <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['has_files']) ? 'disabled' : '' }}>
             <span>Irrigated Area</span>
         </label>
         <label class="layer-check" >
-            <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['files']) ? 'disabled' : '' }}>
+            <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['has_files']) ? 'disabled' : '' }}>
             <span>Land Boundary</span>
         </label>
         <label class="layer-check" >
-            <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['files']) ? 'disabled' : '' }}>
+            <input type="checkbox" id="togglePotential" {{ empty($overlayGroups['potential']['has_files']) ? 'disabled' : '' }}>
             <span>Potential Irrigable Area</span>
         </label>
     </div>
@@ -970,6 +1062,10 @@ input:checked + .slider:before {
 <div id="miniMap"></div>
 
 @if(auth()->check() && auth()->user()->role === 'admin')
+<button id="admin-toggle-btn" type="button">
+    <i class="fas fa-upload"></i> Upload
+</button>
+
 <div id="admin-sidebar" class="sidebar-closed">
     <div class="sidebar-header">
         <h3><i class="fas fa-tools"></i> Admin Panel</h3>
@@ -998,7 +1094,7 @@ input:checked + .slider:before {
                 <div class="form-group">
                     <label>Destination Folder</label>
                     <select name="target_folder" id="targetFolderSelect">
-                        <option value="">Category Root</option>
+                        <option value="">Category root</option>
                     </select>
                     <small id="targetFolderHint">Choose the municipality or folder where the files should be added.</small>
                 </div>
@@ -1033,10 +1129,7 @@ input:checked + .slider:before {
         </div>
     </div>
 </div>
-
-<button id="admin-toggle-btn" title="Open Admin Panel">
-    <i class="fas fa-cog"></i> Upload
-</button>
+</div>
 @endif
 
 <!-- the map -->
@@ -1045,6 +1138,16 @@ input:checked + .slider:before {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@5.8.1/dist/togeojson.umd.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@6.2.0/dist/shp.min.js" crossorigin="anonymous"></script>
+@php
+    $notificationUserKey = null;
+    $currentUserRole = null;
+    $notificationsEndpoint = route('map.notifications.feed');
+
+    if (auth()->check()) {
+        $currentUserRole = auth()->user()->role ?? null;
+        $notificationsEndpoint = route('map.notifications');
+    }
+@endphp
 <script>
 function toTitleCase(str) {
     if (!str) return '';
@@ -1053,22 +1156,52 @@ function toTitleCase(str) {
     }).join(' ');
 }
 
-const overlayGroups = JSON.parse('{!! json_encode($overlayGroups) !!}');
-const uploadTargets = JSON.parse('{!! json_encode($uploadTargets ?? []) !!}');
+const overlayGroups = @json($overlayGroups);
+let uploadTargets = @json($uploadTargets ?? []);
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
-const currentUserRole = "{{ auth()->check() ? (auth()->user()->role ?? '') : '' }}" || null;
+const mapApiStatusEndpoint = "{{ route('map.api.status') }}";
+const overlayFilesEndpointBase = "{{ url('/map/overlays') }}";
+const renderedOverlayEndpointBase = "{{ url('/map/render') }}";
+const notificationUserKey = "{{ $notificationUserKey ?? '' }}" || null;
+const currentUserRole = "{{ $currentUserRole ?? '' }}" || null;
+const notificationsEndpoint = "{{ $notificationsEndpoint }}";
+let currentMapApiVersion = null;
 let landChart = null;
 let selectedMunicipality = null;
 let activeSliceIndex = null;
 let municipalityMarkers = [];
 let provinceLabelLayer = null;
+let baseMapGeoJson = null;
 let irrigatedStats = {};
+let irrigatedStatsPromise = null;
 
-fetch('/irrigated-chart-data')
-    .then(res => res.json())
-    .then(data => {
-        irrigatedStats = data;
-    });
+async function ensureIrrigatedStatsLoaded() {
+    if (Object.keys(irrigatedStats).length) {
+        return irrigatedStats;
+    }
+
+    if (!irrigatedStatsPromise) {
+        irrigatedStatsPromise = fetch('/irrigated-chart-data')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Unable to load municipality chart data.');
+                }
+
+                return res.json();
+            })
+            .then(data => {
+                irrigatedStats = data || {};
+
+                return irrigatedStats;
+            })
+            .catch(error => {
+                irrigatedStatsPromise = null;
+                throw error;
+            });
+    }
+
+    return await irrigatedStatsPromise;
+}
 
 function buildAppUrl(path) {
     if (!path) {
@@ -1088,6 +1221,29 @@ function buildAppUrl(path) {
 const DEFAULT_CENTER = [16.0433, 120.3333];
 const DEFAULT_ZOOM = 10;
 let map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+map.createPane('baseBoundaryPane');
+map.getPane('baseBoundaryPane').style.zIndex = 410;
+map.createPane('potentialPane');
+map.getPane('potentialPane').style.zIndex = 660;
+map.getPane('potentialPane').style.pointerEvents = 'none';
+map.getPane('potentialPane').classList.add('overlay-3d-potential');
+map.createPane('irrigatedPane');
+map.getPane('irrigatedPane').style.zIndex = 675;
+map.getPane('irrigatedPane').style.pointerEvents = 'none';
+map.getPane('irrigatedPane').classList.add('overlay-3d-irrigated');
+map.createPane('landBoundaryPane');
+map.getPane('landBoundaryPane').style.zIndex = 640;
+map.getPane('landBoundaryPane').style.pointerEvents = 'none';
+map.getPane('landBoundaryPane').classList.add('overlay-3d-land-boundary');
+map.createPane('municipalityLabelPane');
+map.getPane('municipalityLabelPane').style.zIndex = 800;
+map.getPane('municipalityLabelPane').style.pointerEvents = 'none';
+map.createPane('provincePane');
+map.getPane('provincePane').style.zIndex = 810;
+map.getPane('provincePane').style.pointerEvents = 'none';
+const potentialRenderer = L.canvas({ pane: 'potentialPane', padding: 0.5 });
+const irrigatedRenderer = L.canvas({ pane: 'irrigatedPane', padding: 0.5 });
+const landBoundaryRenderer = L.canvas({ pane: 'landBoundaryPane', padding: 0.5 });
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1111,6 +1267,81 @@ const overlayToggles = {
     land_boundary: document.getElementById('toggleLandBoundary'),
     potential: document.getElementById('togglePotential')
 };
+
+function renderTargetFolderOptions() {
+    const categorySelect = document.querySelector('select[name="category"]');
+    const targetFolderSelect = document.getElementById('targetFolderSelect');
+
+    if (!categorySelect || !targetFolderSelect) {
+        return;
+    }
+
+    const category = categorySelect.value;
+    const folders = uploadTargets[category] || [{ value: '', label: 'Category root' }];
+
+    targetFolderSelect.innerHTML = folders.map(folder =>
+        `<option value="${String(folder.value || '').replace(/"/g, '&quot;')}">${folder.label}</option>`
+    ).join('');
+}
+
+async function refreshMapApiStatus() {
+    try {
+        const response = await fetch(mapApiStatusEndpoint, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const status = await response.json();
+        const nextVersion = status.version || null;
+        const versionChanged = currentMapApiVersion && nextVersion && currentMapApiVersion !== nextVersion;
+
+        currentMapApiVersion = nextVersion || currentMapApiVersion;
+        uploadTargets = status.upload_targets || {};
+
+        Object.entries(status.overlay_groups || {}).forEach(([categoryKey, summary]) => {
+            const checkbox = overlayToggles[categoryKey];
+
+            overlayGroups[categoryKey] = {
+                ...(overlayGroups[categoryKey] || {}),
+                ...summary,
+                files: versionChanged ? [] : (overlayGroups[categoryKey]?.files || []),
+                files_loaded: versionChanged ? false : (overlayGroups[categoryKey]?.files_loaded || false)
+            };
+
+            if (checkbox) {
+                checkbox.disabled = !overlayGroups[categoryKey].has_files;
+            }
+
+            if (versionChanged && overlayLayers[categoryKey]) {
+                if (map.hasLayer(overlayLayers[categoryKey])) {
+                    map.removeLayer(overlayLayers[categoryKey]);
+                }
+
+                delete overlayLayers[categoryKey];
+            }
+        });
+
+        renderTargetFolderOptions();
+
+        if (versionChanged) {
+            Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
+                if (checkbox?.checked && !checkbox.disabled) {
+                    showOverlayCategory(categoryKey).catch(error => {
+                        console.error(error);
+                        updateStatus(error.message || 'Failed to refresh map layer.', true);
+                    });
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Map API status refresh failed', error);
+    }
+}
 // function closeDetail(){
 //     document.getElementById('detailPanel').classList.add('deactive');
 // };
@@ -1125,7 +1356,7 @@ const overlayStyles = {
         color: '#0d47a1', // Dark blue border
         weight: 2,
         fillColor: '#2196f3', // Vibrant blue fill
-        fillOpacity: 0.5    // Adjusted for visibility
+        fillOpacity: 0.5
     },
     potential: {
         color: '#fbc02d',
@@ -1146,7 +1377,9 @@ document.getElementById('resetMapBtn').addEventListener('click', function() {
 let geoLayer;
 let selectedBaseLayer;
 let miniGeoLayer;
+let miniOverlayRefreshId = 0;
 const overlayLayers = {};
+const overlayLoadTokens = {};
 const mapContainer = document.getElementById('map-container');
 const contentContainer = document.querySelector('.content');
 const mainWrapper = document.querySelector('.main-wrapper');
@@ -1235,51 +1468,50 @@ function getFeatureName(feature, fallback = 'Unknown') {
 }
 
 function updateProvinceLabelVisibility() {
-    // Check if ANY checkbox is checked
-    const anyChecked = Object.values(overlayToggles).some(checkbox => checkbox && checkbox.checked);
-
-    if (anyChecked) {
-        // HIDE PROVINCE LABEL
-        if (provinceLabelLayer && map.hasLayer(provinceLabelLayer)) {
-            map.removeLayer(provinceLabelLayer);
-        }
-
-        // HIDE ALL MUNICIPALITY MARKERS
-        municipalityMarkers.forEach(marker => {
-            if (map.hasLayer(marker)) {
-                map.removeLayer(marker);
-            }
-        });
-    } else {
-        // SHOW PROVINCE LABEL
-        if (provinceLabelLayer && !map.hasLayer(provinceLabelLayer)) {
-            provinceLabelLayer.addTo(map);
-        }
-
-        // SHOW ALL MUNICIPALITY MARKERS
-        municipalityMarkers.forEach(marker => {
-            if (!map.hasLayer(marker)) {
-                marker.addTo(map);
-            }
-        });
+    if (provinceLabelLayer && !map.hasLayer(provinceLabelLayer)) {
+        provinceLabelLayer.addTo(map);
     }
+
+    municipalityMarkers.forEach(marker => {
+        if (!map.hasLayer(marker)) {
+            marker.addTo(map);
+        }
+    });
 }
 
 function getBaseStyle(feature) {
     return {
         color: '#ffffff',
         weight: 1,
-        fillColor: '#9e9e9e', // ✅ visible gray
+        fillColor: 'rgb(108, 105, 105)', // ✅ visible gray
         fillOpacity: 0.5
     };
 }
 
 function setSelectedBaseLayer(layer) {
     if (selectedBaseLayer && geoLayer) {
+        if (selectedBaseLayer.getElement) {
+            selectedBaseLayer.getElement()?.classList.remove('municipality-selected-3d');
+        }
+
         geoLayer.resetStyle(selectedBaseLayer);
     }
 
     selectedBaseLayer = layer;
+    layer.setStyle({
+        color: '#ffffff',
+        weight: 3,
+        fillColor: 'rgb(248, 105, 105)',
+        fillOpacity: 0.85
+    });
+
+    if (layer.bringToFront) {
+        layer.bringToFront();
+    }
+
+    if (layer.getElement) {
+        layer.getElement()?.classList.add('municipality-selected-3d');
+    }
 
 }
 
@@ -1291,6 +1523,7 @@ async function loadBaseMap() {
     }
 
     const data = await response.json();
+    baseMapGeoJson = data;
 
     // Clear previous markers
     municipalityMarkers.forEach(m => map.removeLayer(m));
@@ -1300,18 +1533,19 @@ async function loadBaseMap() {
     const labeledNames = new Set();
 
     geoLayer = L.geoJSON(data, {
+        pane: 'baseBoundaryPane',
         style: getBaseStyle,
         onEachFeature: function(feature, layer) {
             const name = toTitleCase(getFeatureName(feature));
 
 
             layer.on('mouseover', function() {
-                layer.setStyle({
-                    color: '#fc756b',
-                    weight: 2,
-                    fillColor: '#bdbdbd',
-                    fillOpacity: 0.75
-                });
+                // layer.setStyle({
+                //     color: '#fc756b',
+                //     weight: 2,
+                //     fillColor: '#464646',
+                //     fillOpacity: 0.75
+                // });
 
                 if (layer.bringToFront) {
                     layer.bringToFront();
@@ -1329,7 +1563,16 @@ async function loadBaseMap() {
                 layer.closeTooltip();
             });
 
-            layer.on('click', function() {
+            layer.on('click', async function() {
+                updateStatus('Loading chart data for ' + name + '...');
+
+                try {
+                    await ensureIrrigatedStatsLoaded();
+                } catch (error) {
+                    console.error(error);
+                    updateStatus(error.message || 'Unable to load chart data.', true);
+                }
+
                 const stat = getIrrigatedStatByName(name);
                 updateInfoPanel(name);
                 selectedMunicipality = stat;
@@ -1362,7 +1605,7 @@ const landData = {
                 } else {
                     document.getElementById('extraData').innerHTML = "No data available";
                 }
-                showMiniMap(layer.toGeoJSON());
+                showMiniMapForMunicipality(layer);
                 openPanel();
             });
 
@@ -1376,6 +1619,7 @@ const landData = {
                     const center = bounds.getCenter();
 
                     const marker = L.marker(center, {
+                        pane: 'municipalityLabelPane',
                         icon: L.divIcon({
                             className: 'municipality-label',
                             html: name
@@ -1455,6 +1699,96 @@ function pauseForUi() {
     });
 }
 
+function nextOverlayLoadToken(categoryKey) {
+    overlayLoadTokens[categoryKey] = (overlayLoadTokens[categoryKey] || 0) + 1;
+
+    return overlayLoadTokens[categoryKey];
+}
+
+function isCurrentOverlayLoad(categoryKey, token) {
+    return overlayLoadTokens[categoryKey] === token;
+}
+
+function updateLoaderMessage(message) {
+    const loaderText = document.getElementById('loader-text');
+
+    if (loaderText) {
+        loaderText.textContent = message;
+    }
+}
+
+async function loadOverlayConfig(categoryKey) {
+    const existingConfig = overlayGroups[categoryKey];
+
+    if (!existingConfig) {
+        throw new Error('Unknown map layer.');
+    }
+
+    if (existingConfig.files_loaded) {
+        return existingConfig;
+    }
+
+    const response = await fetch(`${overlayFilesEndpointBase}/${encodeURIComponent(categoryKey)}`);
+
+    if (!response.ok) {
+        throw new Error('The selected map layer list could not be loaded.');
+    }
+
+    const loadedConfig = await response.json();
+
+    if (loadedConfig.version) {
+        currentMapApiVersion = loadedConfig.version;
+    }
+
+    overlayGroups[categoryKey] = {
+        ...existingConfig,
+        ...loadedConfig,
+        files: Array.isArray(loadedConfig.files) ? loadedConfig.files : [],
+        files_loaded: true
+    };
+
+    return overlayGroups[categoryKey];
+}
+
+async function loadRenderedOverlayData(categoryKey) {
+    if (categoryKey === 'land_boundary' && baseMapGeoJson) {
+        const normalized = normalizeGeoJson(baseMapGeoJson);
+
+        return {
+            type: 'FeatureCollection',
+            category: 'land_boundary',
+            label: overlayGroups.land_boundary?.label || 'Pangasinan Land Boundary',
+            feature_count: Array.isArray(normalized.features) ? normalized.features.length : 0,
+            failed_files: [],
+            features: (normalized.features || []).map(feature => ({
+                ...feature,
+                properties: {
+                    ...(feature.properties || {}),
+                    _category: 'land_boundary'
+                }
+            }))
+        };
+    }
+
+    const response = await fetch(`${renderedOverlayEndpointBase}/${encodeURIComponent(categoryKey)}`, {
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('The selected map layer could not be rendered from the API.');
+    }
+
+    const payload = await response.json();
+
+    if (payload.version) {
+        currentMapApiVersion = payload.version;
+    }
+
+    return payload;
+}
+
 async function convertStoredFileToGeoJson(fileUrl) {
     const safeUrl = buildAppUrl(fileUrl);
     const lowerFileUrl = fileUrl.toLowerCase();
@@ -1499,8 +1833,12 @@ async function convertStoredFileToGeoJson(fileUrl) {
         return toGeoJSON.kml(kmlDocument);
     }
 
-    if (lowerFileUrl.endsWith('.zip') || lowerFileUrl.endsWith('.shp')) {
+    if (lowerFileUrl.endsWith('.zip')) {
         return await shp(safeUrl);
+    }
+
+    if (lowerFileUrl.endsWith('.shp')) {
+        return await shp(safeUrl.replace(/\.shp(?:([?#]).*)?$/i, '$1'));
     }
 
     throw new Error('Unsupported map file type.');
@@ -1531,31 +1869,45 @@ function styleOverlayFeature(categoryKey, feature) {
     return baseStyle;
 }
 
+function getOverlayPane(categoryKey) {
+    if (categoryKey === 'land_boundary') return 'landBoundaryPane';
+    if (categoryKey === 'irrigated') return 'irrigatedPane';
+    return 'potentialPane';
+}
+
+function getOverlayRenderer(categoryKey) {
+    if (categoryKey === 'land_boundary') return landBoundaryRenderer;
+    if (categoryKey === 'irrigated') return irrigatedRenderer;
+    return potentialRenderer;
+}
+
 function createOverlayLayer(categoryKey, geoJson, fileName) {
     return L.geoJSON(normalizeGeoJson(geoJson), {
+        pane: getOverlayPane(categoryKey),
+        renderer: getOverlayRenderer(categoryKey),
+        interactive: categoryKey !== 'irrigated',
         style: feature => styleOverlayFeature(categoryKey, feature),
 
        onEachFeature: function(feature, layer) {
+    if (categoryKey === 'irrigated') {
+        return;
+    }
 
+    if (!feature.properties) {
+        feature.properties = {};
+    }
+
+    layer.feature.properties = feature.properties;
     layer.feature.properties._category = categoryKey;
-
-    const name = getFeatureName(feature, fileName);
-
-    layer.bindPopup('<b>' + name + '</b><br>' + overlayGroups[categoryKey].label);
-
-            if (categoryKey === 'land_boundary') {
-                layer.bindTooltip(name, {
-                    permanent: true,
-                    direction: 'center',
-                    className: 'municipality-label'
-                }).openTooltip();
-            }
-
 
     layer.on('click', function(e) {
 
         // 🔥 zoom to clicked overlay
-        map.fitBounds(layer.getBounds());
+        if (typeof layer.getBounds === 'function') {
+            map.fitBounds(layer.getBounds());
+        } else if (typeof layer.getLatLng === 'function') {
+            map.setView(layer.getLatLng(), Math.max(map.getZoom(), 14));
+        }
 
         // 🔥 send ONLY this overlay to mini map
         showMiniMap(layer.toGeoJSON());
@@ -1565,46 +1917,48 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
 }
 
 async function showOverlayCategory(categoryKey) {
-    const config = overlayGroups[categoryKey];
+    const loadToken = nextOverlayLoadToken(categoryKey);
+    const pendingConfig = overlayGroups[categoryKey];
 
-    if (!config || !config.files.length) {
+    updateStatus('Preparing ' + (pendingConfig?.label || 'selected layer') + '...');
+    updateLoaderMessage('Preparing rendered layer...');
+
+    const config = pendingConfig || {};
+
+    if (!config || config.has_files === false) {
         updateStatus('No files found for ' + (config?.label || categoryKey) + '.', true);
         return;
     }
 
     if (!overlayLayers[categoryKey]) {
-        const layers = [];
-        const failedFiles = [];
+        updateStatus('Loading rendered ' + (config.label || 'map layer') + ' from API...');
+        updateLoaderMessage('Loading rendered layer from API...');
 
-        for (let index = 0; index < config.files.length; index++) {
-            const file = config.files[index];
+        const renderedGeoJson = await loadRenderedOverlayData(categoryKey);
 
-            updateStatus(`Loading ${config.label} (${index + 1}/${config.files.length})...`);
-
-            try {
-                const geoJson = await convertStoredFileToGeoJson(file.url);
-                layers.push(createOverlayLayer(categoryKey, geoJson, file.name));
-            } catch (error) {
-                console.error('Failed to load file:', file.name, error);
-                failedFiles.push(file.name);
-            }
-
-            if ((index + 1) % 5 === 0) {
-                await new Promise(resolve => setTimeout(resolve, 0));
-            }
-        }
-
-        if (!layers.length) {
-            updateStatus('No valid polygons could be loaded for ' + config.label + '.', true);
+        if (!isCurrentOverlayLoad(categoryKey, loadToken)) {
             return;
         }
 
-        overlayLayers[categoryKey] = L.featureGroup(layers);
+        if (!hasRenderableFeatures(renderedGeoJson)) {
+            updateStatus('No valid polygons could be loaded for ' + (config.label || categoryKey) + '.', true);
+            throw new Error('No valid polygons could be loaded for ' + (config.label || categoryKey) + '.');
+        }
 
-        if (failedFiles.length) {
-            console.warn('Overlay files that failed to load:', failedFiles);
+        overlayLayers[categoryKey] = createOverlayLayer(
+            categoryKey,
+            renderedGeoJson,
+            renderedGeoJson.label || config.label || categoryKey
+        );
+
+        if (!map.hasLayer(overlayLayers[categoryKey])) {
+            overlayLayers[categoryKey].addTo(map);
+        }
+
+        if (Array.isArray(renderedGeoJson.failed_files) && renderedGeoJson.failed_files.length) {
+            console.warn('Overlay files that failed to render:', renderedGeoJson.failed_files);
             updateStatus(
-                `${config.label} loaded with ${failedFiles.length} failed file(s): ${failedFiles.slice(0, 5).join(', ')}${failedFiles.length > 5 ? '...' : ''}`,
+                `${renderedGeoJson.label || config.label} rendered ${renderedGeoJson.feature_count || 0} feature(s), with ${renderedGeoJson.failed_files.length} failed file(s).`,
                 true
             );
         }
@@ -1622,10 +1976,19 @@ async function showOverlayCategory(categoryKey) {
         }
     });
 
-    updateStatus(config.label + ' is now highlighted on the map.');
+    if (overlayLayers[categoryKey]) {
+        const renderedCount = typeof overlayLayers[categoryKey].getLayers === 'function'
+            ? overlayLayers[categoryKey].getLayers().length
+            : 0;
+        updateStatus(`${config.label || 'Selected layer'} is highlighted on the map (${renderedCount.toLocaleString()} rendered feature(s)).`);
+    } else {
+        updateStatus((config.label || 'Selected layer') + ' is now highlighted on the map.');
+    }
 }
 
 function hideOverlayCategory(categoryKey) {
+    nextOverlayLoadToken(categoryKey);
+
     if (overlayLayers[categoryKey] && map.hasLayer(overlayLayers[categoryKey])) {
         map.removeLayer(overlayLayers[categoryKey]);
     }
@@ -1649,7 +2012,8 @@ Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
                 await showOverlayCategory(categoryKey);
             } catch (error) {
                 console.error("Error loading map layer:", error);
-                updateStatus("Failed to load layer.", true);
+                checkbox.checked = false;
+                updateStatus(error.message || "Failed to load layer.", true);
             } finally {
                 // 3. Hide the loader once finished (or if it fails)
                 if (loader) loader.style.display = 'none';
@@ -1660,6 +2024,14 @@ Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
 
         // Update label visibility
         updateProvinceLabelVisibility();
+
+        if (selectedBaseLayer) {
+            // Debounce the minimap generation to prevent freezes when rapidly selecting multiple layers
+            clearTimeout(window._miniMapDebounceTimer);
+            window._miniMapDebounceTimer = setTimeout(() => {
+                showMiniMapForMunicipality(selectedBaseLayer);
+            }, 300);
+        }
     });
 });
 
@@ -1667,6 +2039,7 @@ let miniMap = L.map('miniMap', {
     attributionControl: false,
     zoomControl: false
 });
+const miniMapRenderer = L.canvas({ padding: 0.5 });
 
 let miniLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -1680,8 +2053,18 @@ function showMiniMap(feature) {
     }
 
     miniGeoLayer = L.geoJSON(feature, {
+        renderer: miniMapRenderer,
         style: function(f) {
             const category = f.properties?._category;
+
+            if (category === 'selected_municipality') {
+                return {
+                    color: '#d32f2f',
+                    weight: 4,
+                    fillColor: '#fffffb00',
+                    fillOpacity: 0.45
+                };
+            }
 
             if (category && overlayStyles[category]) {
                 return overlayStyles[category]; // same color
@@ -1695,65 +2078,237 @@ function showMiniMap(feature) {
         }
     }).addTo(miniMap);
 
-    miniMap.fitBounds(miniGeoLayer.getBounds(), { padding: [10,10] });
+    let targetBounds = null;
+    miniGeoLayer.eachLayer(layer => {
+        if (layer.feature?.properties?._category === 'selected_municipality') {
+            targetBounds = layer.getBounds();
+            if (layer.bringToFront) {
+                layer.bringToFront();
+            }
+        }
+    });
+
+    if (targetBounds) {
+        miniMap.fitBounds(targetBounds, { padding: [10,10] });
+    } else {
+        miniMap.fitBounds(miniGeoLayer.getBounds(), { padding: [10,10] });
+    }
 }
 
-    // 👉 If there are active overlays
-//     activeCategories.forEach(categoryKey => {
-//         if (overlayLayers[categoryKey]) {
+function filterGeometryByBounds(geoJson, bounds) {
+    if (!geoJson || !geoJson.geometry) return geoJson;
 
-//             overlayLayers[categoryKey].eachLayer(layer => {
+    const type = geoJson.geometry.type;
+    const coords = geoJson.geometry.coordinates;
+    const minLat = bounds.getSouth();
+    const maxLat = bounds.getNorth();
+    const minLng = bounds.getWest();
+    const maxLng = bounds.getEast();
 
-//                 // Check if overlay is inside municipality
-//                 if (feature.geometry && layer.getBounds().intersects(L.geoJSON(feature).getBounds())) {
-//                     layersToShow.push(layer.toGeoJSON());
-//                 }
+    const MAX_FEATURES = 20000;
 
-//             });
-//         }
-//     });
+    function lineIntersects(line) {
+        if (!line || line.length === 0) return false;
 
-//     // 👉 If overlays found → show them
-//     if (layersToShow.length > 0) {
-//         miniGeoLayer = L.geoJSON(layersToShow, {
-//     style: function(feature) {
-//         const category = feature.properties._category;
+        let pMinLat = 90, pMaxLat = -90, pMinLng = 180, pMaxLng = -180;
+        const len = line.length;
 
-//         if (category && overlayStyles[category]) {
-//             return overlayStyles[category]; // ✅ SAME COLOR AS MAIN MAP
-//         }
+        for (let j = 0; j < len; j++) {
+            const pt = line[j];
+            if (!pt) continue;
+            if (pt[1] < pMinLat) pMinLat = pt[1];
+            if (pt[1] > pMaxLat) pMaxLat = pt[1];
+            if (pt[0] < pMinLng) pMinLng = pt[0];
+            if (pt[0] > pMaxLng) pMaxLng = pt[0];
+        }
 
-//         return {
-//             color: 'red',
-//             weight: 2,
-//             fillOpacity: 0.5
-//         };
-//     }
-// }).addTo(miniMap);
+        return !(pMinLng > maxLng || pMaxLng < minLng || pMinLat > maxLat || pMaxLat < minLat);
+    }
 
-//         miniMap.fitBounds(miniGeoLayer.getBounds());
-//     } else {
-//         // 👉 fallback if no overlay matched
-//         miniGeoLayer = L.geoJSON(feature, {
-//             style: {
-//                 color: 'red',
-//                 weight: 2,
-//                 fillOpacity: 0.5
-//             }
-//         }).addTo(miniMap);
+    if (type === 'MultiPolygon') {
+        const filtered = [];
+        for (let i = 0; i < coords.length; i++) {
+            if (filtered.length >= MAX_FEATURES) break;
+            if (coords[i][0] && lineIntersects(coords[i][0])) {
+                filtered.push(coords[i]);
+            }
+        }
+        if (filtered.length === 0) return null;
+        return { type: 'Feature', properties: geoJson.properties, geometry: { type: 'MultiPolygon', coordinates: filtered } };
+    }
 
-//         miniMap.fitBounds(miniGeoLayer.getBounds());
-//     }
+    if (type === 'MultiLineString') {
+        const filtered = [];
+        for (let i = 0; i < coords.length; i++) {
+            if (filtered.length >= MAX_FEATURES) break;
+            if (lineIntersects(coords[i])) {
+                filtered.push(coords[i]);
+            }
+        }
+        if (filtered.length === 0) return null;
+        return { type: 'Feature', properties: geoJson.properties, geometry: { type: 'MultiLineString', coordinates: filtered } };
+    }
+
+    if (type === 'MultiPoint') {
+        const filtered = [];
+        const step = Math.max(1, Math.floor(coords.length / MAX_FEATURES));
+        for (let i = 0; i < coords.length; i += step) {
+            if (filtered.length >= MAX_FEATURES) break;
+            const pt = coords[i];
+            if (pt[0] >= minLng && pt[0] <= maxLng && pt[1] >= minLat && pt[1] <= maxLat) {
+                filtered.push(pt);
+            }
+        }
+        if (filtered.length === 0) return null;
+        return { type: 'Feature', properties: geoJson.properties, geometry: { type: 'MultiPoint', coordinates: filtered } };
+    }
+
+    return geoJson;
+}
+
+function showMiniMapForMunicipality(municipalityLayer) {
+    const refreshId = ++miniOverlayRefreshId;
+    const municipalityFeature = municipalityLayer.toGeoJSON();
+    municipalityFeature.properties = {
+        ...(municipalityFeature.properties || {}),
+        _category: 'selected_municipality'
+    };
+
+    showMiniMap({
+        type: 'FeatureCollection',
+        features: [municipalityFeature]
+    });
+
+    const municipalityBounds = municipalityLayer.getBounds();
+    const overlayEntries = Object.entries(overlayLayers).filter(([categoryKey, overlayLayer]) => {
+        const checkbox = overlayToggles[categoryKey];
+
+        return checkbox?.checked && map.hasLayer(overlayLayer);
+    });
+
+    if (!overlayEntries.length) {
+        return;
+    }
+
+    const overlayFeatures = [];
+    const maxMiniOverlayFeatures = 3000;
+    let entryIndex = 0;
+    let currentLayers = [];
+    let layerIndex = 0;
+
+    function loadNextOverlayBatch(deadline = null) {
+        if (refreshId !== miniOverlayRefreshId) {
+            return;
+        }
+
+        const startedAt = performance.now();
+
+        while (entryIndex < overlayEntries.length && overlayFeatures.length < maxMiniOverlayFeatures) {
+            const [categoryKey, overlayLayer] = overlayEntries[entryIndex];
+
+            if (!currentLayers.length) {
+                currentLayers = [];
+                overlayLayer.eachLayer(layer => currentLayers.push(layer));
+                layerIndex = 0;
+            }
+
+            while (layerIndex < currentLayers.length && overlayFeatures.length < maxMiniOverlayFeatures) {
+                const layer = currentLayers[layerIndex++];
+
+                let overlayFeature = layer.feature || layer.toGeoJSON();
+                let touchesBounds = false;
+
+                // Skip expensive getBounds() calculation for massive MultiPolygons which loops over all vertices synchronously
+                if (overlayFeature.geometry?.type?.startsWith('Multi') && overlayFeature.geometry.coordinates?.length > 1000) {
+                    touchesBounds = true; // We filter it in filterGeometryByBounds anyway
+                } else {
+                    touchesBounds = doesLayerTouchBounds(layer, municipalityBounds);
+                }
+
+                if (touchesBounds) {
+                    if (categoryKey === 'irrigated' || overlayFeature.geometry?.type?.startsWith('Multi')) {
+                        overlayFeature = filterGeometryByBounds(overlayFeature, municipalityBounds);
+                    }
+
+                    if (overlayFeature) {
+                        overlayFeatures.push({
+                            type: overlayFeature.type,
+                            geometry: overlayFeature.geometry,
+                            properties: {
+                                ...(overlayFeature.properties || {}),
+                                _category: categoryKey
+                            }
+                        });
+                    }
+                }
+
+                const shouldYield = deadline
+                    ? deadline.timeRemaining() < 8
+                    : performance.now() - startedAt > 16;
+
+                if (shouldYield) {
+                    scheduleMiniOverlayBatch(loadNextOverlayBatch);
+                    return;
+                }
+            }
+
+            entryIndex++;
+            currentLayers = [];
+        }
+
+        if (refreshId !== miniOverlayRefreshId) {
+            return;
+        }
+
+        // Sort features so that higher priority layers are drawn last (on top) by Leaflet Canvas
+        const categoryPriority = {
+            'land_boundary': 1,
+            'potential': 2,
+            'irrigated': 3
+        };
+
+        overlayFeatures.sort((a, b) => {
+            const prioA = categoryPriority[a.properties?._category] || 0;
+            const prioB = categoryPriority[b.properties?._category] || 0;
+            return prioA - prioB;
+        });
+
+        showMiniMap({
+            type: 'FeatureCollection',
+            features: [
+                ...overlayFeatures,
+                municipalityFeature
+            ]
+        });
+    }
+
+    scheduleMiniOverlayBatch(loadNextOverlayBatch);
+}
+
+function scheduleMiniOverlayBatch(callback) {
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(callback, { timeout: 250 });
+        return;
+    }
+
+    window.setTimeout(callback, 0);
+}
+
+function doesLayerTouchBounds(layer, bounds) {
+    if (typeof layer.getBounds === 'function') {
+        return layer.getBounds().intersects(bounds);
+    }
+
+    if (typeof layer.getLatLng === 'function') {
+        return bounds.contains(layer.getLatLng());
+    }
+
+    return false;
+}
 
 (async function initializeMap() {
     try {
-        // 1. Create the high-priority layer (Pane) for the Province Label
-        // This ensures "PANGASINAN" stays above all other map layers
-        map.createPane('provincePane');
-        map.getPane('provincePane').style.zIndex = 650;
-        map.getPane('provincePane').style.pointerEvents = 'none';
-
-        // 2. Load the map data
+        // Load the map data
         await loadBaseMap();
 
     } catch (error) {
@@ -1762,24 +2317,40 @@ function showMiniMap(feature) {
     }
 })();
 
+refreshMapApiStatus();
+setInterval(refreshMapApiStatus, 15000);
+
 
 const form = document.getElementById('uploadForm');
 const supportedMapExtensions = ['geojson', 'json', 'kml', 'kmz', 'zip', 'shp', 'shx', 'dbf', 'prj', 'cpg'];
 const supportedMapExtensionLabel = '.geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, .cpg';
+
+function getUnsupportedMapFiles(fileList) {
+    return Array.from(fileList || []).filter((file) => {
+        const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+        return !supportedMapExtensions.includes(extension);
+    });
+}
+
+function openUploadFeedbackModal(message, title = 'Upload Failed') {
+    if (typeof openAsyncSuccessModal === 'function') {
+        openAsyncSuccessModal('#appFeedbackModal', message, title);
+        return;
+    }
+
+    window.alert(message);
+}
 
 if (form) {
     const statusBoxUpload = document.getElementById('uploadStatus');
     const categorySelect = document.querySelector('select[name="category"]');
     const targetFolderSelect = document.getElementById('targetFolderSelect');
     const uploadSelectionInfo = document.getElementById('uploadSelectionInfo');
+    const fileUploadBox = document.getElementById('fileUploadBox');
+    const folderUploadBox = document.getElementById('folderUploadBox');
 
     function updateTargetFolderOptions() {
-        const category = categorySelect.value;
-        const folders = uploadTargets[category] || [{ value: '', label: 'Category Root' }];
-
-        targetFolderSelect.innerHTML = folders.map(folder =>
-            `<option value="${folder.value}">${folder.label}</option>`
-        ).join('');
+        renderTargetFolderOptions();
     }
 
     function updateSelectionInfo(message) {
@@ -1788,56 +2359,46 @@ if (form) {
         }
     }
 
-    function getUnsupportedMapFiles(fileList) {
-        return Array.from(fileList).filter((file) => {
-            const parts = String(file.name || '').toLowerCase().split('.');
-            const extension = parts.length > 1 ? parts.pop() : '';
-
-            return !supportedMapExtensions.includes(extension);
-        });
-    }
-
-    function openUploadFeedbackModal(message, title = 'Upload Failed') {
-        if (typeof openAsyncSuccessModal === 'function') {
-            openAsyncSuccessModal('#appFeedbackModal', message, title);
-            return;
-        }
-
-        alert(message);
-    }
-
-    const fileInput = document.getElementById('fileInput');
-    const folderInput = document.getElementById('folderInput');
-    const fileUploadBox = document.getElementById('fileUploadBox');
-    const folderUploadBox = document.getElementById('folderUploadBox');
-
     function syncUploadSourceState() {
         const hasFiles = fileInput.files.length > 0;
         const hasFolderFiles = folderInput.files.length > 0;
 
-        fileInput.disabled = hasFolderFiles;
-        folderInput.disabled = hasFiles;
-
         if (fileUploadBox) {
             fileUploadBox.classList.toggle('is-disabled', hasFolderFiles);
+            fileUploadBox.setAttribute('aria-disabled', hasFolderFiles ? 'true' : 'false');
         }
 
         if (folderUploadBox) {
             folderUploadBox.classList.toggle('is-disabled', hasFiles);
+            folderUploadBox.setAttribute('aria-disabled', hasFiles ? 'true' : 'false');
         }
+
+        fileInput.disabled = hasFolderFiles;
+        folderInput.disabled = hasFiles;
     }
 
-    if (fileUploadBox) {
-        fileUploadBox.addEventListener('click', () => {
-            if (!fileInput.disabled) {
+    const fileInput = document.getElementById('fileInput');
+    const folderInput = document.getElementById('folderInput');
+
+    if (fileUploadBox && fileInput) {
+        fileUploadBox.addEventListener('click', () => fileInput.click());
+        fileUploadBox.setAttribute('tabindex', '0');
+        fileUploadBox.setAttribute('role', 'button');
+        fileUploadBox.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
                 fileInput.click();
             }
         });
     }
 
-    if (folderUploadBox) {
-        folderUploadBox.addEventListener('click', () => {
-            if (!folderInput.disabled) {
+    if (folderUploadBox && folderInput) {
+        folderUploadBox.addEventListener('click', () => folderInput.click());
+        folderUploadBox.setAttribute('tabindex', '0');
+        folderUploadBox.setAttribute('role', 'button');
+        folderUploadBox.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
                 folderInput.click();
             }
         });
@@ -1848,13 +2409,12 @@ if (form) {
             folderInput.value = '';
         }
 
-        syncUploadSourceState();
-
         updateSelectionInfo(
             fileInput.files.length
                 ? `${fileInput.files.length} file(s) selected for upload.`
                 : 'No files selected.'
         );
+        syncUploadSourceState();
     });
 
     folderInput.addEventListener('change', () => {
@@ -1862,16 +2422,16 @@ if (form) {
             fileInput.value = '';
         }
 
-        syncUploadSourceState();
-
         if (folderInput.files.length > 0) {
             const firstPath = folderInput.files[0].webkitRelativePath || folderInput.files[0].name;
             const rootFolder = firstPath.split('/')[0];
             updateSelectionInfo(`${folderInput.files.length} file(s) selected from folder "${rootFolder}".`);
+            syncUploadSourceState();
             return;
         }
 
         updateSelectionInfo('No files selected.');
+        syncUploadSourceState();
     });
 
     categorySelect.addEventListener('change', updateTargetFolderOptions);
@@ -1887,6 +2447,11 @@ if (form) {
         const formData = new FormData();
 
         const category = categorySelect.value;
+        if (!category) {
+            openUploadFeedbackModal('Please choose a layer category before uploading.', 'Upload Required');
+            return;
+        }
+
         formData.append('category', category);
         formData.append('target_folder', targetFolderSelect.value || '');
 
@@ -1908,7 +2473,8 @@ if (form) {
         if (unsupportedFiles.length > 0) {
             const invalidNames = unsupportedFiles.map((file) => file.name).slice(0, 5).join(', ');
             openUploadFeedbackModal(
-                `Unsupported file detected: ${invalidNames}. Please upload only ${supportedMapExtensionLabel}.`
+                `Unsupported file detected: ${invalidNames}. Please upload only ${supportedMapExtensionLabel}.`,
+                'Upload Failed'
             );
             return;
         }
@@ -1927,11 +2493,11 @@ if (form) {
             }
         }
 
+        statusBoxUpload.style.display = 'block';
+        statusBoxUpload.className = 'upload-status upload-loading';
+        statusBoxUpload.innerHTML = 'Uploading...';
         const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
-        if (typeof showAppLoader === 'function') {
-            showAppLoader('Uploading map files...');
-        }
 
         try {
             const response = await fetch("{{ route('map.upload') }}", {
@@ -1946,17 +2512,18 @@ if (form) {
 
             if (response.ok && result.files.length > 0) {
                 statusBoxUpload.style.display = 'none';
-                statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
-                
+                statusBoxUpload.className = 'upload-status upload-success';
+                statusBoxUpload.innerHTML = result.message || `Uploaded ${result.files.length} file(s).`;
                 if (typeof openAsyncSuccessModal === 'function') {
                     openAsyncSuccessModal(
                         '#appFeedbackModal',
                         result.message || `Uploaded ${result.files.length} file(s).`,
                         'Upload Complete'
                     );
-                    statusBoxUpload.style.display = 'none';
                 }
                 form.reset();
+                fileInput.disabled = false;
+                folderInput.disabled = false;
                 syncUploadSourceState();
                 updateTargetFolderOptions();
                 updateSelectionInfo('No files selected.');
@@ -1979,14 +2546,132 @@ if (form) {
             }
             statusBoxUpload.innerHTML = '❌ ' + error.message;
         } finally {
-            if (typeof hideAppLoader === 'function') {
-                hideAppLoader();
-            }
             submitButton.disabled = false;
+            syncUploadSourceState();
         }
     });
 }
 
+if (notificationUserKey) {
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const notificationPanel = document.getElementById('notificationPanel');
+    const notificationList = document.getElementById('notificationList');
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    const clearOldBtn = document.getElementById('clearOldBtn');
+    const seenKey = `map_notifications_seen_${notificationUserKey}`;
+    let latestNotifications = [];
+
+    function formatNotificationTime(isoString) {
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleString();
+    }
+
+    function renderNotificationPanel(notifications) {
+        if (!notificationList) return;
+
+        if (!Array.isArray(notifications) || notifications.length === 0) {
+            notificationList.innerHTML = '<div class="notification-item">No notifications yet.</div>';
+            return;
+        }
+
+        notificationList.innerHTML = notifications.map((item) => {
+            const actionText = item.action === 'delete' ? 'deleted' : 'uploaded';
+            const locationText = Array.isArray(item.locations) && item.locations.length
+                ? item.locations.join(', ')
+                : 'Unknown location';
+            const fileCount = Array.isArray(item.files) ? item.files.length : 0;
+
+            return `
+                <div class="notification-item">
+                    <div class="notification-item-title">${item.actor || 'Admin'} ${actionText} ${fileCount} file(s)</div>
+                    <div>Category: ${item.category || 'Map Files'}</div>
+                    <div>Location: ${locationText}</div>
+                    <div class="notification-item-time">${formatNotificationTime(item.created_at)}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateNotificationBadge(notifications) {
+        if (!notificationBadge) return;
+        const lastSeen = localStorage.getItem(seenKey);
+        const unseen = (notifications || []).filter((item) => {
+            if (!lastSeen) return true;
+            return (item.created_at || '') > lastSeen;
+        }).length;
+
+        if (unseen > 0) {
+            notificationBadge.style.display = 'inline-block';
+            notificationBadge.textContent = unseen > 99 ? '99+' : String(unseen);
+        } else {
+            notificationBadge.style.display = 'none';
+        }
+    }
+
+    async function fetchMapNotifications() {
+        try {
+            const response = await fetch(notificationsEndpoint);
+            if (!response.ok) return;
+            const result = await response.json();
+            const notifications = Array.isArray(result.notifications) ? result.notifications : [];
+            latestNotifications = notifications;
+            renderNotificationPanel(notifications);
+            updateNotificationBadge(notifications);
+        } catch (error) {
+            console.error('Failed to fetch notifications', error);
+        }
+    }
+
+    if (notificationBtn && notificationPanel) {
+        notificationBtn.addEventListener('click', async () => {
+            notificationPanel.classList.toggle('active');
+            if (notificationPanel.classList.contains('active')) {
+                await fetchMapNotifications();
+                const latestTimestamp = latestNotifications[0]?.created_at || new Date().toISOString();
+                localStorage.setItem(seenKey, latestTimestamp);
+                notificationBadge.style.display = 'none';
+            }
+        });
+    }
+
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', () => {
+            const latestTimestamp = latestNotifications[0]?.created_at || new Date().toISOString();
+            localStorage.setItem(seenKey, latestTimestamp);
+            notificationBadge.style.display = 'none';
+        });
+    }
+
+    if (clearOldBtn) {
+        clearOldBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch("{{ route('map.notifications.clear_old') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ days: 30 })
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to clear old notifications.');
+                }
+
+                await fetchMapNotifications();
+                alert(result.message || 'Old notifications cleared.');
+            } catch (error) {
+                alert(error.message || 'Failed to clear old notifications.');
+            }
+        });
+    }
+
+    fetchMapNotifications();
+    setInterval(fetchMapNotifications, 30000);
+}
 const overlayPriority = {
     irrigated: 3,
     potential: 2,
@@ -2014,6 +2699,10 @@ function closeAllPanels() {
 
     // Optional: Reset the map selection style
     if (selectedBaseLayer && geoLayer) {
+        if (selectedBaseLayer.getElement) {
+            selectedBaseLayer.getElement()?.classList.remove('municipality-selected-3d');
+        }
+
         geoLayer.resetStyle(selectedBaseLayer);
     }
 }
@@ -2247,12 +2936,6 @@ if ('ResizeObserver' in window) {
 window.addEventListener('resize', syncMapLayout);
 document.addEventListener('DOMContentLoaded', syncMapLayout);
 
-async function loadChart() {
-    const res = await fetch('/irrigated-chart-data');
-    const data = await res.json();
-}
-
-loadChart();
 function updateChart(municipality, data) {
     const values = data[municipality];
 
@@ -2312,7 +2995,6 @@ function hideMapLoader() {
         loader.style.display = 'none';
     }
 }
-
 
 </script>
 @endsection

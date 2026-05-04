@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\SystemNotificationService;
 use App\Models\User;
-use Illuminate\Validation\ValidationException;
+use App\Services\SystemNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -15,7 +14,7 @@ use ZipArchive;
 
 class MapController extends Controller
 {
-    private const IRRIGATED_CHART_CACHE_KEY_PREFIX = 'map.irrigated_chart_data.v7.';
+    private const IRRIGATED_CHART_CACHE_KEY = 'map.irrigated_chart_data.v8';
     private const MUNICIPALITY_DETAILS_PATH = 'maps/details.json';
     private const IRRIGATED_DIRECTORY = 'maps/irrigated';
     private const POTENTIAL_DIRECTORY = 'maps/potential';
@@ -41,6 +40,25 @@ class MapController extends Controller
     private const SHAPEFILE_COMPANION_EXTENSIONS = ['shp', 'shx', 'dbf', 'prj', 'cpg'];
     private const MAP_NOTIFICATION_FILE = 'map_notifications.json';
     private const MAP_NOTIFICATION_LIMIT = 200;
+    private const MAP_API_CACHE_KEY = 'map.api.snapshot.v4';
+    private const MAP_RENDER_CACHE_KEY_PREFIX = 'map.rendered_geojson.v19.';
+    private const MAP_API_VERSION_FILE = 'map_api_version.json';
+    private const MAP_API_SIGNATURE_FILE = 'map_api_signature.json';
+    private const RENDERED_FEATURE_LIMITS = [
+        'irrigated' => 86500,
+        'potential' => 20000,
+        'land_boundary' => 5000,
+    ];
+    private const RENDERED_FEATURES_PER_FILE_LIMITS = [
+        'irrigated' => 86500,
+        'potential' => 500,
+        'land_boundary' => 1000,
+    ];
+    private const MUNICIPALITY_RENDERED_FEATURE_LIMIT = 30000;
+    private const MUNICIPALITY_RENDERED_FEATURES_PER_FILE_LIMIT = 5000;
+    private const IRRIGATED_OVERVIEW_POLYGON_POINTS = 10;
+    private const DEFAULT_RENDER_POLYGON_POINTS = 35;
+    private const DEFAULT_RENDER_LINE_POINTS = 120;
 
     private function notifications(): SystemNotificationService
     {
@@ -49,14 +67,123 @@ class MapController extends Controller
 
     public function Showmap()
     {
-        $overlayGroups = [
-            'irrigated' => $this->buildOverlayGroup('Irrigated Area', 'irrigated'),
-            'land_boundary' => $this->buildOverlayGroup('Pangasinan Land Boundary', 'land_boundary'),
-            'potential' => $this->buildOverlayGroup('Potential Irrigable Area', 'potential'),
-        ];
-        $uploadTargets = $this->buildUploadTargets();
+        $overlayGroups = $this->defaultOverlayGroups();
+        $uploadTargets = [];
 
         return view('map.map', compact('overlayGroups', 'uploadTargets'));
+    }
+
+    public function mapApiStatus()
+    {
+        $snapshot = $this->mapApiSnapshot();
+
+        return response()->json([
+            'version' => $snapshot['version'],
+            'updated_at' => $snapshot['updated_at'],
+            'overlay_groups' => collect($snapshot['overlay_groups'])->map(function ($group, $categoryKey) {
+                return [
+                    'label' => $group['label'],
+                    'files' => [],
+                    'file_count' => (int) ($group['file_count'] ?? 0),
+                    'files_loaded' => false,
+                    'has_files' => (bool) ($group['has_files'] ?? false),
+                    'render_url' => url('/map/render/' . $categoryKey),
+                ];
+            })->all(),
+            'upload_targets' => $snapshot['upload_targets'],
+        ]);
+    }
+
+    public function overlayFiles(string $category)
+    {
+        $snapshot = $this->mapApiSnapshot();
+
+        if (!isset($snapshot['overlay_groups'][$category])) {
+            return response()->json([
+                'message' => 'Invalid map category.',
+            ], 404);
+        }
+
+        return response()->json([
+            ...$snapshot['overlay_groups'][$category],
+            'version' => $snapshot['version'],
+            'updated_at' => $snapshot['updated_at'],
+        ]);
+    }
+
+    public function renderedOverlay(string $category)
+    {
+        @ini_set('memory_limit', '2048M');
+        @set_time_limit(180);
+
+        if (!array_key_exists($category, $this->categoryRouteMap())) {
+            return response()->json([
+                'message' => 'Invalid map category.',
+            ], 404);
+        }
+
+        $snapshot = $this->mapApiSnapshot();
+        $version = $snapshot['version'];
+        $cacheKey = self::MAP_RENDER_CACHE_KEY_PREFIX . $version . '.' . $category;
+
+        $payload = Cache::store('file')->rememberForever($cacheKey, function () use ($category, $snapshot) {
+            return $this->buildRenderedOverlayPayload($category, $snapshot);
+        });
+
+        return response()->json($payload)->header('Cache-Control', 'public, max-age=86400');
+    }
+
+    public function renderedMunicipalityIrrigatedOverlay(string $municipality)
+    {
+        @ini_set('memory_limit', '2048M');
+        @set_time_limit(180);
+
+        $snapshot = $this->mapApiSnapshot();
+        $version = $snapshot['version'];
+        $normalizedMunicipality = $this->normalizeMunicipalityName(rawurldecode($municipality));
+
+        if ($normalizedMunicipality === '') {
+            return response()->json([
+                'message' => 'Invalid municipality.',
+            ], 422);
+        }
+
+        $cacheKey = self::MAP_RENDER_CACHE_KEY_PREFIX . $version . '.irrigated.municipality.' . sha1($normalizedMunicipality);
+
+        $payload = Cache::store('file')->rememberForever($cacheKey, function () use ($snapshot, $normalizedMunicipality, $municipality) {
+            return $this->buildMunicipalityIrrigatedOverlayPayload($snapshot, $normalizedMunicipality, rawurldecode($municipality));
+        });
+
+        return response()->json($payload)->header('Cache-Control', 'public, max-age=86400');
+    }
+
+    private function defaultOverlayGroups(): array
+    {
+        return [
+            'irrigated' => $this->emptyOverlayGroup('Irrigated Area'),
+            'land_boundary' => $this->emptyOverlayGroup('Pangasinan Land Boundary'),
+            'potential' => $this->emptyOverlayGroup('Potential Irrigable Area'),
+        ];
+    }
+
+    private function emptyOverlayGroup(string $label): array
+    {
+        return [
+            'label' => $label,
+            'files' => [],
+            'file_count' => 0,
+            'files_loaded' => false,
+            'has_files' => true,
+        ];
+    }
+
+    private function categoryRouteMap(): array
+    {
+        return [
+            'irrigated' => ['Irrigated Area', 'irrigated'],
+            'land_boundary' => ['Pangasinan Land Boundary', 'land_boundary'],
+            'potential' => ['Potential Irrigable Area', 'potential'],
+        ];
     }
 
     private function buildOverlayGroup(string $label, string $directory): array
@@ -79,13 +206,11 @@ class MapController extends Controller
                     return false;
                 }
 
-                if ($extension !== 'shp') {
-                    return true;
+                if (str_starts_with(strtolower($path), 'maps/irrigated/') && $this->shouldSkipIrrigatedPath($path)) {
+                    return false;
                 }
 
-                $basePath = substr($path, 0, -4);
-
-                return $disk->exists($basePath . '.dbf') && $disk->exists($basePath . '.shx');
+                return true;
             })
             ->groupBy(function ($path) {
                 return strtolower(dirname($path) . '|' . pathinfo($path, PATHINFO_FILENAME));
@@ -102,6 +227,7 @@ class MapController extends Controller
                     'name' => basename($path),
                     'url' => $this->mapFileUrl($path),
                     'folder' => $this->relativeOverlayFolder($path, $folder),
+                    'size' => $this->overlayFilePayloadSize($path),
                 ];
             })
             ->sortBy([
@@ -114,7 +240,951 @@ class MapController extends Controller
         return [
             'label' => $label,
             'files' => $files,
+            'file_count' => count($files),
+            'files_loaded' => true,
+            'has_files' => count($files) > 0,
         ];
+    }
+
+    private function mapApiSnapshot(): array
+    {
+        return Cache::store('file')->rememberForever(self::MAP_API_CACHE_KEY, function () {
+            $version = $this->readMapApiVersion();
+
+            return [
+                'version' => $version['version'],
+                'updated_at' => $version['updated_at'],
+                'overlay_groups' => [
+                    'irrigated' => $this->buildOverlayGroup('Irrigated Area', 'irrigated'),
+                    'land_boundary' => $this->buildOverlayGroup('Pangasinan Land Boundary', 'land_boundary'),
+                    'potential' => $this->buildOverlayGroup('Potential Irrigable Area', 'potential'),
+                ],
+                'upload_targets' => $this->buildUploadTargets(),
+            ];
+        });
+    }
+
+    private function buildRenderedOverlayPayload(string $category, array $snapshot): array
+    {
+        if ($category === 'land_boundary') {
+            $basePath = public_path('maps/PANGASINAN.geojson');
+
+            if (is_file($basePath)) {
+                $features = $this->featuresFromGeoJsonFile($basePath, 'PANGASINAN.geojson', $category);
+                return $this->renderedOverlayFeatureCollection($category, $snapshot, $features, []);
+            }
+        }
+
+        $group = $snapshot['overlay_groups'][$category] ?? null;
+        $features = [];
+        $failedFiles = [];
+
+        if (!$group || empty($group['files'])) {
+            return $this->renderedOverlayFeatureCollection($category, $snapshot, [], []);
+        }
+
+        $files = $group['files'];
+
+        $featureLimit = self::RENDERED_FEATURE_LIMITS[$category] ?? 20000;
+        $perFileFeatureLimit = self::RENDERED_FEATURES_PER_FILE_LIMITS[$category] ?? 500;
+
+        foreach ($files as $file) {
+            if (count($features) >= $featureLimit) {
+                $failedFiles[] = [
+                    'name' => 'Additional ' . ($group['label'] ?? $category) . ' files',
+                    'message' => "Skipped from rendered overlay after {$featureLimit} features to keep the browser responsive. These files are still included in DBF/stat calculations.",
+                ];
+                break;
+            }
+
+            $fileUrl = (string) ($file['url'] ?? '');
+            $fileName = (string) ($file['name'] ?? 'Unknown file');
+            $fileFeatureLimit = min($perFileFeatureLimit, $featureLimit - count($features));
+
+            try {
+                foreach ($this->featuresFromMapFile($fileUrl, $fileName, $category, $fileFeatureLimit) as $feature) {
+                    $features[] = $feature;
+
+                    if (count($features) >= $featureLimit) {
+                        break;
+                    }
+                }
+            } catch (\Throwable $exception) {
+                try {
+                    $fallbackPath = $this->fallbackRenderablePath($fileUrl);
+                    $fallbackName = basename($fallbackPath);
+
+                    foreach ($this->featuresFromMapFile($this->mapFileUrl($fallbackPath), $fallbackName, $category, $fileFeatureLimit) as $feature) {
+                        $features[] = $feature;
+
+                        if (count($features) >= $featureLimit) {
+                            break;
+                        }
+                    }
+                } catch (\Throwable $fallbackException) {
+                    $failedFiles[] = [
+                        'name' => $fileName,
+                        'message' => $exception->getMessage() . ' / fallback: ' . $fallbackException->getMessage(),
+                    ];
+                }
+            }
+        }
+
+        return $this->renderedOverlayFeatureCollection($category, $snapshot, $features, $failedFiles);
+    }
+
+    private function buildMunicipalityIrrigatedOverlayPayload(array $snapshot, string $normalizedMunicipality, string $municipalityLabel): array
+    {
+        $group = $snapshot['overlay_groups']['irrigated'] ?? null;
+        $files = $group['files'] ?? [];
+        $features = [];
+        $failedFiles = [];
+        $matchedFiles = 0;
+
+        if (!$group || empty($files)) {
+            return $this->municipalityRenderedOverlayFeatureCollection($snapshot, $municipalityLabel, [], [], 0);
+        }
+
+        foreach ($files as $file) {
+            if (count($features) >= self::MUNICIPALITY_RENDERED_FEATURE_LIMIT) {
+                $failedFiles[] = [
+                    'name' => 'Additional ' . $municipalityLabel . ' irrigated files',
+                    'message' => 'Skipped after the municipality render limit to keep the browser responsive.',
+                ];
+                break;
+            }
+
+            $fileUrl = (string) ($file['url'] ?? '');
+            $fileName = (string) ($file['name'] ?? 'Unknown file');
+
+            if (!$this->renderFileBelongsToMunicipality($file, $fileUrl, $fileName, $normalizedMunicipality)) {
+                continue;
+            }
+
+            $matchedFiles++;
+            $fileFeatureLimit = min(
+                self::MUNICIPALITY_RENDERED_FEATURES_PER_FILE_LIMIT,
+                self::MUNICIPALITY_RENDERED_FEATURE_LIMIT - count($features)
+            );
+
+            try {
+                foreach ($this->featuresFromMapFile($fileUrl, $fileName, 'irrigated', $fileFeatureLimit) as $feature) {
+                    $features[] = $feature;
+
+                    if (count($features) >= self::MUNICIPALITY_RENDERED_FEATURE_LIMIT) {
+                        break;
+                    }
+                }
+            } catch (\Throwable $exception) {
+                try {
+                    $fallbackPath = $this->fallbackRenderablePath($fileUrl);
+                    $fallbackName = basename($fallbackPath);
+
+                    foreach ($this->featuresFromMapFile($this->mapFileUrl($fallbackPath), $fallbackName, 'irrigated', $fileFeatureLimit) as $feature) {
+                        $features[] = $feature;
+
+                        if (count($features) >= self::MUNICIPALITY_RENDERED_FEATURE_LIMIT) {
+                            break;
+                        }
+                    }
+                } catch (\Throwable $fallbackException) {
+                    $failedFiles[] = [
+                        'name' => $fileName,
+                        'message' => $exception->getMessage() . ' / fallback: ' . $fallbackException->getMessage(),
+                    ];
+                }
+            }
+        }
+
+        return $this->municipalityRenderedOverlayFeatureCollection($snapshot, $municipalityLabel, $features, $failedFiles, $matchedFiles);
+    }
+
+    private function municipalityRenderedOverlayFeatureCollection(
+        array $snapshot,
+        string $municipalityLabel,
+        array $features,
+        array $failedFiles,
+        int $matchedFiles
+    ): array {
+        $sourceFeatureCount = count($features);
+        $renderedFeatures = $this->combinedIrrigatedRenderFeatures($features);
+
+        return [
+            'type' => 'FeatureCollection',
+            'category' => 'irrigated',
+            'label' => 'Irrigated Area - ' . $municipalityLabel,
+            'municipality' => $municipalityLabel,
+            'version' => $snapshot['version'],
+            'updated_at' => $snapshot['updated_at'],
+            'feature_count' => $sourceFeatureCount,
+            'rendered_feature_count' => count($renderedFeatures),
+            'matched_files_count' => $matchedFiles,
+            'failed_files' => $failedFiles,
+            'features' => $renderedFeatures,
+        ];
+    }
+
+    private function renderFileBelongsToMunicipality(array $file, string $fileUrl, string $fileName, string $normalizedMunicipality): bool
+    {
+        $folder = $this->normalizeMunicipalityName((string) ($file['folder'] ?? ''));
+        $source = $this->normalizeMunicipalityName(rawurldecode($fileUrl . ' ' . $fileName));
+
+        return $this->municipalityTextMatches($folder, $normalizedMunicipality)
+            || $this->municipalityTextMatches($source, $normalizedMunicipality);
+    }
+
+    private function municipalityTextMatches(string $text, string $normalizedMunicipality): bool
+    {
+        if ($text === '' || $normalizedMunicipality === '') {
+            return false;
+        }
+
+        return $text === $normalizedMunicipality
+            || str_starts_with($text, $normalizedMunicipality . ' ')
+            || str_contains($text, ' ' . $normalizedMunicipality . ' ')
+            || str_ends_with($text, ' ' . $normalizedMunicipality);
+    }
+
+    private function renderedOverlayFeatureCollection(string $category, array $snapshot, array $features, array $failedFiles): array
+    {
+        $group = $snapshot['overlay_groups'][$category] ?? [];
+        $sourceFeatureCount = count($features);
+        $renderedFeatures = $category === 'irrigated'
+            ? $this->combinedIrrigatedRenderFeatures($features)
+            : $features;
+
+        return [
+            'type' => 'FeatureCollection',
+            'category' => $category,
+            'label' => (string) ($group['label'] ?? $category),
+            'version' => $snapshot['version'],
+            'updated_at' => $snapshot['updated_at'],
+            'feature_count' => $sourceFeatureCount,
+            'rendered_feature_count' => count($renderedFeatures),
+            'failed_files' => $failedFiles,
+            'features' => $renderedFeatures,
+        ];
+    }
+
+    private function combinedIrrigatedRenderFeatures(array $features): array
+    {
+        $polygons = [];
+        $lines = [];
+        $points = [];
+
+        foreach ($features as $feature) {
+            $geometry = $feature['geometry'] ?? null;
+
+            if (!is_array($geometry) || empty($geometry['type']) || !isset($geometry['coordinates'])) {
+                continue;
+            }
+
+            $type = (string) $geometry['type'];
+            $coordinates = $geometry['coordinates'];
+
+            if ($type === 'Polygon') {
+                $polygons[] = $coordinates;
+            } elseif ($type === 'MultiPolygon') {
+                foreach ($coordinates as $polygon) {
+                    $polygons[] = $polygon;
+                }
+            } elseif ($type === 'LineString') {
+                $lines[] = $coordinates;
+            } elseif ($type === 'MultiLineString') {
+                foreach ($coordinates as $line) {
+                    $lines[] = $line;
+                }
+            } elseif ($type === 'Point') {
+                $points[] = $coordinates;
+            } elseif ($type === 'MultiPoint') {
+                foreach ($coordinates as $point) {
+                    $points[] = $point;
+                }
+            }
+        }
+
+        $combined = [];
+        $properties = [
+            '_source_file' => 'Combined irrigated render layer',
+            '_category' => 'irrigated',
+        ];
+
+        if (!empty($polygons)) {
+            $combined[] = [
+                'type' => 'Feature',
+                'properties' => $properties,
+                'geometry' => [
+                    'type' => 'MultiPolygon',
+                    'coordinates' => $polygons,
+                ],
+            ];
+        }
+
+        if (!empty($lines)) {
+            $combined[] = [
+                'type' => 'Feature',
+                'properties' => $properties,
+                'geometry' => [
+                    'type' => 'MultiLineString',
+                    'coordinates' => $lines,
+                ],
+            ];
+        }
+
+        if (!empty($points)) {
+            $combined[] = [
+                'type' => 'Feature',
+                'properties' => $properties,
+                'geometry' => [
+                    'type' => 'MultiPoint',
+                    'coordinates' => $points,
+                ],
+            ];
+        }
+
+        return $combined;
+    }
+
+    private function featuresFromMapFile(string $fileUrl, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $path = $this->storagePathFromMapUrl($fileUrl);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return match ($extension) {
+            'geojson', 'json' => $this->featuresFromGeoJsonFile($path, $fileName, $category, $maxFeatures),
+            'kml' => $this->featuresFromKmlFile($path, $fileName, $category, $maxFeatures),
+            'kmz' => $this->featuresFromKmzFile($path, $fileName, $category, $maxFeatures),
+            'shp' => $this->featuresFromShapefile($path, $fileName, $category, $maxFeatures),
+            'zip' => $this->featuresFromZippedShapefile($path, $fileName, $category, $maxFeatures),
+            default => [],
+        };
+    }
+
+    private function storagePathFromMapUrl(string $fileUrl): string
+    {
+        $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
+        $prefix = '/map/file/';
+
+        if (str_contains($path, $prefix)) {
+            $path = substr($path, strpos($path, $prefix) + strlen($prefix));
+        }
+
+        $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
+        $fullPath = Storage::disk('public')->path($storagePath);
+
+        if (!is_file($fullPath)) {
+            throw new \RuntimeException('Map source file was not found.');
+        }
+
+        return $fullPath;
+    }
+
+    private function fallbackRenderablePath(string $fileUrl): string
+    {
+        $fullPath = $this->storagePathFromMapUrl($fileUrl);
+        $basePath = preg_replace('/\.[^.]+$/', '', $fullPath);
+
+        foreach (['geojson', 'json', 'kml', 'kmz'] as $extension) {
+            $candidate = $basePath . '.' . $extension;
+
+            if (is_file($candidate)) {
+                $publicRoot = str_replace('\\', '/', Storage::disk('public')->path(''));
+                $normalizedCandidate = str_replace('\\', '/', $candidate);
+
+                if (str_starts_with($normalizedCandidate, $publicRoot)) {
+                    return substr($normalizedCandidate, strlen($publicRoot));
+                }
+            }
+        }
+
+        throw new \RuntimeException('No renderable fallback source was found.');
+    }
+
+    private function featuresFromGeoJsonFile(string $path, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $decoded = json_decode((string) file_get_contents($path), true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        return $this->normalizeGeoJsonFeatures($decoded, $fileName, $category, $maxFeatures);
+    }
+
+    private function normalizeGeoJsonFeatures(array $geoJson, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        if (($geoJson['type'] ?? null) === 'FeatureCollection') {
+            $features = $geoJson['features'] ?? [];
+        } elseif (($geoJson['type'] ?? null) === 'Feature') {
+            $features = [$geoJson];
+        } elseif (!empty($geoJson['type']) && !empty($geoJson['coordinates'])) {
+            $features = [[
+                'type' => 'Feature',
+                'properties' => [],
+                'geometry' => $geoJson,
+            ]];
+        } else {
+            $features = [];
+        }
+
+        if ($maxFeatures !== null) {
+            $features = array_slice($features, 0, max(0, $maxFeatures));
+        }
+
+        return array_values(array_filter(array_map(function ($feature) use ($fileName, $category) {
+            if (!is_array($feature) || empty($feature['geometry'])) {
+                return null;
+            }
+
+            $feature['type'] = 'Feature';
+            $feature['properties'] = is_array($feature['properties'] ?? null) ? $feature['properties'] : [];
+            $feature['properties']['_source_file'] = $fileName;
+            $feature['properties']['_category'] = $category;
+
+            return $this->compactRenderedFeature($feature, $fileName, $category);
+        }, $features)));
+    }
+
+    private function featuresFromKmlFile(string $path, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $reader = new \XMLReader();
+
+        if (!$reader->open($path)) {
+            return [];
+        }
+
+        $features = [];
+
+        while ($reader->read()) {
+            if ($reader->nodeType !== \XMLReader::ELEMENT || $reader->localName !== 'Placemark') {
+                continue;
+            }
+
+            $xml = simplexml_load_string((string) $reader->readOuterXML());
+
+            if (!$xml) {
+                continue;
+            }
+
+            foreach ($this->featuresFromKmlPlacemark($xml, $fileName, $category) as $feature) {
+                $features[] = $feature;
+
+                if ($maxFeatures !== null && count($features) >= $maxFeatures) {
+                    break 2;
+                }
+            }
+        }
+
+        $reader->close();
+
+        return $features;
+    }
+
+    private function featuresFromKmzFile(string $path, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $zip = new ZipArchive;
+
+        if ($zip->open($path) !== true) {
+            return [];
+        }
+
+        $kmlText = null;
+
+        for ($index = 0; $index < $zip->numFiles; $index++) {
+            $entryName = (string) $zip->getNameIndex($index);
+
+            if (strtolower($entryName) === 'doc.kml' || str_ends_with(strtolower($entryName), '.kml')) {
+                $kmlText = $zip->getFromIndex($index);
+                break;
+            }
+        }
+
+        $zip->close();
+
+        return is_string($kmlText) ? $this->featuresFromKmlString($kmlText, $fileName, $category, $maxFeatures) : [];
+    }
+
+    private function featuresFromKmlString(string $kmlText, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $xml = simplexml_load_string($kmlText);
+
+        if (!$xml) {
+            return [];
+        }
+
+        $placemarks = $xml->xpath('//*[local-name()="Placemark"]') ?: [];
+        $features = [];
+
+        foreach ($placemarks as $placemark) {
+            $name = trim((string) ($placemark->xpath('./*[local-name()="name"]')[0] ?? ''));
+            $description = trim((string) ($placemark->xpath('./*[local-name()="description"]')[0] ?? ''));
+
+            foreach ($this->featuresFromKmlPlacemark($placemark, $fileName, $category, $name, $description) as $feature) {
+                $features[] = $feature;
+
+                if ($maxFeatures !== null && count($features) >= $maxFeatures) {
+                    break 2;
+                }
+            }
+        }
+
+        return $features;
+    }
+
+    private function featuresFromKmlPlacemark(
+        \SimpleXMLElement $placemark,
+        string $fileName,
+        string $category,
+        ?string $knownName = null,
+        ?string $knownDescription = null
+    ): array {
+        $name = $knownName ?? trim((string) ($placemark->xpath('./*[local-name()="name"]')[0] ?? ''));
+        $description = $knownDescription ?? trim((string) ($placemark->xpath('./*[local-name()="description"]')[0] ?? ''));
+        $features = [];
+
+        foreach ($this->kmlGeometries($placemark) as $geometry) {
+            $features[] = $this->compactRenderedFeature([
+                'type' => 'Feature',
+                'properties' => [
+                    'name' => $name ?: pathinfo($fileName, PATHINFO_FILENAME),
+                    'description' => $description,
+                    '_source_file' => $fileName,
+                    '_category' => $category,
+                ],
+                'geometry' => $geometry,
+            ], $fileName, $category);
+        }
+
+        return $features;
+    }
+
+    private function kmlGeometries(\SimpleXMLElement $node): array
+    {
+        $geometries = [];
+
+        foreach ($node->xpath('.//*[local-name()="Point"]/*[local-name()="coordinates"]') ?: [] as $coordinates) {
+            $point = $this->parseKmlCoordinateList((string) $coordinates)[0] ?? null;
+
+            if ($point) {
+                $geometries[] = [
+                    'type' => 'Point',
+                    'coordinates' => $point,
+                ];
+            }
+        }
+
+        foreach ($node->xpath('.//*[local-name()="LineString"]/*[local-name()="coordinates"]') ?: [] as $coordinates) {
+            $line = $this->parseKmlCoordinateList((string) $coordinates);
+
+            if (count($line) >= 2) {
+                $geometries[] = [
+                    'type' => 'LineString',
+                    'coordinates' => $line,
+                ];
+            }
+        }
+
+        foreach ($node->xpath('.//*[local-name()="Polygon"]') ?: [] as $polygon) {
+            $rings = [];
+
+            foreach ($polygon->xpath('.//*[local-name()="LinearRing"]/*[local-name()="coordinates"]') ?: [] as $coordinates) {
+                $ring = $this->parseKmlCoordinateList((string) $coordinates);
+
+                if (count($ring) >= 4) {
+                    $rings[] = $ring;
+                }
+            }
+
+            if (!empty($rings)) {
+                $geometries[] = [
+                    'type' => 'Polygon',
+                    'coordinates' => $rings,
+                ];
+            }
+        }
+
+        return $geometries;
+    }
+
+    private function parseKmlCoordinateList(string $coordinates): array
+    {
+        $points = preg_split('/\s+/', trim($coordinates)) ?: [];
+        $parsed = [];
+
+        foreach ($points as $point) {
+            $parts = array_map('trim', explode(',', $point));
+
+            if (count($parts) >= 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
+                $parsed[] = [(float) $parts[0], (float) $parts[1]];
+            }
+        }
+
+        return $parsed;
+    }
+
+    private function featuresFromShapefile(string $path, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        return $this->featuresFromRawShapefile($path, $fileName, $category, $maxFeatures);
+    }
+
+    private function featuresFromRawShapefile(string $path, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $handle = fopen($path, 'rb');
+
+        if (!$handle) {
+            return [];
+        }
+
+        try {
+            fseek($handle, 100);
+            $features = [];
+
+            while (!feof($handle)) {
+                $recordHeader = fread($handle, 8);
+
+                if (strlen($recordHeader) < 8) {
+                    break;
+                }
+
+                $contentLengthWords = unpack('N', substr($recordHeader, 4, 4))[1] ?? 0;
+                $contentLength = (int) $contentLengthWords * 2;
+
+                if ($contentLength <= 0) {
+                    break;
+                }
+
+                $content = fread($handle, $contentLength);
+
+                if (strlen($content) < 4) {
+                    continue;
+                }
+
+                $geometry = $this->geometryFromRawShpRecord($content, $contentLength);
+
+                if (!$geometry) {
+                    continue;
+                }
+
+                $features[] = $this->compactRenderedFeature([
+                    'type' => 'Feature',
+                    'properties' => [
+                        'name' => pathinfo($fileName, PATHINFO_FILENAME),
+                        '_source_file' => $fileName,
+                        '_category' => $category,
+                    ],
+                    'geometry' => $geometry,
+                ], $fileName, $category);
+
+                if ($maxFeatures !== null && count($features) >= $maxFeatures) {
+                    break;
+                }
+            }
+
+            return array_values(array_filter($features, fn ($feature) => !empty($feature['geometry'])));
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    private function geometryFromRawShpRecord(string $content, int $contentLength = 0): ?array
+    {
+        $shapeType = $this->readLittleEndianInt($content, 0);
+
+        return match ($shapeType) {
+            1, 11, 21 => $this->pointGeometryFromRawShpRecord($content),
+            3, 13, 23 => $contentLength > 400000
+                ? $this->bboxGeometryFromRawShpRecord($content)
+                : $this->lineGeometryFromRawShpRecord($content),
+            5, 15, 25 => $contentLength > 400000
+                ? $this->bboxGeometryFromRawShpRecord($content)
+                : $this->polygonGeometryFromRawShpRecord($content),
+            default => null,
+        };
+    }
+
+    private function bboxGeometryFromRawShpRecord(string $content): ?array
+    {
+        if (strlen($content) < 36) {
+            return null;
+        }
+
+        $xmin = round($this->readLittleEndianDouble($content, 4), 4);
+        $ymin = round($this->readLittleEndianDouble($content, 12), 4);
+        $xmax = round($this->readLittleEndianDouble($content, 20), 4);
+        $ymax = round($this->readLittleEndianDouble($content, 28), 4);
+
+        if ($xmin === $xmax || $ymin === $ymax) {
+            return null;
+        }
+
+        return [
+            'type' => 'Polygon',
+            'coordinates' => [[
+                [$xmin, $ymin],
+                [$xmax, $ymin],
+                [$xmax, $ymax],
+                [$xmin, $ymax],
+                [$xmin, $ymin],
+            ]],
+        ];
+    }
+
+    private function pointGeometryFromRawShpRecord(string $content): ?array
+    {
+        if (strlen($content) < 20) {
+            return null;
+        }
+
+        return [
+            'type' => 'Point',
+            'coordinates' => [
+                $this->readLittleEndianDouble($content, 4),
+                $this->readLittleEndianDouble($content, 12),
+            ],
+        ];
+    }
+
+    private function lineGeometryFromRawShpRecord(string $content): ?array
+    {
+        $parts = $this->rawShpParts($content, 120);
+
+        if (empty($parts)) {
+            return null;
+        }
+
+        return count($parts) === 1
+            ? ['type' => 'LineString', 'coordinates' => $parts[0]]
+            : ['type' => 'MultiLineString', 'coordinates' => $parts];
+    }
+
+    private function polygonGeometryFromRawShpRecord(string $content): ?array
+    {
+        $rings = $this->rawShpParts($content, 35);
+
+        if (empty($rings)) {
+            return null;
+        }
+
+        return [
+            'type' => count($rings) === 1 ? 'Polygon' : 'MultiPolygon',
+            'coordinates' => count($rings) === 1
+                ? [$rings[0]]
+                : array_map(fn ($ring) => [$ring], $rings),
+        ];
+    }
+
+    private function rawShpParts(string $content, int $maxPointsPerPart): array
+    {
+        if (strlen($content) < 44) {
+            return [];
+        }
+
+        $numParts = $this->readLittleEndianInt($content, 36);
+        $numPoints = $this->readLittleEndianInt($content, 40);
+
+        if ($numParts <= 0 || $numPoints <= 0) {
+            return [];
+        }
+
+        $partsOffset = 44;
+        $pointsOffset = $partsOffset + ($numParts * 4);
+
+        if (strlen($content) < $pointsOffset + ($numPoints * 16)) {
+            return [];
+        }
+
+        $partStarts = [];
+
+        for ($index = 0; $index < $numParts; $index++) {
+            $partStarts[] = $this->readLittleEndianInt($content, $partsOffset + ($index * 4));
+        }
+
+        $partStarts[] = $numPoints;
+        $parts = [];
+
+        for ($partIndex = 0; $partIndex < $numParts; $partIndex++) {
+            $start = $partStarts[$partIndex];
+            $end = $partStarts[$partIndex + 1];
+            $points = [];
+            $pointCount = max(0, $end - $start);
+            $step = max(1, (int) ceil($pointCount / max(1, $maxPointsPerPart)));
+
+            for ($pointIndex = $start; $pointIndex < $end; $pointIndex += $step) {
+                $pointOffset = $pointsOffset + ($pointIndex * 16);
+                $points[] = [
+                    round($this->readLittleEndianDouble($content, $pointOffset), 4),
+                    round($this->readLittleEndianDouble($content, $pointOffset + 8), 4),
+                ];
+            }
+
+            $lastPointIndex = $end - 1;
+
+            if ($lastPointIndex >= $start) {
+                $lastPointOffset = $pointsOffset + ($lastPointIndex * 16);
+                $lastPoint = [
+                    round($this->readLittleEndianDouble($content, $lastPointOffset), 4),
+                    round($this->readLittleEndianDouble($content, $lastPointOffset + 8), 4),
+                ];
+
+                if (end($points) !== $lastPoint) {
+                    $points[] = $lastPoint;
+                }
+            }
+
+            if (!empty($points)) {
+                $parts[] = $points;
+            }
+        }
+
+        return $parts;
+    }
+
+    private function readLittleEndianInt(string $bytes, int $offset): int
+    {
+        return unpack('V', substr($bytes, $offset, 4))[1] ?? 0;
+    }
+
+    private function readLittleEndianDouble(string $bytes, int $offset): float
+    {
+        return unpack('d', substr($bytes, $offset, 8))[1] ?? 0.0;
+    }
+
+    private function compactRenderedFeature(array $feature, string $fileName, string $category): array
+    {
+        $properties = is_array($feature['properties'] ?? null) ? $feature['properties'] : [];
+
+        $compactProperties = [
+            '_source_file' => $fileName,
+            '_category' => $category,
+        ];
+
+        foreach (['name', 'Name', 'NAMELSAD', 'ADM3_EN', 'MUNICIPALI', 'MUNICIPAL', 'layer', 'description'] as $key) {
+            if (!empty($properties[$key]) && is_scalar($properties[$key])) {
+                $compactProperties[$key] = (string) $properties[$key];
+            }
+        }
+
+        return [
+            'type' => 'Feature',
+            'properties' => $compactProperties,
+            'geometry' => $this->simplifyRenderedGeometry($feature['geometry'] ?? null, $category),
+        ];
+    }
+
+    private function simplifyRenderedGeometry($geometry, string $category)
+    {
+        if (!is_array($geometry) || empty($geometry['type']) || !isset($geometry['coordinates'])) {
+            return null;
+        }
+
+        return [
+            'type' => $geometry['type'],
+            'coordinates' => $this->simplifyCoordinateTree($geometry['coordinates'], (string) $geometry['type'], $category),
+        ];
+    }
+
+    private function simplifyCoordinateTree($coordinates, string $geometryType, string $category = '')
+    {
+        if (!is_array($coordinates)) {
+            return $coordinates;
+        }
+
+        if (count($coordinates) >= 2 && is_numeric($coordinates[0] ?? null) && is_numeric($coordinates[1] ?? null)) {
+            return [
+                round((float) $coordinates[0], 4),
+                round((float) $coordinates[1], 4),
+            ];
+        }
+
+        if ($this->isCoordinateRing($coordinates)) {
+            $maxPoints = str_contains($geometryType, 'Polygon')
+                ? ($category === 'irrigated' ? self::IRRIGATED_OVERVIEW_POLYGON_POINTS : self::DEFAULT_RENDER_POLYGON_POINTS)
+                : self::DEFAULT_RENDER_LINE_POINTS;
+
+            return $this->thinCoordinateRing($coordinates, $maxPoints);
+        }
+
+        return array_map(fn ($item) => $this->simplifyCoordinateTree($item, $geometryType, $category), $coordinates);
+    }
+
+    private function isCoordinateRing(array $coordinates): bool
+    {
+        return isset($coordinates[0], $coordinates[0][0], $coordinates[0][1])
+            && is_numeric($coordinates[0][0])
+            && is_numeric($coordinates[0][1]);
+    }
+
+    private function thinCoordinateRing(array $ring, int $maxPoints): array
+    {
+        $count = count($ring);
+
+        if ($count <= $maxPoints) {
+            return array_map(fn ($point) => $this->simplifyCoordinateTree($point, 'Point'), $ring);
+        }
+
+        $step = max(1, (int) ceil($count / $maxPoints));
+        $thinned = [];
+
+        for ($index = 0; $index < $count; $index += $step) {
+            $thinned[] = $this->simplifyCoordinateTree($ring[$index], 'Point');
+        }
+
+        $lastPoint = $this->simplifyCoordinateTree($ring[$count - 1], 'Point');
+
+        if (end($thinned) !== $lastPoint) {
+            $thinned[] = $lastPoint;
+        }
+
+        return $thinned;
+    }
+
+    private function featuresFromZippedShapefile(string $path, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $extractPath = storage_path('app/temp/map_render_' . uniqid('', true));
+        $zip = new ZipArchive;
+
+        if ($zip->open($path) !== true) {
+            return [];
+        }
+
+        if (!is_dir($extractPath)) {
+            mkdir($extractPath, 0777, true);
+        }
+
+        $zip->extractTo($extractPath);
+        $zip->close();
+
+        try {
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($extractPath));
+
+            foreach ($iterator as $file) {
+                if ($file->isFile() && strtolower($file->getExtension()) === 'shp') {
+                    return $this->featuresFromShapefile($file->getPathname(), $fileName, $category, $maxFeatures);
+                }
+            }
+
+            return [];
+        } finally {
+            $this->deleteLocalDirectory($extractPath);
+        }
+    }
+
+    private function deleteLocalDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+        }
+
+        rmdir($directory);
     }
 
     private function resolveOverlayFolder(string $label, string $directory): string
@@ -169,18 +1239,37 @@ class MapController extends Controller
         return $relativeFolder === '.' ? '' : $relativeFolder;
     }
 
+    private function overlayFilePayloadSize(string $path): int
+    {
+        $disk = Storage::disk('public');
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if ($extension !== 'shp') {
+            return $disk->exists($path) ? (int) $disk->size($path) : 0;
+        }
+
+        $basePath = substr($path, 0, -4);
+        $totalSize = 0;
+
+        foreach (self::SHAPEFILE_COMPANION_EXTENSIONS as $companionExtension) {
+            $companionPath = $basePath . '.' . $companionExtension;
+
+            if ($disk->exists($companionPath)) {
+                $totalSize += (int) $disk->size($companionPath);
+            }
+        }
+
+        return $totalSize;
+    }
+
     public function upload(Request $request)
     {
         try {
             $request->validate([
                 'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
                 'files' => 'required',
-                'files.*' => 'file|extensions:geojson,json,kml,kmz,zip,shp,shx,dbf,prj,cpg',
+                'files.*' => 'file|max:51200',
                 'target_folder' => 'nullable|string|max:255',
-            ], [
-                'files.required' => 'Please select at least one supported map file to upload.',
-                'files.*.file' => 'Only supported map files may be uploaded.',
-                'files.*.extensions' => 'Unsupported file detected. Please upload only: .geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, or .cpg.',
             ]);
 
             $category = $request->category;
@@ -188,6 +1277,7 @@ class MapController extends Controller
             $paths = $request->input('paths', []);
             $targetFolder = $this->sanitizeRelativeFolder($request->input('target_folder', ''));
             $baseStoragePath = trim("maps/{$categoryDirectory}/{$targetFolder}", '/');
+            $displayUploadDirectory = $this->displayMapDirectory($baseStoragePath, $category);
             $uploadedFiles = [];
             $shapefileBasenames = [];
 
@@ -233,7 +1323,6 @@ class MapController extends Controller
             }
 
             $this->clearMapDataCache();
-            $this->notifyUploadedMapFiles($request, $category, $uploadedFiles, $targetFolder);
             $notificationResult = $this->notifyMapFileChange(
                 'upload',
                 $category,
@@ -241,16 +1330,12 @@ class MapController extends Controller
             );
 
             return response()->json([
-                'message' => 'Upload successful. ' . $notificationResult['admin_message'],
+                'message' => "Upload successful to {$displayUploadDirectory}. {$notificationResult['admin_message']}",
                 'files' => $uploadedFiles,
                 'target_folder' => $targetFolder,
+                'target_directory' => $displayUploadDirectory,
                 'notified_users_count' => $notificationResult['notified_users_count'],
             ]);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => $e->validator->errors()->first() ?: 'Upload failed. Please check the selected files and try again.',
-                'errors' => $e->errors(),
-            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Upload failed: ' . $e->getMessage(),
@@ -509,9 +1594,9 @@ class MapController extends Controller
         }
     }
 
-    public function getIrrigatedChartData()
+     public function getIrrigatedChartData()
     {
-        return response()->json(Cache::store('file')->remember($this->irrigatedChartCacheKey(), now()->addHour(), function () {
+        $payload = Cache::store('file')->rememberForever($this->irrigatedChartCacheKey(), function () {
             $municipalityDetails = $this->getMunicipalityDetailIndex();
 
             if (empty($municipalityDetails)) {
@@ -571,7 +1656,9 @@ class MapController extends Controller
             }
 
             return $chartData;
-        }));
+        });
+
+        return response()->json($payload)->header('Cache-Control', 'public, max-age=86400');
     }
 
     private function getMunicipalityDetailIndex(): array
@@ -607,11 +1694,19 @@ class MapController extends Controller
             $this->resolveMapDataDirectory(self::IRRIGATED_DIRECTORY),
             $municipalityDetails,
             function (string $path, array $record) use ($municipalityDetails): ?string {
+                $municipalityFromFolder = $this->guessMunicipalityFromPath($path, $municipalityDetails);
+
+                if ($municipalityFromFolder) {
+                    return $municipalityFromFolder;
+                }
+
                 if ($this->shouldSkipIrrigatedPath($path)) {
                     return null;
                 }
 
-                return $this->guessMunicipalityFromPath($path, $municipalityDetails);
+                $recordName = (string) ($record['layer'] ?? $record['name'] ?? '');
+
+                return $this->guessMunicipalityFromText($recordName . ' ' . $path, $municipalityDetails);
             },
             function (array $record): float {
                 return $this->extractIrrigatedAreaValue($record);
@@ -829,7 +1924,7 @@ class MapController extends Controller
     {
         $normalizedPath = strtolower($path);
 
-        return str_contains($normalizedPath, 'potential ia')
+        return str_contains($normalizedPath, '/!pia')
             || str_contains($normalizedPath, 'non-operational')
             || str_contains($normalizedPath, 'non operational');
     }
@@ -972,42 +2067,119 @@ class MapController extends Controller
     private function clearMapDataCache(): void
     {
         Cache::store('file')->forget($this->irrigatedChartCacheKey());
+        Cache::store('file')->forget(self::MAP_API_CACHE_KEY);
+        $version = $this->bumpMapApiVersion();
+        $this->writeMapApiSignature('manual:' . ($version['version'] ?? uniqid('', true)), $version);
     }
 
-    private function notifyUploadedMapFiles(Request $request, string $category, array $uploadedFiles, string $targetFolder): void
+    private function refreshMapDataCacheIfFilesystemChanged(): void
     {
-        $actor = $request->user();
+        $signature = $this->currentMapDataSignature();
+        $stored = $this->readMapApiSignature();
 
-        if (!$actor || empty($uploadedFiles)) {
+        if (($stored['signature'] ?? null) === $signature) {
             return;
         }
 
-        $fileNames = collect($uploadedFiles)
-            ->pluck('name')
-            ->filter()
-            ->values();
+        Cache::store('file')->forget($this->irrigatedChartCacheKey());
+        Cache::store('file')->forget(self::MAP_API_CACHE_KEY);
+        $version = $this->bumpMapApiVersion();
+        $this->writeMapApiSignature($signature, $version);
+    }
 
-        if ($fileNames->isEmpty()) {
-            return;
+    private function currentMapDataSignature(): string
+    {
+        $disk = Storage::disk('public');
+        $entries = [];
+
+        foreach (self::CATEGORY_DIRECTORY_MAP as $category => $directory) {
+            $root = $this->resolveOverlayFolder($category, $directory);
+
+            if (!$disk->exists($root)) {
+                $entries[] = "{$root}|missing";
+                continue;
+            }
+
+            foreach ($disk->allFiles($root) as $path) {
+                $entries[] = implode('|', [
+                    $path,
+                    $disk->size($path),
+                    $disk->lastModified($path),
+                ]);
+            }
         }
 
-        $categoryDirectory = self::CATEGORY_DIRECTORY_MAP[$category] ?? $category;
-        $directory = trim("maps/{$categoryDirectory}/{$targetFolder}", '/');
-        $directoryLabel = $directory !== '' ? $directory : 'maps';
-        $actorLabel = $this->notifications()->actorLabel($actor);
-        $title = $fileNames->count() === 1 ? 'Map file uploaded' : 'Map files uploaded';
-        $message = $fileNames->count() === 1
-            ? "{$actorLabel} uploaded a new file into {$directoryLabel}/{$fileNames->first()}."
-            : "{$actorLabel} uploaded new files into {$directoryLabel}: {$fileNames->implode(', ')}.";
+        $detailsPath = public_path(self::MUNICIPALITY_DETAILS_PATH);
 
-        $this->notifications()->notifyAgency($actor, $title, $message, [
-            'type' => 'map_file',
-            'team' => 'all',
-            'team_label' => 'All Teams',
-            'map_category' => $category,
-            'map_directory' => $directoryLabel,
-            'map_files' => $fileNames->all(),
-        ]);
+        if (is_file($detailsPath)) {
+            $entries[] = implode('|', [
+                self::MUNICIPALITY_DETAILS_PATH,
+                filesize($detailsPath) ?: 0,
+                filemtime($detailsPath) ?: 0,
+            ]);
+        }
+
+        sort($entries, SORT_STRING);
+
+        return sha1(implode("\n", $entries));
+    }
+
+    private function readMapApiSignature(): array
+    {
+        $filePath = storage_path('app/' . self::MAP_API_SIGNATURE_FILE);
+
+        if (!file_exists($filePath)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) file_get_contents($filePath), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function writeMapApiSignature(string $signature, array $version): void
+    {
+        file_put_contents(
+            storage_path('app/' . self::MAP_API_SIGNATURE_FILE),
+            json_encode([
+                'signature' => $signature,
+                'version' => $version['version'] ?? null,
+                'updated_at' => $version['updated_at'] ?? now()->toIso8601String(),
+            ], JSON_PRETTY_PRINT)
+        );
+    }
+
+    private function readMapApiVersion(): array
+    {
+        $filePath = storage_path('app/' . self::MAP_API_VERSION_FILE);
+
+        if (file_exists($filePath)) {
+            $decoded = json_decode((string) file_get_contents($filePath), true);
+
+            if (is_array($decoded) && !empty($decoded['version']) && !empty($decoded['updated_at'])) {
+                return [
+                    'version' => (string) $decoded['version'],
+                    'updated_at' => (string) $decoded['updated_at'],
+                ];
+            }
+        }
+
+        return $this->bumpMapApiVersion();
+    }
+
+    private function bumpMapApiVersion(): array
+    {
+        $version = [
+            'version' => uniqid('map_api_', true),
+            'updated_at' => now()->toIso8601String(),
+        ];
+
+        file_put_contents(
+            storage_path('app/' . self::MAP_API_VERSION_FILE),
+            json_encode($version, JSON_PRETTY_PRINT)
+        );
+
+        return $version;
     }
 
     private function notifyMapFileChange(string $action, string $category, array $files): array
@@ -1024,8 +2196,9 @@ class MapController extends Controller
         }
 
         $actor = Auth::check() ? (Auth::user()->name ?? 'Admin') : 'Admin';
-        $locations = array_values(array_unique(array_map(function ($file) {
-            return trim(dirname((string) ($file['path'] ?? '')), '.');
+        $locations = array_values(array_unique(array_map(function ($file) use ($category) {
+            $path = (string) ($file['path'] ?? '');
+            return $this->displayMapDirectory(dirname($path), $category);
         }, $files)));
 
         $entry = [
@@ -1048,11 +2221,51 @@ class MapController extends Controller
         $existing = array_slice($existing, 0, self::MAP_NOTIFICATION_LIMIT);
         $this->writeMapNotifications($existing);
 
-        $notifiedUsers = User::query()
-            ->where('role', '!=', 'admin')
-            ->count();
+        $notifiedUsers = 0;
+        $adminMessage = 'Teams and admins have been notified.';
 
-        $adminMessage = 'Other users have been notified.';
+        if (Auth::check() && Auth::user() instanceof User) {
+            $actorUser = Auth::user();
+            $actorLabel = $this->notifications()->actorLabel($actorUser);
+            $locationSummary = implode(', ', array_slice($locations, 0, 3));
+
+            if (count($locations) > 3) {
+                $locationSummary .= ', and more';
+            }
+
+            if ($locationSummary === '') {
+                $locationSummary = $this->displayMapDirectory('maps', $category);
+            }
+
+            $title = $action === 'delete' ? 'Map file removed' : 'Map file uploaded';
+            $fileCount = count($files);
+            $fileLabel = $fileCount === 1 ? 'file' : 'files';
+            $actionText = $action === 'delete' ? 'removed' : 'uploaded';
+            $message = "{$actorLabel} {$actionText} {$fileCount} map {$fileLabel} in {$locationSummary}.";
+
+            $this->notifications()->notifyAgency($actorUser, $title, $message, [
+                'type' => 'map_file',
+                'team' => 'all',
+                'team_label' => $this->notifications()->teamLabel('all'),
+                'map_category' => $category,
+                'map_locations' => $locations,
+                'map_files' => array_map(function ($file) {
+                    return [
+                        'name' => (string) ($file['name'] ?? ''),
+                        'path' => (string) ($file['path'] ?? ''),
+                    ];
+                }, $files),
+            ]);
+
+            $notifiedUsers = User::query()
+                ->where('is_active', true)
+                ->where('id', '!=', $actorUser->getKey())
+                ->count();
+        } else {
+            $notifiedUsers = User::query()
+                ->where('is_active', true)
+                ->count();
+        }
 
         return [
             'notified_users_count' => $notifiedUsers,
@@ -1102,14 +2315,10 @@ class MapController extends Controller
 
     private function irrigatedChartCacheKey(): string
     {
-        return self::IRRIGATED_CHART_CACHE_KEY_PREFIX . $this->mapDataFingerprint([
-            self::IRRIGATED_DIRECTORY,
-            self::POTENTIAL_DIRECTORY,
-            self::MUNICIPALITY_DETAILS_PATH,
-        ]);
+        return self::IRRIGATED_CHART_CACHE_KEY;
     }
 
-    private function mapDataFingerprint(array $paths): string
+        private function mapDataFingerprint(array $paths): string
     {
         $parts = [];
 
@@ -1173,6 +2382,29 @@ class MapController extends Controller
         });
 
         return implode('/', $parts);
+    }
+
+    private function displayMapDirectory(string $path, string $category): string
+    {
+        $normalized = trim(str_replace('\\', '/', $path), '/');
+
+        if ($normalized === '' || $normalized === '.') {
+            return "maps/{$category}";
+        }
+
+        $segments = explode('/', $normalized);
+
+        if (($segments[0] ?? '') !== 'maps') {
+            array_unshift($segments, 'maps');
+        }
+
+        if (isset($segments[1])) {
+            $segments[1] = $category;
+        } else {
+            $segments[] = $category;
+        }
+
+        return implode('/', $segments);
     }
 
     private function extractUploadSubfolder(string $relativePath): string

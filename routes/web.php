@@ -35,6 +35,9 @@ Route::get('/guest/pao-team/pow/export-excel', [PaoTeamController::class, 'expor
 Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 Route::get('/map/notifications-feed', [MapController::class, 'mapNotifications'])->name('map.notifications.feed');
 Route::get('/map/file/{path}', [MapController::class, 'serveMapFile'])->where('path', '.*')->name('map.file');
+Route::get('/map/api/status', [MapController::class, 'mapApiStatus'])->name('map.api.status');
+Route::get('/map/render/{category}', [MapController::class, 'renderedOverlay'])->name('map.render');
+Route::get('/map/overlay/files/{category}', [MapController::class, 'overlayFiles'])->name('map.overlay.files');
 
 Route::get('/irrigated-chart-data', [MapController::class, 'getIrrigatedChartData']);
 Route::get('/guest/{team_slug}/dashboard', [GuestController::class, 'teamDashboard'])->name('guest.team.dashboard');
@@ -227,7 +230,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/procurement/import', [DataTableImportController::class, 'import'])->defaults('table', 'cm-procurement')->name('cm.procurement.import');
                 Route::put('/procurement/update', [ContractManagementTeamController::class, 'updateProcurement'])->name('cm.procurement.update');
                 Route::delete('/procurement/{id}', [ContractManagementTeamController::class, 'destroyProcurement'])->name('cm.procurement.destroy');
-                
+
                 Route::delete('/procurement/{id}/delete-ca-file', [ContractManagementTeamController::class, 'deleteCAFile'])->name('cm.procurement.delete_ca');
                 Route::delete('/procurement/{id}/delete-ntp-file', [ContractManagementTeamController::class, 'deleteNTPFile'])->name('cm.procurement.delete_ntp');
             });
