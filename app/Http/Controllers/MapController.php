@@ -65,16 +65,47 @@ class MapController extends Controller
         return app(SystemNotificationService::class);
     }
 
-    public function Showmap()
+    private function denyMapAccessUnlessAllowed(Request $request)
     {
+        if ($request->session()->get('guest_terms_accepted') === true) {
+            return null;
+        }
+
+        if ($request->user() && $request->session()->get('agreed_to_terms') === true) {
+            return null;
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => 'Map access requires login or accepted guest access.',
+            ], 403);
+        }
+
+        if ($request->user()) {
+            return redirect()->route('terms.show');
+        }
+
+        return redirect()->route('login');
+    }
+
+    public function Showmap(Request $request)
+    {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
         $overlayGroups = $this->defaultOverlayGroups();
         $uploadTargets = [];
 
         return view('map.map', compact('overlayGroups', 'uploadTargets'));
     }
 
-    public function mapApiStatus()
+    public function mapApiStatus(Request $request)
     {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
         $snapshot = $this->mapApiSnapshot();
 
         return response()->json([
@@ -94,8 +125,12 @@ class MapController extends Controller
         ]);
     }
 
-    public function overlayFiles(string $category)
+    public function overlayFiles(Request $request, string $category)
     {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
         $snapshot = $this->mapApiSnapshot();
 
         if (!isset($snapshot['overlay_groups'][$category])) {
@@ -111,8 +146,12 @@ class MapController extends Controller
         ]);
     }
 
-    public function renderedOverlay(string $category)
+    public function renderedOverlay(Request $request, string $category)
     {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
         @ini_set('memory_limit', '2048M');
         @set_time_limit(180);
 
@@ -133,8 +172,12 @@ class MapController extends Controller
         return response()->json($payload)->header('Cache-Control', 'public, max-age=86400');
     }
 
-    public function renderedMunicipalityIrrigatedOverlay(string $municipality)
+    public function renderedMunicipalityIrrigatedOverlay(Request $request, string $municipality)
     {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
         @ini_set('memory_limit', '2048M');
         @set_time_limit(180);
 
@@ -1461,8 +1504,12 @@ class MapController extends Controller
         ]);
     }
 
-    public function serveMapFile(string $path)
+    public function serveMapFile(Request $request, string $path)
     {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
         $path = $this->normalizePublicStoragePath($path);
         $disk = Storage::disk('public');
         $fullPath = $disk->path($path);
@@ -1478,13 +1525,8 @@ class MapController extends Controller
 
     public function mapNotifications(Request $request)
     {
-        $user = $request->user();
-        $isGuest = (bool) $request->session()->get('guest_terms_accepted');
-
-        if (!$user && !$isGuest) {
-            return response()->json([
-                'notifications' => [],
-            ]);
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
         }
 
         $notifications = $this->readMapNotifications();
@@ -1594,8 +1636,12 @@ class MapController extends Controller
         }
     }
 
-     public function getIrrigatedChartData()
+     public function getIrrigatedChartData(Request $request)
     {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
         $payload = Cache::store('file')->rememberForever($this->irrigatedChartCacheKey(), function () {
             $municipalityDetails = $this->getMunicipalityDetailIndex();
 
