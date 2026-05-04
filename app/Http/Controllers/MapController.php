@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\SystemNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -58,6 +59,11 @@ class MapController extends Controller
     private const IRRIGATED_OVERVIEW_POLYGON_POINTS = 10;
     private const DEFAULT_RENDER_POLYGON_POINTS = 35;
     private const DEFAULT_RENDER_LINE_POINTS = 120;
+
+    private function notifications(): SystemNotificationService
+    {
+        return app(SystemNotificationService::class);
+    }
 
     public function Showmap()
     {
@@ -1271,6 +1277,7 @@ class MapController extends Controller
             $paths = $request->input('paths', []);
             $targetFolder = $this->sanitizeRelativeFolder($request->input('target_folder', ''));
             $baseStoragePath = trim("maps/{$categoryDirectory}/{$targetFolder}", '/');
+            $displayUploadDirectory = $this->displayMapDirectory($baseStoragePath, $category);
             $uploadedFiles = [];
             $shapefileBasenames = [];
 
@@ -1323,9 +1330,10 @@ class MapController extends Controller
             );
 
             return response()->json([
-                'message' => 'Upload successful. ' . $notificationResult['admin_message'],
+                'message' => "Upload successful to {$displayUploadDirectory}. {$notificationResult['admin_message']}",
                 'files' => $uploadedFiles,
                 'target_folder' => $targetFolder,
+                'target_directory' => $displayUploadDirectory,
                 'notified_users_count' => $notificationResult['notified_users_count'],
             ]);
         } catch (\Exception $e) {
@@ -2188,8 +2196,9 @@ class MapController extends Controller
         }
 
         $actor = Auth::check() ? (Auth::user()->name ?? 'Admin') : 'Admin';
-        $locations = array_values(array_unique(array_map(function ($file) {
-            return trim(dirname((string) ($file['path'] ?? '')), '.');
+        $locations = array_values(array_unique(array_map(function ($file) use ($category) {
+            $path = (string) ($file['path'] ?? '');
+            return $this->displayMapDirectory(dirname($path), $category);
         }, $files)));
 
         $entry = [
@@ -2212,11 +2221,51 @@ class MapController extends Controller
         $existing = array_slice($existing, 0, self::MAP_NOTIFICATION_LIMIT);
         $this->writeMapNotifications($existing);
 
-        $notifiedUsers = User::query()
-            ->where('role', '!=', 'admin')
-            ->count();
+        $notifiedUsers = 0;
+        $adminMessage = 'Teams and admins have been notified.';
 
-        $adminMessage = 'Other users have been notified.';
+        if (Auth::check() && Auth::user() instanceof User) {
+            $actorUser = Auth::user();
+            $actorLabel = $this->notifications()->actorLabel($actorUser);
+            $locationSummary = implode(', ', array_slice($locations, 0, 3));
+
+            if (count($locations) > 3) {
+                $locationSummary .= ', and more';
+            }
+
+            if ($locationSummary === '') {
+                $locationSummary = $this->displayMapDirectory('maps', $category);
+            }
+
+            $title = $action === 'delete' ? 'Map file removed' : 'Map file uploaded';
+            $fileCount = count($files);
+            $fileLabel = $fileCount === 1 ? 'file' : 'files';
+            $actionText = $action === 'delete' ? 'removed' : 'uploaded';
+            $message = "{$actorLabel} {$actionText} {$fileCount} map {$fileLabel} in {$locationSummary}.";
+
+            $this->notifications()->notifyAgency($actorUser, $title, $message, [
+                'type' => 'map_file',
+                'team' => 'all',
+                'team_label' => $this->notifications()->teamLabel('all'),
+                'map_category' => $category,
+                'map_locations' => $locations,
+                'map_files' => array_map(function ($file) {
+                    return [
+                        'name' => (string) ($file['name'] ?? ''),
+                        'path' => (string) ($file['path'] ?? ''),
+                    ];
+                }, $files),
+            ]);
+
+            $notifiedUsers = User::query()
+                ->where('is_active', true)
+                ->where('id', '!=', $actorUser->getKey())
+                ->count();
+        } else {
+            $notifiedUsers = User::query()
+                ->where('is_active', true)
+                ->count();
+        }
 
         return [
             'notified_users_count' => $notifiedUsers,
@@ -2333,6 +2382,29 @@ class MapController extends Controller
         });
 
         return implode('/', $parts);
+    }
+
+    private function displayMapDirectory(string $path, string $category): string
+    {
+        $normalized = trim(str_replace('\\', '/', $path), '/');
+
+        if ($normalized === '' || $normalized === '.') {
+            return "maps/{$category}";
+        }
+
+        $segments = explode('/', $normalized);
+
+        if (($segments[0] ?? '') !== 'maps') {
+            array_unshift($segments, 'maps');
+        }
+
+        if (isset($segments[1])) {
+            $segments[1] = $category;
+        } else {
+            $segments[] = $category;
+        }
+
+        return implode('/', $segments);
     }
 
     private function extractUploadSubfolder(string $relativePath): string

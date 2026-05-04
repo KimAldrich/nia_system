@@ -835,11 +835,18 @@ input:checked + .slider:before {
     cursor: not-allowed;
     border-color: #e2e8f0;
     background: #f8fafc;
+    transform: none;
+    pointer-events: none;
 }
 
 .upload-box.is-disabled:hover {
     border-color: #e2e8f0;
     background: #f8fafc;
+}
+
+.submit-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 .upload-choice-divider {
@@ -2318,6 +2325,22 @@ const form = document.getElementById('uploadForm');
 const supportedMapExtensions = ['geojson', 'json', 'kml', 'kmz', 'zip', 'shp', 'shx', 'dbf', 'prj', 'cpg'];
 const supportedMapExtensionLabel = '.geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, .cpg';
 
+function getUnsupportedMapFiles(fileList) {
+    return Array.from(fileList || []).filter((file) => {
+        const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+        return !supportedMapExtensions.includes(extension);
+    });
+}
+
+function openUploadFeedbackModal(message, title = 'Upload Failed') {
+    if (typeof openAsyncSuccessModal === 'function') {
+        openAsyncSuccessModal('#appFeedbackModal', message, title);
+        return;
+    }
+
+    window.alert(message);
+}
+
 if (form) {
     const statusBoxUpload = document.getElementById('uploadStatus');
     const categorySelect = document.querySelector('select[name="category"]');
@@ -2334,6 +2357,24 @@ if (form) {
         if (uploadSelectionInfo) {
             uploadSelectionInfo.textContent = message;
         }
+    }
+
+    function syncUploadSourceState() {
+        const hasFiles = fileInput.files.length > 0;
+        const hasFolderFiles = folderInput.files.length > 0;
+
+        if (fileUploadBox) {
+            fileUploadBox.classList.toggle('is-disabled', hasFolderFiles);
+            fileUploadBox.setAttribute('aria-disabled', hasFolderFiles ? 'true' : 'false');
+        }
+
+        if (folderUploadBox) {
+            folderUploadBox.classList.toggle('is-disabled', hasFiles);
+            folderUploadBox.setAttribute('aria-disabled', hasFiles ? 'true' : 'false');
+        }
+
+        fileInput.disabled = hasFolderFiles;
+        folderInput.disabled = hasFiles;
     }
 
     const fileInput = document.getElementById('fileInput');
@@ -2373,6 +2414,7 @@ if (form) {
                 ? `${fileInput.files.length} file(s) selected for upload.`
                 : 'No files selected.'
         );
+        syncUploadSourceState();
     });
 
     folderInput.addEventListener('change', () => {
@@ -2384,14 +2426,17 @@ if (form) {
             const firstPath = folderInput.files[0].webkitRelativePath || folderInput.files[0].name;
             const rootFolder = firstPath.split('/')[0];
             updateSelectionInfo(`${folderInput.files.length} file(s) selected from folder "${rootFolder}".`);
+            syncUploadSourceState();
             return;
         }
 
         updateSelectionInfo('No files selected.');
+        syncUploadSourceState();
     });
 
     categorySelect.addEventListener('change', updateTargetFolderOptions);
     updateTargetFolderOptions();
+    syncUploadSourceState();
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -2402,6 +2447,11 @@ if (form) {
         const formData = new FormData();
 
         const category = categorySelect.value;
+        if (!category) {
+            openUploadFeedbackModal('Please choose a layer category before uploading.', 'Upload Required');
+            return;
+        }
+
         formData.append('category', category);
         formData.append('target_folder', targetFolderSelect.value || '');
 
@@ -2423,7 +2473,8 @@ if (form) {
         if (unsupportedFiles.length > 0) {
             const invalidNames = unsupportedFiles.map((file) => file.name).slice(0, 5).join(', ');
             openUploadFeedbackModal(
-                `Unsupported file detected: ${invalidNames}. Please upload only ${supportedMapExtensionLabel}.`
+                `Unsupported file detected: ${invalidNames}. Please upload only ${supportedMapExtensionLabel}.`,
+                'Upload Failed'
             );
             return;
         }
@@ -2461,12 +2512,19 @@ if (form) {
 
             if (response.ok && result.files.length > 0) {
                 statusBoxUpload.style.display = 'none';
-                statusBoxUpload.innerHTML = `✅ Uploaded ${result.files.length} file(s)!`;
+                statusBoxUpload.className = 'upload-status upload-success';
                 statusBoxUpload.innerHTML = result.message || `Uploaded ${result.files.length} file(s).`;
-                if (currentUserRole === 'admin') {
-                    alert(result.message || 'Upload successful. Other users have been notified.');
+                if (typeof openAsyncSuccessModal === 'function') {
+                    openAsyncSuccessModal(
+                        '#appFeedbackModal',
+                        result.message || `Uploaded ${result.files.length} file(s).`,
+                        'Upload Complete'
+                    );
                 }
                 form.reset();
+                fileInput.disabled = false;
+                folderInput.disabled = false;
+                syncUploadSourceState();
                 updateTargetFolderOptions();
                 updateSelectionInfo('No files selected.');
                 irrigatedStats = await fetch('/irrigated-chart-data').then(res => res.json());
@@ -2489,6 +2547,7 @@ if (form) {
             statusBoxUpload.innerHTML = '❌ ' + error.message;
         } finally {
             submitButton.disabled = false;
+            syncUploadSourceState();
         }
     });
 }
