@@ -179,6 +179,7 @@
                 <button onclick="openProcAddModal()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
                     + Add Data
                 </button>
+                @include('partials.excel-import-form', ['routeName' => 'cm.procurement.import', 'target' => '#procurementSection'])
             @endif
             
             <a href="{{ route('cm.procurement.export', request()->query()) }}" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none;">
