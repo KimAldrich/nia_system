@@ -37,6 +37,25 @@
         .file-list-item:last-child { border-bottom: none; }
         .file-list-name { font-size: 12px; font-weight: 600; color: #18181b; word-break: break-word; }
         .file-remove { background: transparent; border: none; color: #ef4444; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .resolution-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+        .resolution-card-title { margin: 0; font-size: 15px; font-weight: 700; color: #18181b; word-break: break-word; }
+        .resolution-files-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+        .attachment-card { display: flex; flex-direction: column; }
+        .attachment-preview { margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e4e7; height: 120px; background: #fafafa; position: relative; transition: opacity 0.2s; }
+        .attachment-preview:hover { opacity: 0.8; }
+        .attachment-link { position: absolute; inset: 0; z-index: 10; background: transparent; cursor: pointer; }
+        .attachment-frame { width: 100%; height: 100%; border: none; transform: scale(0.95); transform-origin: top center; pointer-events: none; overflow: hidden; }
+        .attachment-fallback { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .attachment-fallback-icon { font-size: 32px; margin-bottom: 5px; }
+        .attachment-fallback-label { font-size: 12px; font-weight: 600; color: #18181b; }
+        .attachment-meta { flex: 1; min-width: 0; }
+        .attachment-name { margin: 0 0 2px 0; font-size: 14px; font-weight: 600; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .attachment-date { font-size: 11px; color: #a1a1aa; margin: 0 0 15px 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .attachment-actions { display: flex; gap: 8px; margin-top: auto; }
+        @media (max-width: 640px) {
+            .resolution-card-header { flex-direction: column; align-items: stretch; }
+            .resolution-files-grid { grid-template-columns: 1fr; }
+        }
     </style>
 
     <h1 class="header-title">{{ $headerTitle }}</h1>

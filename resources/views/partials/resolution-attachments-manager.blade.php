@@ -1,4 +1,4 @@
-<div id="resolutionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+<div id="resolutionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
     @forelse($resolutions as $resolution)
         @php
             $resolutionTeam = $resolution->team;
@@ -17,14 +17,9 @@
         @endphp
 
         <div class="ui-card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+            <div class="resolution-card-header">
                 <div style="min-width: 0;">
-                    <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 700; color: #18181b; word-break: break-word;">
-                        {{ $resolution->title }}
-                    </h4>
-                    <p style="margin: 0; font-size: 11px; color: #94a3b8; font-weight: 500;">
-                        {{ $files->count() }} {{ \Illuminate\Support\Str::plural('file', $files->count()) }}
-                    </p>
+                    <h4 class="resolution-card-title">{{ $resolution->title }}</h4>
                 </div>
 
                 @if (\App\Models\IaResolution::isCompletedStatus($resolution->status))
@@ -36,19 +31,42 @@
                 @endif
             </div>
 
-            <div style="display: grid; gap: 10px;">
+            <div class="resolution-files-grid">
                 @foreach($files as $file)
-                    <div style="border: 1px solid #e4e4e7; border-radius: 10px; padding: 12px; background: #fafafa;">
-                        <div style="margin-bottom: 10px; min-width: 0;">
-                            <div style="font-size: 12px; font-weight: 600; color: #18181b; word-break: break-word;">
-                                {{ $file->original_name }}
-                            </div>
-                            <div style="font-size: 10px; color: #94a3b8; margin-top: 3px;">
-                                Uploaded {{ optional($file->created_at)->format('M d, Y') ?? optional($resolution->created_at)->format('M d, Y') }}
-                            </div>
+                    @php
+                        $extension = strtolower(pathinfo($file->file_path, PATHINFO_EXTENSION));
+                        $uploadedDate = optional($file->created_at)->format('M d, Y') ?? optional($resolution->created_at)->format('M d, Y');
+                    @endphp
+                    <div class="attachment-card">
+                        <div class="attachment-preview">
+                            <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="attachment-link"
+                                title="Click to view or download document"></a>
+
+                            @if ($extension === 'pdf')
+                                <iframe src="{{ asset('storage/' . $file->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
+                                    class="attachment-frame" scrolling="no"></iframe>
+                            @else
+                                <div class="attachment-fallback">
+                                    @if (in_array($extension, ['xls', 'xlsx']))
+                                        <div class="attachment-fallback-icon">📊</div>
+                                        <span class="attachment-fallback-label">Excel Sheet</span>
+                                    @elseif(in_array($extension, ['doc', 'docx']))
+                                        <div class="attachment-fallback-icon">📝</div>
+                                        <span class="attachment-fallback-label">Word Doc</span>
+                                    @else
+                                        <div class="attachment-fallback-icon">📁</div>
+                                        <span class="attachment-fallback-label">Document</span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
 
-                        <div style="display: flex; gap: 8px;">
+                        <div class="attachment-meta">
+                            <h5 class="attachment-name">{{ $file->original_name }}</h5>
+                            <p class="attachment-date">Uploaded {{ $uploadedDate }}</p>
+                        </div>
+
+                        <div class="attachment-actions">
                             <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
                                 style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
                                 Download
