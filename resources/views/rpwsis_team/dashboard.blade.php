@@ -1016,6 +1016,7 @@
             <div class="toolbar-actions">
                 @if ($canManageRpwsis)
                     <button onclick="openModal()" class="toolbar-btn add">+ Add Data</button>
+                    @include('partials.excel-import-form', ['routeName' => 'rpwsis.accomplishments.import'])
                 @endif
                 <button onclick="exportExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1263,6 +1264,7 @@
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
                     <button onclick="openSummaryModal()" class="toolbar-btn add">+ Add Data</button>
+                    @include('partials.excel-import-form', ['routeName' => 'rpwsis.summary.import'])
                 @endif
                 <button onclick="exportSummaryExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1496,6 +1498,7 @@
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
                     <button onclick="openNurseryModal()" class="toolbar-btn add">+ Add Data</button>
+                    @include('partials.excel-import-form', ['routeName' => 'rpwsis.nursery.import'])
                 @endif
                 <button onclick="exportNurseryExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1646,6 +1649,7 @@
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
                     <button onclick="openSignagesModal()" class="toolbar-btn add">+ Add Data</button>
+                    @include('partials.excel-import-form', ['routeName' => 'rpwsis.signages.import'])
                 @endif
                 <button onclick="exportSignagesExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1792,6 +1796,7 @@
             <div class="toolbar-actions" style="margin-top: 12px;">
                 @if ($canManageRpwsis)
                     <button onclick="openInfrastructureModal()" class="toolbar-btn add">+ Add Data</button>
+                    @include('partials.excel-import-form', ['routeName' => 'rpwsis.infrastructure.import'])
                 @endif
                 <button onclick="exportInfrastructureExcel()" class="toolbar-btn export">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>

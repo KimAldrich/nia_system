@@ -15,6 +15,7 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RpwsisAccomplishmentController;
+use App\Http\Controllers\DataTableImportController;
 
 
 // Authentication Routes
@@ -127,6 +128,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/projects/{project}/update-status', [FsTeamController::class, 'updateStatus'])->name('fs.projects.update');
                 Route::post('/hydro-geo', [FsTeamController::class, 'storeHydroGeo'])->name('fs.hydro.store');
                 Route::post('/fsde/store', [FsTeamController::class, 'storeFsde'])->name('fs.fsde.store');
+                Route::post('/hydro-geo/import', [DataTableImportController::class, 'import'])->defaults('table', 'fs-hydro')->name('fs.hydro.import');
+                Route::post('/fsde/import', [DataTableImportController::class, 'import'])->defaults('table', 'fs-fsde')->name('fs.fsde.import');
                 Route::put('/hydro-geo/{id}', [FsTeamController::class, 'updateHydroGeo'])->name('fs.hydro.update');
                 Route::put('/fsde/{id}', [FsTeamController::class, 'updateFsde'])->name('fs.fsde.update');
                 Route::delete('/hydro-geo/{id}', [FsTeamController::class, 'destroyHydroGeo'])->name('fs.hydro.destroy');
@@ -162,27 +165,32 @@ Route::middleware(['auth', 'check.active'])->group(function () {
 
                 //status table
                 Route::post('/accomplishments/store', [RpwsisTeamController::class, 'storeAccomplishment'])->name('rpwsis.accomplishments.store');
+                Route::post('/accomplishments/import', [DataTableImportController::class, 'import'])->defaults('table', 'rpwsis-accomplishments')->name('rpwsis.accomplishments.import');
                 Route::put('/accomplishments/{id}/update', [RpwsisTeamController::class, 'updateAccomplishment'])->name('rpwsis.accomplishments.update');
                 //delete
                 Route::delete('/accomplishments/{id}/delete', [RpwsisTeamController::class, 'deleteAccomplishment'])->name('rpwsis.accomplishments.delete');
                 //summary table
                 //summary table
                 Route::post('/summary/store', [RpwsisTeamController::class, 'storeSummary'])->name('rpwsis.summary.store');
+                Route::post('/summary/import', [DataTableImportController::class, 'import'])->defaults('table', 'rpwsis-summary')->name('rpwsis.summary.import');
                 Route::put('/summary/{id}/update', [RpwsisTeamController::class, 'updateSummary'])->name('rpwsis.summary.update');
                 Route::delete('/summary/{id}/delete', [RpwsisTeamController::class, 'deleteSummary'])->name('rpwsis.summary.delete');
 
                 // Nursery table routes
                     Route::post('/nursery/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeNursery'])->name('rpwsis.nursery.store');
+                    Route::post('/nursery/import', [DataTableImportController::class, 'import'])->defaults('table', 'rpwsis-nursery')->name('rpwsis.nursery.import');
                     Route::put('/nursery/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateNursery'])->name('rpwsis.nursery.update');
                     Route::delete('/nursery/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteNursery'])->name('rpwsis.nursery.delete');
 
                     // Signages table routes
                 Route::post('/signages/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeSignages'])->name('rpwsis.signages.store');
+                Route::post('/signages/import', [DataTableImportController::class, 'import'])->defaults('table', 'rpwsis-signages')->name('rpwsis.signages.import');
                 Route::put('/signages/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateSignages'])->name('rpwsis.signages.update');
                 Route::delete('/signages/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteSignages'])->name('rpwsis.signages.delete');
 
                 // Infrastructure table routes
                 Route::post('/infrastructure/store', [App\Http\Controllers\RpwsisTeamController::class, 'storeInfrastructure'])->name('rpwsis.infrastructure.store');
+                Route::post('/infrastructure/import', [DataTableImportController::class, 'import'])->defaults('table', 'rpwsis-infrastructure')->name('rpwsis.infrastructure.import');
                 Route::put('/infrastructure/{id}/update', [App\Http\Controllers\RpwsisTeamController::class, 'updateInfrastructure'])->name('rpwsis.infrastructure.update');
                 Route::delete('/infrastructure/{id}/delete', [App\Http\Controllers\RpwsisTeamController::class, 'deleteInfrastructure'])->name('rpwsis.infrastructure.delete');
 
@@ -219,6 +227,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/ia-resolutions/{id}/status', [ContractManagementTeamController::class, 'updateResolutionStatus'])->name('cm.resolutions.update_status');
 
                 Route::post('/procurement/store', [ContractManagementTeamController::class, 'storeProcurement'])->name('cm.procurement.store');
+                Route::post('/procurement/import', [DataTableImportController::class, 'import'])->defaults('table', 'cm-procurement')->name('cm.procurement.import');
                 Route::put('/procurement/update', [ContractManagementTeamController::class, 'updateProcurement'])->name('cm.procurement.update');
                 Route::delete('/procurement/{id}', [ContractManagementTeamController::class, 'destroyProcurement'])->name('cm.procurement.destroy');
 
@@ -278,6 +287,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/ia-resolutions/{id}/update', [PcrTeamController::class, 'updateResolution'])->name('pcr.resolutions.update');
                 Route::post('/ia-resolutions/{id}/status', [PcrTeamController::class, 'updateResolutionStatus'])->name('pcr.resolutions.update_status');
                 Route::post('/status/store', [PcrTeamController::class, 'storePcrStatus'])->name('pcr.status.store');
+                Route::post('/status/import', [DataTableImportController::class, 'import'])->defaults('table', 'pcr-status')->name('pcr.status.import');
                 Route::put('/status/update', [PcrTeamController::class, 'updatePcrStatus'])->name('pcr.status.update');
                 Route::delete('/status/delete/{id}', [PcrTeamController::class, 'deletePcrStatus'])->name('pcr.status.delete');
             });
@@ -309,6 +319,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
                 Route::post('/ia-resolutions/{id}/status', [PaoTeamController::class, 'updateResolutionStatus'])->name('pao.resolutions.update_status');
 
                 Route::post('/pow/store', [PaoTeamController::class, 'storePow'])->name('pao.pow.store');
+                Route::post('/pow/import', [DataTableImportController::class, 'import'])->defaults('table', 'pao-pow')->name('pao.pow.import');
                 Route::put('/pow/update', [PaoTeamController::class, 'updatePow'])->name('pao.pow.update');
                 Route::delete('/pow/delete/{id}', [PaoTeamController::class, 'deletePow'])->name('pao.pow.delete');
             });
