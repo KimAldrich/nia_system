@@ -1,0 +1,67 @@
+[33m7f2414b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull: Fast-forward
+[33md64adb5[m HEAD@{1}: pull: Fast-forward
+[33m8841807[m HEAD@{2}: commit (merge): input fields
+[33md429484[m HEAD@{3}: commit: input fields
+[33md04fc80[m HEAD@{4}: pull: Fast-forward
+[33m5317e35[m HEAD@{5}: commit: amount format
+[33mf454848[m HEAD@{6}: pull: Fast-forward
+[33m521f3e5[m HEAD@{7}: commit: files naming
+[33m073930e[m HEAD@{8}: pull: Fast-forward
+[33m7b010d8[m HEAD@{9}: commit (merge): amount format
+[33m5918e77[m HEAD@{10}: commit: amount format
+[33m4fa5ceb[m HEAD@{11}: reset: moving to origin/main
+[33m0cb9200[m HEAD@{12}: commit: up
+[33md1bf820[m HEAD@{13}: commit: updated graphs
+[33md8447d7[m HEAD@{14}: pull: Fast-forward
+[33mbe136d5[m HEAD@{15}: pull: Fast-forward
+[33mf219c5e[m HEAD@{16}: commit: updated proj button
+[33m8d41d2b[m HEAD@{17}: commit: calendar update
+[33mcba4c44[m HEAD@{18}: commit (merge): updated tables rpw
+[33mdf539e3[m HEAD@{19}: commit: updated tables in rpwsis
+[33m2583a91[m HEAD@{20}: pull: Fast-forward
+[33macd7656[m HEAD@{21}: pull: Fast-forward
+[33m7ac2941[m HEAD@{22}: commit: updated rpwsis table
+[33mff1e12a[m HEAD@{23}: commit (merge): Merge branch 'main' of https://github.com/KimAldrich/nia_system
+[33md0c6831[m HEAD@{24}: commit (merge): Merge branch 'main' of https://github.com/KimAldrich/nia_system
+[33m2dae0ac[m HEAD@{25}: commit: commit
+[33md5ed604[m HEAD@{26}: pull: Fast-forward
+[33m73171f3[m HEAD@{27}: commit (merge): table
+[33m43aedfd[m HEAD@{28}: commit: table
+[33me6f2c73[m HEAD@{29}: pull: Fast-forward
+[33m99a54ac[m HEAD@{30}: commit (merge): rpwsis status table
+[33m1a2a9d2[m HEAD@{31}: commit: rpwsis status table
+[33mef1c3c6[m HEAD@{32}: pull: Fast-forward
+[33m209e77f[m HEAD@{33}: commit: ui for download and resolution
+[33m591dfaf[m HEAD@{34}: pull: Fast-forward
+[33m6f6edff[m HEAD@{35}: pull: Fast-forward
+[33mc7b4e23[m HEAD@{36}: pull: Fast-forward
+[33me6487bb[m HEAD@{37}: commit: downloadables and resolutions
+[33md9c1b62[m HEAD@{38}: pull: Fast-forward
+[33m515efa2[m HEAD@{39}: pull: Fast-forward
+[33m5e179a3[m HEAD@{40}: commit: dashboards
+[33m1ebabb9[m HEAD@{41}: commit: ayos
+[33m9f333d2[m HEAD@{42}: reset: moving to ORIG_HEAD
+[33m9f333d2[m HEAD@{43}: reset: moving to ORIG_HEAD
+[33m9f333d2[m HEAD@{44}: reset: moving to ORIG_HEAD
+[33m9f333d2[m HEAD@{45}: reset: moving to ORIG_HEAD
+[33m9f333d2[m HEAD@{46}: commit (merge): Merge branch 'main' of https://github.com/KimAldrich/nia_system
+[33m38e1d7b[m HEAD@{47}: commit: map
+[33me8543ff[m HEAD@{48}: commit (merge): Merge branch 'main' of https://github.com/KimAldrich/nia_system
+[33m41db478[m HEAD@{49}: commit: upload
+[33m76ed2f5[m HEAD@{50}: commit (merge): Merge branch 'main' of https://github.com/KimAldrich/nia_system
+[33mdc2ff4a[m HEAD@{51}: commit: fsteamui
+[33m6bb1119[m HEAD@{52}: pull: Fast-forward
+[33m666354f[m HEAD@{53}: pull: Fast-forward
+[33m1928baf[m HEAD@{54}: pull: Fast-forward
+[33mb7d7e89[m HEAD@{55}: pull: Fast-forward
+[33ma6aaaa0[m HEAD@{56}: commit: dashboard
+[33m3ad6990[m HEAD@{57}: commit: pcr_team
+[33mb7d0cf9[m HEAD@{58}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33m676fd1c[m HEAD@{59}: commit (merge): Merge branch 'main' of https://github.com/KimAldrich/nia_system
+[33m8c3314c[m HEAD@{60}: commit: up
+[33m5315596[m HEAD@{61}: pull: Fast-forward
+[33m3a1102c[m HEAD@{62}: pull: Fast-forward
+[33m5dabda5[m HEAD@{63}: commit: upload
+[33m89bf8d2[m HEAD@{64}: pull: Fast-forward
+[33mcd32e79[m HEAD@{65}: pull: Fast-forward
+[33m2cc6b07[m HEAD@{66}: clone: from https://github.com/KimAldrich/nia_system.git
