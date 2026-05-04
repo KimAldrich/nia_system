@@ -383,9 +383,10 @@
     display: none;
     padding: 10px 12px;
     border-radius: 10px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(6, 14, 22, 0.82);
     backdrop-filter: blur(6px);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 8px 24px rgba(0,0,0,0.35);
+    color: #f8fafc;
 }
 
 .layer-filter-panel.is-open {
@@ -404,15 +405,16 @@
     width: 100%;
     padding: 8px 10px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.32);
-    background: rgba(255,255,255,0.16);
-    color: inherit;
+    border: 1px solid rgba(255,255,255,0.42);
+    background: rgba(255,255,255,0.18);
+    color: #ffffff;
     outline: none;
     margin-bottom: 10px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.22);
 }
 
 .layer-filter-search::placeholder {
-    color: rgba(255,255,255,0.82);
+    color: rgba(255,255,255,0.92);
 }
 
 .layer-filter-list {
@@ -431,16 +433,89 @@
     font-size: 12px;
     padding: 6px 8px;
     border-radius: 8px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.12);
 }
 
 .layer-filter-option.is-hidden {
     display: none;
 }
 
+.layer-selected-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.layer-selected-list:empty {
+    display: none;
+}
+
+.layer-selected-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(67, 160, 71, 0.2);
+    border: 1px solid rgba(129, 199, 132, 0.55);
+    color: #f8fafc;
+    font-size: 11px;
+    line-height: 1.2;
+    text-shadow: -1px -1px 0 rgba(0,0,0,0.85), 1px -1px 0 rgba(0,0,0,0.85), -1px 1px 0 rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.85);
+}
+
+.layer-selected-chip-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layer-selected-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+}
+
+.layer-selected-chip-remove:hover {
+    background: rgba(248, 113, 113, 0.85);
+}
+
 .layer-filter-summary {
     font-size: 11px;
-    opacity: 0.9;
+    opacity: 1;
+    color: #f8fafc;
+    text-shadow: -1px -1px 0 rgba(0,0,0,0.85), 1px -1px 0 rgba(0,0,0,0.85), -1px 1px 0 rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.85);
+}
+
+.layer-filter-row span,
+.layer-filter-option span {
+    color: #f8fafc;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.75);
+}
+
+.layer-filter-toggle {
+    background: rgba(255,255,255,0.22);
+    color: #000000;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
+}
+
+.layer-filter-search:focus {
+    border-color: rgba(144, 202, 249, 0.95);
+    box-shadow: 0 0 0 2px rgba(144, 202, 249, 0.18);
 }
 
 #layer-controls.satellite-active .layer-filter-panel {
@@ -459,7 +534,7 @@
 
 #layer-controls.satellite-active .layer-filter-toggle {
     background: rgba(255,255,255,0.22);
-    color: #f8fafc;
+    color: #000000;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
 }
 
@@ -1205,6 +1280,7 @@ input:checked + .slider:before {
                 </label>
                 <input type="search" id="municipalityFilterSearch" class="layer-filter-search" placeholder="Search Pangasinan municipalities">
                 <div id="municipalityFilterList" class="layer-filter-list"></div>
+                <div id="municipalitySelectedList" class="layer-selected-list"></div>
             </div>
         </div>
         <label class="layer-check" >
@@ -1439,6 +1515,7 @@ const municipalityFilterPanel = document.getElementById('municipalityFilterPanel
 const municipalityFilterSearch = document.getElementById('municipalityFilterSearch');
 const municipalityFilterList = document.getElementById('municipalityFilterList');
 const municipalityFilterSummary = document.getElementById('municipalityFilterSummary');
+const municipalitySelectedList = document.getElementById('municipalitySelectedList');
 const showAllIrrigatedCheckbox = document.getElementById('showAllIrrigated');
 
 function renderTargetFolderOptions() {
@@ -1641,6 +1718,7 @@ if (municipalityFilterSearch) {
 if (showAllIrrigatedCheckbox) {
     showAllIrrigatedCheckbox.addEventListener('change', async () => {
         updateMunicipalityFilterSummary();
+        renderMunicipalitySelectedList();
         updateMunicipalityFilterBounds();
 
         if (overlayToggles.irrigated?.checked) {
@@ -2050,6 +2128,45 @@ function updateMunicipalityFilterSummary() {
         : `${selections.length} selected`;
 }
 
+function renderMunicipalitySelectedList() {
+    if (!municipalitySelectedList) {
+        return;
+    }
+
+    const selections = getMunicipalityFilterSelections();
+
+    if (showAllIrrigatedCheckbox?.checked || !selections.length) {
+        municipalitySelectedList.innerHTML = '';
+        return;
+    }
+
+    municipalitySelectedList.innerHTML = selections.map(item => `
+        <span class="layer-selected-chip">
+            <span class="layer-selected-chip-label">${item.name}</span>
+            <button type="button" class="layer-selected-chip-remove" data-municipality-key="${item.key}" aria-label="Remove ${item.name}">×</button>
+        </span>
+    `).join('');
+
+    municipalitySelectedList.querySelectorAll('.layer-selected-chip-remove').forEach(button => {
+        button.addEventListener('click', async () => {
+            const targetInput = municipalityFilterList?.querySelector(`input[data-municipality-key="${button.dataset.municipalityKey}"]`);
+
+            if (!targetInput) {
+                return;
+            }
+
+            targetInput.checked = false;
+            updateMunicipalityFilterSummary();
+            renderMunicipalitySelectedList();
+            updateMunicipalityFilterBounds();
+
+            if (overlayToggles.irrigated?.checked) {
+                await showOverlayCategory('irrigated');
+            }
+        });
+    });
+}
+
 function filterMunicipalityOptions() {
     if (!municipalityFilterList || !municipalityFilterSearch) {
         return;
@@ -2092,6 +2209,7 @@ function renderMunicipalityFilterOptions() {
             }
 
             updateMunicipalityFilterSummary();
+            renderMunicipalitySelectedList();
             updateMunicipalityFilterBounds();
 
             if (overlayToggles.irrigated?.checked) {
@@ -2102,6 +2220,7 @@ function renderMunicipalityFilterOptions() {
 
     filterMunicipalityOptions();
     updateMunicipalityFilterSummary();
+    renderMunicipalitySelectedList();
 }
 
 function getMunicipalityFilterBounds() {
