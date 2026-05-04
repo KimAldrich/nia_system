@@ -71,6 +71,16 @@
         .chart-wrapper { position: relative; height: 220px; width: 100%; }
         .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #71717a; text-transform: uppercase; }
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .org-chart-placeholder { min-height: 360px; border: 2px dashed #cbd5e1; border-radius: 14px; background: #f8fafc; display: flex; align-items: center; justify-content: center; text-align: center; padding: 28px; color: #64748b; }
+        .org-chart-placeholder h3 { margin: 0 0 8px 0; color: #1e293b; font-size: 18px; font-weight: 700; }
+        .org-chart-placeholder p { margin: 0; font-size: 13px; line-height: 1.6; }
+        .org-chart-button { display: block; width: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+        .org-chart-button img { width: 100%; height: auto; border-radius: 12px; display: block; }
+        .org-chart-modal { position: fixed; inset: 0; z-index: 10000; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(15, 23, 42, 0.82); }
+        .org-chart-modal.active { display: flex; }
+        .org-chart-modal-dialog { position: relative; width: min(1200px, 96vw); max-height: 92vh; overflow: auto; background: #ffffff; border-radius: 12px; padding: 16px; }
+        .org-chart-modal-dialog img { width: 100%; height: auto; display: block; border-radius: 8px; }
+        .org-chart-modal-close { position: sticky; top: 0; margin-left: auto; margin-bottom: 12px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #0f172a; color: #ffffff; font-size: 22px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         /* KPI GRID STYLES */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
@@ -127,6 +137,16 @@
             </div>
 
             @include('partials.team-analytics-card', ['analytics' => $analytics ?? []])
+
+            @if(!isset($db_team))
+                <div class="ui-card" id="planningUnitOrgChartSection">
+                    <div class="section-title">Planning Unit Organizational Chart</div>
+                    <button type="button" class="org-chart-button" onclick="openPlanningOrgChartModal()" aria-label="View Planning Unit Organizational Chart full size">
+                        <img src="{{ asset('images/planning-unit-org-chart.png') }}"
+                            alt="Planning Unit Organizational Chart">
+                    </button>
+                </div>
+            @endif
         </div>
 
         <div class="side-column">
@@ -986,6 +1006,15 @@
         </div>
     @endif
 
+    @if(!isset($db_team))
+        <div class="org-chart-modal" id="planningOrgChartModal" onclick="closePlanningOrgChartModal(event)">
+            <div class="org-chart-modal-dialog" role="dialog" aria-modal="true" aria-label="Planning Unit Organizational Chart">
+                <button type="button" class="org-chart-modal-close" onclick="closePlanningOrgChartModal()" aria-label="Close">&times;</button>
+                <img src="{{ asset('images/planning-unit-org-chart.png') }}" alt="Planning Unit Organizational Chart">
+            </div>
+        </div>
+    @endif
+
     <script>
         // 🌟 1. CHART RENDERER 🌟
         @include('partials.team-analytics-script', ['analytics' => $analytics ?? []])
@@ -1016,6 +1045,24 @@
                 document.querySelectorAll('.acc-data-' + m).forEach(el => { el.style.display = (m === val) ? 'block' : 'none'; });
             });
         }
+
+        function openPlanningOrgChartModal() {
+            const modal = document.getElementById('planningOrgChartModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closePlanningOrgChartModal(event = null) {
+            const modal = document.getElementById('planningOrgChartModal');
+            if (!modal) return;
+            if (event && event.target !== modal) return;
+            modal.classList.remove('active');
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closePlanningOrgChartModal();
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', function() {
             const table = document.getElementById('guestRpwsisStatusTable');
