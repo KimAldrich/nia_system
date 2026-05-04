@@ -818,16 +818,16 @@ input:checked + .slider:before {
 /* FLOATING PANEL */
 .detail-panel {
     position: fixed;
-    top: 92px;
-    left: 50%;
+    top: 80px;
+    left: 56%;
     transform: translateX(-50%) translateY(14px) scale(0.96);
-    width: min(540px, calc(100vw - 44px));
-    max-height: calc(100vh - 150px);
+    width: min(380px, calc(100vw - 40px));
+    max-height: 400px;
     background: rgba(10, 18, 28, 0.94);
     color: #f8fafc;
     border: 1px solid rgba(148, 163, 184, 0.22);
-    border-radius: 18px;
-    box-shadow: 0 18px 50px rgba(2, 6, 23, 0.42);
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(2, 6, 23, 0.38);
     backdrop-filter: blur(14px);
     opacity: 0;
     visibility: hidden;
@@ -845,7 +845,7 @@ input:checked + .slider:before {
 }
 
 .detail-header {
-    padding: 12px 14px;
+    padding: 10px 12px;
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.92));
     border-bottom: 1px solid rgba(148, 163, 184, 0.18);
     display: flex;
@@ -857,7 +857,7 @@ input:checked + .slider:before {
 }
 
 .detail-header #municipalityName {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     line-height: 1.2;
     color: #ffffff;
@@ -881,7 +881,7 @@ input:checked + .slider:before {
 }
 
 .detail-content {
-    padding: 12px 14px 14px;
+    padding: 10px 12px 12px;
     overflow-y: auto;
     font-size: 11px;
     background:
@@ -891,20 +891,20 @@ input:checked + .slider:before {
 
 .detail-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
+    grid-template-columns: 1fr;
+    gap: 8px;
 }
 
 .detail-card {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 13px;
-    padding: 10px 11px;
+    border-radius: 12px;
+    padding: 9px 10px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 .detail-card--wide {
-    grid-column: 1 / -1;
+    grid-column: auto;
 }
 
 .detail-label {
@@ -920,7 +920,7 @@ input:checked + .slider:before {
 .detail-value {
     display: block;
     margin-bottom: 4px;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: #ffffff;
     line-height: 1.15;
@@ -928,7 +928,7 @@ input:checked + .slider:before {
 }
 
 .detail-card--wide .detail-value {
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .detail-description {
@@ -943,21 +943,13 @@ input:checked + .slider:before {
         top: 72px;
         width: calc(100vw - 20px);
         max-height: calc(100vh - 90px);
-        border-radius: 16px;
+        border-radius: 14px;
     }
 
     .detail-header,
     .detail-content {
         padding-left: 16px;
         padding-right: 16px;
-    }
-
-    .detail-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .detail-card--wide {
-        grid-column: auto;
     }
 
     .detail-value {
