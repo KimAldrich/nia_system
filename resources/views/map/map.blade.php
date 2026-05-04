@@ -1033,24 +1033,6 @@ input:checked + .slider:before {
     <button id="resetMapBtn" title="Reset to default position">🔄 Reset</button>
 </div>
 
-@if((auth()->check() && auth()->user()->role !== 'admin') || session('guest_terms_accepted'))
-<div id="map-notification">
-    <button id="notificationBtn" class="notification-btn" title="Map Notifications">
-        <span>🔔</span>
-        <span id="notificationBadge" class="notification-badge">0</span>
-    </button>
-    <div id="notificationPanel" class="notification-panel">
-        <div class="notification-actions">
-            <button id="markAllReadBtn" class="notification-action-btn" type="button">Mark all as read</button>
-            @if(auth()->check() && auth()->user()->role === 'admin')
-            <button id="clearOldBtn" class="notification-action-btn" type="button">Clear old notifications</button>
-            @endif
-        </div>
-        <div id="notificationList"></div>
-    </div>
-</div>
-@endif
-
     <div id="layer-controls">
         <label class="layer-check">
             <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['has_files']) ? 'disabled' : '' }}>
@@ -1156,14 +1138,7 @@ input:checked + .slider:before {
 
     if (auth()->check()) {
         $currentUserRole = auth()->user()->role ?? null;
-
-        if (($currentUserRole ?? '') !== 'admin') {
-            $notificationUserKey = 'user_' . auth()->id();
-        }
-
         $notificationsEndpoint = route('map.notifications');
-    } elseif (session('guest_terms_accepted')) {
-        $notificationUserKey = 'guest_' . session()->getId();
     }
 @endphp
 <script>
@@ -2348,6 +2323,8 @@ if (form) {
     const categorySelect = document.querySelector('select[name="category"]');
     const targetFolderSelect = document.getElementById('targetFolderSelect');
     const uploadSelectionInfo = document.getElementById('uploadSelectionInfo');
+    const fileUploadBox = document.getElementById('fileUploadBox');
+    const folderUploadBox = document.getElementById('folderUploadBox');
 
     function updateTargetFolderOptions() {
         renderTargetFolderOptions();
@@ -2361,6 +2338,30 @@ if (form) {
 
     const fileInput = document.getElementById('fileInput');
     const folderInput = document.getElementById('folderInput');
+
+    if (fileUploadBox && fileInput) {
+        fileUploadBox.addEventListener('click', () => fileInput.click());
+        fileUploadBox.setAttribute('tabindex', '0');
+        fileUploadBox.setAttribute('role', 'button');
+        fileUploadBox.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                fileInput.click();
+            }
+        });
+    }
+
+    if (folderUploadBox && folderInput) {
+        folderUploadBox.addEventListener('click', () => folderInput.click());
+        folderUploadBox.setAttribute('tabindex', '0');
+        folderUploadBox.setAttribute('role', 'button');
+        folderUploadBox.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                folderInput.click();
+            }
+        });
+    }
 
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
