@@ -338,6 +338,152 @@
     accent-color: #0b5e2c;
 }
 
+.layer-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.layer-check--dropdown {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.layer-check__main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.layer-check__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.layer-filter-toggle {
+    border: none;
+    background: rgba(255,255,255,0.18);
+    color: inherit;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.layer-filter-toggle[aria-expanded="true"] {
+    transform: rotate(180deg);
+}
+
+.layer-filter-panel {
+    display: none;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+}
+
+.layer-filter-panel.is-open {
+    display: block;
+}
+
+.layer-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.layer-filter-search {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.32);
+    background: rgba(255,255,255,0.16);
+    color: inherit;
+    outline: none;
+    margin-bottom: 10px;
+}
+
+.layer-filter-search::placeholder {
+    color: rgba(255,255,255,0.82);
+}
+
+.layer-filter-list {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 4px;
+}
+
+.layer-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.08);
+}
+
+.layer-filter-option.is-hidden {
+    display: none;
+}
+
+.layer-filter-summary {
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+#layer-controls.satellite-active .layer-filter-panel {
+    background: rgba(6, 14, 22, 0.82);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 8px 24px rgba(0,0,0,0.35);
+    color: #f8fafc;
+}
+
+#layer-controls.satellite-active .layer-filter-summary,
+#layer-controls.satellite-active .layer-filter-row span,
+#layer-controls.satellite-active .layer-filter-option span {
+    color: #f8fafc !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.75);
+    opacity: 1;
+}
+
+#layer-controls.satellite-active .layer-filter-toggle {
+    background: rgba(255,255,255,0.22);
+    color: #f8fafc;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
+}
+
+#layer-controls.satellite-active .layer-filter-search {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.42);
+    color: #ffffff;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.22);
+}
+
+#layer-controls.satellite-active .layer-filter-search::placeholder {
+    color: rgba(255,255,255,0.92);
+}
+
+#layer-controls.satellite-active .layer-filter-search:focus {
+    border-color: rgba(144, 202, 249, 0.95);
+    box-shadow: 0 0 0 2px rgba(144, 202, 249, 0.18);
+}
+
+#layer-controls.satellite-active .layer-filter-option {
+    background: rgba(255,255,255,0.12);
+}
+
+
 #map-status {
     position: absolute;
     left: 20px;
@@ -1041,10 +1187,26 @@ input:checked + .slider:before {
 </div>
 
     <div id="layer-controls">
-        <label class="layer-check">
-            <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['has_files']) ? 'disabled' : '' }}>
-            <span>Irrigated Area</span>
-        </label>
+        <div class="layer-filter-group">
+            <label class="layer-check layer-check--dropdown">
+                <span class="layer-check__main">
+                    <input type="checkbox" id="toggleIrrigated" {{ empty($overlayGroups['irrigated']['has_files']) ? 'disabled' : '' }}>
+                    <span>Irrigated Area</span>
+                </span>
+                <span class="layer-check__actions">
+                    <span id="municipalityFilterSummary" class="layer-filter-summary">Show all</span>
+                    <button type="button" id="municipalityFilterToggle" class="layer-filter-toggle" aria-expanded="false" aria-controls="municipalityFilterPanel">▼</button>
+                </span>
+            </label>
+            <div id="municipalityFilterPanel" class="layer-filter-panel">
+                <label class="layer-filter-row">
+                    <input type="checkbox" id="showAllIrrigated" checked>
+                    <span>Show All Irrigated</span>
+                </label>
+                <input type="search" id="municipalityFilterSearch" class="layer-filter-search" placeholder="Search Pangasinan municipalities">
+                <div id="municipalityFilterList" class="layer-filter-list"></div>
+            </div>
+        </div>
         <label class="layer-check" >
             <input type="checkbox" id="toggleLandBoundary" {{ empty($overlayGroups['land_boundary']['has_files']) ? 'disabled' : '' }}>
             <span>Land Boundary</span>
@@ -1174,6 +1336,11 @@ let provinceLabelLayer = null;
 let baseMapGeoJson = null;
 let irrigatedStats = {};
 let irrigatedStatsPromise = null;
+const municipalityBoundaryIndex = new Map();
+const municipalityDisplayNameIndex = new Map();
+const renderedOverlayDataCache = {};
+let municipalityFilterBoundsLayer = null;
+let municipalityOverlayLoadToken = 0;
 
 async function ensureIrrigatedStatsLoaded() {
     if (Object.keys(irrigatedStats).length) {
@@ -1267,6 +1434,12 @@ const overlayToggles = {
     land_boundary: document.getElementById('toggleLandBoundary'),
     potential: document.getElementById('togglePotential')
 };
+const municipalityFilterToggle = document.getElementById('municipalityFilterToggle');
+const municipalityFilterPanel = document.getElementById('municipalityFilterPanel');
+const municipalityFilterSearch = document.getElementById('municipalityFilterSearch');
+const municipalityFilterList = document.getElementById('municipalityFilterList');
+const municipalityFilterSummary = document.getElementById('municipalityFilterSummary');
+const showAllIrrigatedCheckbox = document.getElementById('showAllIrrigated');
 
 function renderTargetFolderOptions() {
     const categorySelect = document.querySelector('select[name="category"]');
@@ -1329,6 +1502,10 @@ async function refreshMapApiStatus() {
         renderTargetFolderOptions();
 
         if (versionChanged) {
+            Object.keys(renderedOverlayDataCache).forEach(key => {
+                delete renderedOverlayDataCache[key];
+            });
+
             Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
                 if (checkbox?.checked && !checkbox.disabled) {
                     showOverlayCategory(categoryKey).catch(error => {
@@ -1450,6 +1627,28 @@ toggle.addEventListener('change', () => {
     }
 });
 
+if (municipalityFilterToggle && municipalityFilterPanel) {
+    municipalityFilterToggle.addEventListener('click', () => {
+        const isOpen = municipalityFilterPanel.classList.toggle('is-open');
+        municipalityFilterToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+}
+
+if (municipalityFilterSearch) {
+    municipalityFilterSearch.addEventListener('input', filterMunicipalityOptions);
+}
+
+if (showAllIrrigatedCheckbox) {
+    showAllIrrigatedCheckbox.addEventListener('change', async () => {
+        updateMunicipalityFilterSummary();
+        updateMunicipalityFilterBounds();
+
+        if (overlayToggles.irrigated?.checked) {
+            await showOverlayCategory('irrigated');
+        }
+    });
+}
+
 function updateStatus(message, isError = false) {
     statusBox.innerHTML = message;
     statusBox.classList.toggle('error', isError);
@@ -1528,6 +1727,8 @@ async function loadBaseMap() {
     // Clear previous markers
     municipalityMarkers.forEach(m => map.removeLayer(m));
     municipalityMarkers = [];
+    municipalityBoundaryIndex.clear();
+    municipalityDisplayNameIndex.clear();
 
     // ✅ TRACKER: Prevent multiple labels for the same municipality
     const labeledNames = new Set();
@@ -1537,6 +1738,18 @@ async function loadBaseMap() {
         style: getBaseStyle,
         onEachFeature: function(feature, layer) {
             const name = toTitleCase(getFeatureName(feature));
+            const municipalityKey = normalizeName(name);
+
+            if (municipalityKey) {
+                const currentBounds = municipalityBoundaryIndex.get(municipalityKey);
+                const nextBounds = mergeLeafletBounds([currentBounds, layer.getBounds()]);
+
+                if (nextBounds) {
+                    municipalityBoundaryIndex.set(municipalityKey, nextBounds);
+                }
+
+                municipalityDisplayNameIndex.set(municipalityKey, name);
+            }
 
 
             layer.on('mouseover', function() {
@@ -1646,6 +1859,9 @@ const landData = {
     .setLatLng(geoLayer.getBounds().getCenter())
     .setContent(provinceName)
     .addTo(map);
+
+    renderMunicipalityFilterOptions();
+    updateMunicipalityFilterBounds();
 }
 
 function normalizeGeoJson(data) {
@@ -1751,10 +1967,14 @@ async function loadOverlayConfig(categoryKey) {
 }
 
 async function loadRenderedOverlayData(categoryKey) {
+    if (renderedOverlayDataCache[categoryKey]) {
+        return renderedOverlayDataCache[categoryKey];
+    }
+
     if (categoryKey === 'land_boundary' && baseMapGeoJson) {
         const normalized = normalizeGeoJson(baseMapGeoJson);
 
-        return {
+        const payload = {
             type: 'FeatureCollection',
             category: 'land_boundary',
             label: overlayGroups.land_boundary?.label || 'Pangasinan Land Boundary',
@@ -1768,6 +1988,10 @@ async function loadRenderedOverlayData(categoryKey) {
                 }
             }))
         };
+
+        renderedOverlayDataCache[categoryKey] = payload;
+
+        return payload;
     }
 
     const response = await fetch(`${renderedOverlayEndpointBase}/${encodeURIComponent(categoryKey)}`, {
@@ -1786,7 +2010,213 @@ async function loadRenderedOverlayData(categoryKey) {
         currentMapApiVersion = payload.version;
     }
 
+    renderedOverlayDataCache[categoryKey] = payload;
+
     return payload;
+}
+
+function getMunicipalityFilterSelections() {
+    if (!municipalityFilterList) {
+        return [];
+    }
+
+    return Array.from(municipalityFilterList.querySelectorAll('input[type="checkbox"][data-municipality-key]:checked'))
+        .map(input => ({
+            key: input.dataset.municipalityKey,
+            name: input.dataset.municipalityName || input.value || ''
+        }))
+        .filter(item => item.key && item.name);
+}
+
+function updateMunicipalityFilterSummary() {
+    if (!municipalityFilterSummary) {
+        return;
+    }
+
+    const selections = getMunicipalityFilterSelections();
+
+    if (showAllIrrigatedCheckbox?.checked) {
+        municipalityFilterSummary.textContent = 'Show all';
+        return;
+    }
+
+    if (!selections.length) {
+        municipalityFilterSummary.textContent = 'No municipality selected';
+        return;
+    }
+
+    municipalityFilterSummary.textContent = selections.length === 1
+        ? selections[0].name
+        : `${selections.length} selected`;
+}
+
+function filterMunicipalityOptions() {
+    if (!municipalityFilterList || !municipalityFilterSearch) {
+        return;
+    }
+
+    const query = normalizeName(municipalityFilterSearch.value || '');
+
+    municipalityFilterList.querySelectorAll('.layer-filter-option').forEach(option => {
+        const target = option.dataset.searchTarget || '';
+        option.classList.toggle('is-hidden', query !== '' && !target.includes(query));
+    });
+}
+
+function renderMunicipalityFilterOptions() {
+    if (!municipalityFilterList) {
+        return;
+    }
+
+    const selections = new Set(getMunicipalityFilterSelections().map(item => item.key));
+    const municipalities = Array.from(municipalityDisplayNameIndex.entries())
+        .sort((a, b) => a[1].localeCompare(b[1]));
+
+    municipalityFilterList.innerHTML = municipalities.map(([key, name]) => `
+        <label class="layer-filter-option" data-search-target="${normalizeName(name)}">
+            <input
+                type="checkbox"
+                value="${name}"
+                data-municipality-key="${key}"
+                data-municipality-name="${name}"
+                ${selections.has(key) ? 'checked' : ''}
+            >
+            <span>${name}</span>
+        </label>
+    `).join('');
+
+    municipalityFilterList.querySelectorAll('input[type="checkbox"][data-municipality-key]').forEach(input => {
+        input.addEventListener('change', async event => {
+            if (event.target.checked && showAllIrrigatedCheckbox) {
+                showAllIrrigatedCheckbox.checked = false;
+            }
+
+            updateMunicipalityFilterSummary();
+            updateMunicipalityFilterBounds();
+
+            if (overlayToggles.irrigated?.checked) {
+                await showOverlayCategory('irrigated');
+            }
+        });
+    });
+
+    filterMunicipalityOptions();
+    updateMunicipalityFilterSummary();
+}
+
+function getMunicipalityFilterBounds() {
+    return getMunicipalityFilterSelections()
+        .map(item => municipalityBoundaryIndex.get(item.key))
+        .filter(Boolean);
+}
+
+function mergeLeafletBounds(boundsList) {
+    const validBounds = Array.isArray(boundsList) ? boundsList.filter(Boolean) : [];
+
+    if (!validBounds.length) {
+        return null;
+    }
+
+    const mergedBounds = L.latLngBounds([]);
+
+    validBounds.forEach(bounds => {
+        mergedBounds.extend(bounds);
+    });
+
+    return mergedBounds.isValid() ? mergedBounds : null;
+}
+
+function updateMunicipalityFilterBounds() {
+    if (municipalityFilterBoundsLayer) {
+        map.removeLayer(municipalityFilterBoundsLayer);
+        municipalityFilterBoundsLayer = null;
+    }
+
+    if (!overlayToggles.irrigated?.checked) {
+        return;
+    }
+
+    if (showAllIrrigatedCheckbox?.checked) {
+        return;
+    }
+
+    const features = getMunicipalityFilterSelections()
+        .map(item => {
+            const bounds = municipalityBoundaryIndex.get(item.key);
+
+            if (!bounds) {
+                return null;
+            }
+
+            return {
+                type: 'Feature',
+                properties: {
+                    _category: 'municipality_bbox',
+                    name: item.name
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[
+                        [bounds.getWest(), bounds.getSouth()],
+                        [bounds.getEast(), bounds.getSouth()],
+                        [bounds.getEast(), bounds.getNorth()],
+                        [bounds.getWest(), bounds.getNorth()],
+                        [bounds.getWest(), bounds.getSouth()]
+                    ]]
+                }
+            };
+        })
+        .filter(Boolean);
+
+    if (!features.length) {
+        return;
+    }
+
+    municipalityFilterBoundsLayer = L.geoJSON({
+        type: 'FeatureCollection',
+        features
+    }, {
+        pane: 'landBoundaryPane',
+        interactive: false,
+        style: () => ({
+            color: '#80deea',
+            weight: 2,
+            opacity: 0.95,
+            dashArray: '6 4',
+            fillOpacity: 0
+        })
+    }).addTo(map);
+}
+
+async function buildFilteredIrrigatedOverlayData(selectedBounds) {
+    const fullPayload = await loadRenderedOverlayData('irrigated');
+    const boundsList = Array.isArray(selectedBounds) ? selectedBounds.filter(Boolean) : [];
+
+    if (!boundsList.length) {
+        return {
+            type: 'FeatureCollection',
+            category: 'irrigated',
+            label: 'Irrigated Area',
+            feature_count: 0,
+            failed_files: Array.isArray(fullPayload.failed_files) ? fullPayload.failed_files : [],
+            features: []
+        };
+    }
+
+    const filteredFeatures = boundsList.flatMap(bounds => {
+        return (fullPayload.features || [])
+            .map(feature => filterGeometryByBounds(feature, bounds))
+            .filter(Boolean);
+    });
+
+    return {
+        ...fullPayload,
+        type: 'FeatureCollection',
+        category: 'irrigated',
+        label: 'Irrigated Area',
+        features: filteredFeatures,
+        rendered_feature_count: filteredFeatures.length
+    };
 }
 
 async function convertStoredFileToGeoJson(fileUrl) {
@@ -1917,6 +2347,63 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
 }
 
 async function showOverlayCategory(categoryKey) {
+    if (categoryKey === 'irrigated') {
+        const loadToken = ++municipalityOverlayLoadToken;
+        const showAll = !!showAllIrrigatedCheckbox?.checked;
+        const selections = getMunicipalityFilterSelections();
+
+        updateMunicipalityFilterSummary();
+        updateMunicipalityFilterBounds();
+
+        if (!showAll && !selections.length) {
+            hideOverlayCategory('irrigated');
+            updateStatus('Select one or more Pangasinan municipalities or enable Show All Irrigated.', true);
+            return;
+        }
+
+        if (showAll) {
+            return await showFullIrrigatedOverlay();
+        }
+
+        const municipalityLabel = selections.length > 1 ? 'municipalities' : 'municipality';
+        updateStatus(`Loading irrigated area for ${selections.length} selected ${municipalityLabel}...`);
+        updateLoaderMessage('Loading municipality irrigated layer...');
+
+        const selectedBounds = selections
+            .map(selection => municipalityBoundaryIndex.get(selection.key) || null)
+            .filter(Boolean);
+
+        if (loadToken !== municipalityOverlayLoadToken) {
+            return;
+        }
+
+        const mergedPayload = await buildFilteredIrrigatedOverlayData(selectedBounds);
+
+        if (loadToken !== municipalityOverlayLoadToken) {
+            return;
+        }
+
+        if (overlayLayers[categoryKey] && map.hasLayer(overlayLayers[categoryKey])) {
+            map.removeLayer(overlayLayers[categoryKey]);
+        }
+
+        overlayLayers[categoryKey] = createOverlayLayer(categoryKey, mergedPayload, mergedPayload.label);
+        overlayLayers[categoryKey]._mode = 'filtered';
+        overlayLayers[categoryKey].addTo(map);
+        overlayLayers[categoryKey].eachLayer(layer => layer.bringToFront());
+
+        if (selectedBounds.length) {
+            const mergedBounds = mergeLeafletBounds(selectedBounds);
+
+            if (mergedBounds) {
+            map.fitBounds(mergedBounds, { padding: [20, 20] });
+            }
+        }
+
+        updateStatus(`Irrigated Area is highlighted for ${selections.length} selected ${municipalityLabel}.`);
+        return;
+    }
+
     const loadToken = nextOverlayLoadToken(categoryKey);
     const pendingConfig = overlayGroups[categoryKey];
 
@@ -1986,8 +2473,67 @@ async function showOverlayCategory(categoryKey) {
     }
 }
 
+async function showFullIrrigatedOverlay() {
+    const loadToken = nextOverlayLoadToken('irrigated');
+    const pendingConfig = overlayGroups.irrigated;
+
+    updateStatus('Preparing Irrigated Area...');
+    updateLoaderMessage('Preparing rendered layer...');
+
+    const config = pendingConfig || {};
+
+    if (!config || config.has_files === false) {
+        updateStatus('No files found for Irrigated Area.', true);
+        return;
+    }
+
+    if (!overlayLayers.irrigated || overlayLayers.irrigated._mode !== 'all') {
+        updateStatus('Loading rendered Irrigated Area from API...');
+        updateLoaderMessage('Loading rendered layer from API...');
+
+        const renderedGeoJson = await loadRenderedOverlayData('irrigated');
+
+        if (!isCurrentOverlayLoad('irrigated', loadToken)) {
+            return;
+        }
+
+        if (!hasRenderableFeatures(renderedGeoJson)) {
+            updateStatus('No valid polygons could be loaded for Irrigated Area.', true);
+            throw new Error('No valid polygons could be loaded for Irrigated Area.');
+        }
+
+        if (overlayLayers.irrigated && map.hasLayer(overlayLayers.irrigated)) {
+            map.removeLayer(overlayLayers.irrigated);
+        }
+
+        overlayLayers.irrigated = createOverlayLayer('irrigated', renderedGeoJson, renderedGeoJson.label || 'Irrigated Area');
+        overlayLayers.irrigated._mode = 'all';
+        overlayLayers.irrigated.addTo(map);
+        overlayLayers.irrigated.eachLayer(layer => layer.bringToFront());
+
+        if (Array.isArray(renderedGeoJson.failed_files) && renderedGeoJson.failed_files.length) {
+            console.warn('Overlay files that failed to render:', renderedGeoJson.failed_files);
+        }
+    }
+
+    if (!map.hasLayer(overlayLayers.irrigated)) {
+        overlayLayers.irrigated.addTo(map);
+    }
+
+    updateStatus('Irrigated Area is highlighted on the map.');
+}
+
 function hideOverlayCategory(categoryKey) {
     nextOverlayLoadToken(categoryKey);
+
+    if (categoryKey === 'irrigated') {
+        municipalityOverlayLoadToken++;
+
+        if (municipalityFilterBoundsLayer) {
+            map.removeLayer(municipalityFilterBoundsLayer);
+            municipalityFilterBoundsLayer = null;
+        }
+    }
 
     if (overlayLayers[categoryKey] && map.hasLayer(overlayLayers[categoryKey])) {
         map.removeLayer(overlayLayers[categoryKey]);

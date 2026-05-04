@@ -453,6 +453,25 @@
             transition: 0.2s;
         }
 
+        select.modern-input {
+            cursor: pointer;
+            appearance: none;
+            padding-right: 34px;
+            background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
+            background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+        }
+
+        .location-custom-input {
+            display: none;
+            margin-top: 8px;
+        }
+
+        .location-custom-input.is-active {
+            display: block;
+        }
+
         .modern-input:focus {
             border-color: #0c4d05;
             box-shadow: 0 0 0 3px rgba(12, 77, 5, 0.1);
@@ -1423,10 +1442,13 @@
                         <div class="modal-section">
                             <span class="modal-section-title">Location Details</span>
                             <div class="modal-grid four">
-                                <input id="sum_region" placeholder="Region" class="modern-input">
-                                <input id="sum_province" placeholder="Province" class="modern-input">
-                                <input id="sum_municipality" placeholder="Municipality" class="modern-input">
-                                <input id="sum_barangay" placeholder="Barangay" class="modern-input">
+                                <select id="sum_region" class="modern-input" data-location-region required></select>
+                                <select id="sum_province" class="modern-input" data-location-province required></select>
+                                <select id="sum_municipality" class="modern-input" data-location-municipality required></select>
+                                <div>
+                                    <select id="sum_barangay" class="modern-input" data-location-barangay data-custom-input="sum_barangay_custom" required></select>
+                                    <input id="sum_barangay_custom" class="modern-input location-custom-input" placeholder="Type barangay">
+                                </div>
                             </div>
                         </div>
 
@@ -1585,10 +1607,13 @@
                         <div class="modal-section">
                             <span class="modal-section-title">Location Details</span>
                             <div class="modal-grid four">
-                                <input id="nur_region" placeholder="Region" class="modern-input">
-                                <input id="nur_province" placeholder="Province" class="modern-input">
-                                <input id="nur_municipality" placeholder="Municipality" class="modern-input">
-                                <input id="nur_barangay" placeholder="Barangay" class="modern-input">
+                                <select id="nur_region" class="modern-input" data-location-region required></select>
+                                <select id="nur_province" class="modern-input" data-location-province required></select>
+                                <select id="nur_municipality" class="modern-input" data-location-municipality required></select>
+                                <div>
+                                    <select id="nur_barangay" class="modern-input" data-location-barangay data-custom-input="nur_barangay_custom" required></select>
+                                    <input id="nur_barangay_custom" class="modern-input location-custom-input" placeholder="Type barangay">
+                                </div>
                             </div>
                         </div>
 
@@ -1730,10 +1755,13 @@
                         <div class="modal-section">
                             <span class="modal-section-title">Location Details</span>
                             <div class="modal-grid four">
-                                <input id="sig_region" placeholder="Region" class="modern-input">
-                                <input id="sig_province" placeholder="Province" class="modern-input">
-                                <input id="sig_municipality" placeholder="Municipality" class="modern-input">
-                                <textarea id="sig_barangay" placeholder="Barangay (Use Enter for multiple)" class="modern-input"></textarea>
+                                <select id="sig_region" class="modern-input" data-location-region required></select>
+                                <select id="sig_province" class="modern-input" data-location-province required></select>
+                                <select id="sig_municipality" class="modern-input" data-location-municipality required></select>
+                                <div>
+                                    <select id="sig_barangay" class="modern-input" data-location-barangay data-custom-input="sig_barangay_custom" required></select>
+                                    <input id="sig_barangay_custom" class="modern-input location-custom-input" placeholder="Type barangay">
+                                </div>
                             </div>
                         </div>
 
@@ -1874,10 +1902,13 @@
                         <div class="modal-section">
                             <span class="modal-section-title">Location Details</span>
                             <div class="modal-grid four">
-                                <input id="inf_region" placeholder="Region" class="modern-input">
-                                <input id="inf_province" placeholder="Province" class="modern-input">
-                                <input id="inf_municipality" placeholder="Municipality" class="modern-input">
-                                <textarea id="inf_barangay" placeholder="Barangay (Use Enter for multiple)" class="modern-input"></textarea>
+                                <select id="inf_region" class="modern-input" data-location-region required></select>
+                                <select id="inf_province" class="modern-input" data-location-province required></select>
+                                <select id="inf_municipality" class="modern-input" data-location-municipality required></select>
+                                <div>
+                                    <select id="inf_barangay" class="modern-input" data-location-barangay data-custom-input="inf_barangay_custom" required></select>
+                                    <input id="inf_barangay_custom" class="modern-input location-custom-input" placeholder="Type barangay">
+                                </div>
                             </div>
                         </div>
 
@@ -1927,6 +1958,28 @@
     @endif
 
     <script>
+        @php
+            $rpwsisMunicipalityOptions = collect(json_decode(@file_get_contents(public_path('maps/details.json')), true) ?: [])
+                ->pluck('name')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values();
+            $rpwsisExistingLocationRows = collect()
+                ->merge(($summaryRecords ?? collect())->map(fn ($row) => ['municipality' => $row->municipality, 'barangay' => $row->barangay]))
+                ->merge(($nurseryRecords ?? collect())->map(fn ($row) => ['municipality' => $row->municipality, 'barangay' => $row->barangay]))
+                ->merge(($signageRecords ?? collect())->map(fn ($row) => ['municipality' => $row->municipality, 'barangay' => $row->barangay]))
+                ->merge(($infrastructureRecords ?? collect())->map(fn ($row) => ['municipality' => $row->municipality, 'barangay' => $row->barangay]))
+                ->filter(fn ($row) => !empty($row['municipality']) && !empty($row['barangay']))
+                ->values();
+        @endphp
+        const rpwsisLocationData = {
+            regions: ['Region I'],
+            provinces: ['Pangasinan'],
+            municipalities: @json($rpwsisMunicipalityOptions),
+            existingRows: @json($rpwsisExistingLocationRows),
+        };
+
         function escapeSummaryHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, function(char) {
                 return {
@@ -2005,19 +2058,158 @@
             button.textContent = isExpanded ? 'Show less' : 'Show more';
         }
 
+        function normalizeLocationKey(value) {
+            return String(value || '')
+                .toLowerCase()
+                .replace(/\bcity of\b/g, '')
+                .replace(/\bmunicipality of\b/g, '')
+                .replace(/\bcity\b/g, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function uniqueSortedValues(values) {
+            return Array.from(new Set((values || [])
+                .map(value => String(value || '').trim())
+                .filter(Boolean)))
+                .sort((left, right) => left.localeCompare(right));
+        }
+
+        const rpwsisBarangaysByMunicipality = (rpwsisLocationData.existingRows || []).reduce((indexed, row) => {
+            const key = normalizeLocationKey(row.municipality);
+            const barangayLines = String(row.barangay || '')
+                .split(/\r?\n|,/)
+                .map(value => value.trim())
+                .filter(Boolean);
+
+            if (!key || !barangayLines.length) return indexed;
+
+            indexed[key] = indexed[key] || [];
+            indexed[key].push(...barangayLines);
+            indexed[key] = uniqueSortedValues(indexed[key]);
+
+            return indexed;
+        }, {});
+
+        function setSelectOptions(select, options, placeholder, selectedValue = '') {
+            if (!select) return;
+
+            const selectedKey = normalizeLocationKey(selectedValue);
+            const normalizedOptions = uniqueSortedValues(options);
+
+            if (selectedValue && !normalizedOptions.some(option => normalizeLocationKey(option) === selectedKey)) {
+                normalizedOptions.push(String(selectedValue).trim());
+                normalizedOptions.sort((left, right) => left.localeCompare(right));
+            }
+
+            select.innerHTML = [
+                `<option value="">${placeholder}</option>`,
+                ...normalizedOptions.map(option => {
+                    const isSelected = normalizeLocationKey(option) === selectedKey;
+                    return `<option value="${escapeAttribute(option)}"${isSelected ? ' selected' : ''}>${escapeSummaryHtml(option)}</option>`;
+                })
+            ].join('');
+        }
+
+        function selectedMunicipalityForPrefix(prefix) {
+            return document.getElementById(`${prefix}_municipality`)?.value || '';
+        }
+
+        function updateBarangayOptions(prefix, selectedValue = '') {
+            const barangaySelect = document.getElementById(`${prefix}_barangay`);
+            if (!barangaySelect) return;
+
+            const municipalityKey = normalizeLocationKey(selectedMunicipalityForPrefix(prefix));
+            const customInput = document.getElementById(barangaySelect.dataset.customInput);
+            const barangays = rpwsisBarangaysByMunicipality[municipalityKey] || [];
+            const selectedIsKnown = barangays.some(value => normalizeLocationKey(value) === normalizeLocationKey(selectedValue));
+            const useCustom = selectedValue && !selectedIsKnown;
+
+            barangaySelect.innerHTML = [
+                '<option value="">Select barangay</option>',
+                ...barangays.map(barangay => {
+                    const selected = !useCustom && normalizeLocationKey(barangay) === normalizeLocationKey(selectedValue);
+                    return `<option value="${escapeAttribute(barangay)}"${selected ? ' selected' : ''}>${escapeSummaryHtml(barangay)}</option>`;
+                }),
+                `<option value="__custom"${useCustom ? ' selected' : ''}>Not listed / type barangay</option>`
+            ].join('');
+
+            if (customInput) {
+                customInput.value = useCustom ? selectedValue : '';
+                customInput.classList.toggle('is-active', barangaySelect.value === '__custom');
+                customInput.required = barangaySelect.value === '__custom';
+            }
+        }
+
+        function syncBarangayCustomInput(select) {
+            const customInput = document.getElementById(select?.dataset?.customInput);
+            if (!customInput) return;
+
+            customInput.classList.toggle('is-active', select.value === '__custom');
+            customInput.required = select.value === '__custom';
+            if (select.value === '__custom') {
+                customInput.focus();
+            } else {
+                customInput.value = '';
+            }
+        }
+
+        function initializeLocationDropdowns() {
+            ['sum', 'nur', 'sig', 'inf'].forEach(prefix => {
+                setSelectOptions(document.getElementById(`${prefix}_region`), rpwsisLocationData.regions, 'Select region', 'Region I');
+                setSelectOptions(document.getElementById(`${prefix}_province`), rpwsisLocationData.provinces, 'Select province', 'Pangasinan');
+                setSelectOptions(document.getElementById(`${prefix}_municipality`), rpwsisLocationData.municipalities, 'Select municipality');
+                updateBarangayOptions(prefix);
+
+                document.getElementById(`${prefix}_municipality`)?.addEventListener('change', () => {
+                    updateBarangayOptions(prefix);
+                });
+
+                document.getElementById(`${prefix}_barangay`)?.addEventListener('change', function() {
+                    syncBarangayCustomInput(this);
+                });
+            });
+        }
+
+        function getFieldValue(id) {
+            const field = document.getElementById(id);
+            if (!field) return '';
+
+            if (field.dataset?.customInput && field.value === '__custom') {
+                return document.getElementById(field.dataset.customInput)?.value.trim() || '';
+            }
+
+            return String(field.value ?? '').trim();
+        }
+
         function validateRequiredFields(fieldIds) {
             const emptyFields = [];
             fieldIds.forEach(id => {
                 const field = document.getElementById(id);
                 if (!field) return;
-                const value = String(field.value ?? '').trim();
+                const value = getFieldValue(id);
                 if (!value) {
-                    emptyFields.push(field);
+                    const customField = field.dataset?.customInput && field.value === '__custom'
+                        ? document.getElementById(field.dataset.customInput)
+                        : null;
+                    emptyFields.push(customField || field);
                     field.style.borderColor = '#ef4444';
                     field.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.12)';
+                    if (customField) {
+                        customField.style.borderColor = '#ef4444';
+                        customField.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.12)';
+                    }
                 } else {
                     field.style.borderColor = '';
                     field.style.boxShadow = '';
+                    if (field.dataset?.customInput) {
+                        const customField = document.getElementById(field.dataset.customInput);
+                        if (customField) {
+                            customField.style.borderColor = '';
+                            customField.style.boxShadow = '';
+                        }
+                    }
                 }
             });
             if (emptyFields.length > 0) {
@@ -2152,8 +2344,31 @@
                     field.value = '';
                     field.style.borderColor = '';
                     field.style.boxShadow = '';
+                    if (field.dataset?.customInput) {
+                        const customInput = document.getElementById(field.dataset.customInput);
+                        if (customInput) {
+                            customInput.value = '';
+                            customInput.classList.remove('is-active');
+                            customInput.required = false;
+                            customInput.style.borderColor = '';
+                            customInput.style.boxShadow = '';
+                        }
+                    }
                 }
             });
+
+            const prefix = {
+                summary: 'sum',
+                nursery: 'nur',
+                signages: 'sig',
+                infrastructure: 'inf',
+            }[type];
+
+            if (prefix) {
+                document.getElementById(`${prefix}_region`).value = 'Region I';
+                document.getElementById(`${prefix}_province`).value = 'Pangasinan';
+                updateBarangayOptions(prefix);
+            }
         }
 
         function configureModalForMode(type, mode = 'add') {
@@ -2194,6 +2409,20 @@
                 const field = document.getElementById(id);
                 if (field) field.value = record?.[id] ?? '';
             });
+
+            const prefix = {
+                summary: 'sum',
+                nursery: 'nur',
+                signages: 'sig',
+                infrastructure: 'inf',
+            }[type];
+
+            if (prefix) {
+                setSelectOptions(document.getElementById(`${prefix}_region`), rpwsisLocationData.regions, 'Select region', record?.[`${prefix}_region`] ?? 'Region I');
+                setSelectOptions(document.getElementById(`${prefix}_province`), rpwsisLocationData.provinces, 'Select province', record?.[`${prefix}_province`] ?? 'Pangasinan');
+                setSelectOptions(document.getElementById(`${prefix}_municipality`), rpwsisLocationData.municipalities, 'Select municipality', record?.[`${prefix}_municipality`] ?? '');
+                updateBarangayOptions(prefix, record?.[`${prefix}_barangay`] ?? '');
+            }
         }
 
         function getRowRecord(button) {
@@ -2409,6 +2638,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            initializeLocationDropdowns();
             const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
             if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', performDelete);
         });
@@ -2645,8 +2875,7 @@
 
             const data = {};
             fields.forEach(id => {
-                const field = document.getElementById(id);
-                data[id] = field ? field.value.trim() : '';
+                data[id] = getFieldValue(id);
             });
 
             const editState = currentEditState.accomplishment;
@@ -2704,8 +2933,7 @@
 
             const data = {};
             fields.forEach(id => {
-                const field = document.getElementById(id);
-                data[id] = field ? field.value.trim() : '';
+                data[id] = getFieldValue(id);
             });
 
             const editState = currentEditState.summary;
@@ -2761,8 +2989,7 @@
 
             const data = {};
             fields.forEach(id => {
-                const field = document.getElementById(id);
-                data[id] = field ? field.value.trim() : '';
+                data[id] = getFieldValue(id);
             });
 
             const editState = currentEditState.nursery;
@@ -2818,8 +3045,7 @@
 
             const data = {};
             fields.forEach(id => {
-                const field = document.getElementById(id);
-                data[id] = field ? field.value.trim() : '';
+                data[id] = getFieldValue(id);
             });
 
             const editState = currentEditState.signages;
@@ -2875,8 +3101,7 @@
 
             const data = {};
             fields.forEach(id => {
-                const field = document.getElementById(id);
-                data[id] = field ? field.value.trim() : '';
+                data[id] = getFieldValue(id);
             });
 
             const editState = currentEditState.infrastructure;
