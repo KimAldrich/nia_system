@@ -14,7 +14,7 @@ class ExcelTableImportService
      * @param class-string<\Illuminate\Database\Eloquent\Model> $modelClass
      * @param array<string, string> $aliases
      * @param array<string, mixed> $rules
-     * @param callable(array<string, mixed>): array<string, mixed>|null $transform
+     * @param callable(array<string, mixed>, array<string, mixed>, array<string, string|null>, array<string, mixed>): array<string, mixed>|null $transform
      * @return array{created:int, skipped:int}
      */
     public function import(
@@ -39,6 +39,8 @@ class ExcelTableImportService
         $skipped = 0;
         $errors = [];
 
+        $state = [];
+
         foreach ($dataRows as $rowNumber => $row) {
             if ($this->isBlankRow($row)) {
                 $skipped++;
@@ -54,7 +56,12 @@ class ExcelTableImportService
                 $payload[$field] = $this->normalizeValue($row[$column] ?? null);
             }
 
-            $payload = $transform ? $transform($payload) : $payload;
+            $payload = $transform ? $transform($payload, $row, $headers, $state) : $payload;
+
+            if ($payload === null) {
+                $skipped++;
+                continue;
+            }
 
             $validator = Validator::make($payload, $rules);
             if ($validator->fails()) {

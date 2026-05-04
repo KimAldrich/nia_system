@@ -13,6 +13,7 @@ use App\Models\RpwsisInfrastructure;
 use App\Models\RpwsisNurseryEstablishment;
 use App\Models\RpwsisSignage;
 use App\Services\ExcelTableImportService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -68,6 +69,11 @@ class DataTableImportController extends Controller
                     'status' => ['required', Rule::in(['For Schedule', 'For Interpretation', 'For Submission of Raw data', 'Relocation', 'Interpreted', 'Not Applicable', 'C/O Contractor', 'Open Source', 'With Geo-res'])],
                     'result' => ['nullable', 'string', 'max:100'],
                 ],
+                'aliases' => [
+                    'system' => 'system_name',
+                    'description_remarks' => 'description',
+                    'result_feasible_or_not_feasible' => 'result',
+                ],
             ],
             'fs-fsde' => [
                 'model' => FsdeProject::class,
@@ -89,6 +95,17 @@ class DataTableImportController extends Controller
                     "{$month}_phy" => ['nullable', 'numeric', 'between:0,100'],
                     "{$month}_fin" => ['nullable', 'numeric', 'between:0,100'],
                 ])->toArray()),
+                'aliases' => [
+                    'total_funding_requirement_p_000' => 'contract_amount',
+                    'approved_budget_p_000' => 'contract_amount',
+                    'contract_amount_p_000' => 'contract_amount',
+                    'actual_obligation_p_000' => 'actual_obligation',
+                    'mode_of_implementation_name_of_consultant' => 'consultant',
+                    'value_of_accomplishment_p_000' => 'value_of_acc',
+                    'actual_expenditures_p_000' => 'actual_expenditures',
+                    'remarks' => 'remarks',
+                ],
+                'transform' => fn (array $payload, array $row) => $this->transformFsdeImportRow($payload, $row),
             ],
             'rpwsis-accomplishments' => [
                 'model' => RpwsisAccomplishment::class,
@@ -196,7 +213,16 @@ class DataTableImportController extends Controller
                     'remarks' => ['nullable', 'string', 'max:1000'],
                     'project_description' => ['nullable', 'string', 'max:2000'],
                 ],
-                'aliases' => ['project_no' => 'proj_no', 'project_number' => 'proj_no'],
+                'aliases' => [
+                    'project_no' => 'proj_no',
+                    'project_number' => 'proj_no',
+                    'no_of_proj' => 'proj_no',
+                    'fy_2026_allocation' => 'allocation',
+                    'approved_budget_of_the_contract' => 'abc',
+                    'contract_agreement_date' => 'ca_date',
+                    'notice_to_proceed_date' => 'ntp_date',
+                ],
+                'transform' => fn (array $payload, array $row, array $headers, array &$state) => $this->transformProcurementImportRow($payload, $row, $state),
             ],
             'pcr-status' => [
                 'model' => PcrStatusReport::class,
@@ -227,7 +253,169 @@ class DataTableImportController extends Controller
                     'pow_for_submission' => ['required', 'integer', 'min:0'],
                     'remarks' => ['nullable', 'string', 'max:2000'],
                 ],
+                'transform' => fn (array $payload, array $row) => $this->transformPowImportRow($payload, $row),
             ],
         ];
+    }
+
+    private function transformPowImportRow(array $payload, array $row): ?array
+    {
+        $district = $this->cleanImportText($payload['district'] ?? $row['A'] ?? null);
+
+        if ($this->isImportHeading($district, ['PROGRAM OF WORKS STATUS MONITORING', 'DISTRICT', 'TOTAL'])) {
+            return null;
+        }
+
+        $payload['district'] = $this->normalizePowDistrict($district);
+        $payload['pow_received'] = $payload['pow_received'] ?? $row['F'] ?? null;
+        $payload['pow_approved'] = $payload['pow_approved'] ?? $row['G'] ?? null;
+        $payload['pow_submitted'] = $payload['pow_submitted'] ?? $row['H'] ?? null;
+
+        foreach ([
+            'no_of_projects',
+            'no_of_plans_received',
+            'no_of_project_estimate_received',
+            'pow_received',
+            'pow_approved',
+            'pow_submitted',
+            'ongoing_pow_preparation',
+            'pow_for_submission',
+        ] as $field) {
+            $payload[$field] = $this->importInteger($payload[$field] ?? 0);
+        }
+
+        $payload['total_allocation'] = $this->importNumber($payload['total_allocation'] ?? 0);
+
+        return $payload;
+    }
+
+    private function transformProcurementImportRow(array $payload, array $row, array &$state): ?array
+    {
+        $firstCell = $this->cleanImportText($row['A'] ?? null);
+
+        if ($this->isImportHeading($firstCell, ['PANGASINAN IMO', 'NO. OF PROJ.', 'FY 2026 (ALLOCATION)'])) {
+            return null;
+        }
+
+        $hasOnlyFirstCell = $firstCell !== null && collect($row)
+            ->except(['A'])
+            ->every(fn ($value) => $this->cleanImportText($value) === null);
+
+        if ($hasOnlyFirstCell) {
+            $state['category'] = $firstCell;
+            return null;
+        }
+
+        $payload['category'] = $payload['category'] ?? $state['category'] ?? null;
+        $payload['allocation'] = $this->importNumber($payload['allocation'] ?? $row['D'] ?? null);
+        $payload['abc'] = $this->importNumber($payload['abc'] ?? $row['E'] ?? null);
+        $payload['contract_amount'] = $this->importNumber($payload['contract_amount'] ?? null);
+
+        foreach (['bid_out', 'for_bidding', 'awarded'] as $field) {
+            $payload[$field] = $this->importInteger($payload[$field] ?? null);
+        }
+
+        foreach (['date_of_bidding', 'date_of_award', 'ca_date', 'ntp_date'] as $field) {
+            $payload[$field] = $this->importDate($payload[$field] ?? null);
+        }
+
+        return $payload;
+    }
+
+    private function transformFsdeImportRow(array $payload, array $row): ?array
+    {
+        $year = $this->cleanImportText($payload['year'] ?? $row['A'] ?? null);
+
+        if ($this->isImportHeading($year, ['PANGASINAN', 'TOTAL FOR PANGASINAN', 'YEAR'])) {
+            return null;
+        }
+
+        foreach (['period_start', 'period_end'] as $field) {
+            $payload[$field] = $this->importDate($payload[$field] ?? null);
+        }
+
+        $payload['period_start'] = $this->importDate($payload['period_start'] ?? $row['H'] ?? null);
+        $payload['period_end'] = $this->importDate($payload['period_end'] ?? $row['I'] ?? null);
+
+        foreach (['contract_amount', 'actual_obligation', 'value_of_acc', 'actual_expenditures'] as $field) {
+            $payload[$field] = $this->importNumber($payload[$field] ?? null);
+        }
+
+        foreach (['jan_phy', 'jan_fin', 'feb_phy', 'feb_fin', 'mar_phy', 'mar_fin', 'apr_phy', 'apr_fin', 'may_phy', 'may_fin', 'jun_phy', 'jun_fin', 'jul_phy', 'jul_fin', 'aug_phy', 'aug_fin', 'sep_phy', 'sep_fin', 'oct_phy', 'oct_fin', 'nov_phy', 'nov_fin', 'dec_phy', 'dec_fin'] as $field) {
+            if (array_key_exists($field, $payload)) {
+                $payload[$field] = $this->importNumber($payload[$field]);
+            }
+        }
+
+        $payload['acc_year'] = $payload['acc_year'] ?? (preg_match('/^\d{4}$/', (string) $year) ? $year : null);
+
+        return $payload;
+    }
+
+    private function importDate(mixed $value): mixed
+    {
+        $value = $this->cleanImportText($value);
+        if ($value === null) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Throwable) {
+            return $value;
+        }
+    }
+
+    private function importNumber(mixed $value): mixed
+    {
+        $value = $this->cleanImportText($value);
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = preg_replace('/[^\d.\-]/', '', $value) ?? $value;
+        $normalized = trim($normalized);
+
+        return is_numeric($normalized) ? $normalized : $value;
+    }
+
+    private function importInteger(mixed $value): mixed
+    {
+        $value = $this->importNumber($value);
+
+        return is_numeric($value) ? (int) $value : $value;
+    }
+
+    private function normalizePowDistrict(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (preg_match('/(\d+)/', $value, $matches)) {
+            return 'District ' . $matches[1];
+        }
+
+        return $value;
+    }
+
+    private function cleanImportText(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function isImportHeading(?string $value, array $headings): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+
+        return in_array(strtoupper($value), $headings, true);
     }
 }
