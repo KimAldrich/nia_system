@@ -1472,6 +1472,7 @@ const overlayGroups = @json($overlayGroups);
 let uploadTargets = @json($uploadTargets ?? []);
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 const mapApiStatusEndpoint = "{{ route('map.api.status') }}";
+const irrigatedAreasEndpoint = "{{ route('map.api.irrigated_areas') }}";
 const overlayFilesEndpointBase = "{{ url('/map/overlays') }}";
 const renderedOverlayEndpointBase = "{{ url('/map/render') }}";
 const notificationUserKey = "{{ $notificationUserKey ?? '' }}" || null;
@@ -1537,7 +1538,9 @@ function buildAppUrl(path) {
 // Dagupan City Center
 const DEFAULT_CENTER = [16.0433, 120.3333];
 const DEFAULT_ZOOM = 10;
-let map = L.map('map').setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+let map = L.map('map', {
+    preferCanvas: true
+}).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 map.createPane('baseBoundaryPane');
 map.getPane('baseBoundaryPane').style.zIndex = 410;
 map.createPane('potentialPane');
@@ -1561,6 +1564,10 @@ map.getPane('provincePane').style.pointerEvents = 'none';
 const potentialRenderer = L.canvas({ pane: 'potentialPane', padding: 0.5 });
 const irrigatedRenderer = L.canvas({ pane: 'irrigatedPane', padding: 0.5 });
 const landBoundaryRenderer = L.canvas({ pane: 'landBoundaryPane', padding: 0.5 });
+const irrigatedViewportLayer = L.layerGroup();
+let irrigatedViewportAbortController = null;
+let irrigatedViewportLoadTimer = null;
+let irrigatedViewportLoadToken = 0;
 
 let normalLayer = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -2319,6 +2326,122 @@ function mergeLeafletBounds(boundsList) {
     return mergedBounds.isValid() ? mergedBounds : null;
 }
 
+function getLatLngBoundsExtents(bounds) {
+    if (!bounds || typeof bounds.getSouth !== 'function') return null;
+
+    return {
+        minLat: bounds.getSouth(),
+        maxLat: bounds.getNorth(),
+        minLng: bounds.getWest(),
+        maxLng: bounds.getEast()
+    };
+}
+
+function traverseGeoJsonCoordinates(geometry, onPoint) {
+    if (!geometry) return;
+
+    const type = geometry.type;
+    const coords = geometry.coordinates;
+
+    if (!coords) return;
+
+    // Coordinates are always in [lng, lat] order for GeoJSON
+    const visitPoint = (pt) => {
+        if (!Array.isArray(pt) || pt.length < 2) return;
+        const lng = Number(pt[0]);
+        const lat = Number(pt[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        onPoint(lat, lng);
+    };
+
+    if (type === 'Point') {
+        visitPoint(coords);
+        return;
+    }
+
+    if (type === 'MultiPoint') {
+        coords.forEach(visitPoint);
+        return;
+    }
+
+    if (type === 'LineString') {
+        coords.forEach(visitPoint);
+        return;
+    }
+
+    if (type === 'MultiLineString') {
+        coords.forEach(line => Array.isArray(line) && line.forEach(visitPoint));
+        return;
+    }
+
+    if (type === 'Polygon') {
+        // coords = [ [ [lng,lat], ... ] , [hole] ... ]
+        coords.forEach(ring => Array.isArray(ring) && ring.forEach(visitPoint));
+        return;
+    }
+
+    if (type === 'MultiPolygon') {
+        // coords = [ [ ring[] ] ... ]
+        coords.forEach(poly => poly.forEach(ring => Array.isArray(ring) && ring.forEach(visitPoint)));
+        return;
+    }
+}
+
+function computeFeatureLatLngBoundsExtents(feature) {
+    if (!feature) return null;
+
+    if (Array.isArray(feature.bbox) && feature.bbox.length >= 4) {
+        // bbox = [minLng, minLat, maxLng, maxLat]
+        const minLng = Number(feature.bbox[0]);
+        const minLat = Number(feature.bbox[1]);
+        const maxLng = Number(feature.bbox[2]);
+        const maxLat = Number(feature.bbox[3]);
+
+        if ([minLat, maxLat, minLng, maxLng].every(Number.isFinite)) {
+            return { minLat, maxLat, minLng, maxLng };
+        }
+    }
+
+    const geometry = feature.geometry;
+
+    let minLat = Infinity;
+    let maxLat = -Infinity;
+    let minLng = Infinity;
+    let maxLng = -Infinity;
+    let visited = 0;
+
+    traverseGeoJsonCoordinates(geometry, (lat, lng) => {
+        visited++;
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+        minLng = Math.min(minLng, lng);
+        maxLng = Math.max(maxLng, lng);
+    });
+
+    if (!visited) return null;
+
+    return { minLat, maxLat, minLng, maxLng };
+}
+
+function isBoundsFullyInsideBoundsExtents(inner, outer, tolerance = 1e-9) {
+    if (!inner || !outer) return false;
+
+    return (
+        inner.minLat >= outer.minLat - tolerance &&
+        inner.maxLat <= outer.maxLat + tolerance &&
+        inner.minLng >= outer.minLng - tolerance &&
+        inner.maxLng <= outer.maxLng + tolerance
+    );
+}
+
+function isFeatureFullyInsideAnyBounds(feature, boundsExtentsList) {
+    const inner = computeFeatureLatLngBoundsExtents(feature);
+
+    if (!inner) return false;
+
+    return boundsExtentsList.some(outer => isBoundsFullyInsideBoundsExtents(inner, outer));
+}
+
 function updateMunicipalityFilterBounds() {
     if (municipalityFilterBoundsLayer) {
         map.removeLayer(municipalityFilterBoundsLayer);
@@ -2382,7 +2505,6 @@ function updateMunicipalityFilterBounds() {
 }
 
 async function buildFilteredIrrigatedOverlayData(selectedBounds) {
-    const fullPayload = await loadRenderedOverlayData('irrigated');
     const boundsList = Array.isArray(selectedBounds) ? selectedBounds.filter(Boolean) : [];
 
     if (!boundsList.length) {
@@ -2391,25 +2513,135 @@ async function buildFilteredIrrigatedOverlayData(selectedBounds) {
             category: 'irrigated',
             label: 'Irrigated Area',
             feature_count: 0,
-            failed_files: Array.isArray(fullPayload.failed_files) ? fullPayload.failed_files : [],
+            failed_files: [],
             features: []
         };
     }
 
-    const filteredFeatures = boundsList.flatMap(bounds => {
-        return (fullPayload.features || [])
-            .map(feature => filterGeometryByBounds(feature, bounds))
-            .filter(Boolean);
-    });
+    const payloads = await Promise.all(boundsList.map(bounds => loadIrrigatedAreasForBounds(bounds)));
+    const basePayload = payloads.find(Boolean) || {};
+
+    const features = payloads.flatMap(payload => Array.isArray(payload.features) ? payload.features : []);
+    const failedFiles = payloads.flatMap(payload => Array.isArray(payload.failed_files) ? payload.failed_files : []);
+
+    // IMPORTANT:
+    // The API request uses bbox intersection (viewport bounds), but we must enforce
+    // that only features fully contained inside the selected municipality bbox are rendered.
+    const boundsExtentsList = boundsList
+        .map(getLatLngBoundsExtents)
+        .filter(Boolean);
+
+    const filteredFeatures = boundsExtentsList.length
+        ? features.filter(feature => isFeatureFullyInsideAnyBounds(feature, boundsExtentsList))
+        : features;
 
     return {
-        ...fullPayload,
+        ...basePayload,
         type: 'FeatureCollection',
         category: 'irrigated',
         label: 'Irrigated Area',
-        features: filteredFeatures,
-        rendered_feature_count: filteredFeatures.length
+        failed_files: failedFiles,
+        features,
+        rendered_feature_count: features.length
     };
+}
+
+function irrigatedBoundsUrl(bounds) {
+    const params = new URLSearchParams({
+        sw_lat: bounds.getSouth(),
+        sw_lng: bounds.getWest(),
+        ne_lat: bounds.getNorth(),
+        ne_lng: bounds.getEast()
+    });
+
+    return `${irrigatedAreasEndpoint}?${params.toString()}`;
+}
+
+async function loadIrrigatedAreasForBounds(bounds, signal = null) {
+    const response = await fetch(irrigatedBoundsUrl(bounds), {
+        signal,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('The irrigated area viewport could not be loaded.');
+    }
+
+    const payload = await response.json();
+
+    if (payload.version) {
+        currentMapApiVersion = payload.version;
+    }
+
+    return payload;
+}
+
+function stopIrrigatedViewportLoading() {
+    map.off('moveend', scheduleIrrigatedViewportLoad);
+
+    if (irrigatedViewportLoadTimer) {
+        window.clearTimeout(irrigatedViewportLoadTimer);
+        irrigatedViewportLoadTimer = null;
+    }
+
+    if (irrigatedViewportAbortController) {
+        irrigatedViewportAbortController.abort();
+        irrigatedViewportAbortController = null;
+    }
+}
+
+function scheduleIrrigatedViewportLoad() {
+    if (!overlayToggles.irrigated?.checked || !showAllIrrigatedCheckbox?.checked) {
+        return;
+    }
+
+    if (irrigatedViewportLoadTimer) {
+        window.clearTimeout(irrigatedViewportLoadTimer);
+    }
+
+    irrigatedViewportLoadTimer = window.setTimeout(loadVisibleIrrigatedAreas, 120);
+}
+
+async function loadVisibleIrrigatedAreas() {
+    if (!overlayToggles.irrigated?.checked || !showAllIrrigatedCheckbox?.checked) {
+        return;
+    }
+
+    const loadToken = ++irrigatedViewportLoadToken;
+    const bounds = map.getBounds();
+
+    if (irrigatedViewportAbortController) {
+        irrigatedViewportAbortController.abort();
+    }
+
+    irrigatedViewportAbortController = new AbortController();
+
+    try {
+        updateStatus('Loading visible Irrigated Area...');
+        const payload = await loadIrrigatedAreasForBounds(bounds, irrigatedViewportAbortController.signal);
+
+        if (loadToken !== irrigatedViewportLoadToken) {
+            return;
+        }
+
+        irrigatedViewportLayer.clearLayers();
+
+        const layer = createOverlayLayer('irrigated', payload, payload.label || 'Irrigated Area');
+        layer.addTo(irrigatedViewportLayer);
+        layer.eachLayer(childLayer => childLayer.bringToFront());
+
+        const renderedCount = Number(payload.rendered_feature_count ?? payload.features?.length ?? 0);
+        updateStatus(`Irrigated Area is highlighted in the current view (${renderedCount.toLocaleString()} rendered feature(s)).`);
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            return;
+        }
+
+        console.error('Error loading visible irrigated area:', error);
+        updateStatus(error.message || 'Failed to load visible Irrigated Area.', true);
+    }
 }
 
 async function convertStoredFileToGeoJson(fileUrl) {
@@ -2558,6 +2790,9 @@ async function showOverlayCategory(categoryKey) {
             return await showFullIrrigatedOverlay();
         }
 
+        stopIrrigatedViewportLoading();
+        irrigatedViewportLayer.clearLayers();
+
         const municipalityLabel = selections.length > 1 ? 'municipalities' : 'municipality';
         updateStatus(`Loading irrigated area for ${selections.length} selected ${municipalityLabel}...`);
         updateLoaderMessage('Loading municipality irrigated layer...');
@@ -2680,40 +2915,25 @@ async function showFullIrrigatedOverlay() {
         return;
     }
 
-    if (!overlayLayers.irrigated || overlayLayers.irrigated._mode !== 'all') {
-        updateStatus('Loading rendered Irrigated Area from API...');
-        updateLoaderMessage('Loading rendered layer from API...');
-
-        const renderedGeoJson = await loadRenderedOverlayData('irrigated');
-
-        if (!isCurrentOverlayLoad('irrigated', loadToken)) {
-            return;
-        }
-
-        if (!hasRenderableFeatures(renderedGeoJson)) {
-            updateStatus('No valid polygons could be loaded for Irrigated Area.', true);
-            throw new Error('No valid polygons could be loaded for Irrigated Area.');
-        }
-
-        if (overlayLayers.irrigated && map.hasLayer(overlayLayers.irrigated)) {
-            map.removeLayer(overlayLayers.irrigated);
-        }
-
-        overlayLayers.irrigated = createOverlayLayer('irrigated', renderedGeoJson, renderedGeoJson.label || 'Irrigated Area');
-        overlayLayers.irrigated._mode = 'all';
-        overlayLayers.irrigated.addTo(map);
-        overlayLayers.irrigated.eachLayer(layer => layer.bringToFront());
-
-        if (Array.isArray(renderedGeoJson.failed_files) && renderedGeoJson.failed_files.length) {
-            console.warn('Overlay files that failed to render:', renderedGeoJson.failed_files);
-        }
+    if (overlayLayers.irrigated && overlayLayers.irrigated !== irrigatedViewportLayer && map.hasLayer(overlayLayers.irrigated)) {
+        map.removeLayer(overlayLayers.irrigated);
     }
 
-    if (!map.hasLayer(overlayLayers.irrigated)) {
-        overlayLayers.irrigated.addTo(map);
+    overlayLayers.irrigated = irrigatedViewportLayer;
+    overlayLayers.irrigated._mode = 'all';
+
+    if (!map.hasLayer(irrigatedViewportLayer)) {
+        irrigatedViewportLayer.addTo(map);
     }
 
-    updateStatus('Irrigated Area is highlighted on the map.');
+    map.off('moveend', scheduleIrrigatedViewportLoad);
+    map.on('moveend', scheduleIrrigatedViewportLoad);
+
+    if (!isCurrentOverlayLoad('irrigated', loadToken)) {
+        return;
+    }
+
+    await loadVisibleIrrigatedAreas();
 }
 
 function hideOverlayCategory(categoryKey) {
@@ -2721,6 +2941,9 @@ function hideOverlayCategory(categoryKey) {
 
     if (categoryKey === 'irrigated') {
         municipalityOverlayLoadToken++;
+        irrigatedViewportLoadToken++;
+        stopIrrigatedViewportLoading();
+        irrigatedViewportLayer.clearLayers();
 
         if (municipalityFilterBoundsLayer) {
             map.removeLayer(municipalityFilterBoundsLayer);
@@ -3206,10 +3429,9 @@ if (form) {
             return;
         }
 
-        const filesToValidate = files.length > 0 ? files : folderFiles;
-        const unsupportedFiles = getUnsupportedMapFiles(filesToValidate);
+        const unsupportedFiles = getUnsupportedMapFiles(files.length > 0 ? files : folderFiles);
 
-        if (unsupportedFiles.length > 0) {
+        if (files.length > 0 && unsupportedFiles.length > 0) {
             const invalidNames = unsupportedFiles.map((file) => file.name).slice(0, 5).join(', ');
             openUploadFeedbackModal(
                 `Unsupported file detected: ${invalidNames}. Please upload only ${supportedMapExtensionLabel}.`,
@@ -3226,9 +3448,21 @@ if (form) {
         }
 
         if (folderFiles.length > 0) {
+            let supportedFolderFileCount = 0;
+
             for (let i = 0; i < folderFiles.length; i++) {
+                if (getUnsupportedMapFiles([folderFiles[i]]).length > 0) {
+                    continue;
+                }
+
                 formData.append('files[]', folderFiles[i]);
                 formData.append('paths[]', folderFiles[i].webkitRelativePath);
+                supportedFolderFileCount++;
+            }
+
+            if (supportedFolderFileCount === 0) {
+                openUploadFeedbackModal(`No supported map files were found in that folder. Please upload ${supportedMapExtensionLabel}.`, 'Upload Failed');
+                return;
             }
         }
 
@@ -3249,7 +3483,7 @@ if (form) {
                 files: []
             }));
 
-            if (response.ok && result.files.length > 0) {
+            if (response.ok && Array.isArray(result.files) && result.files.length > 0) {
                 statusBoxUpload.style.display = 'none';
                 statusBoxUpload.className = 'upload-status upload-success';
                 statusBoxUpload.innerHTML = result.message || `Uploaded ${result.files.length} file(s).`;

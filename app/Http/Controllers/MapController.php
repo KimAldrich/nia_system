@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\IrrigatedArea;
 use App\Models\User;
 use App\Services\SystemNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Shapefile\Shapefile;
 use Shapefile\ShapefileReader;
@@ -59,6 +61,7 @@ class MapController extends Controller
     private const IRRIGATED_OVERVIEW_POLYGON_POINTS = 10;
     private const DEFAULT_RENDER_POLYGON_POINTS = 35;
     private const DEFAULT_RENDER_LINE_POINTS = 120;
+    private const SYNC_IRRIGATED_IMPORT_FILE_LIMIT = 6;
 
     private function notifications(): SystemNotificationService
     {
@@ -198,6 +201,68 @@ class MapController extends Controller
         });
 
         return response()->json($payload)->header('Cache-Control', 'public, max-age=86400');
+    }
+
+    public function irrigatedAreasInBounds(Request $request)
+    {
+        if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
+            return $denied;
+        }
+
+        @ini_set('memory_limit', '2048M');
+        @set_time_limit(180);
+
+        $bounds = $this->validatedMapBounds($request);
+
+        if (!$bounds) {
+            return response()->json([
+                'message' => 'Valid sw_lat, sw_lng, ne_lat, and ne_lng query parameters are required.',
+            ], 422);
+        }
+
+        $snapshot = $this->mapApiSnapshot();
+        $version = $snapshot['version'];
+
+        if (IrrigatedArea::query()->exists()) {
+            $payload = $this->buildDatabaseIrrigatedPayload($snapshot, $bounds);
+
+            return response()->json($payload)->header('Cache-Control', 'private, max-age=30');
+        }
+
+        $fullCacheKey = self::MAP_RENDER_CACHE_KEY_PREFIX . $version . '.irrigated';
+        $fullPayload = Cache::store('file')->rememberForever($fullCacheKey, function () use ($snapshot) {
+            return $this->buildRenderedOverlayPayload('irrigated', $snapshot);
+        });
+        $payload = $this->filterRenderedPayloadToBounds($fullPayload, $bounds);
+
+        return response()->json($payload)->header('Cache-Control', 'private, max-age=30');
+    }
+
+    public function rebuildIrrigatedAreasDatabase(): array
+    {
+        @ini_set('memory_limit', '2048M');
+        @set_time_limit(0);
+
+        $snapshot = $this->mapApiSnapshot();
+        $files = $snapshot['overlay_groups']['irrigated']['files'] ?? [];
+        $result = [
+            'files_imported' => 0,
+            'features_imported' => 0,
+            'failed_files' => [],
+        ];
+
+        IrrigatedArea::query()->truncate();
+
+        foreach ($files as $file) {
+            $importResult = $this->importIrrigatedAreaFile($file);
+            $result['files_imported'] += $importResult['files_imported'];
+            $result['features_imported'] += $importResult['features_imported'];
+            $result['failed_files'] = array_merge($result['failed_files'], $importResult['failed_files']);
+        }
+
+        $this->clearMapDataCache();
+
+        return $result;
     }
 
     private function defaultOverlayGroups(): array
@@ -507,6 +572,249 @@ class MapController extends Controller
             'failed_files' => $failedFiles,
             'features' => $renderedFeatures,
         ];
+    }
+
+    private function validatedMapBounds(Request $request): ?array
+    {
+        $values = [];
+
+        foreach (['sw_lat', 'sw_lng', 'ne_lat', 'ne_lng'] as $key) {
+            if (!$request->has($key) || !is_numeric($request->query($key))) {
+                return null;
+            }
+
+            $values[$key] = (float) $request->query($key);
+        }
+
+        $south = max(-90, min($values['sw_lat'], $values['ne_lat']));
+        $north = min(90, max($values['sw_lat'], $values['ne_lat']));
+        $west = max(-180, min($values['sw_lng'], $values['ne_lng']));
+        $east = min(180, max($values['sw_lng'], $values['ne_lng']));
+
+        if ($south >= $north || $west >= $east) {
+            return null;
+        }
+
+        return compact('south', 'west', 'north', 'east');
+    }
+
+    private function buildDatabaseIrrigatedPayload(array $snapshot, array $bounds): array
+    {
+        $rows = IrrigatedArea::query()
+            ->where('min_lng', '<=', $bounds['east'])
+            ->where('max_lng', '>=', $bounds['west'])
+            ->where('min_lat', '<=', $bounds['north'])
+            ->where('max_lat', '>=', $bounds['south'])
+            ->orderBy('id')
+            ->limit(20000)
+            ->get(['properties_json', 'geometry_json']);
+
+        $features = [];
+
+        foreach ($rows as $row) {
+            $geometry = json_decode((string) $row->geometry_json, true);
+
+            if (!is_array($geometry)) {
+                continue;
+            }
+
+            $features[] = [
+                'type' => 'Feature',
+                'properties' => json_decode((string) $row->properties_json, true) ?: [
+                    '_category' => 'irrigated',
+                ],
+                'geometry' => $geometry,
+            ];
+        }
+
+        $renderedFeatures = $this->combinedIrrigatedRenderFeatures($features);
+
+        return [
+            'type' => 'FeatureCollection',
+            'category' => 'irrigated',
+            'label' => 'Irrigated Area',
+            'version' => $snapshot['version'],
+            'updated_at' => $snapshot['updated_at'],
+            'feature_count' => $rows->count(),
+            'rendered_feature_count' => count($renderedFeatures),
+            'source' => 'database',
+            'failed_files' => [],
+            'features' => $renderedFeatures,
+        ];
+    }
+
+    private function filterRenderedPayloadToBounds(array $payload, array $bounds): array
+    {
+        $features = [];
+
+        foreach (($payload['features'] ?? []) as $feature) {
+            $filteredFeature = $this->filterFeatureToBounds($feature, $bounds);
+
+            if ($filteredFeature) {
+                $features[] = $filteredFeature;
+            }
+        }
+
+        return [
+            ...$payload,
+            'type' => 'FeatureCollection',
+            'category' => 'irrigated',
+            'label' => (string) ($payload['label'] ?? 'Irrigated Area'),
+            'source' => 'file_fallback',
+            'features' => $features,
+            'rendered_feature_count' => count($features),
+        ];
+    }
+
+    private function filterFeatureToBounds(array $feature, array $bounds): ?array
+    {
+        $geometry = $feature['geometry'] ?? null;
+
+        if (!is_array($geometry) || empty($geometry['type']) || !isset($geometry['coordinates'])) {
+            return null;
+        }
+
+        $filteredGeometry = $this->filterGeometryToBounds($geometry, $bounds);
+
+        if (!$filteredGeometry) {
+            return null;
+        }
+
+        return [
+            'type' => 'Feature',
+            'properties' => is_array($feature['properties'] ?? null) ? $feature['properties'] : [],
+            'geometry' => $filteredGeometry,
+        ];
+    }
+
+    private function filterGeometryToBounds(array $geometry, array $bounds): ?array
+    {
+        $type = (string) ($geometry['type'] ?? '');
+        $coordinates = $geometry['coordinates'] ?? null;
+
+        if (!is_array($coordinates)) {
+            return null;
+        }
+
+        if ($type === 'MultiPolygon') {
+            $filtered = array_values(array_filter($coordinates, function ($polygon) use ($bounds) {
+                return isset($polygon[0]) && $this->coordinateListIntersectsBounds($polygon[0], $bounds);
+            }));
+
+            return $filtered ? ['type' => 'MultiPolygon', 'coordinates' => $filtered] : null;
+        }
+
+        if ($type === 'Polygon') {
+            return isset($coordinates[0]) && $this->coordinateListIntersectsBounds($coordinates[0], $bounds) ? $geometry : null;
+        }
+
+        if ($type === 'MultiLineString') {
+            $filtered = array_values(array_filter($coordinates, fn ($line) => $this->coordinateListIntersectsBounds($line, $bounds)));
+
+            return $filtered ? ['type' => 'MultiLineString', 'coordinates' => $filtered] : null;
+        }
+
+        if ($type === 'LineString') {
+            return $this->coordinateListIntersectsBounds($coordinates, $bounds) ? $geometry : null;
+        }
+
+        if ($type === 'MultiPoint') {
+            $filtered = array_values(array_filter($coordinates, fn ($point) => $this->pointIntersectsBounds($point, $bounds)));
+
+            return $filtered ? ['type' => 'MultiPoint', 'coordinates' => $filtered] : null;
+        }
+
+        if ($type === 'Point') {
+            return $this->pointIntersectsBounds($coordinates, $bounds) ? $geometry : null;
+        }
+
+        return null;
+    }
+
+    private function coordinateListIntersectsBounds($coordinates, array $bounds): bool
+    {
+        if (!is_array($coordinates) || empty($coordinates)) {
+            return false;
+        }
+
+        $featureBounds = $this->geometryBoundsFromCoordinateList($coordinates);
+
+        return $featureBounds
+            && !($featureBounds['min_lng'] > $bounds['east']
+                || $featureBounds['max_lng'] < $bounds['west']
+                || $featureBounds['min_lat'] > $bounds['north']
+                || $featureBounds['max_lat'] < $bounds['south']);
+    }
+
+    private function pointIntersectsBounds($point, array $bounds): bool
+    {
+        if (!is_array($point) || !isset($point[0], $point[1]) || !is_numeric($point[0]) || !is_numeric($point[1])) {
+            return false;
+        }
+
+        $lng = (float) $point[0];
+        $lat = (float) $point[1];
+
+        return $lng >= $bounds['west']
+            && $lng <= $bounds['east']
+            && $lat >= $bounds['south']
+            && $lat <= $bounds['north'];
+    }
+
+    private function geometryBounds(array $geometry): ?array
+    {
+        if (!isset($geometry['coordinates']) || !is_array($geometry['coordinates'])) {
+            return null;
+        }
+
+        return $this->geometryBoundsFromCoordinateList($geometry['coordinates']);
+    }
+
+    private function geometryBoundsFromCoordinateList($coordinates): ?array
+    {
+        $bounds = [
+            'min_lat' => 90.0,
+            'max_lat' => -90.0,
+            'min_lng' => 180.0,
+            'max_lng' => -180.0,
+        ];
+        $hasPoint = false;
+        $stack = [$coordinates];
+
+        while ($stack) {
+            $item = array_pop($stack);
+
+            if (!is_array($item)) {
+                continue;
+            }
+
+            if (isset($item[0], $item[1]) && is_numeric($item[0]) && is_numeric($item[1])) {
+                $lng = (float) $item[0];
+                $lat = (float) $item[1];
+                $bounds['min_lat'] = min($bounds['min_lat'], $lat);
+                $bounds['max_lat'] = max($bounds['max_lat'], $lat);
+                $bounds['min_lng'] = min($bounds['min_lng'], $lng);
+                $bounds['max_lng'] = max($bounds['max_lng'], $lng);
+                $hasPoint = true;
+                continue;
+            }
+
+            foreach ($item as $child) {
+                if (is_array($child)) {
+                    $stack[] = $child;
+                }
+            }
+        }
+
+        return $hasPoint ? $bounds : null;
+    }
+
+    private function boundsLookLikeWgs84(array $bounds): bool
+    {
+        return $bounds['min_lng'] >= -180
+            && $bounds['max_lng'] <= 180
+            && $bounds['min_lat'] >= -90
+            && $bounds['max_lat'] <= 90;
     }
 
     private function combinedIrrigatedRenderFeatures(array $features): array
@@ -1308,10 +1616,13 @@ class MapController extends Controller
     public function upload(Request $request)
     {
         try {
+            @ini_set('memory_limit', '2048M');
+            @set_time_limit(0);
+
             $request->validate([
                 'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
                 'files' => 'required',
-                'files.*' => 'file|max:51200',
+                'files.*' => 'file|max:204800',
                 'target_folder' => 'nullable|string|max:255',
             ]);
 
@@ -1323,6 +1634,7 @@ class MapController extends Controller
             $displayUploadDirectory = $this->displayMapDirectory($baseStoragePath, $category);
             $uploadedFiles = [];
             $shapefileBasenames = [];
+            $skippedFiles = [];
 
             foreach ($request->file('files') as $index => $file) {
                 if (!$file->isValid()) {
@@ -1334,6 +1646,12 @@ class MapController extends Controller
 
                 $baseName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                 $extension = strtolower($file->getClientOriginalExtension());
+
+                if (!in_array($extension, array_merge(self::PRIMARY_FILE_EXTENSIONS, self::SHAPEFILE_COMPANION_EXTENSIONS), true)) {
+                    $skippedFiles[] = $file->getClientOriginalName();
+                    continue;
+                }
+
                 $safeBaseName = $this->sanitizeFileBaseName($baseName);
                 $storagePath = trim($baseStoragePath . '/' . $folderPath, '/');
                 $basenameKey = strtolower(trim($storagePath . '/' . $baseName, '/'));
@@ -1365,6 +1683,19 @@ class MapController extends Controller
                 }
             }
 
+            $primaryUploadedFiles = array_values(array_filter($uploadedFiles, function ($file) {
+                $extension = strtolower(pathinfo((string) ($file['path'] ?? ''), PATHINFO_EXTENSION));
+
+                return in_array($extension, self::PRIMARY_FILE_EXTENSIONS, true);
+            }));
+            $dbImportDeferred = false;
+
+            if ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) <= self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
+                $this->importUploadedIrrigatedAreaFiles($uploadedFiles);
+            } elseif ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) > self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
+                $dbImportDeferred = true;
+            }
+
             $this->clearMapDataCache();
             $notificationResult = $this->notifyMapFileChange(
                 'upload',
@@ -1373,8 +1704,10 @@ class MapController extends Controller
             );
 
             return response()->json([
-                'message' => "Upload successful to {$displayUploadDirectory}. {$notificationResult['admin_message']}",
+                'message' => $this->uploadSuccessMessage($displayUploadDirectory, $notificationResult['admin_message'], $skippedFiles, $dbImportDeferred),
                 'files' => $uploadedFiles,
+                'skipped_files' => $skippedFiles,
+                'db_import_deferred' => $dbImportDeferred,
                 'target_folder' => $targetFolder,
                 'target_directory' => $displayUploadDirectory,
                 'notified_users_count' => $notificationResult['notified_users_count'],
@@ -1384,6 +1717,136 @@ class MapController extends Controller
                 'message' => 'Upload failed: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function uploadSuccessMessage(string $displayUploadDirectory, string $adminMessage, array $skippedFiles, bool $dbImportDeferred): string
+    {
+        $message = "Upload successful to {$displayUploadDirectory}. {$adminMessage}";
+
+        if (!empty($skippedFiles)) {
+            $message .= ' Skipped ' . count($skippedFiles) . ' unsupported file(s).';
+        }
+
+        if ($dbImportDeferred) {
+            $message .= ' Large irrigated upload saved. Run php artisan map:rebuild-irrigated-areas to index it for map display.';
+        }
+
+        return $message;
+    }
+
+    private function importUploadedIrrigatedAreaFiles(array $uploadedFiles): void
+    {
+        foreach ($uploadedFiles as $file) {
+            $path = (string) ($file['path'] ?? '');
+            $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+            if (!in_array($extension, self::PRIMARY_FILE_EXTENSIONS, true)) {
+                continue;
+            }
+
+            if ($this->shouldSkipIrrigatedPath($path)) {
+                continue;
+            }
+
+            $this->importIrrigatedAreaFile([
+                'name' => $file['name'] ?? basename($path),
+                'url' => $file['url'] ?? $this->mapFileUrl($path),
+            ]);
+        }
+    }
+
+    private function importIrrigatedAreaFile(array $file): array
+    {
+        $fileUrl = (string) ($file['url'] ?? '');
+        $fileName = (string) ($file['name'] ?? 'Unknown file');
+        $result = [
+            'files_imported' => 0,
+            'features_imported' => 0,
+            'failed_files' => [],
+        ];
+
+        try {
+            $sourcePath = $this->normalizePublicStoragePath($this->toRelativeStoragePath($this->storagePathFromMapUrl($fileUrl)));
+            IrrigatedArea::query()->where('source_path', $sourcePath)->delete();
+
+            $features = $this->featuresFromMapFile($fileUrl, $fileName, 'irrigated');
+            $rows = [];
+
+            foreach ($features as $featureIndex => $feature) {
+                $compactFeature = $this->compactRenderedFeature($feature, $fileName, 'irrigated');
+                $geometry = $compactFeature['geometry'] ?? null;
+
+                if (!is_array($geometry)) {
+                    continue;
+                }
+
+                $bounds = $this->geometryBounds($geometry);
+
+                if (!$bounds || !$this->boundsLookLikeWgs84($bounds)) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'source_path' => $sourcePath,
+                    'source_file' => $fileName,
+                    'source_hash' => hash('sha256', $sourcePath . '|' . $featureIndex),
+                    'feature_index' => $featureIndex,
+                    'min_lat' => $bounds['min_lat'],
+                    'max_lat' => $bounds['max_lat'],
+                    'min_lng' => $bounds['min_lng'],
+                    'max_lng' => $bounds['max_lng'],
+                    'properties_json' => json_encode($compactFeature['properties'] ?? ['_category' => 'irrigated']),
+                    'geometry_json' => json_encode($geometry),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                if (count($rows) >= 500) {
+                    DB::table('irrigated_areas')->insert($rows);
+                    $result['features_imported'] += count($rows);
+                    $rows = [];
+                }
+            }
+
+            if ($rows) {
+                DB::table('irrigated_areas')->insert($rows);
+                $result['features_imported'] += count($rows);
+            }
+
+            $result['files_imported'] = 1;
+        } catch (\Throwable $exception) {
+            $result['failed_files'][] = [
+                'name' => $fileName,
+                'message' => $exception->getMessage(),
+            ];
+        }
+
+        return $result;
+    }
+
+    private function deleteIrrigatedAreaRowsForPath(string $path): void
+    {
+        $path = $this->normalizePublicStoragePath($path);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if (in_array($extension, self::SHAPEFILE_COMPANION_EXTENSIONS, true)) {
+            $path = substr($path, 0, -strlen($extension)) . 'shp';
+        }
+
+        IrrigatedArea::query()->where('source_path', $path)->delete();
+    }
+
+    private function deleteIrrigatedAreaRowsForFolder(string $folder): void
+    {
+        $folder = trim($this->normalizePublicStoragePath($folder), '/');
+
+        if ($folder === '') {
+            return;
+        }
+
+        IrrigatedArea::query()
+            ->where('source_path', 'like', $folder . '/%')
+            ->delete();
     }
 
     public function fileManager()
@@ -1437,6 +1900,7 @@ class MapController extends Controller
 
         if (Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
+            $this->deleteIrrigatedAreaRowsForPath($path);
             $category = $this->resolveCategoryFromStoragePath((string) $path);
             $notificationResult = $this->notifyMapFileChange('delete', $category, [[
                 'name' => basename((string) $path),
@@ -1489,6 +1953,7 @@ class MapController extends Controller
         })->values()->all();
 
         $disk->deleteDirectory($folder);
+        $this->deleteIrrigatedAreaRowsForFolder($folder);
         $category = $this->resolveCategoryFromStoragePath($folder);
         $this->clearMapDataCache();
 
@@ -2100,8 +2565,13 @@ class MapController extends Controller
 
     private function toRelativeStoragePath(string $path): string
     {
+        $storageAppRoot = str_replace('\\', '/', storage_path('app/public')) . '/';
         $storageRoot = str_replace('\\', '/', public_path('storage')) . '/';
         $normalizedPath = str_replace('\\', '/', $path);
+
+        if (str_starts_with($normalizedPath, $storageAppRoot)) {
+            return substr($normalizedPath, strlen($storageAppRoot));
+        }
 
         if (str_starts_with($normalizedPath, $storageRoot)) {
             return substr($normalizedPath, strlen($storageRoot));
@@ -2349,6 +2819,16 @@ class MapController extends Controller
     {
         $path = str_replace('\\', '/', $path);
         $path = preg_replace('#/+#', '/', $path);
+
+        foreach (['/storage/app/public/', '/public/storage/'] as $storageMarker) {
+            $markerPosition = stripos($path, $storageMarker);
+
+            if ($markerPosition !== false) {
+                $path = substr($path, $markerPosition + strlen($storageMarker));
+                break;
+            }
+        }
+
         $path = preg_replace('#^/?storage/#', '', $path);
         $path = trim($path, '/');
 

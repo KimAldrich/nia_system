@@ -36,6 +36,7 @@ Route::get('/map', [MapController::class, 'Showmap'])->name('map');
 Route::get('/map/notifications-feed', [MapController::class, 'mapNotifications'])->name('map.notifications.feed');
 Route::get('/map/file/{path}', [MapController::class, 'serveMapFile'])->where('path', '.*')->name('map.file');
 Route::get('/map/api/status', [MapController::class, 'mapApiStatus'])->name('map.api.status');
+Route::get('/api/irrigated-areas', [MapController::class, 'irrigatedAreasInBounds'])->name('map.api.irrigated_areas');
 Route::get('/map/render/irrigated/municipality/{municipality}', [MapController::class, 'renderedMunicipalityIrrigatedOverlay'])->where('municipality', '.*')->name('map.render.irrigated.municipality');
 Route::get('/map/render/{category}', [MapController::class, 'renderedOverlay'])->name('map.render');
 Route::get('/map/overlay/files/{category}', [MapController::class, 'overlayFiles'])->name('map.overlay.files');
