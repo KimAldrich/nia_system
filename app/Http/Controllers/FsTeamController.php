@@ -242,7 +242,8 @@ class FsTeamController extends Controller
             ], $fileValidationMessages)->validate();
 
             // $path = $file->store('forms', 'public');
-            $path = Storage::disk('s3')->put('forms', $file);
+            //$path = Storage::disk('s3')->put('forms', $file);
+            $path = $file->store('forms');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
