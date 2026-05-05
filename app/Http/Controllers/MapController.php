@@ -1670,10 +1670,10 @@ class MapController extends Controller
                     $finalName = $this->resolveAvailableFileName($storagePath, $safeBaseName, $extension);
                 }
 
-                Storage::disk('public')->makeDirectory($storagePath);
+                Storage::disk('s3')->makeDirectory($storagePath);
 
-                $path = Storage::disk('public')->putFileAs($storagePath, $file, $finalName);
-
+                $path = Storage::disk('s3')->putFileAs($storagePath, $file, $finalName);
+                //$path = $file->store('forms');
                 if ($path) {
                     $uploadedFiles[] = [
                         'name' => $finalName,
