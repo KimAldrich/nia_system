@@ -366,7 +366,8 @@
     </div>
 
     <div id="available-forms" class="tab-pane active">
-        <div id="downloadablesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+        <div id="downloadablesList"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
 
             @forelse($files as $file)
                 @php
@@ -377,9 +378,9 @@
                     <div style="margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e4e7; height: 120px; background: #fafafa; position: relative; transition: opacity 0.2s;"
                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
 
-                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank"
-                            style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
-                            title="Click to view or download document"></a>
+                        <a href="{{ Storage::url($file->file_path) }}">Download</a>
+                        style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
+                        title="Click to view or download document"></a>
 
                         @if (strtolower($extension) === 'pdf')
                             <iframe src="{{ asset('storage/' . $file->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
@@ -419,7 +420,9 @@
                             style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">Download</a>
 
                         @if (auth()->user()->role == 'fs_team' || auth()->user()->role == 'admin')
-                            <form action="{{ route('fs.downloadables.delete', $file->id) }}" method="POST" style="margin: 0;" data-async-target="#downloadablesList" data-async-confirm="Delete this file?" data-async-success="silent">
+                            <form action="{{ route('fs.downloadables.delete', $file->id) }}" method="POST"
+                                style="margin: 0;" data-async-target="#downloadablesList"
+                                data-async-confirm="Delete this file?" data-async-success="silent">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline"
@@ -438,7 +441,10 @@
     </div>
 
     <div id="upload-form" class="tab-pane">
-        <form action="{{ route('fs.downloadables.upload') }}" method="POST" enctype="multipart/form-data" data-async-target="#downloadablesList" data-async-reset="true" data-async-success-modal="#fsFeedbackModal" data-async-success-title="Upload Complete" data-async-error-modal="#fsFeedbackModal" data-async-error-title="Upload Failed">
+        <form action="{{ route('fs.downloadables.upload') }}" method="POST" enctype="multipart/form-data"
+            data-async-target="#downloadablesList" data-async-reset="true" data-async-success-modal="#fsFeedbackModal"
+            data-async-success-title="Upload Complete" data-async-error-modal="#fsFeedbackModal"
+            data-async-error-title="Upload Failed">
             @csrf
             <div class="modern-uploader">
                 <div class="uploader-left" id="dropzone">
@@ -473,7 +479,8 @@
 
     <div class="modal-overlay" id="fsFeedbackModal">
         <div class="modal-box">
-            <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success</h3>
+            <h3 data-success-title style="margin-top: 0; font-size: 18px; color: #1e293b; margin-bottom: 15px;">Success
+            </h3>
             <p data-success-message style="font-size: 14px; color: #475569; margin-bottom: 25px;">Saved successfully.</p>
             <div style="display: flex; gap: 10px;">
                 <button type="button" onclick="closeFsFeedbackModal()" class="btn-dark" style="flex: 1;">OK</button>
