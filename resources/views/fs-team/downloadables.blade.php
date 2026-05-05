@@ -378,7 +378,7 @@
                     <div style="margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e4e7; height: 120px; background: #fafafa; position: relative; transition: opacity 0.2s;"
                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
 
-                        <a href="{{ Storage::url($file->file_path) }}">Download</a>
+                        <a href="{{ asset('storage/' . $file->file_path) }}">Download</a>
                         style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
                         title="Click to view or download document"></a>
 
