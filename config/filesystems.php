@@ -60,6 +60,15 @@ return [
             'report' => false,
         ],
 
+        // 'storage' => [
+        //     'driver' => 's3',
+        //     'AWS_BUCKET'=> 'fls-a1b45d72-144f-4d25-b368-dbbbfbeb7cbb',
+        //     'AWS_DEFAULT_REGION'=> 'auto',
+        //     'AWS_ENDPOINT'=> 'https://367be3a2035528943240074d0096e0cd.r2.cloudflarestorage.com',
+        //     'AWS_URL'=> 'https://fls-a1b45d72-144f-4d25-b368-dbbbfbeb7cbb.laravel.cloud',
+        //     'AWS_USE_PATH_STYLE_ENDPOINT'=> false
+        // ],
+
     ],
 
     /*
