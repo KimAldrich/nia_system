@@ -383,9 +383,10 @@
     display: none;
     padding: 10px 12px;
     border-radius: 10px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(6, 14, 22, 0.82);
     backdrop-filter: blur(6px);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), 0 8px 24px rgba(0,0,0,0.35);
+    color: #f8fafc;
 }
 
 .layer-filter-panel.is-open {
@@ -404,15 +405,16 @@
     width: 100%;
     padding: 8px 10px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.32);
-    background: rgba(255,255,255,0.16);
-    color: inherit;
+    border: 1px solid rgba(255,255,255,0.42);
+    background: rgba(255,255,255,0.18);
+    color: #ffffff;
     outline: none;
     margin-bottom: 10px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.22);
 }
 
 .layer-filter-search::placeholder {
-    color: rgba(255,255,255,0.82);
+    color: rgba(255,255,255,0.92);
 }
 
 .layer-filter-list {
@@ -431,16 +433,89 @@
     font-size: 12px;
     padding: 6px 8px;
     border-radius: 8px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.12);
 }
 
 .layer-filter-option.is-hidden {
     display: none;
 }
 
+.layer-selected-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.layer-selected-list:empty {
+    display: none;
+}
+
+.layer-selected-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(67, 160, 71, 0.2);
+    border: 1px solid rgba(129, 199, 132, 0.55);
+    color: #f8fafc;
+    font-size: 11px;
+    line-height: 1.2;
+    text-shadow: -1px -1px 0 rgba(0,0,0,0.85), 1px -1px 0 rgba(0,0,0,0.85), -1px 1px 0 rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.85);
+}
+
+.layer-selected-chip-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layer-selected-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+}
+
+.layer-selected-chip-remove:hover {
+    background: rgba(248, 113, 113, 0.85);
+}
+
 .layer-filter-summary {
     font-size: 11px;
-    opacity: 0.9;
+    opacity: 1;
+    color: #f8fafc;
+    text-shadow: -1px -1px 0 rgba(0,0,0,0.85), 1px -1px 0 rgba(0,0,0,0.85), -1px 1px 0 rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.85);
+}
+
+.layer-filter-row span,
+.layer-filter-option span {
+    color: #f8fafc;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.75);
+}
+
+.layer-filter-toggle {
+    background: rgba(255,255,255,0.22);
+    color: #000000;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
+}
+
+.layer-filter-search:focus {
+    border-color: rgba(144, 202, 249, 0.95);
+    box-shadow: 0 0 0 2px rgba(144, 202, 249, 0.18);
 }
 
 #layer-controls.satellite-active .layer-filter-panel {
@@ -459,7 +534,7 @@
 
 #layer-controls.satellite-active .layer-filter-toggle {
     background: rgba(255,255,255,0.22);
-    color: #f8fafc;
+    color: #000000;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
 }
 
@@ -744,72 +819,146 @@ input:checked + .slider:before {
 .detail-panel {
     position: fixed;
     top: 80px;
-    left: 60%;
-    transform: translateX(-50%) scale(0.9);
-
-    width: 350px;
+    left: 56%;
+    transform: translateX(-50%) translateY(14px) scale(0.96);
+    width: min(380px, calc(100vw - 40px));
     max-height: 400px;
-
-    background: rgba(50, 60, 70, 0.95);
-    color: #fff;
-
-    border-radius: 6px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-
+    background: rgba(10, 18, 28, 0.94);
+    color: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(2, 6, 23, 0.38);
+    backdrop-filter: blur(14px);
     opacity: 0;
     visibility: hidden;
-    transition: 0.25s;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
     z-index: 3000;
-
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
-/* SHOW */
 .detail-panel.active {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) translateY(0) scale(1);
 }
 
-/* HEADER */
 .detail-header {
-    padding: 10px;
-    background: rgba(0,0,0,0.3);
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.92));
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    cursor: move;
+    user-select: none;
+}
+
+.detail-header #municipalityName {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #ffffff;
 }
 
 .detail-header button {
-    background: none;
-    border: none;
-    color: white;
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    color: #ffffff;
     cursor: pointer;
+    font-size: 13px;
+    flex: 0 0 auto;
 }
 
-/* CONTENT */
+.detail-header button:hover {
+    background: rgba(248, 113, 113, 0.2);
+    border-color: rgba(248, 113, 113, 0.45);
+}
+
 .detail-content {
-    padding: 10px;
+    padding: 10px 12px 12px;
     overflow-y: auto;
-    font-size: 12px;
+    font-size: 11px;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 32%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(10, 18, 28, 0.98));
 }
 
-/* TABLE STYLE */
-.detail-table {
-    width: 100%;
-}
-
-.detail-row {
+.detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1.5fr;
-    margin-bottom: 6px;
+    grid-template-columns: 1fr;
+    gap: 8px;
 }
 
-.detail-header-row {
-    font-weight: bold;
-    border-bottom: 1px solid #aaa;
-    margin-bottom: 6px;
+.detail-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 12px;
+    padding: 9px 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.detail-card--wide {
+    grid-column: auto;
+}
+
+.detail-label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #93c5fd;
+}
+
+.detail-value {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.15;
+    word-break: break-word;
+}
+
+.detail-card--wide .detail-value {
+    font-size: 13px;
+}
+
+.detail-description {
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.35;
+    color: #cbd5e1;
+}
+
+@media (max-width: 640px) {
+    .detail-panel {
+        top: 72px;
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 90px);
+        border-radius: 14px;
+    }
+
+    .detail-header,
+    .detail-content {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .detail-value {
+        font-size: 18px;
+    }
+
+    .detail-header {
+        cursor: default;
+    }
 }
 #admin-sidebar {
     position: absolute;
@@ -1205,6 +1354,7 @@ input:checked + .slider:before {
                 </label>
                 <input type="search" id="municipalityFilterSearch" class="layer-filter-search" placeholder="Search Pangasinan municipalities">
                 <div id="municipalityFilterList" class="layer-filter-list"></div>
+                <div id="municipalitySelectedList" class="layer-selected-list"></div>
             </div>
         </div>
         <label class="layer-check" >
@@ -1439,6 +1589,7 @@ const municipalityFilterPanel = document.getElementById('municipalityFilterPanel
 const municipalityFilterSearch = document.getElementById('municipalityFilterSearch');
 const municipalityFilterList = document.getElementById('municipalityFilterList');
 const municipalityFilterSummary = document.getElementById('municipalityFilterSummary');
+const municipalitySelectedList = document.getElementById('municipalitySelectedList');
 const showAllIrrigatedCheckbox = document.getElementById('showAllIrrigated');
 
 function renderTargetFolderOptions() {
@@ -1641,6 +1792,7 @@ if (municipalityFilterSearch) {
 if (showAllIrrigatedCheckbox) {
     showAllIrrigatedCheckbox.addEventListener('change', async () => {
         updateMunicipalityFilterSummary();
+        renderMunicipalitySelectedList();
         updateMunicipalityFilterBounds();
 
         if (overlayToggles.irrigated?.checked) {
@@ -2050,6 +2202,45 @@ function updateMunicipalityFilterSummary() {
         : `${selections.length} selected`;
 }
 
+function renderMunicipalitySelectedList() {
+    if (!municipalitySelectedList) {
+        return;
+    }
+
+    const selections = getMunicipalityFilterSelections();
+
+    if (showAllIrrigatedCheckbox?.checked || !selections.length) {
+        municipalitySelectedList.innerHTML = '';
+        return;
+    }
+
+    municipalitySelectedList.innerHTML = selections.map(item => `
+        <span class="layer-selected-chip">
+            <span class="layer-selected-chip-label">${item.name}</span>
+            <button type="button" class="layer-selected-chip-remove" data-municipality-key="${item.key}" aria-label="Remove ${item.name}">×</button>
+        </span>
+    `).join('');
+
+    municipalitySelectedList.querySelectorAll('.layer-selected-chip-remove').forEach(button => {
+        button.addEventListener('click', async () => {
+            const targetInput = municipalityFilterList?.querySelector(`input[data-municipality-key="${button.dataset.municipalityKey}"]`);
+
+            if (!targetInput) {
+                return;
+            }
+
+            targetInput.checked = false;
+            updateMunicipalityFilterSummary();
+            renderMunicipalitySelectedList();
+            updateMunicipalityFilterBounds();
+
+            if (overlayToggles.irrigated?.checked) {
+                await showOverlayCategory('irrigated');
+            }
+        });
+    });
+}
+
 function filterMunicipalityOptions() {
     if (!municipalityFilterList || !municipalityFilterSearch) {
         return;
@@ -2092,6 +2283,7 @@ function renderMunicipalityFilterOptions() {
             }
 
             updateMunicipalityFilterSummary();
+            renderMunicipalitySelectedList();
             updateMunicipalityFilterBounds();
 
             if (overlayToggles.irrigated?.checked) {
@@ -2102,6 +2294,7 @@ function renderMunicipalityFilterOptions() {
 
     filterMunicipalityOptions();
     updateMunicipalityFilterSummary();
+    renderMunicipalitySelectedList();
 }
 
 function getMunicipalityFilterBounds() {
@@ -3226,6 +3419,11 @@ const overlayPriority = {
 //Details
 
 let municipalityData = [];
+let detailPanelDrag = {
+    active: false,
+    offsetX: 0,
+    offsetY: 0,
+};
 function getMunicipalityData(name) {
     return getIrrigatedStatByName(name);
 }
@@ -3238,7 +3436,11 @@ function closeAllPanels() {
     document.getElementById('infoPanel').classList.remove('active');
 
     // Removes 'active' from the full details table
-    document.getElementById('detailPanel').classList.remove('active');
+    const detailPanel = document.getElementById('detailPanel');
+    detailPanel.classList.remove('active');
+    detailPanel.style.left = '';
+    detailPanel.style.top = '';
+    detailPanel.style.transform = '';
 
     // Optional: Hide the miniMap if you want it to disappear too
     document.getElementById('miniMap').style.display = 'none';
@@ -3253,6 +3455,70 @@ function closeAllPanels() {
     }
 }
 
+const detailPanelElement = document.getElementById('detailPanel');
+const detailPanelHeader = detailPanelElement?.querySelector('.detail-header');
+
+function clampDetailPanelPosition(left, top) {
+    if (!detailPanelElement) {
+        return { left, top };
+    }
+
+    const panelWidth = detailPanelElement.offsetWidth || 0;
+    const panelHeight = detailPanelElement.offsetHeight || 0;
+    const margin = 12;
+    const maxLeft = Math.max(margin, window.innerWidth - panelWidth - margin);
+    const maxTop = Math.max(margin, window.innerHeight - panelHeight - margin);
+
+    return {
+        left: Math.min(Math.max(left, margin), maxLeft),
+        top: Math.min(Math.max(top, margin), maxTop),
+    };
+}
+
+function moveDetailPanel(clientX, clientY) {
+    if (!detailPanelElement || !detailPanelDrag.active) {
+        return;
+    }
+
+    const nextLeft = clientX - detailPanelDrag.offsetX;
+    const nextTop = clientY - detailPanelDrag.offsetY;
+    const position = clampDetailPanelPosition(nextLeft, nextTop);
+
+    detailPanelElement.style.left = `${position.left}px`;
+    detailPanelElement.style.top = `${position.top}px`;
+    detailPanelElement.style.transform = 'translateX(0) translateY(0) scale(1)';
+}
+
+function stopDetailPanelDrag() {
+    detailPanelDrag.active = false;
+    document.body.style.userSelect = '';
+}
+
+if (detailPanelHeader && detailPanelElement) {
+    detailPanelHeader.addEventListener('mousedown', (event) => {
+        if (window.innerWidth <= 640) {
+            return;
+        }
+
+        if (event.target.closest('button')) {
+            return;
+        }
+
+        const panelRect = detailPanelElement.getBoundingClientRect();
+        detailPanelDrag.active = true;
+        detailPanelDrag.offsetX = event.clientX - panelRect.left;
+        detailPanelDrag.offsetY = event.clientY - panelRect.top;
+        document.body.style.userSelect = 'none';
+    });
+
+    window.addEventListener('mousemove', (event) => {
+        moveDetailPanel(event.clientX, event.clientY);
+    });
+
+    window.addEventListener('mouseup', stopDetailPanelDrag);
+    window.addEventListener('mouseleave', stopDetailPanelDrag);
+}
+
 
 
 function openDetail() {
@@ -3263,64 +3529,47 @@ function openDetail() {
     }
 
     const data = selectedMunicipality;
-    const sourceFiles = Array.isArray(data.source_files) && data.source_files.length
-        ? data.source_files.join(', ')
-        : 'No DBF files matched';
     const irrigatedAreaDescription = data.irrigated_area_source === 'details_json'
         ? 'Fallback from details.json area_developed_ha'
         : 'Summed from matched irrigated DBF records';
 
     document.getElementById('detailContent').innerHTML = `
-        <div class="detail-table">
-
-            <div class="detail-row detail-header-row">
-                <div>ATTRIBUTE</div>
-                <div>VALUE</div>
-                <div>DESCRIPTION</div>
+        <div class="detail-grid">
+            <div class="detail-card detail-card--wide">
+                <span class="detail-label">Municipality</span>
+                <span class="detail-value">${data.name}</span>
+                <p class="detail-description">Matched municipality name.</p>
             </div>
 
-            <div class="detail-row">
-                <div>Municipality</div>
-                <div>${data.name}</div>
-                <div>Matched municipality name</div>
+            <div class="detail-card">
+                <span class="detail-label">Total Land Area</span>
+                <span class="detail-value">${Number(data.total_land_area_ha || 0).toLocaleString()} ha</span>
+                <p class="detail-description">Total land area.</p>
             </div>
 
-            <div class="detail-row">
-                <div>Total Land Area</div>
-                <div>${data.total_land_area_ha.toLocaleString()} ha</div>
-                <div>Total land area</div>
+            <div class="detail-card">
+                <span class="detail-label">PIA</span>
+                <span class="detail-value">${Number(data.pia_area || 0).toLocaleString()} ha</span>
+                <p class="detail-description">Potential irrigable area.</p>
             </div>
 
-            <div class="detail-row">
-                <div>PIA</div>
-                <div>${Number(data.pia_area || 0).toLocaleString()} ha</div>
-                <div>Potential irrigable area</div>
+            <div class="detail-card">
+                <span class="detail-label">Irrigated Area</span>
+                <span class="detail-value">${Number(data.irrigated_area || 0).toLocaleString()} ha</span>
+                <p class="detail-description">${irrigatedAreaDescription}.</p>
             </div>
 
-            <div class="detail-row">
-                <div>Irrigated Area</div>
-                <div>${Number(data.irrigated_area || 0).toLocaleString()} ha</div>
-                <div>${irrigatedAreaDescription}</div>
+            <div class="detail-card">
+                <span class="detail-label">Remaining Area</span>
+                <span class="detail-value">${Number(data.remaining_area || 0).toLocaleString()} ha</span>
+                <p class="detail-description">Computed as PIA minus irrigated area.</p>
             </div>
 
-            <div class="detail-row">
-                <div>Remaining Area</div>
-                <div>${Number(data.remaining_area || 0).toLocaleString()} ha</div>
-                <div>Computed as PIA minus irrigated area</div>
+            <div class="detail-card detail-card--wide">
+                <span class="detail-label">Matched DBF Files</span>
+                <span class="detail-value">${Number(data.dbf_file_count || 0).toLocaleString()}</span>
+                <p class="detail-description">Number of irrigated DBF files used.</p>
             </div>
-
-            <div class="detail-row">
-                <div>Matched DBF Files</div>
-                <div>${Number(data.dbf_file_count || 0)}</div>
-                <div>Number of irrigated DBF files used</div>
-            </div>
-
-            <div class="detail-row">
-                <div>Source Files</div>
-                <div>${sourceFiles}</div>
-                <div>Irrigated folder DBF matches</div>
-            </div>
-
         </div>
     `;
 
