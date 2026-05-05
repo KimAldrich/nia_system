@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        // 's3' => [
+        //     'driver' => 's3',
+        //     'key' => '00dc8b12460c74f87c392b5769643dd9',
+        //     'secret' => '5b60fad56385dbc741fda39c2309a597d9847785323d5606a88ad95bb89df601',
+        //     'region' => 'auto',
+        //     'bucket' => 'fls-a1b45d72-144f-4d25-b368-dbbbfbeb7cbb',
+        //     'url' => 'https://fls-a1b45d72-144f-4d25-b368-dbbbfbeb7cbb.laravel.cloud',
+        //     'endpoint' => 'https://367be3a2035528943240074d0096e0cd.r2.cloudflarestorage.com',
+        //     'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+        //     'throw' => false,
+        //     'report' => false,
+        // ],
+
         // 'storage' => [
         //     'driver' => 's3',
         //     'AWS_BUCKET'=> 'fls-a1b45d72-144f-4d25-b368-dbbbfbeb7cbb',
