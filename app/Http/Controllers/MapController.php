@@ -1429,7 +1429,7 @@ class MapController extends Controller
                     continue;
                 }
 
-                $geometry = $this->geometryFromRawShpRecord($content, $contentLength);
+                $geometry = $this->geometryFromRawShpRecord($content, $contentLength, $category);
 
                 if (!$geometry) {
                     continue;
@@ -1456,16 +1456,17 @@ class MapController extends Controller
         }
     }
 
-    private function geometryFromRawShpRecord(string $content, int $contentLength = 0): ?array
+    private function geometryFromRawShpRecord(string $content, int $contentLength = 0, string $category = ''): ?array
     {
         $shapeType = $this->readLittleEndianInt($content, 0);
+        $useBoundingBox = $category === 'irrigated' && $contentLength > 400000;
 
         return match ($shapeType) {
             1, 11, 21 => $this->pointGeometryFromRawShpRecord($content),
-            3, 13, 23 => $contentLength > 400000
+            3, 13, 23 => $useBoundingBox
                 ? $this->bboxGeometryFromRawShpRecord($content)
                 : $this->lineGeometryFromRawShpRecord($content),
-            5, 15, 25 => $contentLength > 400000
+            5, 15, 25 => $useBoundingBox
                 ? $this->bboxGeometryFromRawShpRecord($content)
                 : $this->polygonGeometryFromRawShpRecord($content),
             default => null,
