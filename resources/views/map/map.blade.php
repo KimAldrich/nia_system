@@ -3286,6 +3286,27 @@ setInterval(refreshMapApiStatus, 15000);
 const form = document.getElementById('uploadForm');
 const supportedMapExtensions = ['geojson', 'json', 'kml', 'kmz', 'zip', 'shp', 'shx', 'dbf', 'prj', 'cpg'];
 const supportedMapExtensionLabel = '.geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, .cpg';
+const maxMapUploadBytes = 95 * 1024 * 1024;
+
+function formatUploadBytes(bytes) {
+    const size = Number(bytes) || 0;
+
+    if (size >= 1024 * 1024) {
+        return `${(size / 1024 / 1024).toFixed(1)} MB`;
+    }
+
+    return `${Math.ceil(size / 1024)} KB`;
+}
+
+function getUploadSizeSummary(fileList) {
+    const files = Array.from(fileList || []);
+    const totalBytes = files.reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+    const largestFile = files.reduce((largest, file) => {
+        return !largest || (Number(file.size) || 0) > (Number(largest.size) || 0) ? file : largest;
+    }, null);
+
+    return { totalBytes, largestFile };
+}
 
 function getUnsupportedMapFiles(fileList) {
     return Array.from(fileList || []).filter((file) => {
@@ -3373,7 +3394,7 @@ if (form) {
 
         updateSelectionInfo(
             fileInput.files.length
-                ? `${fileInput.files.length} file(s) selected for upload.`
+                ? `${fileInput.files.length} file(s) selected, ${formatUploadBytes(getUploadSizeSummary(fileInput.files).totalBytes)} total.`
                 : 'No files selected.'
         );
         syncUploadSourceState();
@@ -3387,7 +3408,7 @@ if (form) {
         if (folderInput.files.length > 0) {
             const firstPath = folderInput.files[0].webkitRelativePath || folderInput.files[0].name;
             const rootFolder = firstPath.split('/')[0];
-            updateSelectionInfo(`${folderInput.files.length} file(s) selected from folder "${rootFolder}".`);
+            updateSelectionInfo(`${folderInput.files.length} file(s) selected from folder "${rootFolder}", ${formatUploadBytes(getUploadSizeSummary(folderInput.files).totalBytes)} total.`);
             syncUploadSourceState();
             return;
         }
@@ -3430,6 +3451,24 @@ if (form) {
         }
 
         const unsupportedFiles = getUnsupportedMapFiles(files.length > 0 ? files : folderFiles);
+        const selectedUploadFiles = files.length > 0 ? files : folderFiles;
+        const sizeSummary = getUploadSizeSummary(selectedUploadFiles);
+
+        if (sizeSummary.largestFile && sizeSummary.largestFile.size > maxMapUploadBytes) {
+            openUploadFeedbackModal(
+                `Upload is too large for Laravel Cloud. "${sizeSummary.largestFile.name}" is ${formatUploadBytes(sizeSummary.largestFile.size)}; the per-upload limit is ${formatUploadBytes(maxMapUploadBytes)}. Please zip/compress, simplify, or split the map data before uploading.`,
+                'Upload Too Large'
+            );
+            return;
+        }
+
+        if (sizeSummary.totalBytes > maxMapUploadBytes) {
+            openUploadFeedbackModal(
+                `Upload is too large for Laravel Cloud. Selected files total ${formatUploadBytes(sizeSummary.totalBytes)}; the request limit is ${formatUploadBytes(maxMapUploadBytes)}. Please upload a smaller batch or split the folder.`,
+                'Upload Too Large'
+            );
+            return;
+        }
 
         if (files.length > 0 && unsupportedFiles.length > 0) {
             const invalidNames = unsupportedFiles.map((file) => file.name).slice(0, 5).join(', ');
@@ -3475,13 +3514,33 @@ if (form) {
         try {
             const response = await fetch("{{ route('map.upload') }}", {
                 method: "POST",
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: formData
             });
 
-            const result = await response.json().catch(() => ({
-                message: 'Upload failed. The server returned an invalid response.',
-                files: []
-            }));
+            const responseText = await response.text();
+            let result = { files: [] };
+
+            if (responseText) {
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    const plainMessage = responseText
+                        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                        .replace(/<[^>]+>/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .slice(0, 240);
+
+                    result.message = response.status === 413
+                        ? 'Upload failed: the selected map data is larger than the Laravel Cloud request limit.'
+                        : (plainMessage || `Upload failed: server returned HTTP ${response.status}.`);
+                }
+            }
 
             if (response.ok && Array.isArray(result.files) && result.files.length > 0) {
                 statusBoxUpload.style.display = 'none';
@@ -3500,7 +3559,20 @@ if (form) {
                 syncUploadSourceState();
                 updateTargetFolderOptions();
                 updateSelectionInfo('No files selected.');
-                irrigatedStats = await fetch('/irrigated-chart-data').then(res => res.json());
+
+                if (category === 'Irrigated Area') {
+                    try {
+                        irrigatedStats = await fetch('/irrigated-chart-data', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        }).then(res => res.json());
+                    } catch (statsError) {
+                        irrigatedStats = {};
+                    }
+                }
+
                 window.setTimeout(() => window.location.reload(), 800);
             } else {
                 throw new Error(result.message || 'Upload failed');

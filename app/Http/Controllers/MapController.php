@@ -65,6 +65,8 @@ class MapController extends Controller
     private const DEFAULT_RENDER_LINE_POINTS = 120;
     private const SYNC_IRRIGATED_IMPORT_FILE_LIMIT = 6;
     private const SYNC_MAP_FEATURE_IMPORT_FILE_LIMIT = 6;
+    private const SYNC_MAP_FEATURE_IMPORT_BYTES_LIMIT = 26214400;
+    private const MAX_MAP_UPLOAD_FILE_KB = 97280;
 
     private function notifications(): SystemNotificationService
     {
@@ -1845,7 +1847,7 @@ class MapController extends Controller
             $request->validate([
                 'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
                 'files' => 'required',
-                'files.*' => 'file|max:204800',
+                'files.*' => 'file|max:' . self::MAX_MAP_UPLOAD_FILE_KB,
                 'target_folder' => 'nullable|string|max:255',
             ]);
 
@@ -1908,6 +1910,7 @@ class MapController extends Controller
                         'name' => $finalName,
                         'path' => $path,
                         'url' => $this->mapFileUrl($path),
+                        'size' => (int) ($file->getSize() ?: 0),
                     ];
                 }
             }
@@ -1930,10 +1933,18 @@ class MapController extends Controller
                 'failed_files' => [],
             ];
             $shouldIndexSharedMapFeatures = $categoryDirectory !== 'irrigated';
+            $primaryUploadedBytes = array_sum(array_map(
+                fn ($file) => (int) ($file['size'] ?? 0),
+                $primaryUploadedFiles
+            ));
+            $shouldImportSharedMapFeaturesNow = $shouldIndexSharedMapFeatures
+                && $this->mapFeaturesTableExists()
+                && count($primaryUploadedFiles) <= self::SYNC_MAP_FEATURE_IMPORT_FILE_LIMIT
+                && $primaryUploadedBytes <= self::SYNC_MAP_FEATURE_IMPORT_BYTES_LIMIT;
 
-            if ($shouldIndexSharedMapFeatures && $this->mapFeaturesTableExists() && count($primaryUploadedFiles) <= self::SYNC_MAP_FEATURE_IMPORT_FILE_LIMIT) {
+            if ($shouldImportSharedMapFeaturesNow) {
                 $mapFeatureImportResult = $this->importUploadedMapFeatureFiles($uploadedFiles, $categoryDirectory);
-            } elseif ($shouldIndexSharedMapFeatures && $this->mapFeaturesTableExists() && count($primaryUploadedFiles) > self::SYNC_MAP_FEATURE_IMPORT_FILE_LIMIT) {
+            } elseif ($shouldIndexSharedMapFeatures && $this->mapFeaturesTableExists() && count($primaryUploadedFiles) > 0) {
                 $mapFeatureImportDeferred = true;
             }
 
@@ -1971,7 +1982,7 @@ class MapController extends Controller
                 'target_directory' => $displayUploadDirectory,
                 'notified_users_count' => $notificationResult['notified_users_count'],
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'message' => 'Upload failed: ' . $e->getMessage(),
             ], 500);
