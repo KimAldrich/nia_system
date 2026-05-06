@@ -77,6 +77,11 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            // Large map uploads use streaming PUTs; default Guzzle timeout is short and causes "Write timed-out".
+            'http' => [
+                'timeout' => (float) env('AWS_HTTP_TIMEOUT', 900),
+                'connect_timeout' => (float) env('AWS_HTTP_CONNECT_TIMEOUT', 30),
+            ],
             'throw' => false,
             'report' => false,
         ],
