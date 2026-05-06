@@ -1825,9 +1825,14 @@ class MapController extends Controller
                 return in_array($extension, self::PRIMARY_FILE_EXTENSIONS, true);
             }));
             $dbImportDeferred = false;
+            $dbImportResult = [
+                'files_imported' => 0,
+                'features_imported' => 0,
+                'failed_files' => [],
+            ];
 
             if ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) <= self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
-                $this->importUploadedIrrigatedAreaFiles($uploadedFiles);
+                $dbImportResult = $this->importUploadedIrrigatedAreaFiles($uploadedFiles);
             } elseif ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) > self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
                 $dbImportDeferred = true;
             }
@@ -1840,10 +1845,17 @@ class MapController extends Controller
             );
 
             return response()->json([
-                'message' => $this->uploadSuccessMessage($displayUploadDirectory, $notificationResult['admin_message'], $skippedFiles, $dbImportDeferred),
+                'message' => $this->uploadSuccessMessage(
+                    $displayUploadDirectory,
+                    $notificationResult['admin_message'],
+                    $skippedFiles,
+                    $dbImportDeferred,
+                    $dbImportResult
+                ),
                 'files' => $uploadedFiles,
                 'skipped_files' => $skippedFiles,
                 'db_import_deferred' => $dbImportDeferred,
+                'db_import' => $dbImportResult,
                 'target_folder' => $targetFolder,
                 'target_directory' => $displayUploadDirectory,
                 'notified_users_count' => $notificationResult['notified_users_count'],
@@ -1855,7 +1867,7 @@ class MapController extends Controller
         }
     }
 
-    private function uploadSuccessMessage(string $displayUploadDirectory, string $adminMessage, array $skippedFiles, bool $dbImportDeferred): string
+    private function uploadSuccessMessage(string $displayUploadDirectory, string $adminMessage, array $skippedFiles, bool $dbImportDeferred, array $dbImportResult): string
     {
         $message = "Upload successful to {$displayUploadDirectory}. {$adminMessage}";
 
@@ -1865,13 +1877,25 @@ class MapController extends Controller
 
         if ($dbImportDeferred) {
             $message .= ' Large irrigated upload saved. Run php artisan map:rebuild-irrigated-areas to index it for map display.';
+        } elseif (($dbImportResult['files_imported'] ?? 0) > 0) {
+            $message .= ' Indexed ' . ((int) ($dbImportResult['features_imported'] ?? 0)) . ' feature(s) into irrigated_areas.';
+        } elseif (!empty($dbImportResult['failed_files'] ?? [])) {
+            $message .= ' Upload saved, but DB indexing failed for ' . count($dbImportResult['failed_files']) . ' file(s).';
+        } elseif (($dbImportResult['files_imported'] ?? 0) === 0 && str_contains(strtolower($displayUploadDirectory), 'irrigated')) {
+            $message .= ' Upload saved, but no irrigated features were indexed (verify CRS is WGS84 coordinates).';
         }
 
         return $message;
     }
 
-    private function importUploadedIrrigatedAreaFiles(array $uploadedFiles): void
+    private function importUploadedIrrigatedAreaFiles(array $uploadedFiles): array
     {
+        $result = [
+            'files_imported' => 0,
+            'features_imported' => 0,
+            'failed_files' => [],
+        ];
+
         foreach ($uploadedFiles as $file) {
             $path = (string) ($file['path'] ?? '');
             $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
@@ -1884,12 +1908,18 @@ class MapController extends Controller
                 continue;
             }
 
-            $this->importIrrigatedAreaFile([
+            $importResult = $this->importIrrigatedAreaFile([
                 'path' => $path,
                 'name' => $file['name'] ?? basename($path),
                 'url' => $file['url'] ?? $this->mapFileUrl($path),
             ]);
+
+            $result['files_imported'] += (int) ($importResult['files_imported'] ?? 0);
+            $result['features_imported'] += (int) ($importResult['features_imported'] ?? 0);
+            $result['failed_files'] = array_merge($result['failed_files'], (array) ($importResult['failed_files'] ?? []));
         }
+
+        return $result;
     }
 
     private function importIrrigatedAreaFile(array $file): array
