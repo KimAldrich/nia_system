@@ -808,22 +808,14 @@ class MapController extends Controller
 
         return $hasPoint ? $bounds : null;
     }
-    //local only
-    // private function boundsLookLikeWgs84(array $bounds): bool
-    // {
-    //     return $bounds['min_lng'] >= -180
-    //         && $bounds['max_lng'] <= 180
-    //         && $bounds['min_lat'] >= -90
-    //         && $bounds['max_lat'] <= 90;
-    // }
 
-    //new for s3
     private function boundsLookLikeWgs84(array $bounds): bool
-{
-    // BYPASS: Force the system to accept all coordinates, 
-    // including local metric projections like PRS92.
-    return true; 
-}
+    {
+        return $bounds['min_lng'] >= -180
+            && $bounds['max_lng'] <= 180
+            && $bounds['min_lat'] >= -90
+            && $bounds['max_lat'] <= 90;
+    }
 
     private function combinedIrrigatedRenderFeatures(array $features): array
     {
@@ -919,85 +911,24 @@ class MapController extends Controller
         };
     }
 
-    // THIS IS WORKING ON LOCAL LARAVEL ONLY
-    // private function storagePathFromMapUrl(string $fileUrl): string
-    // {
-    //     $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
-    //     $prefix = '/map/file/';
-
-    //     if (str_contains($path, $prefix)) {
-    //         $path = substr($path, strpos($path, $prefix) + strlen($prefix));
-    //     }
-
-    //     $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
-    //     $fullPath = Storage::disk('public')->path($storagePath);
-
-    //     if (!is_file($fullPath)) {
-    //         throw new \RuntimeException('Map source file was not found.');
-    //     }
-
-    //     return $fullPath;
-    // }
-
-    //TEST FOR S3 BUCKET ONLINE WEBSITE
     private function storagePathFromMapUrl(string $fileUrl): string
-{
-    $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
-    $prefix = '/map/file/';
+    {
+        $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
+        $prefix = '/map/file/';
 
-    if (str_contains($path, $prefix)) {
-        $path = substr($path, strpos($path, $prefix) + strlen($prefix));
-    }
-
-    $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
-
-    // --- CLOUD S3 FIX START ---
-    // Check if the file is in S3. If yes, download it locally to parse.
-    if (Storage::disk('s3')->exists($storagePath)) {
-        $tempPath = storage_path('app/temp_maps/' . ltrim($storagePath, '/'));
-        $tempDir = dirname($tempPath);
-
-        // Ensure temp directory exists
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0755, true);
+        if (str_contains($path, $prefix)) {
+            $path = substr($path, strpos($path, $prefix) + strlen($prefix));
         }
 
-        // Download the primary map file
-        if (!file_exists($tempPath)) {
-            file_put_contents($tempPath, Storage::disk('s3')->get($storagePath));
+        $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
+        $fullPath = Storage::disk('public')->path($storagePath);
+
+        if (!is_file($fullPath)) {
+            throw new \RuntimeException('Map source file was not found.');
         }
 
-        // If it's a shapefile, we MUST download the companion files (.dbf, .shx, etc.) 
-        // to the same local temp folder or the shapefile reader will crash.
-        $extension = strtolower(pathinfo($storagePath, PATHINFO_EXTENSION));
-        if (in_array($extension, ['shp', 'dbf', 'shx'])) {
-            $basePathS3 = substr($storagePath, 0, -4);
-            $basePathLocal = substr($tempPath, 0, -4);
-
-            foreach (self::SHAPEFILE_COMPANION_EXTENSIONS as $comp) {
-                $compPathS3 = $basePathS3 . '.' . $comp;
-                $compPathLocal = $basePathLocal . '.' . $comp;
-
-                // Download missing companions
-                if (Storage::disk('s3')->exists($compPathS3) && !file_exists($compPathLocal)) {
-                    file_put_contents($compPathLocal, Storage::disk('s3')->get($compPathS3));
-                }
-            }
-        }
-
-        return $tempPath;
+        return $fullPath;
     }
-    // --- CLOUD S3 FIX END ---
-
-    // Original fallback for local files
-    $fullPath = Storage::disk('public')->path($storagePath);
-
-    if (!is_file($fullPath)) {
-        throw new \RuntimeException('Map source file was not found.');
-    }
-
-    return $fullPath;
-}
 
     private function fallbackRenderablePath(string $fileUrl): string
     {
@@ -1824,159 +1755,74 @@ class MapController extends Controller
         }
     }
 
-    //s3 version of the import function - not currently used in production since we switched to S3 for storage and the import process seems to be working fine with the existing code, but keeping this here in case we need it for future reference or local testing with S3
     private function importIrrigatedAreaFile(array $file): array
-{
-    $fileUrl = (string) ($file['url'] ?? '');
-    $fileName = (string) ($file['name'] ?? 'Unknown file');
-    $result = [
-        'files_imported' => 0,
-        'features_imported' => 0,
-        'failed_files' => [],
-    ];
+    {
+        $fileUrl = (string) ($file['url'] ?? '');
+        $fileName = (string) ($file['name'] ?? 'Unknown file');
+        $result = [
+            'files_imported' => 0,
+            'features_imported' => 0,
+            'failed_files' => [],
+        ];
 
-    try {
-        $sourcePath = $this->normalizePublicStoragePath($this->toRelativeStoragePath($this->storagePathFromMapUrl($fileUrl)));
-        IrrigatedArea::query()->where('source_path', $sourcePath)->delete();
+        try {
+            $sourcePath = $this->normalizePublicStoragePath($this->toRelativeStoragePath($this->storagePathFromMapUrl($fileUrl)));
+            IrrigatedArea::query()->where('source_path', $sourcePath)->delete();
 
-        $features = $this->featuresFromMapFile($fileUrl, $fileName, 'irrigated');
-        $rows = [];
+            $features = $this->featuresFromMapFile($fileUrl, $fileName, 'irrigated');
+            $rows = [];
 
-        // DEBUG: Log how many features were actually extracted from the file
-        \Log::info("Map Import: Extracted " . count($features) . " features from {$fileName}");
+            foreach ($features as $featureIndex => $feature) {
+                $compactFeature = $this->compactRenderedFeature($feature, $fileName, 'irrigated');
+                $geometry = $compactFeature['geometry'] ?? null;
 
-        foreach ($features as $featureIndex => $feature) {
-            $compactFeature = $this->compactRenderedFeature($feature, $fileName, 'irrigated');
-            $geometry = $compactFeature['geometry'] ?? null;
-
-            if (!is_array($geometry)) {
-                continue;
-            }
-
-            $bounds = $this->geometryBounds($geometry);
-
-            if (!$bounds || !$this->boundsLookLikeWgs84($bounds)) {
-                // DEBUG: Warn if coordinates are being rejected for not being WGS84
-                if ($featureIndex === 0) {
-                    \Log::warning("Map Import: Feature 0 in {$fileName} skipped. Bounds are not WGS84.", ['bounds' => $bounds]);
+                if (!is_array($geometry)) {
+                    continue;
                 }
-                continue;
+
+                $bounds = $this->geometryBounds($geometry);
+
+                if (!$bounds || !$this->boundsLookLikeWgs84($bounds)) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'source_path' => $sourcePath,
+                    'source_file' => $fileName,
+                    'source_hash' => hash('sha256', $sourcePath . '|' . $featureIndex),
+                    'feature_index' => $featureIndex,
+                    'min_lat' => $bounds['min_lat'],
+                    'max_lat' => $bounds['max_lat'],
+                    'min_lng' => $bounds['min_lng'],
+                    'max_lng' => $bounds['max_lng'],
+                    'properties_json' => json_encode($compactFeature['properties'] ?? ['_category' => 'irrigated']),
+                    'geometry_json' => json_encode($geometry),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                if (count($rows) >= 500) {
+                    DB::table('irrigated_areas')->insert($rows);
+                    $result['features_imported'] += count($rows);
+                    $rows = [];
+                }
             }
 
-            $rows[] = [
-                'source_path' => $sourcePath,
-                'source_file' => $fileName,
-                'source_hash' => hash('sha256', $sourcePath . '|' . $featureIndex),
-                'feature_index' => $featureIndex,
-                'min_lat' => $bounds['min_lat'],
-                'max_lat' => $bounds['max_lat'],
-                'min_lng' => $bounds['min_lng'],
-                'max_lng' => $bounds['max_lng'],
-                'properties_json' => json_encode($compactFeature['properties'] ?? ['_category' => 'irrigated']),
-                'geometry_json' => json_encode($geometry),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-
-            if (count($rows) >= 500) {
+            if ($rows) {
                 DB::table('irrigated_areas')->insert($rows);
                 $result['features_imported'] += count($rows);
-                $rows = [];
             }
+
+            $result['files_imported'] = 1;
+        } catch (\Throwable $exception) {
+            $result['failed_files'][] = [
+                'name' => $fileName,
+                'message' => $exception->getMessage(),
+            ];
         }
 
-        if ($rows) {
-            DB::table('irrigated_areas')->insert($rows);
-            $result['features_imported'] += count($rows);
-        }
-
-        $result['files_imported'] = 1;
-        
-        // DEBUG: Log success
-        \Log::info("Map Import: Successfully inserted {$result['features_imported']} rows for {$fileName}");
-
-    } catch (\Throwable $exception) {
-        // DEBUG: Catch the exact fatal error preventing the database import
-        \Log::error("Map Import FATAL ERROR for {$fileName}: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine());
-        
-        $result['failed_files'][] = [
-            'name' => $fileName,
-            'message' => $exception->getMessage(),
-        ];
+        return $result;
     }
-
-    return $result;
-    }
-
-    //LOCAL ONLY - not used in production since we switched to S3 for storage, but keeping the code here in case we need it for local testing or future reference
-    // private function importIrrigatedAreaFile(array $file): array
-    // {
-    //     $fileUrl = (string) ($file['url'] ?? '');
-    //     $fileName = (string) ($file['name'] ?? 'Unknown file');
-    //     $result = [
-    //         'files_imported' => 0,
-    //         'features_imported' => 0,
-    //         'failed_files' => [],
-    //     ];
-
-    //     try {
-    //         $sourcePath = $this->normalizePublicStoragePath($this->toRelativeStoragePath($this->storagePathFromMapUrl($fileUrl)));
-    //         IrrigatedArea::query()->where('source_path', $sourcePath)->delete();
-
-    //         $features = $this->featuresFromMapFile($fileUrl, $fileName, 'irrigated');
-    //         $rows = [];
-
-    //         foreach ($features as $featureIndex => $feature) {
-    //             $compactFeature = $this->compactRenderedFeature($feature, $fileName, 'irrigated');
-    //             $geometry = $compactFeature['geometry'] ?? null;
-
-    //             if (!is_array($geometry)) {
-    //                 continue;
-    //             }
-
-    //             $bounds = $this->geometryBounds($geometry);
-
-    //             if (!$bounds || !$this->boundsLookLikeWgs84($bounds)) {
-    //                 continue;
-    //             }
-
-    //             $rows[] = [
-    //                 'source_path' => $sourcePath,
-    //                 'source_file' => $fileName,
-    //                 'source_hash' => hash('sha256', $sourcePath . '|' . $featureIndex),
-    //                 'feature_index' => $featureIndex,
-    //                 'min_lat' => $bounds['min_lat'],
-    //                 'max_lat' => $bounds['max_lat'],
-    //                 'min_lng' => $bounds['min_lng'],
-    //                 'max_lng' => $bounds['max_lng'],
-    //                 'properties_json' => json_encode($compactFeature['properties'] ?? ['_category' => 'irrigated']),
-    //                 'geometry_json' => json_encode($geometry),
-    //                 'created_at' => now(),
-    //                 'updated_at' => now(),
-    //             ];
-
-    //             if (count($rows) >= 500) {
-    //                 DB::table('irrigated_areas')->insert($rows);
-    //                 $result['features_imported'] += count($rows);
-    //                 $rows = [];
-    //             }
-    //         }
-
-    //         if ($rows) {
-    //             DB::table('irrigated_areas')->insert($rows);
-    //             $result['features_imported'] += count($rows);
-    //         }
-
-    //         $result['files_imported'] = 1;
-    //     } catch (\Throwable $exception) {
-    //         $result['failed_files'][] = [
-    //             'name' => $fileName,
-    //             'message' => $exception->getMessage(),
-    //         ];
-    //     }
-
-    //     return $result;
-    // }
 
     private function deleteIrrigatedAreaRowsForPath(string $path): void
     {
