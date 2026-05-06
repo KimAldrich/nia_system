@@ -38,10 +38,6 @@
         .file-list-item:last-child { border-bottom: none; }
         .file-list-name { font-size: 12px; font-weight: 600; color: #18181b; word-break: break-word; }
         .file-remove { background: transparent; border: none; color: #ef4444; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .status-badge { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; max-width: 150px; padding: 6px 10px; border-radius: 999px; font-size: 10px; line-height: 1.25; font-weight: 700; text-align: center; text-transform: uppercase; overflow-wrap: anywhere; }
-        .badge-dark { background: #0c4d05; color: #ffffff; }
-        .badge-light { background: #fda611; color: #ffffff; }
-        .badge-outline { background: #ffffff; border: 1px solid #d4d4d8; color: #52525b; }
         .resolution-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #edf2ed; }
         .resolution-title-wrap { min-width: 0; flex: 1; }
         .resolution-card-title { margin: 0; font-size: 15px; line-height: 1.35; font-weight: 700; color: #18181b; overflow-wrap: anywhere; }
