@@ -26,7 +26,7 @@ return [
     */
 
     'maps_disk' => env('FILESYSTEM_MAP_DISK')
-        ?: (env('FILESYSTEM_DISK') === 's3' ? 's3' : 'public'),
+        ?: (env('FILESYSTEM_DISK') === 's3' || env('AWS_BUCKET') ? 's3' : 'public'),
 
     /*
     | When the map disk driver is "s3" and this is true, mapFileUrl() uses the

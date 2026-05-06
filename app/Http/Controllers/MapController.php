@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Shapefile\Shapefile;
 use Shapefile\ShapefileReader;
@@ -46,6 +47,7 @@ class MapController extends Controller
     private const MAP_RENDER_CACHE_KEY_PREFIX = 'map.rendered_geojson.v19.';
     private const MAP_API_VERSION_FILE = 'map_api_version.json';
     private const MAP_API_SIGNATURE_FILE = 'map_api_signature.json';
+    private const MAP_FEATURES_TABLE = 'map_features';
     private const RENDERED_FEATURE_LIMITS = [
         'irrigated' => 86500,
         'potential' => 20000,
@@ -62,6 +64,7 @@ class MapController extends Controller
     private const DEFAULT_RENDER_POLYGON_POINTS = 35;
     private const DEFAULT_RENDER_LINE_POINTS = 120;
     private const SYNC_IRRIGATED_IMPORT_FILE_LIMIT = 6;
+    private const SYNC_MAP_FEATURE_IMPORT_FILE_LIMIT = 6;
 
     private function notifications(): SystemNotificationService
     {
@@ -146,7 +149,14 @@ class MapController extends Controller
 
         $candidate = $pathPart !== '' ? ltrim($pathPart, '/') : $decodedUrl;
 
-        return $this->normalizePublicStoragePath($candidate);
+        $storageKey = $this->normalizePublicStoragePath($candidate);
+        $mapsPosition = stripos('/' . $storageKey, '/maps/');
+
+        if ($mapsPosition !== false) {
+            return substr($storageKey, $mapsPosition);
+        }
+
+        return $storageKey;
     }
 
     public function Showmap(Request $request)
@@ -352,6 +362,17 @@ class MapController extends Controller
         ];
     }
 
+    private function normalizeMapCategoryKey(string $category): string
+    {
+        $category = trim($category);
+
+        if (array_key_exists($category, $this->categoryRouteMap())) {
+            return $category;
+        }
+
+        return self::CATEGORY_DIRECTORY_MAP[$category] ?? '';
+    }
+
     private function buildOverlayGroup(string $label, string $directory): array
     {
         $disk = $this->mapDisk();
@@ -433,7 +454,15 @@ class MapController extends Controller
 
     private function buildRenderedOverlayPayload(string $category, array $snapshot): array
     {
-        if ($category === 'land_boundary') {
+        $group = $snapshot['overlay_groups'][$category] ?? null;
+        $features = [];
+        $failedFiles = [];
+
+        if ($this->mapFeaturesTableExists() && $this->mapFeatureRowsExist($category)) {
+            return $this->buildDatabaseRenderedOverlayPayload($category, $snapshot);
+        }
+
+        if ($category === 'land_boundary' && empty($group['files'])) {
             $basePath = public_path('maps/PANGASINAN.geojson');
 
             if (is_file($basePath)) {
@@ -441,10 +470,6 @@ class MapController extends Controller
                 return $this->renderedOverlayFeatureCollection($category, $snapshot, $features, []);
             }
         }
-
-        $group = $snapshot['overlay_groups'][$category] ?? null;
-        $features = [];
-        $failedFiles = [];
 
         if (!$group || empty($group['files'])) {
             return $this->renderedOverlayFeatureCollection($category, $snapshot, [], []);
@@ -465,11 +490,12 @@ class MapController extends Controller
             }
 
             $fileUrl = (string) ($file['url'] ?? '');
+            $filePath = (string) ($file['path'] ?? '');
             $fileName = (string) ($file['name'] ?? 'Unknown file');
             $fileFeatureLimit = min($perFileFeatureLimit, $featureLimit - count($features));
 
             try {
-                foreach ($this->featuresFromMapFile($fileUrl, $fileName, $category, $fileFeatureLimit) as $feature) {
+                foreach ($this->featuresFromMapFileRecord($file, $fileName, $category, $fileFeatureLimit) as $feature) {
                     $features[] = $feature;
 
                     if (count($features) >= $featureLimit) {
@@ -478,7 +504,7 @@ class MapController extends Controller
                 }
             } catch (\Throwable $exception) {
                 try {
-                    $fallbackPath = $this->fallbackRenderablePath($fileUrl);
+                    $fallbackPath = $this->fallbackRenderablePath($filePath !== '' ? $filePath : $fileUrl);
                     $fallbackName = basename($fallbackPath);
 
                     foreach ($this->featuresFromMapFile($this->mapFileUrl($fallbackPath), $fallbackName, $category, $fileFeatureLimit) as $feature) {
@@ -535,7 +561,7 @@ class MapController extends Controller
             );
 
             try {
-                foreach ($this->featuresFromMapFile($fileUrl, $fileName, 'irrigated', $fileFeatureLimit) as $feature) {
+                foreach ($this->featuresFromMapFileRecord($file, $fileName, 'irrigated', $fileFeatureLimit) as $feature) {
                     $features[] = $feature;
 
                     if (count($features) >= self::MUNICIPALITY_RENDERED_FEATURE_LIMIT) {
@@ -630,6 +656,57 @@ class MapController extends Controller
             'rendered_feature_count' => count($renderedFeatures),
             'failed_files' => $failedFiles,
             'features' => $renderedFeatures,
+        ];
+    }
+
+    private function mapFeaturesTableExists(): bool
+    {
+        static $exists = null;
+
+        if ($exists === null) {
+            $exists = Schema::hasTable(self::MAP_FEATURES_TABLE);
+        }
+
+        return $exists;
+    }
+
+    private function mapFeatureRowsExist(string $category): bool
+    {
+        return DB::table(self::MAP_FEATURES_TABLE)
+            ->where('category', $category)
+            ->exists();
+    }
+
+    private function buildDatabaseRenderedOverlayPayload(string $category, array $snapshot): array
+    {
+        $featureLimit = self::RENDERED_FEATURE_LIMITS[$category] ?? 20000;
+        $rows = DB::table(self::MAP_FEATURES_TABLE)
+            ->where('category', $category)
+            ->orderBy('id')
+            ->limit($featureLimit)
+            ->get(['properties_json', 'geometry_json']);
+
+        $features = [];
+
+        foreach ($rows as $row) {
+            $geometry = json_decode((string) $row->geometry_json, true);
+
+            if (!is_array($geometry)) {
+                continue;
+            }
+
+            $features[] = [
+                'type' => 'Feature',
+                'properties' => json_decode((string) $row->properties_json, true) ?: [
+                    '_category' => $category,
+                ],
+                'geometry' => $geometry,
+            ];
+        }
+
+        return [
+            ...$this->renderedOverlayFeatureCollection($category, $snapshot, $features, []),
+            'source' => 'database',
         ];
     }
 
@@ -953,6 +1030,22 @@ class MapController extends Controller
         }
 
         return $combined;
+    }
+
+    private function featuresFromMapFileRecord(array $file, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $path = $this->normalizePublicStoragePath((string) ($file['path'] ?? ''));
+
+        if ($path !== '') {
+            return $this->featuresFromMapLocalPath(
+                $this->localPathForNormalizedMapStorageKey($path),
+                $fileName,
+                $category,
+                $maxFeatures
+            );
+        }
+
+        return $this->featuresFromMapFile((string) ($file['url'] ?? ''), $fileName, $category, $maxFeatures);
     }
 
     private function featuresFromMapFile(string $fileUrl, string $fileName, string $category, ?int $maxFeatures = null): array
@@ -1830,6 +1923,19 @@ class MapController extends Controller
                 'features_imported' => 0,
                 'failed_files' => [],
             ];
+            $mapFeatureImportDeferred = false;
+            $mapFeatureImportResult = [
+                'files_imported' => 0,
+                'features_imported' => 0,
+                'failed_files' => [],
+            ];
+            $shouldIndexSharedMapFeatures = $categoryDirectory !== 'irrigated';
+
+            if ($shouldIndexSharedMapFeatures && $this->mapFeaturesTableExists() && count($primaryUploadedFiles) <= self::SYNC_MAP_FEATURE_IMPORT_FILE_LIMIT) {
+                $mapFeatureImportResult = $this->importUploadedMapFeatureFiles($uploadedFiles, $categoryDirectory);
+            } elseif ($shouldIndexSharedMapFeatures && $this->mapFeaturesTableExists() && count($primaryUploadedFiles) > self::SYNC_MAP_FEATURE_IMPORT_FILE_LIMIT) {
+                $mapFeatureImportDeferred = true;
+            }
 
             if ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) <= self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
                 $dbImportResult = $this->importUploadedIrrigatedAreaFiles($uploadedFiles);
@@ -1849,11 +1955,16 @@ class MapController extends Controller
                     $displayUploadDirectory,
                     $notificationResult['admin_message'],
                     $skippedFiles,
+                    $categoryDirectory,
+                    $mapFeatureImportDeferred,
+                    $mapFeatureImportResult,
                     $dbImportDeferred,
                     $dbImportResult
                 ),
                 'files' => $uploadedFiles,
                 'skipped_files' => $skippedFiles,
+                'map_feature_import_deferred' => $mapFeatureImportDeferred,
+                'map_feature_import' => $mapFeatureImportResult,
                 'db_import_deferred' => $dbImportDeferred,
                 'db_import' => $dbImportResult,
                 'target_folder' => $targetFolder,
@@ -1867,12 +1978,29 @@ class MapController extends Controller
         }
     }
 
-    private function uploadSuccessMessage(string $displayUploadDirectory, string $adminMessage, array $skippedFiles, bool $dbImportDeferred, array $dbImportResult): string
+    private function uploadSuccessMessage(
+        string $displayUploadDirectory,
+        string $adminMessage,
+        array $skippedFiles,
+        string $categoryDirectory,
+        bool $mapFeatureImportDeferred,
+        array $mapFeatureImportResult,
+        bool $dbImportDeferred,
+        array $dbImportResult
+    ): string
     {
         $message = "Upload successful to {$displayUploadDirectory}. {$adminMessage}";
 
         if (!empty($skippedFiles)) {
             $message .= ' Skipped ' . count($skippedFiles) . ' unsupported file(s).';
+        }
+
+        if ($mapFeatureImportDeferred) {
+            $message .= ' Large map upload saved. Run php artisan map:rebuild-features to index it for map display.';
+        } elseif (($mapFeatureImportResult['files_imported'] ?? 0) > 0 && $categoryDirectory !== 'irrigated') {
+            $message .= ' Indexed ' . ((int) ($mapFeatureImportResult['features_imported'] ?? 0)) . ' feature(s) into map_features.';
+        } elseif (!empty($mapFeatureImportResult['failed_files'] ?? []) && $categoryDirectory !== 'irrigated') {
+            $message .= ' Upload saved, but map feature indexing failed for ' . count($mapFeatureImportResult['failed_files']) . ' file(s).';
         }
 
         if ($dbImportDeferred) {
@@ -1920,6 +2048,229 @@ class MapController extends Controller
         }
 
         return $result;
+    }
+
+    public function rebuildMapFeaturesDatabase(?string $category = null): array
+    {
+        @ini_set('memory_limit', '2048M');
+        @set_time_limit(0);
+
+        $result = [
+            'files_imported' => 0,
+            'features_imported' => 0,
+            'failed_files' => [],
+        ];
+
+        if (!$this->mapFeaturesTableExists()) {
+            $result['failed_files'][] = [
+                'name' => self::MAP_FEATURES_TABLE,
+                'message' => 'Run migrations before rebuilding the map feature index.',
+            ];
+
+            return $result;
+        }
+
+        $snapshot = $this->mapApiSnapshot();
+        $categoryKeys = array_keys($this->categoryRouteMap());
+
+        if ($category !== null) {
+            $category = $this->normalizeMapCategoryKey($category);
+            $categoryKeys = in_array($category, $categoryKeys, true) ? [$category] : [];
+        }
+
+        if (empty($categoryKeys)) {
+            $result['failed_files'][] = [
+                'name' => (string) $category,
+                'message' => 'Unknown map category.',
+            ];
+
+            return $result;
+        }
+
+        DB::table(self::MAP_FEATURES_TABLE)
+            ->when($category !== null, fn ($query) => $query->where('category', $category))
+            ->delete();
+
+        foreach ($categoryKeys as $categoryKey) {
+            $files = $snapshot['overlay_groups'][$categoryKey]['files'] ?? [];
+
+            foreach ($files as $file) {
+                $importResult = $this->importMapFeatureFile($file, $categoryKey);
+                $result['files_imported'] += $importResult['files_imported'];
+                $result['features_imported'] += $importResult['features_imported'];
+                $result['failed_files'] = array_merge($result['failed_files'], $importResult['failed_files']);
+            }
+        }
+
+        $this->clearMapDataCache();
+
+        return $result;
+    }
+
+    private function importUploadedMapFeatureFiles(array $uploadedFiles, string $category): array
+    {
+        $result = [
+            'files_imported' => 0,
+            'features_imported' => 0,
+            'failed_files' => [],
+        ];
+
+        if (!$this->mapFeaturesTableExists()) {
+            return $result;
+        }
+
+        $category = $this->normalizeMapCategoryKey($category);
+
+        foreach ($uploadedFiles as $file) {
+            $path = (string) ($file['path'] ?? '');
+            $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+            if (!in_array($extension, self::PRIMARY_FILE_EXTENSIONS, true)) {
+                continue;
+            }
+
+            if ($category === 'irrigated' && $this->shouldSkipIrrigatedPath($path)) {
+                continue;
+            }
+
+            $importResult = $this->importMapFeatureFile([
+                'path' => $path,
+                'name' => $file['name'] ?? basename($path),
+                'url' => $file['url'] ?? $this->mapFileUrl($path),
+            ], $category);
+
+            $result['files_imported'] += (int) ($importResult['files_imported'] ?? 0);
+            $result['features_imported'] += (int) ($importResult['features_imported'] ?? 0);
+            $result['failed_files'] = array_merge($result['failed_files'], (array) ($importResult['failed_files'] ?? []));
+        }
+
+        return $result;
+    }
+
+    private function importMapFeatureFile(array $file, string $category): array
+    {
+        $fileUrl = (string) ($file['url'] ?? '');
+        $fileName = (string) ($file['name'] ?? 'Unknown file');
+        $category = $this->normalizeMapCategoryKey($category);
+        $result = [
+            'files_imported' => 0,
+            'features_imported' => 0,
+            'failed_files' => [],
+        ];
+
+        if ($category === '') {
+            $result['failed_files'][] = [
+                'name' => $fileName,
+                'message' => 'Unknown map category.',
+            ];
+
+            return $result;
+        }
+
+        try {
+            $explicitKey = $this->normalizePublicStoragePath((string) ($file['path'] ?? ''));
+            $canonicalKey = $explicitKey !== ''
+                ? $explicitKey
+                : $this->mapStorageKeyFromUrl($fileUrl);
+
+            if ($canonicalKey === '') {
+                throw new \RuntimeException('Unable to resolve map storage key for database import.');
+            }
+
+            DB::table(self::MAP_FEATURES_TABLE)
+                ->where('category', $category)
+                ->where('source_path', $canonicalKey)
+                ->delete();
+
+            $localPath = $this->localPathForNormalizedMapStorageKey($canonicalKey);
+            $features = $this->featuresFromMapLocalPath($localPath, $fileName, $category);
+            $importSummary = $this->insertMapFeatures($features, $fileName, $canonicalKey, $category);
+            $result['features_imported'] += $importSummary['features_imported'];
+
+            if (
+                $result['features_imported'] === 0
+                && $importSummary['geometry_features'] > 0
+                && $importSummary['wgs84_rejected'] === $importSummary['geometry_features']
+            ) {
+                $reprojectedGeoJson = $this->reprojectFileToWgs84GeoJson($localPath);
+
+                if ($reprojectedGeoJson !== null && is_file($reprojectedGeoJson)) {
+                    $reprojectedFeatures = $this->featuresFromGeoJsonFile($reprojectedGeoJson, $fileName, $category);
+                    $reprojectedSummary = $this->insertMapFeatures($reprojectedFeatures, $fileName, $canonicalKey, $category);
+                    $result['features_imported'] += $reprojectedSummary['features_imported'];
+                    $this->deleteLocalDirectory(dirname($reprojectedGeoJson));
+                }
+            }
+
+            $result['files_imported'] = 1;
+        } catch (\Throwable $exception) {
+            \Log::error("Map Feature Import failed for {$fileName}: ".$exception->getMessage().' in '.$exception->getFile().' on line '.$exception->getLine());
+
+            $result['failed_files'][] = [
+                'name' => $fileName,
+                'message' => $exception->getMessage(),
+            ];
+        }
+
+        return $result;
+    }
+
+    private function insertMapFeatures(array $features, string $fileName, string $sourcePath, string $category): array
+    {
+        $rows = [];
+        $featuresImported = 0;
+        $geometryFeatures = 0;
+        $wgs84Rejected = 0;
+
+        foreach ($features as $featureIndex => $feature) {
+            $compactFeature = $this->compactRenderedFeature($feature, $fileName, $category);
+            $geometry = $compactFeature['geometry'] ?? null;
+
+            if (!is_array($geometry)) {
+                continue;
+            }
+
+            $geometryFeatures++;
+            $bounds = $this->geometryBounds($geometry);
+
+            if (!$bounds || !$this->boundsLookLikeWgs84($bounds)) {
+                $wgs84Rejected++;
+                continue;
+            }
+
+            $rows[] = [
+                'category' => $category,
+                'source_path' => $sourcePath,
+                'source_file' => $fileName,
+                'source_hash' => hash('sha256', $category.'|'.$sourcePath.'|'.$featureIndex),
+                'feature_index' => $featureIndex,
+                'min_lat' => $bounds['min_lat'],
+                'max_lat' => $bounds['max_lat'],
+                'min_lng' => $bounds['min_lng'],
+                'max_lng' => $bounds['max_lng'],
+                'properties_json' => json_encode($compactFeature['properties'] ?? ['_category' => $category]),
+                'geometry_json' => json_encode($geometry),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            if (count($rows) >= 500) {
+                DB::table(self::MAP_FEATURES_TABLE)->insert($rows);
+                $featuresImported += count($rows);
+                $rows = [];
+            }
+        }
+
+        if ($rows) {
+            DB::table(self::MAP_FEATURES_TABLE)->insert($rows);
+            $featuresImported += count($rows);
+        }
+
+        return [
+            'features_imported' => $featuresImported,
+            'geometry_features' => $geometryFeatures,
+            'wgs84_rejected' => $wgs84Rejected,
+        ];
     }
 
     private function importIrrigatedAreaFile(array $file): array
@@ -2110,6 +2461,24 @@ class MapController extends Controller
         IrrigatedArea::query()->where('source_path', $path)->delete();
     }
 
+    private function deleteMapFeatureRowsForPath(string $path): void
+    {
+        if (!$this->mapFeaturesTableExists()) {
+            return;
+        }
+
+        $path = $this->normalizePublicStoragePath($path);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if (in_array($extension, self::SHAPEFILE_COMPANION_EXTENSIONS, true)) {
+            $path = substr($path, 0, -strlen($extension)) . 'shp';
+        }
+
+        DB::table(self::MAP_FEATURES_TABLE)
+            ->where('source_path', $path)
+            ->delete();
+    }
+
     private function deleteIrrigatedAreaRowsForFolder(string $folder): void
     {
         $folder = trim($this->normalizePublicStoragePath($folder), '/');
@@ -2119,6 +2488,23 @@ class MapController extends Controller
         }
 
         IrrigatedArea::query()
+            ->where('source_path', 'like', $folder . '/%')
+            ->delete();
+    }
+
+    private function deleteMapFeatureRowsForFolder(string $folder): void
+    {
+        if (!$this->mapFeaturesTableExists()) {
+            return;
+        }
+
+        $folder = trim($this->normalizePublicStoragePath($folder), '/');
+
+        if ($folder === '') {
+            return;
+        }
+
+        DB::table(self::MAP_FEATURES_TABLE)
             ->where('source_path', 'like', $folder . '/%')
             ->delete();
     }
@@ -2187,6 +2573,7 @@ class MapController extends Controller
         }
 
         $this->deleteIrrigatedAreaRowsForPath($path);
+        $this->deleteMapFeatureRowsForPath($path);
         $category = $this->resolveCategoryFromStoragePath((string) $path);
         $notificationResult = $this->notifyMapFileChange('delete', $category, [[
             'name' => basename((string) $path),
@@ -2235,6 +2622,7 @@ class MapController extends Controller
 
         $disk->deleteDirectory($folder);
         $this->deleteIrrigatedAreaRowsForFolder($folder);
+        $this->deleteMapFeatureRowsForFolder($folder);
         $category = $this->resolveCategoryFromStoragePath($folder);
         $this->clearMapDataCache();
 
