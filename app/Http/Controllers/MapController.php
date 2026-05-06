@@ -2559,13 +2559,9 @@ class MapController extends Controller
 
     private function reprojectFileToWgs84GeoJson(string $localPath): ?string
     {
-        $binary = trim((string) @shell_exec('command -v ogr2ogr 2>/dev/null'));
+        $binary = $this->ogr2ogrBinaryPath();
 
-        if ($binary === '') {
-            $binary = trim((string) @shell_exec('which ogr2ogr 2>/dev/null'));
-        }
-
-        if ($binary === '') {
+        if ($binary === null) {
             return null;
         }
 
@@ -2601,6 +2597,33 @@ class MapController extends Controller
         }
 
         return $outputPath;
+    }
+
+    private function ogr2ogrBinaryPath(): ?string
+    {
+        $configuredPath = trim((string) config('services.ogr2ogr.path', ''));
+
+        if ($configuredPath !== '') {
+            return is_file($configuredPath) || is_executable($configuredPath) ? $configuredPath : null;
+        }
+
+        if (!function_exists('shell_exec')) {
+            return null;
+        }
+
+        $command = PHP_OS_FAMILY === 'Windows'
+            ? 'where ogr2ogr 2>NUL'
+            : 'command -v ogr2ogr 2>/dev/null';
+
+        $output = trim((string) @shell_exec($command));
+
+        if ($output === '' && PHP_OS_FAMILY !== 'Windows') {
+            $output = trim((string) @shell_exec('which ogr2ogr 2>/dev/null'));
+        }
+
+        $candidate = trim(strtok($output, "\r\n") ?: '');
+
+        return $candidate !== '' ? $candidate : null;
     }
 
     private function deleteIrrigatedAreaRowsForPath(string $path): void

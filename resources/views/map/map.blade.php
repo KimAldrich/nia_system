@@ -1473,7 +1473,7 @@ let uploadTargets = @json($uploadTargets ?? []);
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 const mapApiStatusEndpoint = "{{ route('map.api.status') }}";
 const irrigatedAreasEndpoint = "{{ route('map.api.irrigated_areas') }}";
-const overlayFilesEndpointBase = "{{ url('/map/overlays') }}";
+const overlayFilesEndpointBase = "{{ url('/map/overlay/files') }}";
 const renderedOverlayEndpointBase = "{{ url('/map/render') }}";
 const notificationUserKey = "{{ $notificationUserKey ?? '' }}" || null;
 const currentUserRole = "{{ $currentUserRole ?? '' }}" || null;
@@ -2536,11 +2536,21 @@ async function buildFilteredIrrigatedOverlayData(selectedBounds) {
         };
     }
 
-    const payloads = await Promise.all(boundsList.map(bounds => loadIrrigatedAreasForBounds(bounds)));
+    let payloads = await Promise.all(boundsList.map(bounds => loadIrrigatedAreasForBounds(bounds)));
     const basePayload = payloads.find(Boolean) || {};
 
-    const features = payloads.flatMap(payload => Array.isArray(payload.features) ? payload.features : []);
-    const failedFiles = payloads.flatMap(payload => Array.isArray(payload.failed_files) ? payload.failed_files : []);
+    let features = payloads.flatMap(payload => Array.isArray(payload.features) ? payload.features : []);
+    let failedFiles = payloads.flatMap(payload => Array.isArray(payload.failed_files) ? payload.failed_files : []);
+
+    if (!features.length) {
+        const fallbackPayload = await loadRenderedOverlayData('irrigated');
+
+        if (hasRenderableFeatures(fallbackPayload)) {
+            payloads = [fallbackPayload];
+            features = Array.isArray(fallbackPayload.features) ? fallbackPayload.features : [];
+            failedFiles = Array.isArray(fallbackPayload.failed_files) ? fallbackPayload.failed_files : [];
+        }
+    }
 
     // IMPORTANT:
     // The API request uses bbox intersection (viewport bounds), but we must enforce
@@ -2638,10 +2648,18 @@ async function loadVisibleIrrigatedAreas() {
 
     try {
         updateStatus('Loading visible Irrigated Area...');
-        const payload = await loadIrrigatedAreasForBounds(bounds, irrigatedViewportAbortController.signal);
+        let payload = await loadIrrigatedAreasForBounds(bounds, irrigatedViewportAbortController.signal);
 
         if (loadToken !== irrigatedViewportLoadToken) {
             return;
+        }
+
+        if (!hasRenderableFeatures(payload)) {
+            const fallbackPayload = await loadRenderedOverlayData('irrigated');
+
+            if (hasRenderableFeatures(fallbackPayload)) {
+                payload = fallbackPayload;
+            }
         }
 
         irrigatedViewportLayer.clearLayers();

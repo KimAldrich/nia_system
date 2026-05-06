@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'ogr2ogr' => [
+        'path' => env('OGR2OGR_PATH'),
+    ],
+
 ];
