@@ -911,24 +911,85 @@ class MapController extends Controller
         };
     }
 
+    // THIS IS WORKING ON LOCAL LARAVEL ONLY
+    // private function storagePathFromMapUrl(string $fileUrl): string
+    // {
+    //     $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
+    //     $prefix = '/map/file/';
+
+    //     if (str_contains($path, $prefix)) {
+    //         $path = substr($path, strpos($path, $prefix) + strlen($prefix));
+    //     }
+
+    //     $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
+    //     $fullPath = Storage::disk('public')->path($storagePath);
+
+    //     if (!is_file($fullPath)) {
+    //         throw new \RuntimeException('Map source file was not found.');
+    //     }
+
+    //     return $fullPath;
+    // }
+
+    //TEST FOR S3 BUCKET ONLINE WEBSITE
     private function storagePathFromMapUrl(string $fileUrl): string
-    {
-        $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
-        $prefix = '/map/file/';
+{
+    $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
+    $prefix = '/map/file/';
 
-        if (str_contains($path, $prefix)) {
-            $path = substr($path, strpos($path, $prefix) + strlen($prefix));
-        }
-
-        $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
-        $fullPath = Storage::disk('public')->path($storagePath);
-
-        if (!is_file($fullPath)) {
-            throw new \RuntimeException('Map source file was not found.');
-        }
-
-        return $fullPath;
+    if (str_contains($path, $prefix)) {
+        $path = substr($path, strpos($path, $prefix) + strlen($prefix));
     }
+
+    $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
+
+    // --- CLOUD S3 FIX START ---
+    // Check if the file is in S3. If yes, download it locally to parse.
+    if (Storage::disk('s3')->exists($storagePath)) {
+        $tempPath = storage_path('app/temp_maps/' . ltrim($storagePath, '/'));
+        $tempDir = dirname($tempPath);
+
+        // Ensure temp directory exists
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        // Download the primary map file
+        if (!file_exists($tempPath)) {
+            file_put_contents($tempPath, Storage::disk('s3')->get($storagePath));
+        }
+
+        // If it's a shapefile, we MUST download the companion files (.dbf, .shx, etc.) 
+        // to the same local temp folder or the shapefile reader will crash.
+        $extension = strtolower(pathinfo($storagePath, PATHINFO_EXTENSION));
+        if (in_array($extension, ['shp', 'dbf', 'shx'])) {
+            $basePathS3 = substr($storagePath, 0, -4);
+            $basePathLocal = substr($tempPath, 0, -4);
+
+            foreach (self::SHAPEFILE_COMPANION_EXTENSIONS as $comp) {
+                $compPathS3 = $basePathS3 . '.' . $comp;
+                $compPathLocal = $basePathLocal . '.' . $comp;
+
+                // Download missing companions
+                if (Storage::disk('s3')->exists($compPathS3) && !file_exists($compPathLocal)) {
+                    file_put_contents($compPathLocal, Storage::disk('s3')->get($compPathS3));
+                }
+            }
+        }
+
+        return $tempPath;
+    }
+    // --- CLOUD S3 FIX END ---
+
+    // Original fallback for local files
+    $fullPath = Storage::disk('public')->path($storagePath);
+
+    if (!is_file($fullPath)) {
+        throw new \RuntimeException('Map source file was not found.');
+    }
+
+    return $fullPath;
+}
 
     private function fallbackRenderablePath(string $fileUrl): string
     {
