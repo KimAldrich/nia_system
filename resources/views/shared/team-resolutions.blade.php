@@ -16,8 +16,9 @@
         .tab-pane { display: none; animation: fadeIn 0.2s ease-in-out; }
         .tab-pane.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .ui-card { background: #ffffff; border-radius: 12px; padding: 18px; border: 1px solid #0c4d05; box-shadow: 0 2px 8px rgba(25, 161, 20, 0.02); display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
-        .ui-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04); }
+        .resolution-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+        .ui-card { background: #ffffff; border-radius: 10px; padding: 18px; border: 1px solid #d8e7d5; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03); display: flex; flex-direction: column; transition: border-color 0.2s, box-shadow 0.2s; min-width: 0; }
+        .ui-card:hover { border-color: #0c4d05; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06); }
         .btn-dark { background: #126e08; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; text-align: center; display: block; transition: 0.2s; border: none; cursor: pointer; width: 100%; font-family: 'Poppins', sans-serif; }
         .btn-dark:hover { background: #0c4d05; }
         .btn-outline { background: #ffffff; color: #0c4d05; border: 1px solid #0c4d05; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s; font-family: 'Poppins', sans-serif; }
@@ -37,24 +38,35 @@
         .file-list-item:last-child { border-bottom: none; }
         .file-list-name { font-size: 12px; font-weight: 600; color: #18181b; word-break: break-word; }
         .file-remove { background: transparent; border: none; color: #ef4444; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .resolution-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
-        .resolution-card-title { margin: 0; font-size: 15px; font-weight: 700; color: #18181b; word-break: break-word; }
-        .resolution-files-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-        .attachment-card { display: flex; flex-direction: column; }
-        .attachment-preview { margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e4e7; height: 120px; background: #fafafa; position: relative; transition: opacity 0.2s; }
-        .attachment-preview:hover { opacity: 0.8; }
-        .attachment-link { position: absolute; inset: 0; z-index: 10; background: transparent; cursor: pointer; }
-        .attachment-frame { width: 100%; height: 100%; border: none; transform: scale(0.95); transform-origin: top center; pointer-events: none; overflow: hidden; }
-        .attachment-fallback { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .attachment-fallback-icon { font-size: 32px; margin-bottom: 5px; }
-        .attachment-fallback-label { font-size: 12px; font-weight: 600; color: #18181b; }
+        .status-badge { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; max-width: 150px; padding: 6px 10px; border-radius: 999px; font-size: 10px; line-height: 1.25; font-weight: 700; text-align: center; text-transform: uppercase; overflow-wrap: anywhere; }
+        .badge-dark { background: #0c4d05; color: #ffffff; }
+        .badge-light { background: #fda611; color: #ffffff; }
+        .badge-outline { background: #ffffff; border: 1px solid #d4d4d8; color: #52525b; }
+        .resolution-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #edf2ed; }
+        .resolution-title-wrap { min-width: 0; flex: 1; }
+        .resolution-card-title { margin: 0; font-size: 15px; line-height: 1.35; font-weight: 700; color: #18181b; overflow-wrap: anywhere; }
+        .resolution-file-count { display: inline-flex; margin-top: 7px; color: #71717a; font-size: 11px; font-weight: 600; }
+        .resolution-files-grid { display: flex; flex-direction: column; gap: 10px; }
+        .attachment-card { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid #e4e4e7; border-radius: 8px; background: #fafafa; min-width: 0; }
+        .attachment-card:hover { background: #ffffff; border-color: #b9d8b5; }
+        .attachment-preview { width: 46px; height: 46px; border-radius: 8px; border: 1px solid #d8e7d5; background: #ecfdf5; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .attachment-link { position: absolute; inset: 0; z-index: 2; background: transparent; cursor: pointer; }
+        .attachment-type { color: #0c4d05; font-size: 10px; font-weight: 800; letter-spacing: 0; text-transform: uppercase; max-width: 38px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .attachment-fallback { display: contents; }
+        .attachment-fallback-icon, .attachment-fallback-label { display: none; }
         .attachment-meta { flex: 1; min-width: 0; }
-        .attachment-name { margin: 0 0 2px 0; font-size: 14px; font-weight: 600; color: #18181b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .attachment-date { font-size: 11px; color: #a1a1aa; margin: 0 0 15px 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .attachment-actions { display: flex; gap: 8px; margin-top: auto; }
+        .attachment-name { margin: 0 0 4px 0; font-size: 13px; line-height: 1.35; font-weight: 600; color: #18181b; overflow-wrap: anywhere; }
+        .attachment-date { font-size: 11px; color: #71717a; margin: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .attachment-actions { display: flex; gap: 8px; align-items: center; }
+        .attachment-actions .btn-dark, .attachment-actions .btn-outline { width: auto; min-width: 74px; padding: 8px 10px; }
+        .available-files-empty { grid-column: 1 / -1; background: #ffffff; padding: 34px; border-radius: 10px; text-align: center; border: 1px solid #e4e4e7; }
+        .available-files-empty p { color: #71717a; font-weight: 500; font-size: 13px; margin: 0; }
         @media (max-width: 640px) {
             .resolution-card-header { flex-direction: column; align-items: stretch; }
-            .resolution-files-grid { grid-template-columns: 1fr; }
+            .resolution-list { grid-template-columns: 1fr; }
+            .attachment-card { grid-template-columns: 42px minmax(0, 1fr); }
+            .attachment-preview { width: 42px; height: 42px; }
+            .attachment-actions { grid-column: 1 / -1; justify-content: flex-start; }
         }
     </style>
 

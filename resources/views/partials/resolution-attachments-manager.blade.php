@@ -1,9 +1,10 @@
-<div id="resolutionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+<div id="resolutionsList" class="resolution-list">
     @forelse($resolutions as $resolution)
         @php
             $resolutionTeam = $resolution->team;
             $statusLabel = \App\Models\IaResolution::displayStatusLabel($resolution->status, $resolutionTeam);
             $files = $resolution->files;
+
             if ($files->isEmpty() && $resolution->file_path) {
                 $files = collect([
                     (object) [
@@ -20,8 +21,11 @@
 
         <div class="ui-card">
             <div class="resolution-card-header">
-                <div style="min-width: 0;">
+                <div class="resolution-title-wrap">
                     <h4 class="resolution-card-title">{{ $resolution->title }}</h4>
+                    <span class="resolution-file-count">
+                        {{ $files->count() }} {{ \Illuminate\Support\Str::plural('file', $files->count()) }}
+                    </span>
                 </div>
 
                 @if (\App\Models\IaResolution::isCompletedStatus($resolution->status))
@@ -37,30 +41,15 @@
                 @foreach($files as $file)
                     @php
                         $extension = strtolower(pathinfo($file->file_path, PATHINFO_EXTENSION));
+                        $typeLabel = strtoupper($extension ?: 'FILE');
                         $uploadedDate = optional($file->created_at)->format('M d, Y') ?? optional($resolution->created_at)->format('M d, Y');
                     @endphp
+
                     <div class="attachment-card">
                         <div class="attachment-preview">
                             <a href="{{ $file->file_url }}" target="_blank" class="attachment-link"
-                                title="Click to view or download document"></a>
-
-                            @if ($extension === 'pdf')
-                                <iframe src="{{ $file->preview_url }}"
-                                    class="attachment-frame" scrolling="no"></iframe>
-                            @else
-                                <div class="attachment-fallback">
-                                    @if (in_array($extension, ['xls', 'xlsx']))
-                                        <div class="attachment-fallback-icon">📊</div>
-                                        <span class="attachment-fallback-label">Excel Sheet</span>
-                                    @elseif(in_array($extension, ['doc', 'docx']))
-                                        <div class="attachment-fallback-icon">📝</div>
-                                        <span class="attachment-fallback-label">Word Doc</span>
-                                    @else
-                                        <div class="attachment-fallback-icon">📁</div>
-                                        <span class="attachment-fallback-label">Document</span>
-                                    @endif
-                                </div>
-                            @endif
+                                title="Open {{ $file->original_name }}"></a>
+                            <span class="attachment-type">{{ $typeLabel }}</span>
                         </div>
 
                         <div class="attachment-meta">
@@ -69,21 +58,20 @@
                         </div>
 
                         <div class="attachment-actions">
-                            <a href="{{ $file->file_url }}" target="_blank" class="btn-dark"
-                                style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
-                                Download
+                            <a href="{{ $file->file_url }}" target="_blank" class="btn-dark" style="text-align: center;">
+                                Open
                             </a>
 
                             @if (!empty($canDelete))
                                 <form action="{{ route($deleteRouteName, $file->id) }}" method="POST"
-                                    style="margin: 0; flex: 1;"
+                                    style="margin: 0;"
                                     data-async-target="#resolutionsList"
                                     data-async-confirm="Delete this file from {{ $resolution->title }}?"
                                     data-async-success="silent">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn-outline"
-                                        style="width: 100%; padding: 10px 14px; min-width: 100px; background: #f87171; color: #fff; border: 1px solid #f87171;">
+                                        style="background: #f87171; color: #fff; border: 1px solid #f87171;">
                                         Delete
                                     </button>
                                 </form>
@@ -94,8 +82,8 @@
             </div>
         </div>
     @empty
-        <div style="grid-column: 1 / -1; background: #ffffff; padding: 40px; border-radius: 12px; text-align: center; border: 1px solid #e4e4e7;">
-            <p style="color: #a1a1aa; font-weight: 500; font-size: 13px;">No files have been uploaded yet.</p>
+        <div class="available-files-empty">
+            <p>No files have been uploaded yet.</p>
         </div>
     @endforelse
 </div>
