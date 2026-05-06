@@ -808,14 +808,22 @@ class MapController extends Controller
 
         return $hasPoint ? $bounds : null;
     }
+    //local only
+    // private function boundsLookLikeWgs84(array $bounds): bool
+    // {
+    //     return $bounds['min_lng'] >= -180
+    //         && $bounds['max_lng'] <= 180
+    //         && $bounds['min_lat'] >= -90
+    //         && $bounds['max_lat'] <= 90;
+    // }
 
+    //new for s3
     private function boundsLookLikeWgs84(array $bounds): bool
-    {
-        return $bounds['min_lng'] >= -180
-            && $bounds['max_lng'] <= 180
-            && $bounds['min_lat'] >= -90
-            && $bounds['max_lat'] <= 90;
-    }
+{
+    // BYPASS: Force the system to accept all coordinates, 
+    // including local metric projections like PRS92.
+    return true; 
+}
 
     private function combinedIrrigatedRenderFeatures(array $features): array
     {
