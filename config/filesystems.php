@@ -17,6 +17,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Map layers disk
+    |--------------------------------------------------------------------------
+    |
+    | Uploads under maps/irrigation etc. Defaults to FILESYSTEM_DISK so Laravel
+    | Cloud can set FILESYSTEM_DISK=s3 and keep map files on object storage.
+    |
+    */
+
+    'maps_disk' => env('FILESYSTEM_MAP_DISK')
+        ?: (env('FILESYSTEM_DISK') === 's3' ? 's3' : 'public'),
+
+    /*
+    | When the map disk driver is "s3" and this is true, mapFileUrl() uses the
+    | object store public URL so the browser fetch() loads files from S3/CDN.
+    | Set false to always use same-origin /map/file/... streaming (after login).
+    */
+
+    'maps_public_urls' => filter_var(env('MAP_STORAGE_PUBLIC_URLS', true), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

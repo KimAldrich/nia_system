@@ -91,6 +91,64 @@ class MapController extends Controller
         return redirect()->route('login');
     }
 
+    private function mapDisk(): \Illuminate\Filesystem\FilesystemAdapter
+    {
+        return Storage::disk((string) config('filesystems.maps_disk', 'public'));
+    }
+
+    private function mapDiskUsesDirectPublicUrls(): bool
+    {
+        if (!config('filesystems.maps_public_urls', true)) {
+            return false;
+        }
+
+        $name = (string) config('filesystems.maps_disk', 'public');
+
+        return config("filesystems.disks.{$name}.driver") === 's3';
+    }
+
+    private function overlayPrefixHasAssets(\Illuminate\Contracts\Filesystem\Filesystem $disk, string $root): bool
+    {
+        $root = trim(str_replace('\\', '/', $root), '/');
+
+        if ($root === '') {
+            return false;
+        }
+
+        if (count($disk->files($root)) > 0) {
+            return true;
+        }
+
+        foreach ($disk->directories($root) as $_) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function mapStorageKeyFromUrl(string $fileUrl): string
+    {
+        $decodedUrl = rawurldecode($fileUrl);
+        $pathPart = parse_url($decodedUrl, PHP_URL_PATH) ?: '';
+
+        if (str_contains($pathPart, '/map/file/')) {
+            $trimmed = substr($pathPart, strpos($pathPart, '/map/file/') + strlen('/map/file/'));
+
+            return $this->normalizePublicStoragePath($trimmed);
+        }
+
+        $diskName = (string) config('filesystems.maps_disk', 'public');
+        $baseUrl = rtrim((string) (config("filesystems.disks.{$diskName}.url") ?? ''), '/');
+
+        if ($baseUrl !== '' && str_starts_with($decodedUrl, $baseUrl.'/')) {
+            return $this->normalizePublicStoragePath(substr($decodedUrl, strlen($baseUrl) + 1));
+        }
+
+        $candidate = $pathPart !== '' ? ltrim($pathPart, '/') : $decodedUrl;
+
+        return $this->normalizePublicStoragePath($candidate);
+    }
+
     public function Showmap(Request $request)
     {
         if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
@@ -296,10 +354,10 @@ class MapController extends Controller
 
     private function buildOverlayGroup(string $label, string $directory): array
     {
-        $disk = Storage::disk('public');
+        $disk = $this->mapDisk();
         $folder = $this->resolveOverlayFolder($label, $directory);
 
-        if (!$disk->exists($folder)) {
+        if (!$this->overlayPrefixHasAssets($disk, $folder)) {
             return [
                 'label' => $label,
                 'files' => [],
@@ -332,6 +390,7 @@ class MapController extends Controller
             })
             ->map(function ($path) use ($folder) {
                 return [
+                    'path' => $path,
                     'name' => basename($path),
                     'url' => $this->mapFileUrl($path),
                     'folder' => $this->relativeOverlayFolder($path, $folder),
@@ -898,15 +957,24 @@ class MapController extends Controller
 
     private function featuresFromMapFile(string $fileUrl, string $fileName, string $category, ?int $maxFeatures = null): array
     {
-        $path = $this->storagePathFromMapUrl($fileUrl);
-        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        return $this->featuresFromMapLocalPath(
+            $this->storagePathFromMapUrl($fileUrl),
+            $fileName,
+            $category,
+            $maxFeatures
+        );
+    }
+
+    private function featuresFromMapLocalPath(string $localPath, string $fileName, string $category, ?int $maxFeatures = null): array
+    {
+        $extension = strtolower(pathinfo($localPath, PATHINFO_EXTENSION));
 
         return match ($extension) {
-            'geojson', 'json' => $this->featuresFromGeoJsonFile($path, $fileName, $category, $maxFeatures),
-            'kml' => $this->featuresFromKmlFile($path, $fileName, $category, $maxFeatures),
-            'kmz' => $this->featuresFromKmzFile($path, $fileName, $category, $maxFeatures),
-            'shp' => $this->featuresFromShapefile($path, $fileName, $category, $maxFeatures),
-            'zip' => $this->featuresFromZippedShapefile($path, $fileName, $category, $maxFeatures),
+            'geojson', 'json' => $this->featuresFromGeoJsonFile($localPath, $fileName, $category, $maxFeatures),
+            'kml' => $this->featuresFromKmlFile($localPath, $fileName, $category, $maxFeatures),
+            'kmz' => $this->featuresFromKmzFile($localPath, $fileName, $category, $maxFeatures),
+            'shp' => $this->featuresFromShapefile($localPath, $fileName, $category, $maxFeatures),
+            'zip' => $this->featuresFromZippedShapefile($localPath, $fileName, $category, $maxFeatures),
             default => [],
         };
     }
@@ -931,65 +999,60 @@ class MapController extends Controller
     //     return $fullPath;
     // }
 
-    //TEST FOR S3 BUCKET ONLINE WEBSITE
-    private function storagePathFromMapUrl(string $fileUrl): string
-{
-    $path = parse_url($fileUrl, PHP_URL_PATH) ?: $fileUrl;
-    $prefix = '/map/file/';
+    /**
+     * Download or resolve the map file object key on the map disk into a readable local filesystem path.
+     */
+    private function localPathForNormalizedMapStorageKey(string $storageKey): string
+    {
+        $storagePath = $this->normalizePublicStoragePath($storageKey);
+        $disk = $this->mapDisk();
 
-    if (str_contains($path, $prefix)) {
-        $path = substr($path, strpos($path, $prefix) + strlen($prefix));
-    }
+        if ($disk->exists($storagePath)) {
+            $tempPath = storage_path('app/temp_maps/'.ltrim($storagePath, '/'));
+            $tempDir = dirname($tempPath);
 
-    $storagePath = $this->normalizePublicStoragePath(rawurldecode($path));
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
 
-    // --- CLOUD S3 FIX START ---
-    // Check if the file is in S3. If yes, download it locally to parse.
-    if (Storage::disk('s3')->exists($storagePath)) {
-        $tempPath = storage_path('app/temp_maps/' . ltrim($storagePath, '/'));
-        $tempDir = dirname($tempPath);
+            if (!file_exists($tempPath)) {
+                file_put_contents($tempPath, $disk->get($storagePath));
+            }
 
-        // Ensure temp directory exists
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0755, true);
-        }
+            $extension = strtolower(pathinfo($storagePath, PATHINFO_EXTENSION));
+            if (in_array($extension, ['shp', 'dbf', 'shx'], true)) {
+                $basePathRemote = substr($storagePath, 0, -4);
+                $basePathLocal = substr($tempPath, 0, -4);
 
-        // Download the primary map file
-        if (!file_exists($tempPath)) {
-            file_put_contents($tempPath, Storage::disk('s3')->get($storagePath));
-        }
+                foreach (self::SHAPEFILE_COMPANION_EXTENSIONS as $comp) {
+                    $compPathRemote = $basePathRemote.'.'.$comp;
+                    $compPathLocal = $basePathLocal.'.'.$comp;
 
-        // If it's a shapefile, we MUST download the companion files (.dbf, .shx, etc.) 
-        // to the same local temp folder or the shapefile reader will crash.
-        $extension = strtolower(pathinfo($storagePath, PATHINFO_EXTENSION));
-        if (in_array($extension, ['shp', 'dbf', 'shx'])) {
-            $basePathS3 = substr($storagePath, 0, -4);
-            $basePathLocal = substr($tempPath, 0, -4);
-
-            foreach (self::SHAPEFILE_COMPANION_EXTENSIONS as $comp) {
-                $compPathS3 = $basePathS3 . '.' . $comp;
-                $compPathLocal = $basePathLocal . '.' . $comp;
-
-                // Download missing companions
-                if (Storage::disk('s3')->exists($compPathS3) && !file_exists($compPathLocal)) {
-                    file_put_contents($compPathLocal, Storage::disk('s3')->get($compPathS3));
+                    if ($disk->exists($compPathRemote) && !file_exists($compPathLocal)) {
+                        file_put_contents($compPathLocal, $disk->get($compPathRemote));
+                    }
                 }
+            }
+
+            return $tempPath;
+        }
+
+        $publicDisk = Storage::disk('public');
+        if ($publicDisk->exists($storagePath)) {
+            $fullPath = $publicDisk->path($storagePath);
+
+            if (is_file($fullPath)) {
+                return $fullPath;
             }
         }
 
-        return $tempPath;
-    }
-    // --- CLOUD S3 FIX END ---
-
-    // Original fallback for local files
-    $fullPath = Storage::disk('public')->path($storagePath);
-
-    if (!is_file($fullPath)) {
         throw new \RuntimeException('Map source file was not found.');
     }
 
-    return $fullPath;
-}
+    private function storagePathFromMapUrl(string $fileUrl): string
+    {
+        return $this->localPathForNormalizedMapStorageKey($this->mapStorageKeyFromUrl($fileUrl));
+    }
 
     private function fallbackRenderablePath(string $fileUrl): string
     {
@@ -1601,15 +1664,19 @@ class MapController extends Controller
 
     private function resolveOverlayFolder(string $label, string $directory): string
     {
-        $disk = Storage::disk('public');
+        $disk = $this->mapDisk();
         $canonicalFolder = "maps/{$directory}";
         $legacyFolder = "maps/{$label}";
 
-        if ($disk->exists($canonicalFolder)) {
+        if ($this->overlayPrefixHasAssets($disk, $canonicalFolder)) {
             return $canonicalFolder;
         }
 
-        return $legacyFolder;
+        if ($this->overlayPrefixHasAssets($disk, $legacyFolder)) {
+            return $legacyFolder;
+        }
+
+        return $canonicalFolder;
     }
 
     private function buildUploadTargets(): array
@@ -1620,8 +1687,10 @@ class MapController extends Controller
             $root = $this->resolveOverlayFolder($category, $directory);
             $entries = [['value' => '', 'label' => 'Category root']];
 
-            if (Storage::disk('public')->exists($root)) {
-                $directories = collect(Storage::disk('public')->allDirectories($root))
+            $disk = $this->mapDisk();
+
+            if ($this->overlayPrefixHasAssets($disk, $root)) {
+                $directories = collect($disk->allDirectories($root))
                     ->map(fn ($path) => trim($this->relativeOverlayFolder($path, $root), '/'))
                     ->filter(fn ($path) => $path !== '')
                     ->unique()
@@ -1653,7 +1722,7 @@ class MapController extends Controller
 
     private function overlayFilePayloadSize(string $path): int
     {
-        $disk = Storage::disk('public');
+        $disk = $this->mapDisk();
         $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
         if ($extension !== 'shp') {
@@ -1731,9 +1800,15 @@ class MapController extends Controller
                     $finalName = $this->resolveAvailableFileName($storagePath, $safeBaseName, $extension);
                 }
 
-                Storage::disk('s3')->makeDirectory($storagePath);
+                $mapDisk = $this->mapDisk();
+                $mapDisk->makeDirectory($storagePath);
 
-                $path = Storage::disk('s3')->putFileAs($storagePath, $file, $finalName);
+                $diskName = (string) config('filesystems.maps_disk', 'public');
+                $writeOptions = (config("filesystems.disks.{$diskName}.driver") === 's3')
+                    ? ['visibility' => 'public']
+                    : [];
+
+                $path = $mapDisk->putFileAs($storagePath, $file, $finalName, $writeOptions);
                 //$path = $file->store('forms');
                 if ($path) {
                     $uploadedFiles[] = [
@@ -1810,6 +1885,7 @@ class MapController extends Controller
             }
 
             $this->importIrrigatedAreaFile([
+                'path' => $path,
                 'name' => $file['name'] ?? basename($path),
                 'url' => $file['url'] ?? $this->mapFileUrl($path),
             ]);
@@ -1827,10 +1903,19 @@ class MapController extends Controller
         ];
 
         try {
-            $sourcePath = $this->normalizePublicStoragePath($this->toRelativeStoragePath($this->storagePathFromMapUrl($fileUrl)));
-            IrrigatedArea::query()->where('source_path', $sourcePath)->delete();
+            $explicitKey = $this->normalizePublicStoragePath((string) ($file['path'] ?? ''));
+            $canonicalKey = $explicitKey !== ''
+                ? $explicitKey
+                : $this->mapStorageKeyFromUrl($fileUrl);
 
-            $features = $this->featuresFromMapFile($fileUrl, $fileName, 'irrigated');
+            if ($canonicalKey === '') {
+                throw new \RuntimeException('Unable to resolve map storage key for database import.');
+            }
+
+            IrrigatedArea::query()->where('source_path', $canonicalKey)->delete();
+
+            $localPath = $this->localPathForNormalizedMapStorageKey($canonicalKey);
+            $features = $this->featuresFromMapLocalPath($localPath, $fileName, 'irrigated');
             $rows = [];
 
             foreach ($features as $featureIndex => $feature) {
@@ -1848,9 +1933,9 @@ class MapController extends Controller
                 }
 
                 $rows[] = [
-                    'source_path' => $sourcePath,
+                    'source_path' => $canonicalKey,
                     'source_file' => $fileName,
-                    'source_hash' => hash('sha256', $sourcePath . '|' . $featureIndex),
+                    'source_hash' => hash('sha256', $canonicalKey.'|'.$featureIndex),
                     'feature_index' => $featureIndex,
                     'min_lat' => $bounds['min_lat'],
                     'max_lat' => $bounds['max_lat'],
@@ -1915,14 +2000,16 @@ class MapController extends Controller
         $filesData = [];
         $foldersData = [];
 
+        $disk = $this->mapDisk();
+
         foreach (self::CATEGORY_DIRECTORY_MAP as $category => $directory) {
             $folder = $this->resolveOverlayFolder($category, $directory);
 
-            if (!Storage::disk('public')->exists($folder)) {
+            if (!$this->overlayPrefixHasAssets($disk, $folder)) {
                 continue;
             }
 
-            $files = collect(Storage::disk('public')->allFiles($folder));
+            $files = collect($disk->allFiles($folder));
             $folderCounts = [];
 
             foreach ($files as $file) {
@@ -1958,28 +2045,33 @@ class MapController extends Controller
     public function deleteFile(Request $request)
     {
         $path = $this->normalizePublicStoragePath((string) $request->path);
+        $mapDisk = $this->mapDisk();
+        $legacyDisk = Storage::disk('public');
 
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
-            $this->deleteIrrigatedAreaRowsForPath($path);
-            $category = $this->resolveCategoryFromStoragePath((string) $path);
-            $notificationResult = $this->notifyMapFileChange('delete', $category, [[
-                'name' => basename((string) $path),
-                'path' => (string) $path,
-                'url' => $this->mapFileUrl((string) $path),
-            ]]);
-
-            $this->clearMapDataCache();
-
+        if ($mapDisk->exists($path)) {
+            $mapDisk->delete($path);
+        } elseif ($legacyDisk->exists($path)) {
+            $legacyDisk->delete($path);
+        } else {
             return response()->json([
-                'message' => 'Deleted. ' . $notificationResult['admin_message'],
-                'notified_users_count' => $notificationResult['notified_users_count'],
-            ]);
+                'message' => 'File not found',
+            ], 404);
         }
 
+        $this->deleteIrrigatedAreaRowsForPath($path);
+        $category = $this->resolveCategoryFromStoragePath((string) $path);
+        $notificationResult = $this->notifyMapFileChange('delete', $category, [[
+            'name' => basename((string) $path),
+            'path' => (string) $path,
+            'url' => $this->mapFileUrl((string) $path),
+        ]]);
+
+        $this->clearMapDataCache();
+
         return response()->json([
-            'message' => 'File not found',
-        ], 404);
+            'message' => 'Deleted. '.$notificationResult['admin_message'],
+            'notified_users_count' => $notificationResult['notified_users_count'],
+        ]);
     }
 
     public function deleteFolder(Request $request)
@@ -1997,9 +2089,9 @@ class MapController extends Controller
             ], 422);
         }
 
-        $disk = Storage::disk('public');
+        $disk = $this->mapDisk();
 
-        if (!$disk->exists($folder)) {
+        if (count($disk->allFiles($folder)) === 0) {
             return response()->json([
                 'message' => 'Folder not found.',
             ], 404);
@@ -2037,16 +2129,22 @@ class MapController extends Controller
         }
 
         $path = $this->normalizePublicStoragePath($path);
-        $disk = Storage::disk('public');
-        $fullPath = $disk->path($path);
+        $disk = $this->mapDisk();
 
-        if (!$disk->exists($path) || !is_file($fullPath)) {
-            abort(404);
+        if ($disk->exists($path)) {
+            return $disk->response($path, basename($path), [
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            ]);
         }
 
-        return response()->file($fullPath, [
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-        ]);
+        $legacy = Storage::disk('public');
+        if ($legacy->exists($path)) {
+            return response()->file($legacy->path($path), [
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            ]);
+        }
+
+        abort(404);
     }
 
     public function mapNotifications(Request $request)
@@ -2666,13 +2764,13 @@ class MapController extends Controller
 
     private function currentMapDataSignature(): string
     {
-        $disk = Storage::disk('public');
+        $disk = $this->mapDisk();
         $entries = [];
 
         foreach (self::CATEGORY_DIRECTORY_MAP as $category => $directory) {
             $root = $this->resolveOverlayFolder($category, $directory);
 
-            if (!$disk->exists($root)) {
+            if (!$this->overlayPrefixHasAssets($disk, $root)) {
                 $entries[] = "{$root}|missing";
                 continue;
             }
@@ -2871,9 +2969,15 @@ class MapController extends Controller
 
     private function mapFileUrl(string $path): string
     {
-        $segments = array_map('rawurlencode', explode('/', $this->normalizePublicStoragePath($path)));
+        $path = $this->normalizePublicStoragePath($path);
 
-        return url('/map/file/' . implode('/', $segments));
+        if ($this->mapDiskUsesDirectPublicUrls()) {
+            return $this->mapDisk()->url($path);
+        }
+
+        $segments = array_map('rawurlencode', explode('/', $path));
+
+        return url('/map/file/'.implode('/', $segments));
     }
 
     private function normalizePublicStoragePath(string $path): string
@@ -2905,7 +3009,7 @@ class MapController extends Controller
         return self::IRRIGATED_CHART_CACHE_KEY;
     }
 
-        private function mapDataFingerprint(array $paths): string
+    private function mapDataFingerprint(array $paths): string
     {
         $parts = [];
 
@@ -3011,7 +3115,7 @@ class MapController extends Controller
 
     private function resolveAvailableBaseName(string $storagePath, string $baseName, array $extensions): string
     {
-        $disk = Storage::disk('public');
+        $disk = $this->mapDisk();
         $candidate = $baseName;
         $counter = 1;
 
@@ -3036,7 +3140,7 @@ class MapController extends Controller
 
     private function resolveAvailableFileName(string $storagePath, string $baseName, string $extension): string
     {
-        $disk = Storage::disk('public');
+        $disk = $this->mapDisk();
         $candidate = $baseName . '.' . $extension;
         $counter = 1;
 

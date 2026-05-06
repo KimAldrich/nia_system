@@ -1370,7 +1370,7 @@ input:checked + .slider:before {
     <!-- MAP -->
     <div id="map"></div>
 
-<div id="map-status">Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.</div>
+<div id="map-status">Tick a layer to load the uploaded polygons from cloud map storage (<code>maps/…</code>).</div>
 <div id="miniMap"></div>
 
 @if(auth()->check() && auth()->user()->role === 'admin')
