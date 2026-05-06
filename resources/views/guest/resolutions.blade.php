@@ -181,6 +181,7 @@
                                 $files = collect([
                                     (object) [
                                         'file_path' => $res->file_path,
+                                        'file_url' => app(\App\Services\DocumentStorageService::class)->url($res->file_path),
                                         'original_name' => $res->original_name,
                                         'created_at' => $res->created_at,
                                     ],
@@ -205,7 +206,7 @@
                                 <td>{{ $file->original_name }}</td>
                                 <td>{{ optional($file->created_at)->format('M d, Y') }}</td>
                                 <td style="text-align: right;">
-                                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-download" download>
+                                    <a href="{{ $file->file_url }}" target="_blank" class="btn-download" download>
                                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                         Download
                                     </a>

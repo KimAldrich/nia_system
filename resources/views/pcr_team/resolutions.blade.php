@@ -346,13 +346,13 @@
                     <div style="margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e4e7; height: 120px; background: #fafafa; position: relative; transition: opacity 0.2s;"
                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
 
-                        <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank"
+                        <a href="{{ $resolution->file_url }}" target="_blank"
                             style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: pointer;"
                             title="Click to view or download document"></a>
 
                         @if (strtolower($extension) === 'pdf')
                             <iframe
-                                src="{{ asset('storage/' . $resolution->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
+                                src="{{ $resolution->preview_url }}"
                                 width="100%" height="100%" scrolling="no"
                                 style="border: none; transform: scale(0.95); transform-origin: top center; pointer-events: none; overflow: hidden;">
                             </iframe>
@@ -386,7 +386,7 @@
 
                     <!-- ✅ FS TEAM STYLE BUTTONS -->
                     <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                        <a href="{{ asset('storage/' . $resolution->file_path) }}" target="_blank" class="btn-dark"
+                        <a href="{{ $resolution->file_url }}" target="_blank" class="btn-dark"
                             style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
                             Download
                         </a>

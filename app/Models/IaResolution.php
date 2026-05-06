@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\DocumentStorageService;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ class IaResolution extends Model
 
     public static function attachUploadedFile(UploadedFile $file, string $team): self
     {
-        $path = $file->store('resolutions', 'public');
+        $path = app(DocumentStorageService::class)->store($file, 'resolutions');
         $title = self::cleanedTitleFromFileName($file->getClientOriginalName());
 
         $resolution = self::firstOrCreate(
@@ -47,6 +48,16 @@ class IaResolution extends Model
         $resolution->refreshPrimaryAttachment();
 
         return $resolution->fresh('files');
+    }
+
+    public function getFileUrlAttribute(): string
+    {
+        return app(DocumentStorageService::class)->url($this->file_path);
+    }
+
+    public function getPreviewUrlAttribute(): string
+    {
+        return app(DocumentStorageService::class)->previewUrl($this->file_path);
     }
 
     public function refreshPrimaryAttachment(): void

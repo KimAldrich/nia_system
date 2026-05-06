@@ -9,6 +9,8 @@
                     (object) [
                         'id' => $resolution->id,
                         'file_path' => $resolution->file_path,
+                        'file_url' => app(\App\Services\DocumentStorageService::class)->url($resolution->file_path),
+                        'preview_url' => app(\App\Services\DocumentStorageService::class)->previewUrl($resolution->file_path),
                         'original_name' => $resolution->original_name,
                         'created_at' => $resolution->created_at,
                     ],
@@ -39,11 +41,11 @@
                     @endphp
                     <div class="attachment-card">
                         <div class="attachment-preview">
-                            <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="attachment-link"
+                            <a href="{{ $file->file_url }}" target="_blank" class="attachment-link"
                                 title="Click to view or download document"></a>
 
                             @if ($extension === 'pdf')
-                                <iframe src="{{ asset('storage/' . $file->file_path) }}#page=1&view=Fit&toolbar=0&navpanes=0"
+                                <iframe src="{{ $file->preview_url }}"
                                     class="attachment-frame" scrolling="no"></iframe>
                             @else
                                 <div class="attachment-fallback">
@@ -67,7 +69,7 @@
                         </div>
 
                         <div class="attachment-actions">
-                            <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="btn-dark"
+                            <a href="{{ $file->file_url }}" target="_blank" class="btn-dark"
                                 style="flex: 1; padding: 10px 14px; text-align: center; min-width: 100px;">
                                 Download
                             </a>

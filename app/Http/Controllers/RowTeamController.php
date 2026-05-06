@@ -105,7 +105,7 @@ class RowTeamController extends Controller
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
-            $path = $file->store('forms', 'public');
+            $path = app(\App\Services\DocumentStorageService::class)->store($file, 'forms');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 
@@ -138,11 +138,9 @@ class RowTeamController extends Controller
         $file = $request->file('document');
 
         $previousName = $downloadable->original_name;
-        if (Storage::disk('public')->exists($downloadable->file_path)) {
-            Storage::disk('public')->delete($downloadable->file_path);
-        }
+        app(\App\Services\DocumentStorageService::class)->delete($downloadable->file_path);
 
-        $path = $file->store('forms', 'public');
+        $path = app(\App\Services\DocumentStorageService::class)->store($file, 'forms');
         $downloadable->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
         $teamLabel = $this->notifications()->teamLabel('row_team');
@@ -157,9 +155,7 @@ class RowTeamController extends Controller
         $downloadable = Downloadable::findOrFail($id);
 
         $deletedName = $downloadable->original_name;
-        if (Storage::disk('public')->exists($downloadable->file_path)) {
-            Storage::disk('public')->delete($downloadable->file_path);
-        }
+        app(\App\Services\DocumentStorageService::class)->delete($downloadable->file_path);
 
         $downloadable->delete();
 
@@ -222,11 +218,9 @@ class RowTeamController extends Controller
         $file = $request->file('document');
 
         $previousName = $resolution->original_name;
-        if (Storage::disk('public')->exists($resolution->file_path)) {
-            Storage::disk('public')->delete($resolution->file_path);
-        }
+        app(\App\Services\DocumentStorageService::class)->delete($resolution->file_path);
 
-        $path = $file->store('resolutions', 'public');
+        $path = app(\App\Services\DocumentStorageService::class)->store($file, 'resolutions');
         $resolution->update(['file_path' => $path, 'original_name' => $file->getClientOriginalName()]);
 
         $resolutionTeam = $resolution->team ?: 'row_team';
@@ -260,9 +254,7 @@ class RowTeamController extends Controller
         $resolutionFile = IaResolutionFile::with('resolution')->findOrFail($id);
         $resolution = $resolutionFile->resolution;
         $deletedName = $resolutionFile->original_name;
-        if (Storage::disk('public')->exists($resolutionFile->file_path)) {
-            Storage::disk('public')->delete($resolutionFile->file_path);
-        }
+        app(\App\Services\DocumentStorageService::class)->delete($resolutionFile->file_path);
 
         // Optional: role/team check (same as your comment)
         // if ($resolution->team !== 'row_team') {

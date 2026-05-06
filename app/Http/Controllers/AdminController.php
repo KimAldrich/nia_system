@@ -339,7 +339,7 @@ class AdminController extends Controller
         ], $fileValidationMessages);
 
         $file = $request->file('document');
-        $path = $file->store('forms', 'public');
+        $path = app(\App\Services\DocumentStorageService::class)->store($file, 'forms');
 
         $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
