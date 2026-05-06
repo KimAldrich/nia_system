@@ -1209,6 +1209,75 @@ class MapController extends Controller
         throw new \RuntimeException('Map source file was not found.');
     }
 
+    /**
+     * Use a fresh local copy for import/indexing so S3-backed files are parsed
+     * from the Laravel runtime filesystem, then cleaned up immediately.
+     */
+    private function withTemporaryLocalMapFile(string $storageKey, callable $callback)
+    {
+        $storagePath = $this->normalizePublicStoragePath($storageKey);
+        $disk = $this->mapDisk();
+
+        if ($disk->exists($storagePath)) {
+            $tempDir = storage_path('app/temp_maps/import_' . uniqid('', true));
+            $tempPath = $tempDir . '/' . basename($storagePath);
+
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            if (file_put_contents($tempPath, $disk->get($storagePath)) === false) {
+                throw new \RuntimeException('Unable to create a temporary local map file for indexing.');
+            }
+
+            $this->copyShapefileCompanionsToLocal($disk, $storagePath, $tempPath);
+
+            try {
+                return $callback($tempPath);
+            } finally {
+                $this->deleteLocalDirectory($tempDir);
+            }
+        }
+
+        $publicDisk = Storage::disk('public');
+        if ($publicDisk->exists($storagePath)) {
+            $fullPath = $publicDisk->path($storagePath);
+
+            if (is_file($fullPath)) {
+                return $callback($fullPath);
+            }
+        }
+
+        throw new \RuntimeException('Map source file was not found.');
+    }
+
+    private function copyShapefileCompanionsToLocal(
+        \Illuminate\Contracts\Filesystem\Filesystem $disk,
+        string $storagePath,
+        string $tempPath
+    ): void {
+        $extension = strtolower(pathinfo($storagePath, PATHINFO_EXTENSION));
+
+        if (!in_array($extension, self::SHAPEFILE_COMPANION_EXTENSIONS, true)) {
+            return;
+        }
+
+        $remoteBase = substr($storagePath, 0, -strlen(pathinfo($storagePath, PATHINFO_EXTENSION)) - 1);
+        $localBase = substr($tempPath, 0, -strlen(pathinfo($tempPath, PATHINFO_EXTENSION)) - 1);
+
+        foreach (self::SHAPEFILE_COMPANION_EXTENSIONS as $companionExtension) {
+            foreach ([$companionExtension, strtoupper($companionExtension)] as $candidateExtension) {
+                $companionRemotePath = $remoteBase . '.' . $candidateExtension;
+                $companionLocalPath = $localBase . '.' . strtolower($companionExtension);
+
+                if ($disk->exists($companionRemotePath)) {
+                    file_put_contents($companionLocalPath, $disk->get($companionRemotePath));
+                    break;
+                }
+            }
+        }
+    }
+
     private function storagePathFromMapUrl(string $fileUrl): string
     {
         return $this->localPathForNormalizedMapStorageKey($this->mapStorageKeyFromUrl($fileUrl));
@@ -2074,16 +2143,20 @@ class MapController extends Controller
 
         if ($mapFeatureImportDeferred) {
             $message .= ' Large map upload saved. Run php artisan map:rebuild-features to index it for map display.';
-        } elseif (($mapFeatureImportResult['files_imported'] ?? 0) > 0 && $categoryDirectory !== 'irrigated') {
+        } elseif (($mapFeatureImportResult['features_imported'] ?? 0) > 0 && $categoryDirectory !== 'irrigated') {
             $message .= ' Indexed ' . ((int) ($mapFeatureImportResult['features_imported'] ?? 0)) . ' feature(s) into map_features.';
+        } elseif (($mapFeatureImportResult['files_imported'] ?? 0) > 0 && $categoryDirectory !== 'irrigated') {
+            $message .= ' Upload saved, but no map features were indexed. Check that the file uses WGS84 coordinates or that cloud reprojection support is available.';
         } elseif (!empty($mapFeatureImportResult['failed_files'] ?? []) && $categoryDirectory !== 'irrigated') {
             $message .= ' Upload saved, but map feature indexing failed for ' . count($mapFeatureImportResult['failed_files']) . ' file(s).';
         }
 
         if ($dbImportDeferred) {
             $message .= ' Large irrigated upload saved. Run php artisan map:rebuild-irrigated-areas to index it for map display.';
-        } elseif (($dbImportResult['files_imported'] ?? 0) > 0) {
+        } elseif (($dbImportResult['features_imported'] ?? 0) > 0) {
             $message .= ' Indexed ' . ((int) ($dbImportResult['features_imported'] ?? 0)) . ' feature(s) into irrigated_areas.';
+        } elseif (($dbImportResult['files_imported'] ?? 0) > 0) {
+            $message .= ' Upload saved, but no irrigated features were indexed. Check that the file uses WGS84 coordinates or that cloud reprojection support is available.';
         } elseif (!empty($dbImportResult['failed_files'] ?? [])) {
             $message .= ' Upload saved, but DB indexing failed for ' . count($dbImportResult['failed_files']) . ' file(s).';
         } elseif (($dbImportResult['files_imported'] ?? 0) === 0 && str_contains(strtolower($displayUploadDirectory), 'irrigated')) {
@@ -2261,25 +2334,26 @@ class MapController extends Controller
                 ->where('source_path', $canonicalKey)
                 ->delete();
 
-            $localPath = $this->localPathForNormalizedMapStorageKey($canonicalKey);
-            $features = $this->featuresFromMapLocalPath($localPath, $fileName, $category);
-            $importSummary = $this->insertMapFeatures($features, $fileName, $canonicalKey, $category);
-            $result['features_imported'] += $importSummary['features_imported'];
+            $this->withTemporaryLocalMapFile($canonicalKey, function (string $localPath) use (&$result, $fileName, $canonicalKey, $category) {
+                $features = $this->featuresFromMapLocalPath($localPath, $fileName, $category);
+                $importSummary = $this->insertMapFeatures($features, $fileName, $canonicalKey, $category);
+                $result['features_imported'] += $importSummary['features_imported'];
 
-            if (
-                $result['features_imported'] === 0
-                && $importSummary['geometry_features'] > 0
-                && $importSummary['wgs84_rejected'] === $importSummary['geometry_features']
-            ) {
-                $reprojectedGeoJson = $this->reprojectFileToWgs84GeoJson($localPath);
+                if (
+                    $result['features_imported'] === 0
+                    && $importSummary['geometry_features'] > 0
+                    && $importSummary['wgs84_rejected'] === $importSummary['geometry_features']
+                ) {
+                    $reprojectedGeoJson = $this->reprojectFileToWgs84GeoJson($localPath);
 
-                if ($reprojectedGeoJson !== null && is_file($reprojectedGeoJson)) {
-                    $reprojectedFeatures = $this->featuresFromGeoJsonFile($reprojectedGeoJson, $fileName, $category);
-                    $reprojectedSummary = $this->insertMapFeatures($reprojectedFeatures, $fileName, $canonicalKey, $category);
-                    $result['features_imported'] += $reprojectedSummary['features_imported'];
-                    $this->deleteLocalDirectory(dirname($reprojectedGeoJson));
+                    if ($reprojectedGeoJson !== null && is_file($reprojectedGeoJson)) {
+                        $reprojectedFeatures = $this->featuresFromGeoJsonFile($reprojectedGeoJson, $fileName, $category);
+                        $reprojectedSummary = $this->insertMapFeatures($reprojectedFeatures, $fileName, $canonicalKey, $category);
+                        $result['features_imported'] += $reprojectedSummary['features_imported'];
+                        $this->deleteLocalDirectory(dirname($reprojectedGeoJson));
+                    }
                 }
-            }
+            });
 
             $result['files_imported'] = 1;
         } catch (\Throwable $exception) {
@@ -2374,37 +2448,38 @@ class MapController extends Controller
 
             IrrigatedArea::query()->where('source_path', $canonicalKey)->delete();
 
-            $localPath = $this->localPathForNormalizedMapStorageKey($canonicalKey);
-            $features = $this->featuresFromMapLocalPath($localPath, $fileName, 'irrigated');
+            $this->withTemporaryLocalMapFile($canonicalKey, function (string $localPath) use (&$result, $fileName, $canonicalKey) {
+                $features = $this->featuresFromMapLocalPath($localPath, $fileName, 'irrigated');
 
-            \Log::info('Map Import: Extracted '.count($features)." features from {$fileName}");
+                \Log::info('Map Import: Extracted '.count($features)." features from {$fileName}");
 
-            $importSummary = $this->insertIrrigatedFeatures($features, $fileName, $canonicalKey);
-            $result['features_imported'] += $importSummary['features_imported'];
+                $importSummary = $this->insertIrrigatedFeatures($features, $fileName, $canonicalKey);
+                $result['features_imported'] += $importSummary['features_imported'];
 
-            if (
-                $result['features_imported'] === 0
-                && $importSummary['geometry_features'] > 0
-                && $importSummary['wgs84_rejected'] === $importSummary['geometry_features']
-            ) {
-                $reprojectedGeoJson = $this->reprojectFileToWgs84GeoJson($localPath);
+                if (
+                    $result['features_imported'] === 0
+                    && $importSummary['geometry_features'] > 0
+                    && $importSummary['wgs84_rejected'] === $importSummary['geometry_features']
+                ) {
+                    $reprojectedGeoJson = $this->reprojectFileToWgs84GeoJson($localPath);
 
-                if ($reprojectedGeoJson !== null && is_file($reprojectedGeoJson)) {
-                    $reprojectedFeatures = $this->featuresFromGeoJsonFile($reprojectedGeoJson, $fileName, 'irrigated');
-                    $reprojectedSummary = $this->insertIrrigatedFeatures($reprojectedFeatures, $fileName, $canonicalKey);
-                    $result['features_imported'] += $reprojectedSummary['features_imported'];
+                    if ($reprojectedGeoJson !== null && is_file($reprojectedGeoJson)) {
+                        $reprojectedFeatures = $this->featuresFromGeoJsonFile($reprojectedGeoJson, $fileName, 'irrigated');
+                        $reprojectedSummary = $this->insertIrrigatedFeatures($reprojectedFeatures, $fileName, $canonicalKey);
+                        $result['features_imported'] += $reprojectedSummary['features_imported'];
 
-                    if ($reprojectedSummary['features_imported'] > 0) {
-                        \Log::info("Map Import: Reprojected {$fileName} to EPSG:4326 and inserted {$reprojectedSummary['features_imported']} row(s).");
+                        if ($reprojectedSummary['features_imported'] > 0) {
+                            \Log::info("Map Import: Reprojected {$fileName} to EPSG:4326 and inserted {$reprojectedSummary['features_imported']} row(s).");
+                        } else {
+                            \Log::warning("Map Import: Reprojection ran for {$fileName} but still produced no insertable WGS84 features.");
+                        }
+
+                        $this->deleteLocalDirectory(dirname($reprojectedGeoJson));
                     } else {
-                        \Log::warning("Map Import: Reprojection ran for {$fileName} but still produced no insertable WGS84 features.");
+                        \Log::warning("Map Import: Skipped automatic reprojection for {$fileName}. ogr2ogr is unavailable or conversion failed.");
                     }
-
-                    $this->deleteLocalDirectory(dirname($reprojectedGeoJson));
-                } else {
-                    \Log::warning("Map Import: Skipped automatic reprojection for {$fileName}. ogr2ogr is unavailable or conversion failed.");
                 }
-            }
+            });
 
             $result['files_imported'] = 1;
 
