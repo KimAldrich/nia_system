@@ -1352,6 +1352,10 @@ input:checked + .slider:before {
                     <input type="checkbox" id="showAllIrrigated" checked>
                     <span>Show All Irrigated</span>
                 </label>
+                <label class="layer-filter-row">
+                    <input type="checkbox" id="toggleShapeDisplay" checked>
+                    <span>Show Polygon Shape (Uncheck for Rectangle)</span>
+                </label>
                 <input type="search" id="municipalityFilterSearch" class="layer-filter-search" placeholder="Search Pangasinan municipalities">
                 <div id="municipalityFilterList" class="layer-filter-list"></div>
                 <div id="municipalitySelectedList" class="layer-selected-list"></div>
@@ -1445,6 +1449,7 @@ input:checked + .slider:before {
 @endif
 
 <!-- the map -->
+ <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
@@ -1489,6 +1494,7 @@ let irrigatedStats = {};
 let irrigatedStatsPromise = null;
 const municipalityBoundaryIndex = new Map();
 const municipalityDisplayNameIndex = new Map();
+const municipalityFeatureIndex = new Map();
 const renderedOverlayDataCache = {};
 let municipalityFilterBoundsLayer = null;
 let municipalityOverlayLoadToken = 0;
@@ -1598,6 +1604,7 @@ const municipalityFilterList = document.getElementById('municipalityFilterList')
 const municipalityFilterSummary = document.getElementById('municipalityFilterSummary');
 const municipalitySelectedList = document.getElementById('municipalitySelectedList');
 const showAllIrrigatedCheckbox = document.getElementById('showAllIrrigated');
+const toggleShapeDisplayCheckbox = document.getElementById('toggleShapeDisplay');
 
 function renderTargetFolderOptions() {
     const categorySelect = document.querySelector('select[name="category"]');
@@ -1801,10 +1808,16 @@ if (showAllIrrigatedCheckbox) {
         updateMunicipalityFilterSummary();
         renderMunicipalitySelectedList();
         updateMunicipalityFilterBounds();
-
+        elevateFilteredMunicipalities();
         if (overlayToggles.irrigated?.checked) {
             await showOverlayCategory('irrigated');
         }
+    });
+}
+
+if (toggleShapeDisplayCheckbox) {
+    toggleShapeDisplayCheckbox.addEventListener('change', () => {
+        updateMunicipalityFilterBounds();
     });
 }
 
@@ -1883,6 +1896,17 @@ async function loadBaseMap() {
     const data = await response.json();
     baseMapGeoJson = data;
 
+    municipalityFeatureIndex.clear();
+    if (Array.isArray(baseMapGeoJson.features)) {
+        baseMapGeoJson.features.forEach(feature => {
+            const name = toTitleCase(getFeatureName(feature));
+            const key = normalizeName(name);
+            if (key) {
+                municipalityFeatureIndex.set(key, feature);
+            }
+        });
+    }
+
     // Clear previous markers
     municipalityMarkers.forEach(m => map.removeLayer(m));
     municipalityMarkers = [];
@@ -1927,13 +1951,29 @@ async function loadBaseMap() {
             });
 
             layer.on('mouseout', function() {
-                if (selectedBaseLayer === layer) {
-                    return;
-                }
+    const name = toTitleCase(getFeatureName(layer.feature));
+    const key = normalizeName(name);
 
-                geoLayer.resetStyle(layer);
-                layer.closeTooltip();
-            });
+    const selectedKeys = new Set(
+        getMunicipalityFilterSelections().map(item => item.key)
+    );
+
+    // ❗ DO NOT RESET if:
+    // - it's clicked
+    // - OR it's selected in filter
+    if (selectedBaseLayer === layer || selectedKeys.has(key)) {
+        return;
+    }
+
+    geoLayer.resetStyle(layer);
+
+    if (layer.getElement()) {
+        layer.getElement().style.transform = '';
+        layer.getElement().style.filter = '';
+    }
+
+    layer.closeTooltip();
+});
 
             layer.on('click', async function() {
                 updateStatus('Loading chart data for ' + name + '...');
@@ -2240,7 +2280,7 @@ function renderMunicipalitySelectedList() {
             updateMunicipalityFilterSummary();
             renderMunicipalitySelectedList();
             updateMunicipalityFilterBounds();
-
+            elevateFilteredMunicipalities()
             if (overlayToggles.irrigated?.checked) {
                 await showOverlayCategory('irrigated');
             }
@@ -2284,19 +2324,21 @@ function renderMunicipalityFilterOptions() {
     `).join('');
 
     municipalityFilterList.querySelectorAll('input[type="checkbox"][data-municipality-key]').forEach(input => {
-        input.addEventListener('change', async event => {
-            if (event.target.checked && showAllIrrigatedCheckbox) {
-                showAllIrrigatedCheckbox.checked = false;
-            }
+input.addEventListener('change', async event => {
+    if (event.target.checked && showAllIrrigatedCheckbox) {
+        showAllIrrigatedCheckbox.checked = false;
+    }
 
-            updateMunicipalityFilterSummary();
-            renderMunicipalitySelectedList();
-            updateMunicipalityFilterBounds();
+    updateMunicipalityFilterSummary();
+    renderMunicipalitySelectedList();
+    updateMunicipalityFilterBounds();
 
-            if (overlayToggles.irrigated?.checked) {
-                await showOverlayCategory('irrigated');
-            }
-        });
+    elevateFilteredMunicipalities(); // 🔥 ADD THIS
+
+    if (overlayToggles.irrigated?.checked) {
+        await showOverlayCategory('irrigated');
+    }
+});
     });
 
     filterMunicipalityOptions();
@@ -2488,9 +2530,19 @@ function updateMunicipalityFilterBounds() {
         return;
     }
 
+    const usePolygonShape = toggleShapeDisplayCheckbox?.checked;
+    const geojsonFeatures = features
+        .map(item => {
+            if (usePolygonShape) {
+                const feature = municipalityFeatureIndex.get(normalizeName(item.properties.name));
+                return feature ? feature : item;
+            }
+            return item;
+        });
+
     municipalityFilterBoundsLayer = L.geoJSON({
         type: 'FeatureCollection',
-        features
+        features: geojsonFeatures
     }, {
         pane: 'landBoundaryPane',
         interactive: false,
@@ -2504,10 +2556,119 @@ function updateMunicipalityFilterBounds() {
     }).addTo(map);
 }
 
-async function buildFilteredIrrigatedOverlayData(selectedBounds) {
-    const boundsList = Array.isArray(selectedBounds) ? selectedBounds.filter(Boolean) : [];
+// Get bounding box of a GeoJSON feature
+function getFeatureBounds(feature) {
+    if (!feature || !feature.geometry) return null;
 
-    if (!boundsList.length) {
+    const geometry = feature.geometry;
+
+    if (geometry.type === 'Polygon') {
+        const coords = geometry.coordinates[0];
+        let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+
+        coords.forEach(coord => {
+            minLng = Math.min(minLng, coord[0]);
+            maxLng = Math.max(maxLng, coord[0]);
+            minLat = Math.min(minLat, coord[1]);
+            maxLat = Math.max(maxLat, coord[1]);
+        });
+
+        return L.latLngBounds(L.latLng(minLat, minLng), L.latLng(maxLat, maxLng));
+    } else if (geometry.type === 'MultiPolygon') {
+        let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+
+        geometry.coordinates.forEach(polygon => {
+            polygon[0].forEach(coord => {
+                minLng = Math.min(minLng, coord[0]);
+                maxLng = Math.max(maxLng, coord[0]);
+                minLat = Math.min(minLat, coord[1]);
+                maxLat = Math.max(maxLat, coord[1]);
+            });
+        });
+
+        return L.latLngBounds(L.latLng(minLat, minLng), L.latLng(maxLat, maxLng));
+    }
+
+    return null;
+}
+
+function isPointInPolygon(point, polygon) {
+    const [x, y] = point;
+    let inside = false;
+
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const [xi, yi] = polygon[i];
+        const [xj, yj] = polygon[j];
+
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+            inside = !inside;
+        }
+    }
+
+    return inside;
+}
+
+function getFeatureCentroid(feature) {
+    if (!feature || !feature.geometry) return null;
+
+    const geometry = feature.geometry;
+
+    if (geometry.type === 'Polygon') {
+        const coords = geometry.coordinates[0];
+        let lngSum = 0, latSum = 0, count = 0;
+
+        coords.forEach(coord => {
+            lngSum += coord[0];
+            latSum += coord[1];
+            count++;
+        });
+
+        return [latSum / count, lngSum / count];
+    }
+
+    if (geometry.type === 'MultiPolygon') {
+        let totalLng = 0, totalLat = 0, totalCount = 0;
+
+        geometry.coordinates.forEach(polygon => {
+            polygon[0].forEach(coord => {
+                totalLng += coord[0];
+                totalLat += coord[1];
+                totalCount++;
+            });
+        });
+
+        return [totalLat / totalCount, totalLng / totalCount];
+    }
+
+    return null;
+}
+
+function doesFeatureIntersectMunicipality(feature, municipalityGeometry) {
+    if (!feature || !municipalityGeometry) return false;
+
+    const centroid = getFeatureCentroid(feature);
+    if (!centroid) return false;
+
+    const [lat, lng] = centroid;
+
+    if (municipalityGeometry.type === 'Polygon') {
+        return isPointInPolygon([lng, lat], municipalityGeometry.coordinates[0]);
+    }
+
+    if (municipalityGeometry.type === 'MultiPolygon') {
+        return municipalityGeometry.coordinates.some(polygon =>
+            isPointInPolygon([lng, lat], polygon[0])
+        );
+    }
+
+    return false;
+}
+
+async function buildFilteredIrrigatedOverlayData(selections) {
+    const selectionList = Array.isArray(selections) ? selections.filter(Boolean) : [];
+
+    // ❌ nothing selected → return empty
+    if (!selectionList.length) {
         return {
             type: 'FeatureCollection',
             category: 'irrigated',
@@ -2518,22 +2679,62 @@ async function buildFilteredIrrigatedOverlayData(selectedBounds) {
         };
     }
 
-    const payloads = await Promise.all(boundsList.map(bounds => loadIrrigatedAreasForBounds(bounds)));
-    const basePayload = payloads.find(Boolean) || {};
-
-    const features = payloads.flatMap(payload => Array.isArray(payload.features) ? payload.features : []);
-    const failedFiles = payloads.flatMap(payload => Array.isArray(payload.failed_files) ? payload.failed_files : []);
-
-    // IMPORTANT:
-    // The API request uses bbox intersection (viewport bounds), but we must enforce
-    // that only features fully contained inside the selected municipality bbox are rendered.
-    const boundsExtentsList = boundsList
-        .map(getLatLngBoundsExtents)
+    // ✅ Get municipality FEATURES (not just bounds)
+    const selectedMunicipalities = selectionList
+        .map(sel => municipalityFeatureIndex.get(sel.key))
         .filter(Boolean);
 
-    const filteredFeatures = boundsExtentsList.length
-        ? features.filter(feature => isFeatureFullyInsideAnyBounds(feature, boundsExtentsList))
-        : features;
+    if (!selectedMunicipalities.length) {
+        return {
+            type: 'FeatureCollection',
+            category: 'irrigated',
+            label: 'Irrigated Area',
+            feature_count: 0,
+            failed_files: [],
+            features: []
+        };
+    }
+
+    // still use bounds for API (performance)
+    const boundsList = selectionList
+        .map(selection => municipalityBoundaryIndex.get(selection.key))
+        .filter(Boolean);
+
+    const payloads = await Promise.all(
+        boundsList.map(bounds => loadIrrigatedAreasForBounds(bounds))
+    );
+
+    const basePayload = payloads.find(Boolean) || {};
+    const failedFiles = payloads.flatMap(p => Array.isArray(p.failed_files) ? p.failed_files : []);
+
+    // 🔥 CLIP FEATURES USING TURF
+    const features = payloads.flatMap(payload => {
+        const rawFeatures = Array.isArray(payload.features) ? payload.features : [];
+
+        return rawFeatures.flatMap(feature => {
+            const clippedResults = [];
+
+            selectedMunicipalities.forEach(municipality => {
+                try {
+                    const clipped = turf.intersect(feature, municipality);
+
+                    if (clipped) {
+                        clipped.properties = {
+                            ...(feature.properties || {}),
+                            _clipped: true
+                        };
+
+                        clippedResults.push(clipped);
+                    }
+
+                } catch (e) {
+                    console.warn('Clip error:', e);
+                }
+            });
+
+            return clippedResults;
+        });
+    });
 
     return {
         ...basePayload,
@@ -2541,7 +2742,7 @@ async function buildFilteredIrrigatedOverlayData(selectedBounds) {
         category: 'irrigated',
         label: 'Irrigated Area',
         failed_files: failedFiles,
-        features,
+        features: features,
         rendered_feature_count: features.length
     };
 }
@@ -2805,7 +3006,7 @@ async function showOverlayCategory(categoryKey) {
             return;
         }
 
-        const mergedPayload = await buildFilteredIrrigatedOverlayData(selectedBounds);
+        const mergedPayload = await buildFilteredIrrigatedOverlayData(selections);
 
         if (loadToken !== municipalityOverlayLoadToken) {
             return;
@@ -4025,5 +4226,51 @@ function hideMapLoader() {
     }
 }
 
+function elevateFilteredMunicipalities() {
+    if (!geoLayer) return;
+
+    const selectedKeys = new Set(
+        getMunicipalityFilterSelections().map(item => item.key)
+    );
+
+    geoLayer.eachLayer(layer => {
+        const name = toTitleCase(getFeatureName(layer.feature));
+        const key = normalizeName(name);
+
+        if (!key) return;
+
+        if (selectedKeys.has(key)) {
+
+            // 🔥 ELEVATED STYLE
+            layer.setStyle({
+                color: '#ff4141',
+                weight: 4,
+                fillColor: '#757575fb',
+                fillOpacity: 0.9
+            });
+
+            layer.bringToFront();
+
+            // 💡 fake 3D lift
+            if (layer.getElement()) {
+                layer.getElement().style.transform = 'translateY(-6px)';
+                layer.getElement().style.filter = 'drop-shadow(0 6px 8px rgba(0,0,0,0.5))';
+                layer.getElement().style.transition = 'all 0.2s ease';
+            }
+
+        } else {
+
+            // ❗ don't override clicked selection
+            if (selectedBaseLayer === layer) return;
+
+            geoLayer.resetStyle(layer);
+
+            if (layer.getElement()) {
+                layer.getElement().style.transform = '';
+                layer.getElement().style.filter = '';
+            }
+        }
+    });
+}
 </script>
 @endsection
