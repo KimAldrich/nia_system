@@ -1946,53 +1946,34 @@ class MapController extends Controller
 
             $localPath = $this->localPathForNormalizedMapStorageKey($canonicalKey);
             $features = $this->featuresFromMapLocalPath($localPath, $fileName, 'irrigated');
-            $rows = [];
 
             \Log::info('Map Import: Extracted '.count($features)." features from {$fileName}");
 
-            foreach ($features as $featureIndex => $feature) {
-                $compactFeature = $this->compactRenderedFeature($feature, $fileName, 'irrigated');
-                $geometry = $compactFeature['geometry'] ?? null;
+            $importSummary = $this->insertIrrigatedFeatures($features, $fileName, $canonicalKey);
+            $result['features_imported'] += $importSummary['features_imported'];
 
-                if (!is_array($geometry)) {
-                    continue;
-                }
+            if (
+                $result['features_imported'] === 0
+                && $importSummary['geometry_features'] > 0
+                && $importSummary['wgs84_rejected'] === $importSummary['geometry_features']
+            ) {
+                $reprojectedGeoJson = $this->reprojectFileToWgs84GeoJson($localPath);
 
-                $bounds = $this->geometryBounds($geometry);
+                if ($reprojectedGeoJson !== null && is_file($reprojectedGeoJson)) {
+                    $reprojectedFeatures = $this->featuresFromGeoJsonFile($reprojectedGeoJson, $fileName, 'irrigated');
+                    $reprojectedSummary = $this->insertIrrigatedFeatures($reprojectedFeatures, $fileName, $canonicalKey);
+                    $result['features_imported'] += $reprojectedSummary['features_imported'];
 
-                if (!$bounds || !$this->boundsLookLikeWgs84($bounds)) {
-                    if ($featureIndex === 0) {
-                        \Log::warning("Map Import: Feature 0 in {$fileName} skipped. Bounds are not WGS84.", ['bounds' => $bounds]);
+                    if ($reprojectedSummary['features_imported'] > 0) {
+                        \Log::info("Map Import: Reprojected {$fileName} to EPSG:4326 and inserted {$reprojectedSummary['features_imported']} row(s).");
+                    } else {
+                        \Log::warning("Map Import: Reprojection ran for {$fileName} but still produced no insertable WGS84 features.");
                     }
 
-                    continue;
+                    $this->deleteLocalDirectory(dirname($reprojectedGeoJson));
+                } else {
+                    \Log::warning("Map Import: Skipped automatic reprojection for {$fileName}. ogr2ogr is unavailable or conversion failed.");
                 }
-
-                $rows[] = [
-                    'source_path' => $canonicalKey,
-                    'source_file' => $fileName,
-                    'source_hash' => hash('sha256', $canonicalKey.'|'.$featureIndex),
-                    'feature_index' => $featureIndex,
-                    'min_lat' => $bounds['min_lat'],
-                    'max_lat' => $bounds['max_lat'],
-                    'min_lng' => $bounds['min_lng'],
-                    'max_lng' => $bounds['max_lng'],
-                    'properties_json' => json_encode($compactFeature['properties'] ?? ['_category' => 'irrigated']),
-                    'geometry_json' => json_encode($geometry),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-
-                if (count($rows) >= 500) {
-                    DB::table('irrigated_areas')->insert($rows);
-                    $result['features_imported'] += count($rows);
-                    $rows = [];
-                }
-            }
-
-            if ($rows) {
-                DB::table('irrigated_areas')->insert($rows);
-                $result['features_imported'] += count($rows);
             }
 
             $result['files_imported'] = 1;
@@ -2008,6 +1989,113 @@ class MapController extends Controller
         }
 
         return $result;
+    }
+
+    private function insertIrrigatedFeatures(array $features, string $fileName, string $sourcePath): array
+    {
+        $rows = [];
+        $featuresImported = 0;
+        $geometryFeatures = 0;
+        $wgs84Rejected = 0;
+
+        foreach ($features as $featureIndex => $feature) {
+            $compactFeature = $this->compactRenderedFeature($feature, $fileName, 'irrigated');
+            $geometry = $compactFeature['geometry'] ?? null;
+
+            if (!is_array($geometry)) {
+                continue;
+            }
+
+            $geometryFeatures++;
+            $bounds = $this->geometryBounds($geometry);
+
+            if (!$bounds || !$this->boundsLookLikeWgs84($bounds)) {
+                if ($featureIndex === 0) {
+                    \Log::warning("Map Import: Feature 0 in {$fileName} skipped. Bounds are not WGS84.", ['bounds' => $bounds]);
+                }
+
+                $wgs84Rejected++;
+                continue;
+            }
+
+            $rows[] = [
+                'source_path' => $sourcePath,
+                'source_file' => $fileName,
+                'source_hash' => hash('sha256', $sourcePath.'|'.$featureIndex),
+                'feature_index' => $featureIndex,
+                'min_lat' => $bounds['min_lat'],
+                'max_lat' => $bounds['max_lat'],
+                'min_lng' => $bounds['min_lng'],
+                'max_lng' => $bounds['max_lng'],
+                'properties_json' => json_encode($compactFeature['properties'] ?? ['_category' => 'irrigated']),
+                'geometry_json' => json_encode($geometry),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            if (count($rows) >= 500) {
+                DB::table('irrigated_areas')->insert($rows);
+                $featuresImported += count($rows);
+                $rows = [];
+            }
+        }
+
+        if ($rows) {
+            DB::table('irrigated_areas')->insert($rows);
+            $featuresImported += count($rows);
+        }
+
+        return [
+            'features_imported' => $featuresImported,
+            'geometry_features' => $geometryFeatures,
+            'wgs84_rejected' => $wgs84Rejected,
+        ];
+    }
+
+    private function reprojectFileToWgs84GeoJson(string $localPath): ?string
+    {
+        $binary = trim((string) @shell_exec('command -v ogr2ogr 2>/dev/null'));
+
+        if ($binary === '') {
+            $binary = trim((string) @shell_exec('which ogr2ogr 2>/dev/null'));
+        }
+
+        if ($binary === '') {
+            return null;
+        }
+
+        $tempDir = storage_path('app/temp/reproject_'.uniqid('', true));
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $outputPath = $tempDir.'/reprojected.geojson';
+        $extension = strtolower(pathinfo($localPath, PATHINFO_EXTENSION));
+        $inputPath = $extension === 'zip' ? '/vsizip/'.$localPath : $localPath;
+
+        $command = sprintf(
+            '%s -f GeoJSON -t_srs EPSG:4326 %s %s 2>&1',
+            escapeshellarg($binary),
+            escapeshellarg($outputPath),
+            escapeshellarg($inputPath)
+        );
+
+        $outputLines = [];
+        $exitCode = 0;
+        @exec($command, $outputLines, $exitCode);
+
+        if ($exitCode !== 0 || !is_file($outputPath)) {
+            \Log::warning('Map Import: ogr2ogr conversion failed.', [
+                'file' => $localPath,
+                'exit_code' => $exitCode,
+                'output' => implode("\n", $outputLines),
+            ]);
+            $this->deleteLocalDirectory($tempDir);
+
+            return null;
+        }
+
+        return $outputPath;
     }
 
     private function deleteIrrigatedAreaRowsForPath(string $path): void
