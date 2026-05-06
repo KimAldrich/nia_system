@@ -238,9 +238,26 @@ class MapController extends Controller
         $version = $snapshot['version'];
         $cacheKey = self::MAP_RENDER_CACHE_KEY_PREFIX . $version . '.' . $category;
 
-        $payload = Cache::store('file')->rememberForever($cacheKey, function () use ($category, $snapshot) {
-            return $this->buildRenderedOverlayPayload($category, $snapshot);
-        });
+        if ($indexMessage = $this->largeLayerIndexRequiredMessage($category, $snapshot)) {
+            return response()->json([
+                'message' => $indexMessage,
+                'category' => $category,
+                'requires_index' => true,
+            ], 409);
+        }
+
+        try {
+            $payload = Cache::store('file')->rememberForever($cacheKey, function () use ($category, $snapshot) {
+                return $this->buildRenderedOverlayPayload($category, $snapshot);
+            });
+        } catch (\Throwable $exception) {
+            \Log::error("Map render failed for {$category}: ".$exception->getMessage().' in '.$exception->getFile().' on line '.$exception->getLine());
+
+            return response()->json([
+                'message' => $this->renderFailureMessage($category, $exception),
+                'category' => $category,
+            ], 500);
+        }
 
         return response()->json($payload)->header('Cache-Control', 'public, max-age=86400');
     }
@@ -312,6 +329,8 @@ class MapController extends Controller
     {
         @ini_set('memory_limit', '2048M');
         @set_time_limit(0);
+
+        $this->refreshMapDataCacheIfFilesystemChanged();
 
         $snapshot = $this->mapApiSnapshot();
         $files = $snapshot['overlay_groups']['irrigated']['files'] ?? [];
@@ -677,6 +696,52 @@ class MapController extends Controller
         return DB::table(self::MAP_FEATURES_TABLE)
             ->where('category', $category)
             ->exists();
+    }
+
+    private function largeLayerIndexRequiredMessage(string $category, array $snapshot): ?string
+    {
+        if (!in_array($category, ['potential', 'land_boundary'], true)) {
+            return null;
+        }
+
+        $group = $snapshot['overlay_groups'][$category] ?? [];
+        $files = $group['files'] ?? [];
+
+        if (empty($files)) {
+            return null;
+        }
+
+        $totalSize = array_sum(array_map(
+            fn ($file) => (int) ($file['size'] ?? 0),
+            $files
+        ));
+
+        if ($totalSize <= self::SYNC_MAP_FEATURE_IMPORT_BYTES_LIMIT) {
+            return null;
+        }
+
+        $label = (string) ($group['label'] ?? $category);
+
+        if (!$this->mapFeaturesTableExists()) {
+            return "{$label} is too large to render directly. Run php artisan migrate --force, then php artisan map:rebuild-features {$category}.";
+        }
+
+        if (!$this->mapFeatureRowsExist($category)) {
+            return "{$label} is too large to render directly and must be indexed first. Run php artisan map:rebuild-features {$category}, then php artisan optimize:clear.";
+        }
+
+        return null;
+    }
+
+    private function renderFailureMessage(string $category, \Throwable $exception): string
+    {
+        $label = $this->categoryRouteMap()[$category][0] ?? $category;
+
+        if (in_array($category, ['potential', 'land_boundary'], true)) {
+            return "{$label} could not be rendered from uploaded files. If this layer is large, run php artisan map:rebuild-features {$category}, then php artisan optimize:clear. Server error: ".$exception->getMessage();
+        }
+
+        return "{$label} could not be rendered. Server error: ".$exception->getMessage();
     }
 
     private function buildDatabaseRenderedOverlayPayload(string $category, array $snapshot): array
@@ -2066,6 +2131,8 @@ class MapController extends Controller
     {
         @ini_set('memory_limit', '2048M');
         @set_time_limit(0);
+
+        $this->refreshMapDataCacheIfFilesystemChanged();
 
         $result = [
             'files_imported' => 0,

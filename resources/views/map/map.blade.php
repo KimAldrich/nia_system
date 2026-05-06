@@ -2160,7 +2160,25 @@ async function loadRenderedOverlayData(categoryKey) {
     });
 
     if (!response.ok) {
-        throw new Error('The selected map layer could not be rendered from the API.');
+        const errorText = await response.text();
+        let message = 'The selected map layer could not be rendered from the API.';
+
+        if (errorText) {
+            try {
+                const errorPayload = JSON.parse(errorText);
+                message = errorPayload.message || message;
+            } catch (parseError) {
+                message = errorText
+                    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .slice(0, 240) || message;
+            }
+        }
+
+        throw new Error(message);
     }
 
     const payload = await response.json();
