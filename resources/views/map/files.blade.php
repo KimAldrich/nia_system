@@ -100,6 +100,46 @@ tbody tr:hover {
     background: #c62828;
 }
 
+.folders-panel {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    margin-bottom: 18px;
+    padding: 16px;
+}
+
+.folders-panel h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+}
+
+.folder-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.folder-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+}
+
+.folder-name {
+    font-weight: bold;
+    word-break: break-word;
+}
+
+.folder-meta {
+    color: #666;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
 /* PAGINATION */
 .pagination {
     margin-top: 15px;
@@ -154,6 +194,28 @@ tbody tr:hover {
         </select>
     </div>
 
+    @if(isset($foldersData) && count($foldersData))
+    <div class="folders-panel">
+        <h3>Folders</h3>
+        <div class="folder-list">
+            @foreach($foldersData as $folderIndex => $folder)
+            <div class="folder-item" id="folder-{{ $folderIndex }}">
+                <div>
+                    <div class="folder-name">{{ $folder['name'] }}</div>
+                    <div class="folder-meta">{{ $folder['category'] }} - {{ $folder['file_count'] }} file(s)</div>
+                </div>
+                <button class="btn-delete"
+                    data-folder="{{ $folder['path'] }}"
+                    data-id="{{ $folderIndex }}"
+                    onclick="deleteFolder(this)">
+                    Delete Folder
+                </button>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     <!-- TABLE -->
     <div class="table-container">
         <table>
@@ -168,8 +230,8 @@ tbody tr:hover {
                 </tr>
             </thead>
 
-            <tbody>
-            @if(isset($filesData) && count($filesData))
+            <tbody id="filesTableBody">
+            @if(false && isset($filesData) && count($filesData))
                 @foreach($filesData as $index => $file)
 
                 @php
@@ -230,8 +292,49 @@ tbody tr:hover {
 <script>
 let currentPage = 1;
 const rowsPerPage = 10;
+const filesData = @json($filesData ?? []);
 
-const rows = Array.from(document.querySelectorAll('.data-row'));
+function normalizeFilterValue(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    }[character]));
+}
+
+function getFileMunicipality(fileName) {
+    let name = String(fileName || '').replace(/\.[^/.]+$/, '');
+    name = name.replace(/\s*\(.*?\)\s*/g, '');
+    name = name.replace(/-/g, ' ');
+    name = name.split('_')[0] || '';
+
+    return normalizeFilterValue((name.trim().split(/\s+/)[0] || ''));
+}
+
+function displayMunicipality(value) {
+    return value ? value.charAt(0).toUpperCase() + value.slice(1) : '';
+}
+
+const rows = filesData.map((file, index) => ({
+    ...file,
+    id: index,
+    normalizedName: normalizeFilterValue(file.name),
+    normalizedCategory: normalizeFilterValue(file.category),
+    normalizedFolder: normalizeFilterValue(file.folder),
+    municipality: getFileMunicipality(file.name)
+}));
+
+function addFilterOption(select, value, label = value) {
+    if (!select) return;
+
+    select.add(new Option(label, value));
+}
 let filteredRows = [...rows]; // ✅ IMPORTANT FIX
 
 // 🔽 POPULATE FILTERS
@@ -241,43 +344,42 @@ function populateFilters() {
     const municipalities = new Set();
 
     rows.forEach(row => {
-        if (row.dataset.category) categories.add(row.dataset.category);
-        if (row.dataset.folder) folders.add(row.dataset.folder);
-        if (row.dataset.municipality) municipalities.add(row.dataset.municipality);
+        const category = row.normalizedCategory;
+        const folder = row.normalizedFolder;
+        const municipality = row.municipality;
+
+        if (category) categories.add(category);
+        if (folder) folders.add(folder);
+        if (municipality) municipalities.add(municipality);
     });
 
     const catFilter = document.getElementById('categoryFilter');
     const folderFilter = document.getElementById('folderFilter');
     const muniFilter = document.getElementById('municipalityFilter');
 
-    Array.from(categories).sort().forEach(c => {
-        catFilter.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-
-    Array.from(folders).sort().forEach(f => {
-        folderFilter.innerHTML += `<option value="${f}">${f}</option>`;
-    });
-
+    Array.from(categories).sort().forEach(c => addFilterOption(catFilter, c));
+    Array.from(folders).sort().forEach(f => addFilterOption(folderFilter, f));
     Array.from(municipalities).sort().forEach(m => {
         const display = m.charAt(0).toUpperCase() + m.slice(1);
-        muniFilter.innerHTML += `<option value="${m}">${display}</option>`;
+        addFilterOption(muniFilter, m, display);
     });
 }
 
 // 🔎 FILTERING
 function applyFilters() {
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    const category = document.getElementById('categoryFilter').value;
-    const folder = document.getElementById('folderFilter').value;
-    const municipality = document.getElementById('municipalityFilter').value;
+    const search = normalizeFilterValue(document.getElementById('searchInput')?.value);
+    const category = normalizeFilterValue(document.getElementById('categoryFilter')?.value);
+    const folder = normalizeFilterValue(document.getElementById('folderFilter')?.value);
+    const municipality = normalizeFilterValue(document.getElementById('municipalityFilter')?.value);
 
     filteredRows = rows.filter(row => {
-        const name = row.dataset.name;
-        const cat = row.dataset.category;
-        const fol = row.dataset.folder;
-        const muni = row.dataset.municipality;
+        const name = row.normalizedName;
+        const cat = row.normalizedCategory;
+        const fol = row.normalizedFolder;
+        const muni = row.municipality;
 
         const matchSearch =
+            !search ||
             name.includes(search) ||
             cat.includes(search) ||
             fol.includes(search) ||
@@ -296,27 +398,42 @@ function applyFilters() {
 
 // 📄 PAGINATION (FIXED)
 function paginate() {
-    // hide all first
-    rows.forEach(row => row.style.display = 'none');
+    const tbody = document.getElementById('filesTableBody');
 
-    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+    currentPage = Math.min(currentPage, totalPages);
+    const visibleRows = filteredRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-    filteredRows.forEach((row, index) => {
-        if (
-            index >= (currentPage - 1) * rowsPerPage &&
-            index < currentPage * rowsPerPage
-        ) {
-            row.style.display = '';
-        }
-    });
+    if (!visibleRows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">No matching files</td></tr>';
+    } else {
+        tbody.innerHTML = visibleRows.map(file => `
+            <tr class="data-row" id="row-${file.id}">
+                <td>${escapeHtml(file.name)}</td>
+                <td>${escapeHtml(file.category)}</td>
+                <td>${escapeHtml(file.folder)}</td>
+                <td>${escapeHtml(displayMunicipality(file.municipality))}</td>
+                <td><a href="${escapeHtml(file.url)}" target="_blank" class="btn-open">Open</a></td>
+                <td>
+                    <button class="btn-delete"
+                        data-path="${escapeHtml(file.path)}"
+                        data-id="${file.id}"
+                        onclick="deleteFile(this)">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
 
-    document.getElementById('pageInfo').innerText =
-        `Page ${currentPage} of ${totalPages || 1}`;
+    document.getElementById('pageInfo').innerText = filteredRows.length
+        ? `Page ${currentPage} of ${totalPages}`
+        : 'No matching files';
 }
 
 // ➡ NEXT
 function nextPage() {
-    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
 
     if (currentPage < totalPages) {
         currentPage++;
@@ -351,8 +468,9 @@ async function deleteFile(btn) {
     const result = await response.json();
 
     if (response.ok) {
-        document.getElementById('row-' + rowId).remove();
-        alert('Deleted');
+        const row = document.getElementById('row-' + rowId);
+        if (row) row.remove();
+        alert(result.message || 'Deleted. Other users have been notified.');
 
         // 🔥 update rows after delete
         location.reload(); // simplest reliable fix
@@ -361,9 +479,45 @@ async function deleteFile(btn) {
     }
 }
 
+async function deleteFolder(btn) {
+    const folder = btn.getAttribute('data-folder');
+    const folderId = btn.getAttribute('data-id');
+
+    if (!confirm('Delete this folder and all files inside it?')) return;
+
+    const response = await fetch('/map/delete-folder', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ folder: folder })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+        const item = document.getElementById('folder-' + folderId);
+        if (item) item.remove();
+        alert(result.message || 'Folder deleted.');
+        location.reload();
+    } else {
+        alert(result.message || 'Folder delete failed.');
+    }
+}
+
 // INIT
-populateFilters();
-paginate();
+function initializeFileManager() {
+    filteredRows = [...rows];
+    populateFilters();
+    paginate();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeFileManager);
+} else {
+    initializeFileManager();
+}
 </script>
 
 @endsection
