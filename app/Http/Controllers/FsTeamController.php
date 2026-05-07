@@ -241,9 +241,7 @@ class FsTeamController extends Controller
                 'document' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx'],
             ], $fileValidationMessages)->validate();
 
-            // $path = $file->store('forms', 'public');
-            //$path = Storage::disk('s3')->put('forms', $file);
-            $path = $file->store('forms');
+            $path = $file->store('forms', 'public');
             $rawName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $cleanTitle = ucwords(str_replace(['_', '-'], ' ', $rawName));
 

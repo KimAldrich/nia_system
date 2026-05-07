@@ -55,6 +55,7 @@
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    margin-bottom: 18px;
 }
 
 table {
@@ -128,6 +129,11 @@ tbody tr:hover {
     padding: 20px;
     color: #888;
 }
+
+.section-title {
+    margin: 18px 0 10px;
+    color: #12351f;
+}
 </style>
 
 <div class="page-container">
@@ -154,7 +160,52 @@ tbody tr:hover {
         </select>
     </div>
 
-    <!-- TABLE -->
+    <h3 class="section-title">Folders</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Folder</th>
+                    <th>Category</th>
+                    <th>Municipality</th>
+                    <th>Direct Files</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            @if(isset($foldersData) && count($foldersData))
+                @foreach($foldersData as $index => $folder)
+                <tr class="folder-row"
+                    data-name="{{ strtolower($folder['name']) }}"
+                    data-category="{{ strtolower($folder['category']) }}"
+                    data-folder="{{ strtolower($folder['name']) }}"
+                    data-municipality="{{ strtolower($folder['municipality_key'] ?? '') }}"
+                    id="folder-row-{{ $index }}">
+
+                    <td>{{ $folder['name'] }}</td>
+                    <td>{{ $folder['category'] }}</td>
+                    <td>{{ $folder['municipality'] }}</td>
+                    <td>{{ $folder['file_count'] }}</td>
+                    <td>
+                        <button class="btn-delete"
+                            data-path="{{ $folder['path'] }}"
+                            onclick="deleteFolder(this)">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                @endforeach
+            @else
+                <tr>
+                    <td colspan="5" class="empty">No folders found</td>
+                </tr>
+            @endif
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section-title">Files</h3>
     <div class="table-container">
         <table>
             <thead>
@@ -171,29 +222,17 @@ tbody tr:hover {
             <tbody>
             @if(isset($filesData) && count($filesData))
                 @foreach($filesData as $index => $file)
-
-                @php
-                    $name = pathinfo($file['name'], PATHINFO_FILENAME);
-                    $name = preg_replace('/\s*\(.*?\)\s*/', '', $name);
-                    $name = str_replace('-', ' ', $name);
-                    $name = explode('_', $name)[0];
-                    $municipalityRaw = explode(' ', trim($name))[0];
-
-                    $municipality = strtolower($municipalityRaw);
-                    $municipalityDisplay = ucfirst($municipality);
-                @endphp
-
                 <tr class="data-row"
                     data-name="{{ strtolower($file['name']) }}"
                     data-category="{{ strtolower($file['category']) }}"
                     data-folder="{{ strtolower($file['folder']) }}"
-                    data-municipality="{{ $municipality }}"
+                    data-municipality="{{ strtolower($file['municipality_key'] ?? '') }}"
                     id="row-{{ $index }}">
 
                     <td>{{ $file['name'] }}</td>
                     <td>{{ $file['category'] }}</td>
                     <td>{{ $file['folder'] }}</td>
-                    <td>{{ $municipalityDisplay }}</td>
+                    <td>{{ $file['municipality'] }}</td>
 
                     <td>
                         <a href="{{ $file['url'] }}" target="_blank" class="btn-open">Open</a>
@@ -232,6 +271,7 @@ let currentPage = 1;
 const rowsPerPage = 10;
 
 const rows = Array.from(document.querySelectorAll('.data-row'));
+const folderRows = Array.from(document.querySelectorAll('.folder-row'));
 let filteredRows = [...rows]; // ✅ IMPORTANT FIX
 
 // 🔽 POPULATE FILTERS
@@ -240,7 +280,7 @@ function populateFilters() {
     const folders = new Set();
     const municipalities = new Set();
 
-    rows.forEach(row => {
+    [...folderRows, ...rows].forEach(row => {
         if (row.dataset.category) categories.add(row.dataset.category);
         if (row.dataset.folder) folders.add(row.dataset.folder);
         if (row.dataset.municipality) municipalities.add(row.dataset.municipality);
@@ -259,7 +299,7 @@ function populateFilters() {
     });
 
     Array.from(municipalities).sort().forEach(m => {
-        const display = m.charAt(0).toUpperCase() + m.slice(1);
+        const display = m.split(' ').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
         muniFilter.innerHTML += `<option value="${m}">${display}</option>`;
     });
 }
@@ -270,6 +310,25 @@ function applyFilters() {
     const category = document.getElementById('categoryFilter').value;
     const folder = document.getElementById('folderFilter').value;
     const municipality = document.getElementById('municipalityFilter').value;
+
+    folderRows.forEach(row => {
+        const name = row.dataset.name;
+        const cat = row.dataset.category;
+        const fol = row.dataset.folder;
+        const muni = row.dataset.municipality;
+
+        const matchSearch =
+            name.includes(search) ||
+            cat.includes(search) ||
+            fol.includes(search) ||
+            muni.includes(search);
+
+        const matchCategory = !category || cat === category;
+        const matchFolder = !folder || fol === folder;
+        const matchMunicipality = !municipality || muni === municipality;
+
+        row.style.display = matchSearch && matchCategory && matchFolder && matchMunicipality ? '' : 'none';
+    });
 
     filteredRows = rows.filter(row => {
         const name = row.dataset.name;
@@ -358,6 +417,30 @@ async function deleteFile(btn) {
         location.reload(); // simplest reliable fix
     } else {
         alert(result.message);
+    }
+}
+
+async function deleteFolder(btn) {
+    const path = btn.getAttribute('data-path');
+
+    if (!confirm('Delete this folder and all files inside it?')) return;
+
+    const response = await fetch('/map/delete-folder', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ folder: path })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+        alert(result.message || 'Folder deleted');
+        location.reload();
+    } else {
+        alert(result.message || 'Failed to delete folder');
     }
 }
 

@@ -1452,6 +1452,7 @@ let uploadTargets = @json($uploadTargets ?? []);
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 const mapApiStatusEndpoint = "{{ route('map.api.status') }}";
 const irrigatedAreasEndpoint = "{{ route('map.api.irrigated_areas') }}";
+const irrigatedChartDataEndpoint = "{{ url('/irrigated-chart-data') }}";
 const overlayFilesEndpointBase = "{{ url('/map/overlays') }}";
 const renderedOverlayEndpointBase = "{{ url('/map/render') }}";
 const notificationUserKey = "{{ $notificationUserKey ?? '' }}" || null;
@@ -1479,7 +1480,7 @@ async function ensureIrrigatedStatsLoaded() {
     }
 
     if (!irrigatedStatsPromise) {
-        irrigatedStatsPromise = fetch('/irrigated-chart-data')
+        irrigatedStatsPromise = fetch(irrigatedChartDataEndpoint, { cache: 'no-store' })
             .then(res => {
                 if (!res.ok) {
                     throw new Error('Unable to load municipality chart data.');
@@ -1499,6 +1500,13 @@ async function ensureIrrigatedStatsLoaded() {
     }
 
     return await irrigatedStatsPromise;
+}
+
+async function refreshIrrigatedStats() {
+    irrigatedStats = {};
+    irrigatedStatsPromise = null;
+
+    return await ensureIrrigatedStatsLoaded();
 }
 
 function buildAppUrl(path) {
@@ -3329,7 +3337,7 @@ if (form) {
                 syncUploadSourceState();
                 updateTargetFolderOptions();
                 updateSelectionInfo('No files selected.');
-                irrigatedStats = await fetch('/irrigated-chart-data').then(res => res.json());
+                await refreshIrrigatedStats();
                 window.setTimeout(() => window.location.reload(), 800);
             } else {
                 throw new Error(result.message || 'Upload failed');

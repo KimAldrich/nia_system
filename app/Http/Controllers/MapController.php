@@ -16,7 +16,7 @@ use ZipArchive;
 
 class MapController extends Controller
 {
-    private const IRRIGATED_CHART_CACHE_KEY = 'map.irrigated_chart_data.v8';
+    private const IRRIGATED_CHART_CACHE_KEY = 'map.irrigated_chart_data.v9';
     private const MUNICIPALITY_DETAILS_PATH = 'maps/details.json';
     private const IRRIGATED_DIRECTORY = 'maps/irrigated';
     private const POTENTIAL_DIRECTORY = 'maps/potential';
@@ -1853,45 +1853,71 @@ class MapController extends Controller
     {
         $filesData = [];
         $foldersData = [];
+        $municipalityDetails = $this->getMunicipalityDetailIndex();
 
         foreach (self::CATEGORY_DIRECTORY_MAP as $category => $directory) {
             $folder = $this->resolveOverlayFolder($category, $directory);
+            $categoryRoot = $folder;
 
-            if (!Storage::disk('public')->exists($folder)) {
+            if (!Storage::disk('public')->exists($categoryRoot)) {
                 continue;
             }
 
-            $files = collect(Storage::disk('public')->allFiles($folder));
+            $files = collect(Storage::disk('public')->allFiles($categoryRoot));
             $folderCounts = [];
 
             foreach ($files as $file) {
                 $fileFolder = dirname($file);
                 $folderCounts[$fileFolder] = ($folderCounts[$fileFolder] ?? 0) + 1;
+                $relativeFolder = $this->relativeOverlayFolder($fileFolder, $categoryRoot);
+                $municipality = $this->resolveMunicipalityForMapPath($file, $municipalityDetails);
 
                 $filesData[] = [
                     'name' => basename($file),
                     'category' => $category,
                     'url' => $this->mapFileUrl($file),
                     'path' => $file,
-                    'folder' => $fileFolder,
+                    'folder' => $relativeFolder,
+                    'folder_path' => $fileFolder,
+                    'municipality' => $municipality ?? 'Unmatched',
+                    'municipality_key' => $municipality ? $this->normalizeMunicipalityName($municipality) : '',
                 ];
             }
 
-            foreach ($folderCounts as $fileFolder => $count) {
-                if ($fileFolder === $folder) {
+            foreach (Storage::disk('public')->allDirectories($categoryRoot) as $fileFolder) {
+                if ($fileFolder === $categoryRoot) {
                     continue;
                 }
+
+                $relativeFolder = trim($this->relativeOverlayFolder($fileFolder, $categoryRoot), '/');
+                $municipality = $this->resolveMunicipalityForMapPath($fileFolder, $municipalityDetails);
 
                 $foldersData[] = [
                     'category' => $category,
                     'path' => $fileFolder,
-                    'name' => trim($this->relativeOverlayFolder($fileFolder, $folder), '/') ?: basename($fileFolder),
-                    'file_count' => $count,
+                    'name' => $relativeFolder ?: basename($fileFolder),
+                    'municipality' => $municipality ?? 'Unmatched',
+                    'municipality_key' => $municipality ? $this->normalizeMunicipalityName($municipality) : '',
+                    'file_count' => $folderCounts[$fileFolder] ?? 0,
                 ];
             }
         }
 
+        usort($foldersData, function ($left, $right) {
+            return [$left['category'], $left['municipality'], $left['name']] <=> [$right['category'], $right['municipality'], $right['name']];
+        });
+
+        usort($filesData, function ($left, $right) {
+            return [$left['category'], $left['municipality'], $left['folder'], $left['name']] <=> [$right['category'], $right['municipality'], $right['folder'], $right['name']];
+        });
+
         return view('map.files', compact('filesData', 'foldersData'));
+    }
+
+    private function resolveMunicipalityForMapPath(string $path, array $municipalityDetails): ?string
+    {
+        return $this->guessMunicipalityFromPath($path, $municipalityDetails)
+            ?? $this->guessMunicipalityFromText(str_replace(['_', '-'], ' ', $path), $municipalityDetails);
     }
 
     public function deleteFile(Request $request)
@@ -2173,7 +2199,7 @@ class MapController extends Controller
             return $chartData;
         });
 
-        return response()->json($payload)->header('Cache-Control', 'public, max-age=86400');
+        return response()->json($payload)->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     private function getMunicipalityDetailIndex(): array
@@ -2205,7 +2231,9 @@ class MapController extends Controller
 
     private function collectIrrigatedAreas(array $municipalityDetails): array
     {
-        return $this->collectAreasFromDbfDirectory(
+        $indexedStats = $this->collectIrrigatedAreasFromDatabaseIndex($municipalityDetails);
+        $indexedSourcePaths = $this->indexedIrrigatedSourcePaths();
+        $dbfStats = $this->collectAreasFromDbfDirectory(
             $this->resolveMapDataDirectory(self::IRRIGATED_DIRECTORY),
             $municipalityDetails,
             function (string $path, array $record) use ($municipalityDetails): ?string {
@@ -2225,8 +2253,12 @@ class MapController extends Controller
             },
             function (array $record): float {
                 return $this->extractIrrigatedAreaValue($record);
-            }
+            },
+            'irrigated_area',
+            $indexedSourcePaths
         );
+
+        return $this->mergeAreaStats($dbfStats, $indexedStats, 'irrigated_area');
     }
 
     private function collectPotentialAreas(array $municipalityDetails): array
@@ -2246,12 +2278,147 @@ class MapController extends Controller
         );
     }
 
+    private function collectIrrigatedAreasFromDatabaseIndex(array $municipalityDetails): array
+    {
+        $aggregated = [];
+
+        try {
+            IrrigatedArea::query()
+                ->orderBy('id')
+                ->chunkById(1000, function ($rows) use (&$aggregated, $municipalityDetails): void {
+                    foreach ($rows as $row) {
+                        $sourcePath = $this->normalizePublicStoragePath((string) ($row->source_path ?? ''));
+                        $sourceFile = (string) ($row->source_file ?? basename($sourcePath));
+
+                        if ($sourcePath !== '' && $this->shouldSkipIrrigatedPath($sourcePath)) {
+                            continue;
+                        }
+
+                        $properties = json_decode((string) ($row->properties_json ?? ''), true);
+                        $properties = is_array($properties) ? $properties : [];
+                        $propertyText = $this->propertiesToSearchText($properties);
+                        $municipality = $this->guessMunicipalityFromPath($sourcePath, $municipalityDetails)
+                            ?? $this->guessMunicipalityFromText($sourceFile . ' ' . $propertyText . ' ' . $sourcePath, $municipalityDetails);
+
+                        if (!$municipality) {
+                            continue;
+                        }
+
+                        $normalizedMunicipality = $this->normalizeMunicipalityName($municipality);
+
+                        if (!isset($municipalityDetails[$normalizedMunicipality])) {
+                            continue;
+                        }
+
+                        $geometry = json_decode((string) ($row->geometry_json ?? ''), true);
+                        $area = $this->extractIrrigatedAreaValue($properties);
+
+                        if ($area <= 0 && is_array($geometry)) {
+                            $area = $this->calculateGeoJsonArea($geometry);
+                        }
+
+                        if ($area <= 0) {
+                            continue;
+                        }
+
+                        if (!isset($aggregated[$normalizedMunicipality])) {
+                            $aggregated[$normalizedMunicipality] = [
+                                'irrigated_area' => 0,
+                                'dbf_file_count' => 0,
+                                'source_files' => [],
+                            ];
+                        }
+
+                        $aggregated[$normalizedMunicipality]['irrigated_area'] += (float) $area;
+                        $aggregated[$normalizedMunicipality]['source_files'][] = $sourcePath;
+                    }
+                });
+        } catch (\Throwable $exception) {
+            return [];
+        }
+
+        foreach ($aggregated as &$values) {
+            $values['irrigated_area'] = round((float) $values['irrigated_area'], 2);
+            $values['source_files'] = array_values(array_unique($values['source_files']));
+            $values['dbf_file_count'] = count($values['source_files']);
+        }
+
+        return $aggregated;
+    }
+
+    private function indexedIrrigatedSourcePaths(): array
+    {
+        try {
+            return IrrigatedArea::query()
+                ->select('source_path')
+                ->distinct()
+                ->pluck('source_path')
+                ->filter()
+                ->map(fn($path) => $this->normalizePublicStoragePath((string) $path))
+                ->values()
+                ->all();
+        } catch (\Throwable $exception) {
+            return [];
+        }
+    }
+
+    private function mergeAreaStats(array $primaryStats, array $additionalStats, string $areaKey): array
+    {
+        foreach ($additionalStats as $normalizedName => $stats) {
+            if (!isset($primaryStats[$normalizedName])) {
+                $primaryStats[$normalizedName] = [
+                    $areaKey => 0,
+                    'dbf_file_count' => 0,
+                    'source_files' => [],
+                ];
+            }
+
+            $primaryStats[$normalizedName][$areaKey] = round(
+                (float) ($primaryStats[$normalizedName][$areaKey] ?? 0) + (float) ($stats[$areaKey] ?? 0),
+                2
+            );
+            $primaryStats[$normalizedName]['dbf_file_count'] = (int) ($primaryStats[$normalizedName]['dbf_file_count'] ?? 0)
+                + (int) ($stats['dbf_file_count'] ?? 0);
+            $primaryStats[$normalizedName]['source_files'] = array_values(array_unique(array_merge(
+                $primaryStats[$normalizedName]['source_files'] ?? [],
+                $stats['source_files'] ?? []
+            )));
+        }
+
+        return $primaryStats;
+    }
+
+    private function propertiesToSearchText(array $properties): string
+    {
+        $values = [];
+        $stack = [$properties];
+
+        while ($stack) {
+            $item = array_pop($stack);
+
+            if (is_array($item)) {
+                foreach ($item as $value) {
+                    $stack[] = $value;
+                }
+
+                continue;
+            }
+
+            if (is_scalar($item)) {
+                $values[] = (string) $item;
+            }
+        }
+
+        return implode(' ', $values);
+    }
+
     private function collectAreasFromDbfDirectory(
         string $directory,
         array $municipalityDetails,
         callable $municipalityResolver,
         callable $areaResolver,
-        string $areaKey = 'irrigated_area'
+        string $areaKey = 'irrigated_area',
+        array $excludedSourcePaths = []
     ): array {
         if (!is_dir($directory)) {
             return [];
@@ -2259,6 +2426,10 @@ class MapController extends Controller
 
         $this->registerXBaseAutoloader();
         $aggregated = [];
+        $excludedSourcePaths = array_flip(array_map(
+            fn($path) => strtolower($this->normalizePublicStoragePath((string) $path)),
+            $excludedSourcePaths
+        ));
         $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory));
 
         foreach ($iterator as $file) {
@@ -2267,6 +2438,13 @@ class MapController extends Controller
             }
 
             $filePath = $file->getPathname();
+            $relativeSourcePath = strtolower($this->normalizePublicStoragePath($this->toRelativeStoragePath($filePath)));
+            $relativePrimarySourcePath = preg_replace('/\.dbf$/i', '.shp', $relativeSourcePath) ?: $relativeSourcePath;
+
+            if (isset($excludedSourcePaths[$relativeSourcePath]) || isset($excludedSourcePaths[$relativePrimarySourcePath])) {
+                continue;
+            }
+
             $shapeReader = null;
 
             try {
@@ -2367,8 +2545,14 @@ class MapController extends Controller
 
     private function extractIrrigatedAreaValue(array $record): float
     {
+        $normalizedRecord = [];
+
+        foreach ($record as $key => $value) {
+            $normalizedRecord[strtolower(trim((string) $key))] = $value;
+        }
+
         foreach (self::IRRIGATED_AREA_FIELDS as $field) {
-            $value = $this->extractNumericValue($record[$field] ?? null);
+            $value = $this->extractNumericValue($normalizedRecord[$field] ?? null);
 
             if ($value > 0) {
                 if ($field === 'calculated') {
@@ -2379,7 +2563,19 @@ class MapController extends Controller
             }
         }
 
-        return $this->extractAreaFromText((string) ($record['name'] ?? ''));
+        foreach ($normalizedRecord as $key => $value) {
+            if (!str_contains($key, 'area')) {
+                continue;
+            }
+
+            $area = $this->extractNumericValue($value);
+
+            if ($area > 0) {
+                return $area;
+            }
+        }
+
+        return $this->extractAreaFromText((string) ($normalizedRecord['name'] ?? ''));
     }
 
     private function extractNumericValue($value): float
@@ -3022,16 +3218,24 @@ class MapController extends Controller
 
     private function calculateGeoJsonArea($geometry)
     {
-        $type = $geometry['type'];
+        if (!is_array($geometry) || empty($geometry['type']) || empty($geometry['coordinates']) || !is_array($geometry['coordinates'])) {
+            return 0;
+        }
+
+        $type = (string) $geometry['type'];
         $coords = $geometry['coordinates'];
         $totalArea = 0;
 
-        if ($type === 'Polygon') {
+        if ($type === 'Polygon' && isset($coords[0]) && is_array($coords[0])) {
             $totalArea += $this->polygonArea($coords[0]);
         }
 
         if ($type === 'MultiPolygon') {
             foreach ($coords as $polygon) {
+                if (!isset($polygon[0]) || !is_array($polygon[0])) {
+                    continue;
+                }
+
                 $totalArea += $this->polygonArea($polygon[0]);
             }
         }
@@ -3041,10 +3245,24 @@ class MapController extends Controller
 
     private function polygonArea($ring)
     {
+        if (!is_array($ring) || count($ring) < 4) {
+            return 0;
+        }
+
         $area = 0;
         $points = count($ring);
 
         for ($i = 0; $i < $points - 1; $i++) {
+            if (
+                !isset($ring[$i][0], $ring[$i][1], $ring[$i + 1][0], $ring[$i + 1][1])
+                || !is_numeric($ring[$i][0])
+                || !is_numeric($ring[$i][1])
+                || !is_numeric($ring[$i + 1][0])
+                || !is_numeric($ring[$i + 1][1])
+            ) {
+                continue;
+            }
+
             $x1 = $ring[$i][0];
             $y1 = $ring[$i][1];
             $x2 = $ring[$i + 1][0];
