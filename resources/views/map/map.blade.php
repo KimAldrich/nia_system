@@ -95,11 +95,6 @@
     height: 100%;
 }
 
-/* Mini map */
-#miniMap {
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    border: 3px solid rgba(255,255,255,0.8);
-}
 /* TOGGLE BUTTON */
 #toggleBtn {
     position: absolute;
@@ -278,7 +273,6 @@
 #map-toggle,
 #legend,
 #infoPanel,
-#miniMap,
 #admin-toggle-btn {
     z-index: 9999 !important;
 }
@@ -634,20 +628,6 @@ input:checked + .slider {
 
 input:checked + .slider:before {
     transform: translateX(20px);
-}
-
-#miniMap {
-    position: absolute;
-    bottom: 80px;
-    left: 20px;
-    width: 200px;
-    height: 150px;
-    z-index: 1000;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 2px solid white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    display: none;
 }
 
 .upload-status {
@@ -1371,7 +1351,6 @@ input:checked + .slider:before {
     <div id="map"></div>
 
 <div id="map-status">Tick a layer to load the uploaded polygons from <code>storage/app/public/maps</code>.</div>
-<div id="miniMap"></div>
 
 @if(auth()->check() && auth()->user()->role === 'admin')
 <button id="admin-toggle-btn" type="button">
@@ -1488,6 +1467,7 @@ let baseMapGeoJson = null;
 let irrigatedStats = {};
 let irrigatedStatsPromise = null;
 const municipalityBoundaryIndex = new Map();
+const municipalityBoundaryFeatureIndex = new Map();
 const municipalityDisplayNameIndex = new Map();
 const renderedOverlayDataCache = {};
 let municipalityFilterBoundsLayer = null;
@@ -1711,8 +1691,6 @@ document.getElementById('resetMapBtn').addEventListener('click', function() {
 
 let geoLayer;
 let selectedBaseLayer;
-let miniGeoLayer;
-let miniOverlayRefreshId = 0;
 const overlayLayers = {};
 const overlayLoadTokens = {};
 const mapContainer = document.getElementById('map-container');
@@ -1887,6 +1865,7 @@ async function loadBaseMap() {
     municipalityMarkers.forEach(m => map.removeLayer(m));
     municipalityMarkers = [];
     municipalityBoundaryIndex.clear();
+    municipalityBoundaryFeatureIndex.clear();
     municipalityDisplayNameIndex.clear();
 
     // ✅ TRACKER: Prevent multiple labels for the same municipality
@@ -1906,6 +1885,10 @@ async function loadBaseMap() {
                 if (nextBounds) {
                     municipalityBoundaryIndex.set(municipalityKey, nextBounds);
                 }
+
+                const boundaryFeatures = municipalityBoundaryFeatureIndex.get(municipalityKey) || [];
+                boundaryFeatures.push(layer.toGeoJSON());
+                municipalityBoundaryFeatureIndex.set(municipalityKey, boundaryFeatures);
 
                 municipalityDisplayNameIndex.set(municipalityKey, name);
             }
@@ -1977,7 +1960,6 @@ const landData = {
                 } else {
                     document.getElementById('extraData').innerHTML = "No data available";
                 }
-                showMiniMapForMunicipality(layer);
                 openPanel();
             });
 
@@ -2442,6 +2424,153 @@ function isFeatureFullyInsideAnyBounds(feature, boundsExtentsList) {
     return boundsExtentsList.some(outer => isBoundsFullyInsideBoundsExtents(inner, outer));
 }
 
+function getMunicipalityBoundaryFeatures(selections) {
+    return (Array.isArray(selections) ? selections : [])
+        .flatMap(item => municipalityBoundaryFeatureIndex.get(item.key) || [])
+        .filter(feature => feature?.geometry);
+}
+
+function pointInRing(point, ring) {
+    if (!Array.isArray(point) || !Array.isArray(ring) || ring.length < 3) {
+        return false;
+    }
+
+    const x = Number(point[0]);
+    const y = Number(point[1]);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        return false;
+    }
+
+    let inside = false;
+
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = Number(ring[i]?.[0]);
+        const yi = Number(ring[i]?.[1]);
+        const xj = Number(ring[j]?.[0]);
+        const yj = Number(ring[j]?.[1]);
+
+        if (![xi, yi, xj, yj].every(Number.isFinite)) {
+            continue;
+        }
+
+        const intersects = ((yi > y) !== (yj > y))
+            && (x < ((xj - xi) * (y - yi)) / ((yj - yi) || Number.EPSILON) + xi);
+
+        if (intersects) {
+            inside = !inside;
+        }
+    }
+
+    return inside;
+}
+
+function pointInPolygon(point, polygon) {
+    if (!Array.isArray(polygon) || !Array.isArray(polygon[0])) {
+        return false;
+    }
+
+    if (!pointInRing(point, polygon[0])) {
+        return false;
+    }
+
+    return !polygon.slice(1).some(hole => pointInRing(point, hole));
+}
+
+function pointInBoundaryGeometry(point, geometry) {
+    if (!geometry || !Array.isArray(geometry.coordinates)) {
+        return false;
+    }
+
+    if (geometry.type === 'Polygon') {
+        return pointInPolygon(point, geometry.coordinates);
+    }
+
+    if (geometry.type === 'MultiPolygon') {
+        return geometry.coordinates.some(polygon => pointInPolygon(point, polygon));
+    }
+
+    return false;
+}
+
+function pointInAnyBoundary(point, boundaryFeatures) {
+    return boundaryFeatures.some(feature => pointInBoundaryGeometry(point, feature.geometry));
+}
+
+function ringTouchesAnyBoundary(ring, boundaryFeatures) {
+    if (!Array.isArray(ring) || !ring.length || !boundaryFeatures.length) {
+        return false;
+    }
+
+    const step = Math.max(1, Math.floor(ring.length / 80));
+
+    for (let index = 0; index < ring.length; index += step) {
+        if (pointInAnyBoundary(ring[index], boundaryFeatures)) {
+            return true;
+        }
+    }
+
+    return pointInAnyBoundary(ring[ring.length - 1], boundaryFeatures);
+}
+
+function lineTouchesAnyBoundary(line, boundaryFeatures) {
+    return ringTouchesAnyBoundary(line, boundaryFeatures);
+}
+
+function filterFeatureByMunicipalityBoundaries(feature, boundaryFeatures) {
+    if (!feature?.geometry || !boundaryFeatures.length) {
+        return null;
+    }
+
+    const geometry = feature.geometry;
+    const coordinates = geometry.coordinates;
+
+    if (!Array.isArray(coordinates)) {
+        return null;
+    }
+
+    if (geometry.type === 'MultiPolygon') {
+        const filtered = coordinates.filter(polygon => ringTouchesAnyBoundary(polygon?.[0], boundaryFeatures));
+
+        return filtered.length ? {
+            ...feature,
+            geometry: { type: 'MultiPolygon', coordinates: filtered }
+        } : null;
+    }
+
+    if (geometry.type === 'Polygon') {
+        return ringTouchesAnyBoundary(coordinates[0], boundaryFeatures) ? feature : null;
+    }
+
+    if (geometry.type === 'MultiLineString') {
+        const filtered = coordinates.filter(line => lineTouchesAnyBoundary(line, boundaryFeatures));
+
+        return filtered.length ? {
+            ...feature,
+            geometry: { type: 'MultiLineString', coordinates: filtered }
+        } : null;
+    }
+
+    if (geometry.type === 'LineString') {
+        return lineTouchesAnyBoundary(coordinates, boundaryFeatures) ? feature : null;
+    }
+
+    if (geometry.type === 'MultiPoint') {
+        const filtered = coordinates.filter(point => pointInAnyBoundary(point, boundaryFeatures));
+
+        return filtered.length ? {
+            ...feature,
+            geometry: { type: 'MultiPoint', coordinates: filtered }
+        } : null;
+    }
+
+    if (geometry.type === 'Point') {
+        return pointInAnyBoundary(coordinates, boundaryFeatures) ? feature : null;
+    }
+
+    return null;
+}
+
 function updateMunicipalityFilterBounds() {
     if (municipalityFilterBoundsLayer) {
         map.removeLayer(municipalityFilterBoundsLayer);
@@ -2456,33 +2585,14 @@ function updateMunicipalityFilterBounds() {
         return;
     }
 
-    const features = getMunicipalityFilterSelections()
-        .map(item => {
-            const bounds = municipalityBoundaryIndex.get(item.key);
-
-            if (!bounds) {
-                return null;
+    const features = getMunicipalityBoundaryFeatures(getMunicipalityFilterSelections())
+        .map(feature => ({
+            ...feature,
+            properties: {
+                ...(feature.properties || {}),
+                _category: 'selected_municipality_boundary'
             }
-
-            return {
-                type: 'Feature',
-                properties: {
-                    _category: 'municipality_bbox',
-                    name: item.name
-                },
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [[
-                        [bounds.getWest(), bounds.getSouth()],
-                        [bounds.getEast(), bounds.getSouth()],
-                        [bounds.getEast(), bounds.getNorth()],
-                        [bounds.getWest(), bounds.getNorth()],
-                        [bounds.getWest(), bounds.getSouth()]
-                    ]]
-                }
-            };
-        })
-        .filter(Boolean);
+        }));
 
     if (!features.length) {
         return;
@@ -2504,7 +2614,10 @@ function updateMunicipalityFilterBounds() {
     }).addTo(map);
 }
 
-async function buildFilteredIrrigatedOverlayData(selectedBounds) {
+async function buildFilteredIrrigatedOverlayData(selections) {
+    const selectedBounds = (Array.isArray(selections) ? selections : [])
+        .map(selection => municipalityBoundaryIndex.get(selection.key) || null)
+        .filter(Boolean);
     const boundsList = Array.isArray(selectedBounds) ? selectedBounds.filter(Boolean) : [];
 
     if (!boundsList.length) {
@@ -2524,15 +2637,12 @@ async function buildFilteredIrrigatedOverlayData(selectedBounds) {
     const features = payloads.flatMap(payload => Array.isArray(payload.features) ? payload.features : []);
     const failedFiles = payloads.flatMap(payload => Array.isArray(payload.failed_files) ? payload.failed_files : []);
 
-    // IMPORTANT:
-    // The API request uses bbox intersection (viewport bounds), but we must enforce
-    // that only features fully contained inside the selected municipality bbox are rendered.
-    const boundsExtentsList = boundsList
-        .map(getLatLngBoundsExtents)
-        .filter(Boolean);
+    const boundaryFeatures = getMunicipalityBoundaryFeatures(selections);
 
-    const filteredFeatures = boundsExtentsList.length
-        ? features.filter(feature => isFeatureFullyInsideAnyBounds(feature, boundsExtentsList))
+    const filteredFeatures = boundaryFeatures.length
+        ? features
+            .map(feature => filterFeatureByMunicipalityBoundaries(feature, boundaryFeatures))
+            .filter(Boolean)
         : features;
 
     return {
@@ -2541,8 +2651,8 @@ async function buildFilteredIrrigatedOverlayData(selectedBounds) {
         category: 'irrigated',
         label: 'Irrigated Area',
         failed_files: failedFiles,
-        features,
-        rendered_feature_count: features.length
+        features: filteredFeatures,
+        rendered_feature_count: filteredFeatures.length
     };
 }
 
@@ -2764,8 +2874,6 @@ function createOverlayLayer(categoryKey, geoJson, fileName) {
             map.setView(layer.getLatLng(), Math.max(map.getZoom(), 14));
         }
 
-        // 🔥 send ONLY this overlay to mini map
-        showMiniMap(layer.toGeoJSON());
     });
 }
     });
@@ -2805,7 +2913,7 @@ async function showOverlayCategory(categoryKey) {
             return;
         }
 
-        const mergedPayload = await buildFilteredIrrigatedOverlayData(selectedBounds);
+        const mergedPayload = await buildFilteredIrrigatedOverlayData(selections);
 
         if (loadToken !== municipalityOverlayLoadToken) {
             return;
@@ -2986,287 +3094,8 @@ Object.entries(overlayToggles).forEach(([categoryKey, checkbox]) => {
 
         // Update label visibility
         updateProvinceLabelVisibility();
-
-        if (selectedBaseLayer) {
-            // Debounce the minimap generation to prevent freezes when rapidly selecting multiple layers
-            clearTimeout(window._miniMapDebounceTimer);
-            window._miniMapDebounceTimer = setTimeout(() => {
-                showMiniMapForMunicipality(selectedBaseLayer);
-            }, 300);
-        }
     });
 });
-
-let miniMap = L.map('miniMap', {
-    attributionControl: false,
-    zoomControl: false
-});
-const miniMapRenderer = L.canvas({ padding: 0.5 });
-
-let miniLayer = L.tileLayer(
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-);
-miniLayer.addTo(miniMap);
-function showMiniMap(feature) {
-    document.getElementById('miniMap').style.display = 'block';
-
-    if (miniGeoLayer) {
-        miniMap.removeLayer(miniGeoLayer);
-    }
-
-    miniGeoLayer = L.geoJSON(feature, {
-        renderer: miniMapRenderer,
-        style: function(f) {
-            const category = f.properties?._category;
-
-            if (category === 'selected_municipality') {
-                return {
-                    color: '#d32f2f',
-                    weight: 4,
-                    fillColor: '#fffffb00',
-                    fillOpacity: 0.45
-                };
-            }
-
-            if (category && overlayStyles[category]) {
-                return overlayStyles[category]; // same color
-            }
-
-            return {
-                color: '#ff0000',
-                weight: 2,
-                fillOpacity: 0.6
-            };
-        }
-    }).addTo(miniMap);
-
-    let targetBounds = null;
-    miniGeoLayer.eachLayer(layer => {
-        if (layer.feature?.properties?._category === 'selected_municipality') {
-            targetBounds = layer.getBounds();
-            if (layer.bringToFront) {
-                layer.bringToFront();
-            }
-        }
-    });
-
-    if (targetBounds) {
-        miniMap.fitBounds(targetBounds, { padding: [10,10] });
-    } else {
-        miniMap.fitBounds(miniGeoLayer.getBounds(), { padding: [10,10] });
-    }
-}
-
-function filterGeometryByBounds(geoJson, bounds) {
-    if (!geoJson || !geoJson.geometry) return geoJson;
-
-    const type = geoJson.geometry.type;
-    const coords = geoJson.geometry.coordinates;
-    const minLat = bounds.getSouth();
-    const maxLat = bounds.getNorth();
-    const minLng = bounds.getWest();
-    const maxLng = bounds.getEast();
-
-    const MAX_FEATURES = 20000;
-
-    function lineIntersects(line) {
-        if (!line || line.length === 0) return false;
-
-        let pMinLat = 90, pMaxLat = -90, pMinLng = 180, pMaxLng = -180;
-        const len = line.length;
-
-        for (let j = 0; j < len; j++) {
-            const pt = line[j];
-            if (!pt) continue;
-            if (pt[1] < pMinLat) pMinLat = pt[1];
-            if (pt[1] > pMaxLat) pMaxLat = pt[1];
-            if (pt[0] < pMinLng) pMinLng = pt[0];
-            if (pt[0] > pMaxLng) pMaxLng = pt[0];
-        }
-
-        return !(pMinLng > maxLng || pMaxLng < minLng || pMinLat > maxLat || pMaxLat < minLat);
-    }
-
-    if (type === 'MultiPolygon') {
-        const filtered = [];
-        for (let i = 0; i < coords.length; i++) {
-            if (filtered.length >= MAX_FEATURES) break;
-            if (coords[i][0] && lineIntersects(coords[i][0])) {
-                filtered.push(coords[i]);
-            }
-        }
-        if (filtered.length === 0) return null;
-        return { type: 'Feature', properties: geoJson.properties, geometry: { type: 'MultiPolygon', coordinates: filtered } };
-    }
-
-    if (type === 'MultiLineString') {
-        const filtered = [];
-        for (let i = 0; i < coords.length; i++) {
-            if (filtered.length >= MAX_FEATURES) break;
-            if (lineIntersects(coords[i])) {
-                filtered.push(coords[i]);
-            }
-        }
-        if (filtered.length === 0) return null;
-        return { type: 'Feature', properties: geoJson.properties, geometry: { type: 'MultiLineString', coordinates: filtered } };
-    }
-
-    if (type === 'MultiPoint') {
-        const filtered = [];
-        const step = Math.max(1, Math.floor(coords.length / MAX_FEATURES));
-        for (let i = 0; i < coords.length; i += step) {
-            if (filtered.length >= MAX_FEATURES) break;
-            const pt = coords[i];
-            if (pt[0] >= minLng && pt[0] <= maxLng && pt[1] >= minLat && pt[1] <= maxLat) {
-                filtered.push(pt);
-            }
-        }
-        if (filtered.length === 0) return null;
-        return { type: 'Feature', properties: geoJson.properties, geometry: { type: 'MultiPoint', coordinates: filtered } };
-    }
-
-    return geoJson;
-}
-
-function showMiniMapForMunicipality(municipalityLayer) {
-    const refreshId = ++miniOverlayRefreshId;
-    const municipalityFeature = municipalityLayer.toGeoJSON();
-    municipalityFeature.properties = {
-        ...(municipalityFeature.properties || {}),
-        _category: 'selected_municipality'
-    };
-
-    showMiniMap({
-        type: 'FeatureCollection',
-        features: [municipalityFeature]
-    });
-
-    const municipalityBounds = municipalityLayer.getBounds();
-    const overlayEntries = Object.entries(overlayLayers).filter(([categoryKey, overlayLayer]) => {
-        const checkbox = overlayToggles[categoryKey];
-
-        return checkbox?.checked && map.hasLayer(overlayLayer);
-    });
-
-    if (!overlayEntries.length) {
-        return;
-    }
-
-    const overlayFeatures = [];
-    const maxMiniOverlayFeatures = 3000;
-    let entryIndex = 0;
-    let currentLayers = [];
-    let layerIndex = 0;
-
-    function loadNextOverlayBatch(deadline = null) {
-        if (refreshId !== miniOverlayRefreshId) {
-            return;
-        }
-
-        const startedAt = performance.now();
-
-        while (entryIndex < overlayEntries.length && overlayFeatures.length < maxMiniOverlayFeatures) {
-            const [categoryKey, overlayLayer] = overlayEntries[entryIndex];
-
-            if (!currentLayers.length) {
-                currentLayers = [];
-                overlayLayer.eachLayer(layer => currentLayers.push(layer));
-                layerIndex = 0;
-            }
-
-            while (layerIndex < currentLayers.length && overlayFeatures.length < maxMiniOverlayFeatures) {
-                const layer = currentLayers[layerIndex++];
-
-                let overlayFeature = layer.feature || layer.toGeoJSON();
-                let touchesBounds = false;
-
-                // Skip expensive getBounds() calculation for massive MultiPolygons which loops over all vertices synchronously
-                if (overlayFeature.geometry?.type?.startsWith('Multi') && overlayFeature.geometry.coordinates?.length > 1000) {
-                    touchesBounds = true; // We filter it in filterGeometryByBounds anyway
-                } else {
-                    touchesBounds = doesLayerTouchBounds(layer, municipalityBounds);
-                }
-
-                if (touchesBounds) {
-                    if (categoryKey === 'irrigated' || overlayFeature.geometry?.type?.startsWith('Multi')) {
-                        overlayFeature = filterGeometryByBounds(overlayFeature, municipalityBounds);
-                    }
-
-                    if (overlayFeature) {
-                        overlayFeatures.push({
-                            type: overlayFeature.type,
-                            geometry: overlayFeature.geometry,
-                            properties: {
-                                ...(overlayFeature.properties || {}),
-                                _category: categoryKey
-                            }
-                        });
-                    }
-                }
-
-                const shouldYield = deadline
-                    ? deadline.timeRemaining() < 8
-                    : performance.now() - startedAt > 16;
-
-                if (shouldYield) {
-                    scheduleMiniOverlayBatch(loadNextOverlayBatch);
-                    return;
-                }
-            }
-
-            entryIndex++;
-            currentLayers = [];
-        }
-
-        if (refreshId !== miniOverlayRefreshId) {
-            return;
-        }
-
-        // Sort features so that higher priority layers are drawn last (on top) by Leaflet Canvas
-        const categoryPriority = {
-            'land_boundary': 1,
-            'potential': 2,
-            'irrigated': 3
-        };
-
-        overlayFeatures.sort((a, b) => {
-            const prioA = categoryPriority[a.properties?._category] || 0;
-            const prioB = categoryPriority[b.properties?._category] || 0;
-            return prioA - prioB;
-        });
-
-        showMiniMap({
-            type: 'FeatureCollection',
-            features: [
-                ...overlayFeatures,
-                municipalityFeature
-            ]
-        });
-    }
-
-    scheduleMiniOverlayBatch(loadNextOverlayBatch);
-}
-
-function scheduleMiniOverlayBatch(callback) {
-    if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(callback, { timeout: 250 });
-        return;
-    }
-
-    window.setTimeout(callback, 0);
-}
-
-function doesLayerTouchBounds(layer, bounds) {
-    if (typeof layer.getBounds === 'function') {
-        return layer.getBounds().intersects(bounds);
-    }
-
-    if (typeof layer.getLatLng === 'function') {
-        return bounds.contains(layer.getLatLng());
-    }
-
-    return false;
-}
 
 (async function initializeMap() {
     try {
@@ -3675,9 +3504,6 @@ function closeAllPanels() {
     detailPanel.style.left = '';
     detailPanel.style.top = '';
     detailPanel.style.transform = '';
-
-    // Optional: Hide the miniMap if you want it to disappear too
-    document.getElementById('miniMap').style.display = 'none';
 
     // Optional: Reset the map selection style
     if (selectedBaseLayer && geoLayer) {

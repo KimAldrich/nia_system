@@ -709,7 +709,7 @@ class MapController extends Controller
         }
 
         if ($type === 'MultiLineString') {
-            $filtered = array_values(array_filter($coordinates, fn ($line) => $this->coordinateListIntersectsBounds($line, $bounds)));
+            $filtered = array_values(array_filter($coordinates, fn($line) => $this->coordinateListIntersectsBounds($line, $bounds)));
 
             return $filtered ? ['type' => 'MultiLineString', 'coordinates' => $filtered] : null;
         }
@@ -719,7 +719,7 @@ class MapController extends Controller
         }
 
         if ($type === 'MultiPoint') {
-            $filtered = array_values(array_filter($coordinates, fn ($point) => $this->pointIntersectsBounds($point, $bounds)));
+            $filtered = array_values(array_filter($coordinates, fn($point) => $this->pointIntersectsBounds($point, $bounds)));
 
             return $filtered ? ['type' => 'MultiPoint', 'coordinates' => $filtered] : null;
         }
@@ -969,11 +969,13 @@ class MapController extends Controller
         } elseif (($geoJson['type'] ?? null) === 'Feature') {
             $features = [$geoJson];
         } elseif (!empty($geoJson['type']) && !empty($geoJson['coordinates'])) {
-            $features = [[
-                'type' => 'Feature',
-                'properties' => [],
-                'geometry' => $geoJson,
-            ]];
+            $features = [
+                [
+                    'type' => 'Feature',
+                    'properties' => [],
+                    'geometry' => $geoJson,
+                ]
+            ];
         } else {
             $features = [];
         }
@@ -1231,7 +1233,7 @@ class MapController extends Controller
                 }
             }
 
-            return array_values(array_filter($features, fn ($feature) => !empty($feature['geometry'])));
+            return array_values(array_filter($features, fn($feature) => !empty($feature['geometry'])));
         } finally {
             fclose($handle);
         }
@@ -1243,12 +1245,8 @@ class MapController extends Controller
 
         return match ($shapeType) {
             1, 11, 21 => $this->pointGeometryFromRawShpRecord($content),
-            3, 13, 23 => $contentLength > 400000
-                ? $this->bboxGeometryFromRawShpRecord($content)
-                : $this->lineGeometryFromRawShpRecord($content),
-            5, 15, 25 => $contentLength > 400000
-                ? $this->bboxGeometryFromRawShpRecord($content)
-                : $this->polygonGeometryFromRawShpRecord($content),
+            3, 13, 23 => $this->lineGeometryFromRawShpRecord($content),
+            5, 15, 25 => $this->polygonGeometryFromRawShpRecord($content),
             default => null,
         };
     }
@@ -1270,13 +1268,15 @@ class MapController extends Controller
 
         return [
             'type' => 'Polygon',
-            'coordinates' => [[
-                [$xmin, $ymin],
-                [$xmax, $ymin],
-                [$xmax, $ymax],
-                [$xmin, $ymax],
-                [$xmin, $ymin],
-            ]],
+            'coordinates' => [
+                [
+                    [$xmin, $ymin],
+                    [$xmax, $ymin],
+                    [$xmax, $ymax],
+                    [$xmin, $ymax],
+                    [$xmin, $ymin],
+                ]
+            ],
         ];
     }
 
@@ -1320,7 +1320,7 @@ class MapController extends Controller
             'type' => count($rings) === 1 ? 'Polygon' : 'MultiPolygon',
             'coordinates' => count($rings) === 1
                 ? [$rings[0]]
-                : array_map(fn ($ring) => [$ring], $rings),
+                : array_map(fn($ring) => [$ring], $rings),
         ];
     }
 
@@ -1455,7 +1455,7 @@ class MapController extends Controller
             return $this->thinCoordinateRing($coordinates, $maxPoints);
         }
 
-        return array_map(fn ($item) => $this->simplifyCoordinateTree($item, $geometryType, $category), $coordinates);
+        return array_map(fn($item) => $this->simplifyCoordinateTree($item, $geometryType, $category), $coordinates);
     }
 
     private function isCoordinateRing(array $coordinates): bool
@@ -1470,7 +1470,7 @@ class MapController extends Controller
         $count = count($ring);
 
         if ($count <= $maxPoints) {
-            return array_map(fn ($point) => $this->simplifyCoordinateTree($point, 'Point'), $ring);
+            return array_map(fn($point) => $this->simplifyCoordinateTree($point, 'Point'), $ring);
         }
 
         $step = max(1, (int) ceil($count / $maxPoints));
@@ -1561,8 +1561,8 @@ class MapController extends Controller
 
             if (Storage::disk('public')->exists($root)) {
                 $directories = collect(Storage::disk('public')->allDirectories($root))
-                    ->map(fn ($path) => trim($this->relativeOverlayFolder($path, $root), '/'))
-                    ->filter(fn ($path) => $path !== '')
+                    ->map(fn($path) => trim($this->relativeOverlayFolder($path, $root), '/'))
+                    ->filter(fn($path) => $path !== '')
                     ->unique()
                     ->sort()
                     ->values();
@@ -1670,10 +1670,10 @@ class MapController extends Controller
                     $finalName = $this->resolveAvailableFileName($storagePath, $safeBaseName, $extension);
                 }
 
-                Storage::disk('s3')->makeDirectory($storagePath);
+                $disk = Storage::disk('public');
+                $disk->makeDirectory($storagePath);
 
-                $path = Storage::disk('s3')->putFileAs($storagePath, $file, $finalName);
-                //$path = $file->store('forms');
+                $path = $disk->putFileAs($storagePath, $file, $finalName);
                 if ($path) {
                     $uploadedFiles[] = [
                         'name' => $finalName,
@@ -1902,11 +1902,13 @@ class MapController extends Controller
             Storage::disk('public')->delete($path);
             $this->deleteIrrigatedAreaRowsForPath($path);
             $category = $this->resolveCategoryFromStoragePath((string) $path);
-            $notificationResult = $this->notifyMapFileChange('delete', $category, [[
-                'name' => basename((string) $path),
-                'path' => (string) $path,
-                'url' => $this->mapFileUrl((string) $path),
-            ]]);
+            $notificationResult = $this->notifyMapFileChange('delete', $category, [
+                [
+                    'name' => basename((string) $path),
+                    'path' => (string) $path,
+                    'url' => $this->mapFileUrl((string) $path),
+                ]
+            ]);
 
             $this->clearMapDataCache();
 
@@ -1924,7 +1926,7 @@ class MapController extends Controller
     public function deleteFolder(Request $request)
     {
         $folder = $this->normalizePublicStoragePath((string) $request->input('folder'));
-        $allowedRoots = array_map(fn ($directory) => "maps/{$directory}", array_values(self::CATEGORY_DIRECTORY_MAP));
+        $allowedRoots = array_map(fn($directory) => "maps/{$directory}", array_values(self::CATEGORY_DIRECTORY_MAP));
 
         $isAllowed = collect($allowedRoots)->contains(function ($root) use ($folder) {
             return $folder !== $root && str_starts_with($folder . '/', $root . '/');
@@ -1957,10 +1959,12 @@ class MapController extends Controller
         $category = $this->resolveCategoryFromStoragePath($folder);
         $this->clearMapDataCache();
 
-        $notificationResult = $this->notifyMapFileChange('delete', $category, [[
-            'name' => basename($folder),
-            'path' => $folder,
-        ]]);
+        $notificationResult = $this->notifyMapFileChange('delete', $category, [
+            [
+                'name' => basename($folder),
+                'path' => $folder,
+            ]
+        ]);
 
         return response()->json([
             'message' => 'Folder deleted. ' . $notificationResult['admin_message'],
@@ -2101,7 +2105,7 @@ class MapController extends Controller
         }
     }
 
-     public function getIrrigatedChartData(Request $request)
+    public function getIrrigatedChartData(Request $request)
     {
         if ($denied = $this->denyMapAccessUnlessAllowed($request)) {
             return $denied;
@@ -2844,7 +2848,7 @@ class MapController extends Controller
         return self::IRRIGATED_CHART_CACHE_KEY;
     }
 
-        private function mapDataFingerprint(array $paths): string
+    private function mapDataFingerprint(array $paths): string
     {
         $parts = [];
 
