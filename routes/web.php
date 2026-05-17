@@ -71,8 +71,8 @@ Route::middleware(['auth', 'check.active'])->group(function () {
     //Map Routes
         Route::post('/map/upload', [MapController::class, 'upload'])->name('map.upload');
         Route::get('/map/files', [MapController::class, 'fileManager'])->name('map.files');
-        Route::delete('/map/delete-folder', [MapController::class, 'deleteFolder']);
-        Route::delete('/map/delete', [MapController::class, 'deleteFile']);
+        Route::delete('/map/delete-folder', [MapController::class, 'deleteFolder'])->name('map.delete_folder');
+        Route::delete('/map/delete', [MapController::class, 'deleteFile'])->name('map.delete');
         Route::get('/map/notifications', [MapController::class, 'mapNotifications'])->name('map.notifications');
         Route::post('/map/notifications/clear-old', [MapController::class, 'clearOldMapNotifications'])->name('map.notifications.clear_old');
 

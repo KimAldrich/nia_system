@@ -391,6 +391,9 @@ function prevPage() {
     }
 }
 
+const mapDeleteFileEndpoint = @json(route('map.delete'));
+const mapDeleteFolderEndpoint = @json(route('map.delete_folder'));
+
 //  DELETE
 async function deleteFile(btn) {
     const path = btn.getAttribute('data-path');
@@ -398,7 +401,7 @@ async function deleteFile(btn) {
 
     if (!confirm('Delete this file?')) return;
 
-    const response = await fetch('/map/delete', {
+    const response = await fetch(mapDeleteFileEndpoint, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
@@ -425,7 +428,7 @@ async function deleteFolder(btn) {
 
     if (!confirm('Delete this folder and all files inside it?')) return;
 
-    const response = await fetch('/map/delete-folder', {
+    const response = await fetch(mapDeleteFolderEndpoint, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
