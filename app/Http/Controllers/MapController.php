@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Shapefile\Shapefile;
 use Shapefile\ShapefileReader;
 use ZipArchive;
@@ -62,6 +63,7 @@ class MapController extends Controller
     private const DEFAULT_RENDER_POLYGON_POINTS = 35;
     private const DEFAULT_RENDER_LINE_POINTS = 120;
     private const SYNC_IRRIGATED_IMPORT_FILE_LIMIT = 6;
+    private const MAP_UPLOAD_MAX_KILOBYTES = 204800;
 
     private function notifications(): SystemNotificationService
     {
@@ -100,7 +102,9 @@ class MapController extends Controller
         $overlayGroups = $this->defaultOverlayGroups();
         $uploadTargets = [];
 
-        return view('map.map', compact('overlayGroups', 'uploadTargets'));
+        $uploadConfig = $this->mapUploadConfig();
+
+        return view('map.map', compact('overlayGroups', 'uploadTargets', 'uploadConfig'));
     }
 
     public function mapApiStatus(Request $request)
@@ -1621,8 +1625,8 @@ class MapController extends Controller
 
             $request->validate([
                 'category' => 'required|in:Irrigated Area,Pangasinan Land Boundary,Potential Irrigable Area',
-                'files' => 'required',
-                'files.*' => 'file|max:204800',
+                'files' => 'required|array|min:1',
+                'files.*' => 'file|max:' . self::MAP_UPLOAD_MAX_KILOBYTES,
                 'target_folder' => 'nullable|string|max:255',
             ]);
 
@@ -1674,13 +1678,24 @@ class MapController extends Controller
                 $disk->makeDirectory($storagePath);
 
                 $path = $disk->putFileAs($storagePath, $file, $finalName);
-                if ($path) {
-                    $uploadedFiles[] = [
-                        'name' => $finalName,
-                        'path' => $path,
-                        'url' => $this->mapFileUrl($path),
-                    ];
+                if (!$path) {
+                    throw new \RuntimeException("The server could not save {$finalName}. Please check storage permissions and available disk space.");
                 }
+
+                $uploadedFiles[] = [
+                    'name' => $finalName,
+                    'path' => $path,
+                    'url' => $this->mapFileUrl($path),
+                ];
+            }
+
+            if (empty($uploadedFiles)) {
+                return response()->json([
+                    'message' => empty($skippedFiles)
+                        ? 'Upload failed: no valid map files were received by the server.'
+                        : 'Upload failed: every selected file was unsupported. Please upload .geojson, .json, .kml, .kmz, .zip, .shp, .shx, .dbf, .prj, or .cpg files.',
+                    'skipped_files' => $skippedFiles,
+                ], 422);
             }
 
             $primaryUploadedFiles = array_values(array_filter($uploadedFiles, function ($file) {
@@ -1690,9 +1705,9 @@ class MapController extends Controller
             }));
             $dbImportDeferred = false;
 
-            if ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) <= self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
+            if ($categoryDirectory === 'irrigated' && $this->shouldSyncIrrigatedUploadImport($primaryUploadedFiles)) {
                 $this->importUploadedIrrigatedAreaFiles($uploadedFiles);
-            } elseif ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) > self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
+            } elseif ($categoryDirectory === 'irrigated' && count($primaryUploadedFiles) > 0) {
                 $dbImportDeferred = true;
             }
 
@@ -1712,6 +1727,13 @@ class MapController extends Controller
                 'target_directory' => $displayUploadDirectory,
                 'notified_users_count' => $notificationResult['notified_users_count'],
             ]);
+        } catch (ValidationException $e) {
+            $messages = collect($e->errors())->flatten()->values()->all();
+
+            return response()->json([
+                'message' => 'Upload failed: ' . ($messages[0] ?? 'Please check the selected files and try again.'),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Upload failed: ' . $e->getMessage(),
@@ -1728,10 +1750,53 @@ class MapController extends Controller
         }
 
         if ($dbImportDeferred) {
-            $message .= ' Large irrigated upload saved. Run php artisan map:rebuild-irrigated-areas to index it for map display.';
+            $message .= ' Irrigated-area indexing was deferred for hosted upload stability. Run php artisan map:rebuild-irrigated-areas to index it for map display.';
         }
 
         return $message;
+    }
+
+    private function shouldSyncIrrigatedUploadImport(array $primaryUploadedFiles): bool
+    {
+        if (count($primaryUploadedFiles) === 0 || count($primaryUploadedFiles) > self::SYNC_IRRIGATED_IMPORT_FILE_LIMIT) {
+            return false;
+        }
+
+        return filter_var(env('MAP_UPLOAD_SYNC_IRRIGATED_IMPORT', false), FILTER_VALIDATE_BOOL);
+    }
+
+    private function mapUploadConfig(): array
+    {
+        $validationMaxBytes = self::MAP_UPLOAD_MAX_KILOBYTES * 1024;
+        $uploadMaxBytes = $this->phpIniBytes((string) ini_get('upload_max_filesize'));
+        $postMaxBytes = $this->phpIniBytes((string) ini_get('post_max_size'));
+        $maxRequestBytes = min(array_filter([$validationMaxBytes, $uploadMaxBytes, $postMaxBytes], fn($value) => $value > 0));
+
+        return [
+            'max_file_bytes' => min(array_filter([$validationMaxBytes, $uploadMaxBytes], fn($value) => $value > 0)),
+            'max_request_bytes' => $maxRequestBytes,
+            'max_files' => max(1, (int) ini_get('max_file_uploads')),
+            'sync_irrigated_import' => filter_var(env('MAP_UPLOAD_SYNC_IRRIGATED_IMPORT', false), FILTER_VALIDATE_BOOL),
+        ];
+    }
+
+    private function phpIniBytes(string $value): int
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return 0;
+        }
+
+        $unit = strtolower(substr($value, -1));
+        $number = (float) $value;
+
+        return match ($unit) {
+            'g' => (int) ($number * 1024 * 1024 * 1024),
+            'm' => (int) ($number * 1024 * 1024),
+            'k' => (int) ($number * 1024),
+            default => (int) $number,
+        };
     }
 
     private function importUploadedIrrigatedAreaFiles(array $uploadedFiles): void

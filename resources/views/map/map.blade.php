@@ -1449,11 +1449,12 @@ function toTitleCase(str) {
 
 const overlayGroups = @json($overlayGroups);
 let uploadTargets = @json($uploadTargets ?? []);
+const mapUploadConfig = @json($uploadConfig ?? []);
 const appBaseUrl = "{{ rtrim(request()->getBaseUrl(), '/') }}";
 const mapApiStatusEndpoint = "{{ route('map.api.status') }}";
 const irrigatedAreasEndpoint = "{{ route('map.api.irrigated_areas') }}";
 const irrigatedChartDataEndpoint = "{{ url('/irrigated-chart-data') }}";
-const overlayFilesEndpointBase = "{{ url('/map/overlays') }}";
+const overlayFilesEndpointBase = "{{ url('/map/overlay/files') }}";
 const renderedOverlayEndpointBase = "{{ url('/map/render') }}";
 const notificationUserKey = "{{ $notificationUserKey ?? '' }}" || null;
 const currentUserRole = "{{ $currentUserRole ?? '' }}" || null;
@@ -3131,6 +3132,26 @@ function getUnsupportedMapFiles(fileList) {
     });
 }
 
+function getSupportedMapFiles(fileList) {
+    return Array.from(fileList || []).filter((file) => {
+        const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+        return supportedMapExtensions.includes(extension);
+    });
+}
+
+function formatBytes(bytes) {
+    const size = Number(bytes) || 0;
+    if (size >= 1024 * 1024 * 1024) {
+        return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
+    }
+
+    if (size >= 1024 * 1024) {
+        return `${(size / 1024 / 1024).toFixed(1)} MB`;
+    }
+
+    return `${Math.max(1, Math.ceil(size / 1024))} KB`;
+}
+
 function openUploadFeedbackModal(message, title = 'Upload Failed') {
     if (typeof openAsyncSuccessModal === 'function') {
         openAsyncSuccessModal('#appFeedbackModal', message, title);
@@ -3277,6 +3298,39 @@ if (form) {
             return;
         }
 
+        const uploadCandidates = files.length > 0 ? Array.from(files) : getSupportedMapFiles(folderFiles);
+        const maxFiles = Number(mapUploadConfig.max_files || 0);
+        const maxFileBytes = Number(mapUploadConfig.max_file_bytes || 0);
+        const maxRequestBytes = Number(mapUploadConfig.max_request_bytes || 0);
+        const totalUploadBytes = uploadCandidates.reduce((total, file) => total + Number(file.size || 0), 0);
+        const oversizedFile = maxFileBytes > 0
+            ? uploadCandidates.find((file) => Number(file.size || 0) > maxFileBytes)
+            : null;
+
+        if (maxFiles > 0 && uploadCandidates.length > maxFiles) {
+            openUploadFeedbackModal(
+                `This server accepts up to ${maxFiles} file(s) in one upload. Please upload fewer files or compress the map set into a .zip file.`,
+                'Upload Too Large'
+            );
+            return;
+        }
+
+        if (oversizedFile) {
+            openUploadFeedbackModal(
+                `${oversizedFile.name} is ${formatBytes(oversizedFile.size)}. This server accepts up to ${formatBytes(maxFileBytes)} per file.`,
+                'Upload Too Large'
+            );
+            return;
+        }
+
+        if (maxRequestBytes > 0 && totalUploadBytes > maxRequestBytes) {
+            openUploadFeedbackModal(
+                `The selected files total ${formatBytes(totalUploadBytes)}. This server accepts about ${formatBytes(maxRequestBytes)} per upload request. Please upload fewer files or use a .zip file.`,
+                'Upload Too Large'
+            );
+            return;
+        }
+
         if (files.length > 0) {
             for (let i = 0; i < files.length; i++) {
                 formData.append('files[]', files[i]);
@@ -3312,6 +3366,9 @@ if (form) {
         try {
             const response = await fetch("{{ route('map.upload') }}", {
                 method: "POST",
+                headers: {
+                    'Accept': 'application/json'
+                },
                 body: formData
             });
 
